@@ -96,3 +96,29 @@
 /* Très petits écrans : le titre de la barre se raccourcit, la pastille se réduit à son icône. */
 .barre__titre { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 380px) { .pastille-acces { padding: 0 9px; } .pastille-acces span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
+
+/* ---------- Offre de lancement, code promo ---------- */
+.ab-offre__promo { display: inline-flex; align-items: center; gap: 6px; align-self: start; padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--epargne) 14%, var(--surface)); color: var(--epargne-t, var(--epargne)); font-size: 12.5px; font-weight: 700; }
+.ab-offre__promo svg { width: 14px; height: 14px; flex: none; }
+.ab-offre__avant { color: var(--encre-3); font-size: 16px; font-weight: 600; text-decoration-thickness: 1.5px; margin-right: 4px; }
+.ab-code { display: grid; gap: 6px; margin-top: 16px; max-width: 520px; }
+.ab-code__ligne { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+.ab-code__ligne .saisie { flex: 1 1 180px; min-width: 0; }
+.ab-code__ligne .saisie input { text-transform: uppercase; letter-spacing: .04em; }
+.ab-code__msg { min-height: 1.3em; font-size: 13.5px; color: var(--encre-3); }
+.ab-code__msg[data-type="ok"] { color: var(--succes); font-weight: 650; }
+.ab-code__msg[data-type="erreur"] { color: var(--erreur); }
+
+/* ---------- Parrainage ---------- */
+.ab-parrainage { display: grid; gap: 16px; }
+.ab-parrainage__tete { display: flex; gap: 14px; align-items: flex-start; }
+.ab-parrainage__tete h2 { font-size: 18px; }
+.ab-parrainage__tete p { color: var(--encre-2); font-size: 14.5px; max-width: 62ch; }
+.ab-parrainage__icone { display: grid; place-items: center; width: 42px; height: 42px; flex: none; border-radius: 12px; background: color-mix(in srgb, var(--epargne) 16%, var(--surface)); color: var(--epargne-t, var(--epargne)); }
+.ab-parrainage__icone svg { width: 22px; height: 22px; }
+.ab-parrainage__code { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 14px 16px; border-radius: var(--r-int); background: var(--surface-2); }
+.ab-parrainage__code .champ__lib { width: 100%; }
+.ab-parrainage__code strong { font-size: 24px; letter-spacing: .12em; font-weight: 780; }
+.ab-parrainage__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.ab-parrainage__bilan { color: var(--encre-2); font-size: 14px; }
+.ab-parrainage__saisie { display: grid; gap: 6px; max-width: 520px; padding-top: 12px; border-top: 1px solid var(--filet); }

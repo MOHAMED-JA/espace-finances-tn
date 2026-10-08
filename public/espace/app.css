@@ -427,3 +427,10 @@ body.attente .app { visibility: hidden; }
 .admin__table td strong, .admin__table td small { display: block; }
 .admin__table td small { color: var(--encre-3); font-size: 12.5px; overflow-wrap: anywhere; }
 .admin__aujourdhui { color: var(--succes, var(--salaire)); font-weight: 650; }
+.admin__nouveau summary { cursor: pointer; font-weight: 650; padding: 8px 0; }
+.admin__form { display: grid; gap: 12px 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); align-items: start; padding-top: 8px; }
+.admin__form .champ { min-width: 0; }
+.admin__formules { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; grid-column: 1 / -1; }
+.admin__formules legend { padding: 0; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
+.admin__case { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.admin__form .erreur-champ, .admin__form button[type=submit] { grid-column: 1 / -1; justify-self: start; }

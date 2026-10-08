@@ -29,6 +29,21 @@ function creer() {
   const admins = new Set();
   const alertes = [];
   const usage = new Map();  // "type:cle" -> nombre
+  /* Codes promo et parrainage (migration 0007) : même règles que prix_formule / activer_paiement. */
+  const codes = new Map();       // code -> { code, libelle, remise_pct, formules, fin, max_utilisations, utilisations, automatique, actif }
+  const parrains = new Map();    // user id -> code
+  const parrainages = new Map(); // filleul -> { parrain, recompense }
+  function codeValide(c, formule) {
+    return c && c.actif && (!c.fin || Date.parse(c.fin) > Date.now()) && (!c.max_utilisations || c.utilisations < c.max_utilisations) && (!c.formules || c.formules.includes(formule));
+  }
+  function prixFormule(cle, saisi) {
+    const f = FORMULES.find((x) => x.cle === cle);
+    let m = [...codes.values()].filter((c) => c.automatique && codeValide(c, cle)).sort((a, b) => b.remise_pct - a.remise_pct)[0] || null;
+    const s = saisi && codes.get(String(saisi).toUpperCase());
+    if (s && !s.automatique && codeValide(s, cle) && (!m || s.remise_pct > m.remise_pct)) m = s;
+    const prix = m ? Math.max(1000, Math.round(f.prix_millimes * (100 - m.remise_pct) / 100 / 100) * 100) : f.prix_millimes;
+    return { formule: cle, prix_initial: f.prix_millimes, prix, code: m ? m.code : null, remise_pct: m ? m.remise_pct : 0, libelle: m ? m.libelle : null, automatique: m ? m.automatique : false, fin: m ? m.fin : null };
+  }
   function abonnementDe(id) {
     if (!abonnements.has(id)) abonnements.set(id, { essai_fin: new Date(Date.now() + 3 * 86400000).toISOString(), fin: null, formule: null, offert: false, testeur: false });
     return abonnements.get(id);
@@ -43,6 +58,13 @@ function creer() {
     const f = FORMULES.find((x) => x.cle === p.formule), a = abonnementDe(p.user_id);
     const depart = new Date(Math.max(Date.now(), a.fin ? Date.parse(a.fin) : 0, a.offert ? 0 : Date.parse(a.essai_fin)));
     depart.setMonth(depart.getMonth() + f.mois);
+    if (p.code_promo && codes.get(p.code_promo)) codes.get(p.code_promo).utilisations++;
+    const pa = parrainages.get(p.user_id);
+    if (pa && !pa.recompense) {
+      depart.setMonth(depart.getMonth() + 1);
+      const ap = abonnementDe(pa.parrain), dp = new Date(Math.max(Date.now(), ap.fin ? Date.parse(ap.fin) : 0, ap.offert ? 0 : Date.parse(ap.essai_fin)));
+      dp.setMonth(dp.getMonth() + 1); ap.fin = dp.toISOString(); pa.recompense = true;
+    }
     a.fin = depart.toISOString(); a.formule = f.cle;
     p.statut = "paye"; p.paye_le = new Date().toISOString();
   }
@@ -209,14 +231,15 @@ function creer() {
         const f = FORMULES.find((x) => x.cle === corps.formule);
         if (!f) return repondre(route, 400, { erreur: "Formule inconnue" });
         const reference = "ORB-" + new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + crypto.randomBytes(4).toString("hex").toUpperCase();
-        paiements.push({ reference, user_id: u.id, formule: f.cle, montant_millimes: f.prix_millimes, passerelle: "test", statut: "cree", cree_le: new Date().toISOString(), paye_le: null, test: null });
+        const px = prixFormule(f.cle, corps.code);
+        paiements.push({ reference, user_id: u.id, formule: f.cle, montant_millimes: px.prix, code_promo: px.code, prix_initial_millimes: px.code ? px.prix_initial : null, passerelle: "test", statut: "cree", cree_le: new Date().toISOString(), paye_le: null, test: null });
         return repondre(route, 200, { url: url.origin.replace(/.*/, "") + "/espace/paiement-test.html?ref=" + reference, reference });
       }
       const p = paiements.find((x) => x.reference === corps.reference && x.user_id === u.id);
       if (!p) return repondre(route, 404, { erreur: "Commande introuvable" });
       if (corps.action === "detail") {
         const f = FORMULES.find((x) => x.cle === p.formule);
-        return repondre(route, 200, { reference: p.reference, formule: p.formule, libelle: f.libelle, mois: f.mois, montant_millimes: p.montant_millimes, statut: p.statut, passerelle: "test" });
+        return repondre(route, 200, { reference: p.reference, formule: p.formule, libelle: f.libelle, mois: f.mois, montant_millimes: p.montant_millimes, prix_initial_millimes: p.prix_initial_millimes, code_promo: p.code_promo, statut: p.statut, passerelle: "test" });
       }
       if (corps.action === "simuler") {
         if (p.statut !== "cree") return repondre(route, 200, { statut: p.statut });
@@ -264,6 +287,29 @@ function creer() {
     }
     if (url.pathname === "/rest/v1/rpc/mon_acces") return repondre(route, 200, acces(u.id));
     if (url.pathname === "/rest/v1/rpc/est_admin") return repondre(route, 200, admins.has(u.id));
+    if (url.pathname === "/rest/v1/rpc/offres_en_cours") return repondre(route, 200, FORMULES.map((f) => prixFormule(f.cle, corps.p_code)));
+    if (url.pathname === "/rest/v1/rpc/verifier_code") {
+      const c = codes.get(String(corps.p_code || "").trim().toUpperCase());
+      if (!c || c.automatique || !c.actif) return repondre(route, 200, { valide: false, message: "Ce code n'existe pas." });
+      if (c.fin && Date.parse(c.fin) <= Date.now()) return repondre(route, 200, { valide: false, message: "Ce code a expiré." });
+      if (c.max_utilisations && c.utilisations >= c.max_utilisations) return repondre(route, 200, { valide: false, message: "Ce code a atteint son nombre maximal d'utilisations." });
+      return repondre(route, 200, { valide: true, code: c.code, remise_pct: c.remise_pct, libelle: c.libelle, formules: c.formules, fin: c.fin });
+    }
+    if (url.pathname === "/rest/v1/rpc/mon_parrainage") {
+      if (!parrains.has(u.id)) parrains.set(u.id, crypto.randomBytes(8).toString("hex").toUpperCase().replace(/[^A-Z0-9]/g, "").padEnd(8, "Z").slice(0, 8));
+      const filleuls = [...parrainages.entries()].filter(([, v]) => v.parrain === u.id);
+      return repondre(route, 200, { code: parrains.get(u.id), filleuls: filleuls.length, recompenses: filleuls.filter(([, v]) => v.recompense).length,
+        parrain_saisi: parrainages.has(u.id), filleul_recompense: !!(parrainages.get(u.id) || {}).recompense,
+        peut_saisir: !parrainages.has(u.id) && !paiements.some((x) => x.user_id === u.id && x.statut === "paye") });
+    }
+    if (url.pathname === "/rest/v1/rpc/utiliser_code_parrain") {
+      const code = String(corps.p_code || "").toUpperCase(), p = [...parrains.entries()].find(([, c]) => c === code);
+      if (!p) return repondre(route, 200, { ok: false, message: "Ce code de parrainage n'existe pas." });
+      if (p[0] === u.id) return repondre(route, 200, { ok: false, message: "Vous ne pouvez pas utiliser votre propre code." });
+      if (parrainages.has(u.id)) return repondre(route, 200, { ok: false, message: "Un code de parrainage est déjà enregistré sur votre compte." });
+      parrainages.set(u.id, { parrain: p[0], recompense: false });
+      return repondre(route, 200, { ok: true });
+    }
     if (url.pathname === "/rest/v1/rpc/compter_usage") { const k = corps.p_type + ":" + corps.p_cle; usage.set(k, (usage.get(k) || 0) + 1); return repondre(route, 204); }
     if (url.pathname.indexOf("/rest/v1/rpc/admin_") === 0 && !admins.has(u.id)) return repondre(route, 403, { code: "42501", message: "Réservé à l'administrateur" });
     if (url.pathname === "/rest/v1/rpc/admin_tableau") {
@@ -275,6 +321,17 @@ function creer() {
         essais_termines: 0, convertis: 0, desabonnes: 0, inscriptions_30j: [{ jour: new Date().toISOString().slice(0, 10), n }], utilisateurs: liste, alertes_non_lues: alertes.filter((a) => !a.lue).length });
     }
     if (url.pathname === "/rest/v1/rpc/admin_alertes_liste") return repondre(route, 200, alertes);
+    if (url.pathname === "/rest/v1/rpc/admin_codes") {
+      const l = [...parrainages.values()];
+      return repondre(route, 200, { codes: [...codes.values()], parrainages: l.length, parrainages_recompenses: l.filter((x) => x.recompense).length, parrains_actifs: new Set(l.map((x) => x.parrain)).size });
+    }
+    if (url.pathname === "/rest/v1/rpc/admin_code_enregistrer") {
+      const c = corps.p, code = String(c.code).toUpperCase(), avant = codes.get(code);
+      codes.set(code, { code, libelle: c.libelle || "", remise_pct: c.remise_pct, formules: c.formules && c.formules.length ? c.formules : null, fin: c.fin || null,
+        max_utilisations: c.max_utilisations || null, utilisations: avant ? avant.utilisations : 0, automatique: !!c.automatique, actif: c.actif !== false });
+      return repondre(route, 200, codes.get(code));
+    }
+    if (url.pathname === "/rest/v1/rpc/admin_code_activer") { const c = codes.get(corps.p_code); if (c) c.actif = !!corps.p_actif; return repondre(route, 204); }
     if (url.pathname === "/rest/v1/rpc/admin_alertes_lues") { alertes.forEach((a) => { a.lue = true; }); return repondre(route, 204); }
     if (url.pathname === "/rest/v1/rpc/admin_statistiques") {
       const de = (t) => [...usage.entries()].filter(([k]) => k.indexOf(t + ":") === 0).map(([k, v]) => ({ cle: k.slice(t.length + 1), n: v })).sort((a, b) => b.n - a.n);
@@ -305,6 +362,8 @@ function creer() {
     photos: () => photos,
     abonnementDe(email) { return abonnementDe(comptes.get(email).user.id); },
     marquerAdmin(email) { admins.add(comptes.get(email).user.id); },
+    abonnementDe(email) { return abonnementDe(comptes.get(email).user.id); },
+    paiementsDe(email) { const id = comptes.get(email).user.id; return paiements.filter((p) => p.user_id === id); },
     usage() { return new Map(usage); },
     marquerTesteur(email) { abonnementDe(comptes.get(email).user.id).testeur = true; },
     expirerEssai(email) { abonnementDe(comptes.get(email).user.id).essai_fin = new Date(Date.now() - 60000).toISOString(); },

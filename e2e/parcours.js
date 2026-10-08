@@ -407,6 +407,72 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.screenshot({ path: path.join(CAPTURES, "admin.png"), fullPage: true });
   });
 
+  await etape("codes promo, offre de lancement et parrainage (un mois offert à chacun)", async () => {
+    /* L'admin crée une offre de lancement automatique et un code réservé à l'annuel. */
+    await page.goto(base + "/espace/#admin");
+    await page.waitForSelector("#admin-corps:not([hidden])");
+    await page.click(".admin__nouveau summary");
+    const creerCode = async (code, remise, opts) => {
+      await page.fill("#ac-code", code); await page.fill("#ac-remise", String(remise));
+      await page.fill("#ac-libelle", opts.libelle || "");
+      if (opts.annuel) await page.check('input[name="ac-formule"][value="annuel"]');
+      if (opts.auto) await page.check("#ac-auto");
+      await page.click("#admin-code-form button[type=submit]");
+      await page.waitForFunction((c) => document.getElementById("admin-codes").textContent.indexOf(c) !== -1, code);
+    };
+    await creerCode("LANCEMENT", 20, { libelle: "Offre de lancement", auto: true });
+    await creerCode("AMI30", 30, { annuel: true });
+    /* Page d'abonnement : prix barrés et remise appliquée par le serveur. */
+    await page.goto(base + "/espace/#abonnement");
+    await page.reload();
+    await page.waitForFunction(() => /Offre de lancement/.test(document.getElementById("ab-offres").textContent));
+    const offres = await page.textContent("#ab-offres");
+    assert(/79,900/.test(offres) && /63,900/.test(offres), "prix annuel barré 79,900 puis 63,900 : " + offres);
+    await page.fill("#ab-code", "zzz999");
+    await page.click("#ab-code-appliquer");
+    await page.waitForFunction(() => /n'existe pas/.test(document.getElementById("ab-code-msg").textContent));
+    await page.fill("#ab-code", "ami30");
+    await page.click("#ab-code-appliquer");
+    await page.waitForFunction(() => /AMI30 appliqué/.test(document.getElementById("ab-code-msg").textContent));
+    await page.locator('#ab-offres input[value="annuel"]').dispatchEvent("click");
+    assert(/55,900/.test(await page.textContent("#ab-payer-lib")), "le bouton affiche le prix avec le code");
+    await page.screenshot({ path: path.join(CAPTURES, "promo.png"), fullPage: true });
+    /* Parrainage : un proche s'inscrit avec le lien, prend l'annuel ; chacun reçoit un mois. */
+    await page.waitForSelector("#ab-parrainage:not([hidden])");
+    const code = (await page.textContent("#ab-parr-code")).trim();
+    assert(/^[A-Z0-9]{8}$/.test(code), "code de parrainage : " + code);
+    const finAvant = Date.parse(faux.abonnementDe("aziz@exemple.tn").fin);
+    faux.ajouterCompte("filleul@exemple.tn", "Filleul-compte-2026!", { full_name: "Filleul" });
+    faux.marquerTesteur("filleul@exemple.tn");
+    const ctx3 = await navigateur.newContext({ viewport: { width: 1280, height: 900 } });
+    await ctx3.route(SUPABASE + "/**", (r) => faux.gerer(r));
+    await ctx3.route("https://api.pwnedpasswords.com/**", fuites);
+    const p3 = await ctx3.newPage();
+    suivre(p3);
+    await p3.goto(base + "/connexion.html?parrain=" + code);
+    await p3.waitForSelector("#invitation:not([hidden])");
+    await p3.fill("#email", "filleul@exemple.tn");
+    await p3.fill("#mdp", "Filleul-compte-2026!");
+    await p3.click("#envoyer");
+    await p3.waitForURL(/\/espace\//);
+    await p3.waitForFunction(() => /parrainage enregistré/.test([...document.querySelectorAll(".toast")].map((t) => t.textContent).join(" ")));
+    await p3.goto(base + "/espace/#abonnement");
+    await p3.waitForSelector('#ab-offres input[value="annuel"]');
+    await p3.locator('#ab-offres input[value="annuel"]').dispatchEvent("click");
+    await Promise.all([p3.waitForURL(/paiement-test\.html\?ref=ORB-/), p3.click("#ab-payer")]);
+    await p3.waitForSelector("#pt-ok:not([disabled])");
+    assert(/63,900/.test(await p3.textContent("#pt-montant")), "le filleul bénéficie de l'offre de lancement");
+    await Promise.all([p3.waitForURL(/\/espace\/#abonnement$/), p3.click("#pt-ok")]);
+    await p3.waitForSelector('#ab-statut[data-etat="actif"]');
+    await ctx3.close();
+    const filleul = faux.abonnementDe("filleul@exemple.tn"), jours = (Date.parse(filleul.fin) - Date.now()) / 86400000;
+    assert(jours > 3 + 365 + 27, "filleul : essai + 12 mois + 1 mois offert (" + Math.round(jours) + " j)");
+    const gain = (Date.parse(faux.abonnementDe("aziz@exemple.tn").fin) - finAvant) / 86400000;
+    assert(gain >= 27 && gain <= 32, "parrain : un mois offert (" + Math.round(gain) + " j)");
+    await page.reload();
+    await page.waitForFunction(() => /1 mois gagné/.test(document.getElementById("ab-parr-bilan").textContent));
+  });
+
   await etape("déconnexion puis suppression définitive du compte", async () => {
     await page.goto(base + "/espace/#compte?onglet=donnees");
     await page.waitForSelector("#supprimer-compte");

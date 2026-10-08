@@ -194,14 +194,24 @@
       return client.from("paiements").select("reference, formule, montant_millimes, statut, cree_le, paye_le")
         .order("cree_le", { ascending: false }).limit(20).then(verifier);
     },
-    commander: function (formule) { return appelPaiement({ action: "creer", formule: formule }); },
+    /* Prix affichés (offre de lancement, code promo éventuel) : toujours calculés par le serveur. */
+    offres: function (code) { return client.rpc("offres_en_cours", { p_code: code || null }).then(verifier); },
+    verifierCode: function (code) { return client.rpc("verifier_code", { p_code: code }).then(verifier); },
+    commander: function (formule, code) { return appelPaiement({ action: "creer", formule: formule, code: code || undefined }); },
     verifier: function (reference) { return appelPaiement({ action: "verifier", reference: reference }); },
     detail: function (reference) { return appelPaiement({ action: "detail", reference: reference }); },
     simuler: function (reference, resultat) { return appelPaiement({ action: "simuler", reference: reference, resultat: resultat }); }
   };
 
   /* Administration : chaque fonction vérifie côté serveur que le compte est administrateur. */
+  var parrainage = {
+    moi: function () { return client.rpc("mon_parrainage").then(verifier); },
+    utiliser: function (code) { return client.rpc("utiliser_code_parrain", { p_code: code }).then(verifier); }
+  };
   var admin = {
+    codes: function () { return client.rpc("admin_codes").then(verifier); },
+    codeEnregistrer: function (c) { return client.rpc("admin_code_enregistrer", { p: c }).then(verifier); },
+    codeActiver: function (code, actif) { return client.rpc("admin_code_activer", { p_code: code, p_actif: actif }).then(verifier); },
     est: function () { return client.rpc("est_admin").then(verifier).then(function (v) { return v === true; }, function () { return false; }); },
     tableau: function () { return client.rpc("admin_tableau").then(verifier); },
     alertes: function () { return client.rpc("admin_alertes_liste").then(verifier); },
@@ -303,6 +313,7 @@
     abonnement: abonnement,
     avatar: avatar,
     admin: admin,
+    parrainage: parrainage,
     compterUsage: compterUsage,
     compte: compte,
     toast: toast,

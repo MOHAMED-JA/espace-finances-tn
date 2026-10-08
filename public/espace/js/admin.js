@@ -133,11 +133,58 @@
     });
   }
 
+  /* ---------- Codes promo et parrainage ---------- */
+  function rendreCodes(d) {
+    var tb = $("admin-codes"), codes = (d && d.codes) || [];
+    $("admin-parrainage").textContent = "Parrainage : " + (d.parrainages || 0) + " filleul" + (d.parrainages > 1 ? "s" : "") + " inscrit" + (d.parrainages > 1 ? "s" : "") +
+      ", " + (d.parrainages_recompenses || 0) + " devenu" + (d.parrainages_recompenses > 1 ? "s" : "") + " abonné" + (d.parrainages_recompenses > 1 ? "s" : "") + " (un mois offert à chacun), " + (d.parrains_actifs || 0) + " parrain" + (d.parrains_actifs > 1 ? "s" : "") + ".";
+    tb.textContent = "";
+    if (!codes.length) { var tr0 = cree("tr"), td0 = cree("td", "admin__vide", "Aucun code. Créez par exemple une offre de lancement automatique."); td0.colSpan = 6; tr0.appendChild(td0); tb.appendChild(tr0); return; }
+    codes.forEach(function (c) {
+      var tr = cree("tr"), td = cree("td");
+      td.appendChild(cree("strong", null, c.code));
+      td.appendChild(cree("small", null, (c.automatique ? "Automatique · " : "") + (c.libelle || "")));
+      tr.appendChild(td);
+      tr.appendChild(cree("td", "chiffre", "−" + c.remise_pct + "\u00a0%"));
+      tr.appendChild(cree("td", null, c.formules && c.formules.length ? c.formules.join(", ") : "Toutes"));
+      tr.appendChild(cree("td", null, (c.fin ? "jusqu'au " + DATE.format(new Date(c.fin)) : "sans limite")));
+      tr.appendChild(cree("td", "chiffre", c.utilisations + (c.max_utilisations ? " / " + c.max_utilisations : "")));
+      var ta = cree("td"), b = cree("button", "bouton bouton--petit" + (c.actif ? "" : " bouton--fantome"), c.actif ? "Actif" : "Désactivé");
+      b.type = "button"; b.setAttribute("aria-pressed", c.actif ? "true" : "false"); b.setAttribute("data-code", c.code);
+      b.setAttribute("aria-label", (c.actif ? "Désactiver" : "Activer") + " le code " + c.code);
+      ta.appendChild(b); tr.appendChild(ta);
+      tb.appendChild(tr);
+    });
+  }
+  function chargerCodes() { return E.admin.codes().then(rendreCodes); }
+  $("admin-codes").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-code]");
+    if (!b) return;
+    b.disabled = true;
+    E.admin.codeActiver(b.getAttribute("data-code"), b.getAttribute("aria-pressed") !== "true").then(chargerCodes)
+      .catch(function (x) { E.toast(E.modele.messageErreur(x), { erreur: true }); b.disabled = false; });
+  });
+  $("admin-code-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var err = $("ac-erreur"), code = $("ac-code").value.trim().toUpperCase(), remise = parseInt($("ac-remise").value, 10);
+    var max = $("ac-max").value.trim() ? parseInt($("ac-max").value, 10) : null, fin = $("ac-fin").value;
+    var formules = [].slice.call(doc.querySelectorAll('input[name="ac-formule"]:checked')).map(function (x) { return x.value; });
+    var msg = !/^[A-Z0-9-]{3,20}$/.test(code) ? "Code : 3 à 20 lettres, chiffres ou tirets." : !(remise >= 1 && remise <= 90) ? "Remise : entre 1 et 90 %." : max !== null && !(max > 0) ? "Utilisations max. : un nombre positif." : "";
+    err.textContent = msg; err.hidden = !msg;
+    if (msg) return;
+    var btn = this.querySelector("button[type=submit]"); btn.disabled = true;
+    E.admin.codeEnregistrer({ code: code, remise_pct: remise, libelle: $("ac-libelle").value.trim(), formules: formules,
+      fin: fin ? new Date(fin + "T23:59:59").toISOString() : null, max_utilisations: max, automatique: $("ac-auto").checked, actif: true })
+      .then(function () { E.toast("Code " + code + " enregistré."); e.target.reset(); return chargerCodes(); })
+      .catch(function (x) { err.textContent = E.modele.messageErreur(x); err.hidden = false; })
+      .finally(function () { btn.disabled = false; });
+  });
+
   function charger() {
     if (!estAdmin) return Promise.resolve();
     var zone = $("admin"), btn = $("admin-actualiser");
     zone.setAttribute("aria-busy", "true"); btn.disabled = true;
-    return Promise.all([E.admin.tableau(), E.admin.alertes(), chargerStatistiques()]).then(function (r) {
+    return Promise.all([E.admin.tableau(), E.admin.alertes(), chargerStatistiques(), chargerCodes()]).then(function (r) {
       donnees = r[0];
       rendreTableau(donnees);
       rendreAlertes(r[1] || []);

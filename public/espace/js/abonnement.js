@@ -8,6 +8,8 @@
   var O = window.Orbite, E = window.Espace, A = window.AbonnementCalcul, doc = document;
   var $ = O.$, F = O.F;
   var acces = null, formules = [], choisie = null, paiementsCharges = false;
+  /* Prix calculés par le serveur (offre de lancement, code promo appliqué). */
+  var prixServeur = [], codeApplique = null;
 
   var DATE = new Intl.DateTimeFormat("fr-TN", { day: "numeric", month: "long", year: "numeric" });
   function date(iso) { return iso ? DATE.format(new Date(iso)) : ""; }
@@ -54,7 +56,7 @@
   /* ---------- Offres ---------- */
   function rendreOffres() {
     var box = $("ab-offres");
-    var liste = A.offres(formules);
+    var liste = A.offres(formules, prixServeur);
     box.textContent = "";
     box.setAttribute("aria-busy", "false");
     if (!liste.length) { box.appendChild(cree("p", "ab-vide", "Les formules n'ont pas pu être chargées. Réessayez dans un instant.")); return; }
@@ -70,7 +72,14 @@
       if (o.recommandee) tete.appendChild(cree("span", "ab-offre__badge", "Le plus avantageux"));
       else if (o.reductionPct > 0) tete.appendChild(cree("span", "ab-offre__remise", "−" + o.reductionPct + " %"));
       carte.appendChild(tete);
+      if (o.promo) {
+        var pr = cree("span", "ab-offre__promo");
+        pr.appendChild(icone("etoile"));
+        pr.appendChild(cree("span", null, (o.promo.automatique ? (o.promo.libelle || "Offre de lancement") : "Code " + o.promo.code) + " : −" + o.promo.remisePct + " %" + (o.promo.fin ? " jusqu'au " + date(o.promo.fin) : "")));
+        carte.appendChild(pr);
+      }
       var prix = cree("span", "ab-offre__prix");
+      if (o.prixAvant) { var av = cree("s", "ab-offre__avant chiffre", F.dt3(o.prixAvant)); av.setAttribute("aria-label", "au lieu de " + dt3(o.prixAvant)); prix.appendChild(av); }
       prix.appendChild(cree("strong", "chiffre", F.dt3(o.prix)));
       prix.appendChild(cree("span", null, "DT"));
       carte.appendChild(prix);
@@ -87,7 +96,7 @@
     majBouton();
   }
   function majBouton() {
-    var o = A.offres(formules).filter(function (x) { return x.cle === choisie; })[0];
+    var o = A.offres(formules, prixServeur).filter(function (x) { return x.cle === choisie; })[0];
     var b = $("ab-payer");
     b.disabled = !o;
     $("ab-payer-lib").textContent = o ? "Payer " + dt3(o.prix) + " · " + o.libelle.toLowerCase() : "Choisir une formule";
@@ -106,7 +115,7 @@
     err.hidden = true;
     b.disabled = true; b.setAttribute("aria-busy", "true");
     $("ab-payer-lib").textContent = "Redirection vers le paiement sécurisé…";
-    E.abonnement.commander(choisie).then(function (r) {
+    E.abonnement.commander(choisie, codeApplique).then(function (r) {
       var url = A.adressePaiementSure(r && r.url);
       if (!url) throw new Error("Adresse de paiement invalide.");
       location.assign(url);
@@ -117,6 +126,82 @@
       majBouton();
     });
   });
+
+  /* ---------- Code promo : vérifié par le serveur, qui recalcule aussi les prix ---------- */
+  function messageCode(t, type) { var m = $("ab-code-msg"); m.textContent = t || ""; m.setAttribute("data-type", type || ""); }
+  function chargerPrix() {
+    return E.abonnement.offres(codeApplique).then(function (p) { prixServeur = p || []; }).catch(function () { prixServeur = []; });
+  }
+  function appliquerCode() {
+    var champ = $("ab-code"), code = champ.value.replace(/\s+/g, "").toUpperCase();
+    if (!code) { messageCode("Saisissez un code.", "erreur"); champ.focus(); return; }
+    if (!/^[A-Z0-9-]{3,20}$/.test(code)) { messageCode("Ce code n'existe pas.", "erreur"); return; }
+    var b = $("ab-code-appliquer"); b.disabled = true;
+    E.abonnement.verifierCode(code).then(function (r) {
+      if (!r || !r.valide) { messageCode((r && r.message) || "Ce code n'existe pas.", "erreur"); return; }
+      codeApplique = r.code;
+      champ.value = r.code;
+      return chargerPrix().then(function () {
+        rendreOffres();
+        var vise = r.formules && r.formules.length ? " (formule " + r.formules.map(libelleFormule).join(", ") + ")" : "";
+        messageCode("Code " + r.code + " appliqué : −" + r.remise_pct + " %" + vise + ".", "ok");
+        $("ab-code-retirer").hidden = false;
+      });
+    }).catch(function (x) { messageCode(E.modele.messageErreur(x), "erreur"); }).finally(function () { b.disabled = false; });
+  }
+  $("ab-code-appliquer").addEventListener("click", appliquerCode);
+  $("ab-code").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); appliquerCode(); } });
+  $("ab-code-retirer").addEventListener("click", function () {
+    codeApplique = null; $("ab-code").value = ""; this.hidden = true; messageCode("");
+    chargerPrix().then(rendreOffres);
+  });
+
+  /* ---------- Parrainage : un mois offert au parrain et au filleul au premier abonnement ---------- */
+  var parrainage = null;
+  function lienParrainage(code) { return location.origin + "/connexion.html?mode=inscription&parrain=" + encodeURIComponent(code); }
+  function rendreParrainage() {
+    var p = parrainage, sec = $("ab-parrainage");
+    sec.hidden = !p || !p.code;
+    if (!p || !p.code) return;
+    $("ab-parr-code").textContent = p.code;
+    $("ab-parr-partager").hidden = !navigator.share;
+    $("ab-parr-bilan").textContent = !p.filleuls ? "Personne n'a encore utilisé votre lien."
+      : p.filleuls + " personne" + (p.filleuls > 1 ? "s inscrites" : " inscrite") + " avec votre lien · " + p.recompenses + " mois gagné" + (p.recompenses > 1 ? "s" : "") + ".";
+    $("ab-parr-form").hidden = !p.peut_saisir;
+  }
+  function chargerParrainage() {
+    return E.parrainage.moi().then(function (p) { parrainage = p; rendreParrainage(); return p; }).catch(function () { return null; });
+  }
+  $("ab-parr-copier").addEventListener("click", function () {
+    if (!parrainage) return;
+    var lien = lienParrainage(parrainage.code);
+    (navigator.clipboard ? navigator.clipboard.writeText(lien) : Promise.reject(new Error("presse-papiers"))).then(function () { O.toast("Lien copié : envoyez-le à vos proches."); })
+      .catch(function () { O.toast("Votre lien : " + lien, { duree: 12000 }); });
+  });
+  $("ab-parr-partager").addEventListener("click", function () {
+    if (!parrainage || !navigator.share) return;
+    navigator.share({ title: "Orbite", text: "Je calcule mon salaire, mon épargne et mes crédits avec Orbite. Inscris-toi avec mon lien : un mois offert pour nous deux à ton premier abonnement.", url: lienParrainage(parrainage.code) }).catch(function () {});
+  });
+  function utiliserParrain(code, discret) {
+    return E.parrainage.utiliser(code).then(function (r) {
+      if (r && r.ok) { O.toast("Code de parrainage enregistré : un mois vous sera offert à votre premier abonnement.", { duree: 8000 }); return chargerParrainage(); }
+      if (!discret) { var m = $("ab-parr-msg"); m.textContent = (r && r.message) || "Ce code n'a pas pu être utilisé."; m.setAttribute("data-type", "erreur"); }
+    });
+  }
+  $("ab-parr-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var code = $("ab-parr-saisie").value.replace(/\s+/g, "").toUpperCase();
+    if (!/^[A-Z0-9]{8}$/.test(code)) { var m = $("ab-parr-msg"); m.textContent = "Un code de parrainage compte 8 caractères."; m.setAttribute("data-type", "erreur"); return; }
+    utiliserParrain(code).catch(function (x) { O.toast(E.modele.messageErreur(x), { erreur: true }); });
+  });
+  /* Code reçu par lien d'invitation (?parrain=), mémorisé sur la page d'inscription. */
+  function parrainEnAttente() {
+    var code = null;
+    try { code = localStorage.getItem("ef-parrain"); } catch (e) {}
+    if (!code) return;
+    try { localStorage.removeItem("ef-parrain"); } catch (e) {}
+    if (/^[A-Z0-9]{8}$/.test(code) && parrainage && parrainage.peut_saisir) utiliserParrain(code, true).catch(function () {});
+  }
 
   /* ---------- Historique ---------- */
   var STATUTS = { paye: "Payé", cree: "En attente", echec: "Refusé", annule: "Annulé" };
@@ -147,7 +232,8 @@
   function charger() {
     return Promise.all([
       E.abonnement.acces().then(function (a) { acces = a; }),
-      E.abonnement.formules().then(function (f) { formules = f || []; })
+      E.abonnement.formules().then(function (f) { formules = f || []; }),
+      chargerPrix()
     ]).then(function () {
       rendreAcces(); rendreOffres();
     }).catch(function () {
@@ -193,7 +279,7 @@
     if (e.detail.vue === "abonnement" && !paiementsCharges) chargerHistorique();
   });
 
-  function demarrer() { charger().then(retourPaiement); }
+  function demarrer() { charger().then(retourPaiement); chargerParrainage().then(parrainEnAttente); }
   if (O.pret) demarrer();
   else doc.addEventListener("orbite:pret", demarrer, { once: true });
 
