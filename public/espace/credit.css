@@ -56,14 +56,19 @@
 @media (min-width: 1000px) { .module--credit .cr-mini { display: none; } }
 
 /* ---------- Éditeur ---------- */
-.module--credit .cr-editeur__tete { display: grid; gap: 14px; margin-bottom: 18px; }
-.module--credit .cr-scenarios { display: flex; gap: 8px; align-items: stretch; }
+.module--credit .cr-editeur__tete { display: grid; gap: 14px; margin-bottom: 18px; container-type: inline-size; }
+.module--credit .cr-scenarios { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+/* Colonne étroite avec plusieurs scénarios : les onglets prennent toute la ligne, les actions passent dessous, à droite. */
+@container (max-width: 520px) { .module--credit .cr-scenarios:has(.cr-supprimer:not([hidden])) .cr-onglets-sc { flex-basis: 100%; } .module--credit .cr-scenarios:has(.cr-supprimer:not([hidden])) .cr-dupliquer:not(.cr-supprimer) { margin-left: auto; } }
 .module--credit .cr-onglets-sc { flex: 1; min-width: 0; }
 .module--credit .cr-onglets-sc button { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 0 10px; }
 .module--credit .cr-onglet__lettre { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 8px; background: var(--surface-3); color: var(--encre-2); font-weight: 750; font-size: 13px; flex: none; transition: background-color 200ms ease, color 200ms ease; }
 .module--credit .cr-onglets-sc button[aria-selected="true"] .cr-onglet__lettre { background: var(--credit); color: #fff; }
 .module--credit .cr-onglet__val { font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
 .module--credit .cr-dupliquer { flex: none; min-height: 50px; border-radius: 14px; }
+.module--credit .cr-supprimer:hover { color: var(--erreur); }
+.module--credit .cr-supprimer span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.module--credit .cr-supprimer { width: 50px; padding: 0; justify-content: center; }
 @media (max-width: 479px) {
   .module--credit .cr-dupliquer span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .module--credit .cr-dupliquer { width: 50px; padding: 0; }
