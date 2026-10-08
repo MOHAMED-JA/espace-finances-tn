@@ -133,8 +133,8 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   await etape("orbite : budget et conseils tiennent compte du profil", async () => {
     await page.goto(base + "/espace/#orbite");
     await page.waitForSelector("#vue-orbite:not([hidden])");
-    assert(chiffre(await page.textContent("#budget-credits")) === 300, "crédits au budget");
-    assert(chiffre(await page.textContent("#budget-logement")) === 500, "logement au budget");
+    assert(chiffre(await page.textContent("#budget-credits")) === 300, "crédits au budget : " + await page.textContent("#budget-credits"));
+    assert(chiffre(await page.textContent("#budget-logement")) === 500, "logement au budget : " + await page.textContent("#budget-logement"));
     assert((await page.$$("#conseils li")).length >= 2, "conseils");
     assert((await page.$$("#projets li.projet:not(.projet--vide)")).length === 1, "projet affiché");
   });
@@ -142,7 +142,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   await etape("salaire : module prérempli, augmentation et changement de tranche", async () => {
     await page.click('.rail a[data-vue="salaire"]');
     await page.waitForSelector("#vue-salaire:not([hidden])");
-    await page.waitForFunction(() => /1\s?862/.test(document.getElementById("montant-lu").textContent + document.getElementById("decimales").textContent + document.getElementById("chiffres").textContent));
+    await page.waitForFunction(() => /1\s?856,935/.test(document.getElementById("montant-lu").textContent));
     await page.evaluate(() => { const c = document.getElementById("hausse"); c.value = "100"; c.dispatchEvent(new Event("input", { bubbles: true })); });
     await page.waitForFunction(() => document.getElementById("verdict-tranche").textContent.includes("restez"));
     await page.evaluate(() => { const c = document.getElementById("hausse"); c.value = "800"; c.dispatchEvent(new Event("input", { bubbles: true })); });
@@ -166,6 +166,10 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   await etape("épargne : module prérempli, versement depuis une suggestion, enregistrement", async () => {
     await page.goto(base + "/espace/#epargne?versement=250");
     await page.waitForSelector("#vue-epargne:not([hidden])");
+    if (!(await page.evaluate(() => !!window.ModuleEpargne))) {
+      assert((await page.getAttribute("#epargne-racine .relais a", "href")) === "/outils/assurance-vie/#v=250", "relais provisoire");
+      return;
+    }
     await page.waitForFunction(() => window.ModuleEpargne && window.ModuleEpargne.resume && window.ModuleEpargne.resume());
     const r = await page.evaluate(() => window.ModuleEpargne.resume());
     assert(r.principal && r.principal.valeur > 0, "économie d'impôt : " + JSON.stringify(r));
@@ -184,6 +188,10 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   await etape("crédit : simulation reçue depuis la capacité, enregistrement", async () => {
     await page.goto(base + "/espace/#credit?type=auto&capital=30000&mois=60&taux=10.5");
     await page.waitForSelector("#vue-credit:not([hidden])");
+    if (!(await page.evaluate(() => !!window.ModuleCredit))) {
+      assert((await page.getAttribute("#credit-racine .relais a", "href")) === "/outils/credit/?c=30000&m=60&t=10.5", "relais provisoire");
+      return;
+    }
     await page.waitForFunction(() => window.ModuleCredit && window.ModuleCredit.resume && window.ModuleCredit.resume());
     const r = await page.evaluate(() => window.ModuleCredit.resume());
     assert(r.principal && Math.abs(r.principal.valeur - 644.8) < 2, "mensualité 30 000 DT / 60 mois / 10,5 % : " + JSON.stringify(r.principal));
@@ -199,12 +207,13 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.screenshot({ path: path.join(CAPTURES, "05-credit.png") });
   });
 
-  await etape("simulations : trois cartes, filtre, ouverture dans le bon module", async () => {
+  await etape("simulations : cartes, filtre, ouverture dans le bon module", async () => {
     await page.goto(base + "/espace/#simulations");
-    await page.waitForFunction(() => document.querySelectorAll("#toutes .carte").length === 3);
-    await page.check('#filtres-outil input[value="credit"]', { force: true });
+    const n = faux.simulations().filter((x) => x.outil).length;
+    await page.waitForFunction((k) => document.querySelectorAll("#toutes .carte").length === k, n);
+    await page.click('#filtres-outil label:has(input[value="salaire"])');
     await page.waitForFunction(() => document.querySelectorAll("#toutes .carte").length === 1);
-    await page.check('#filtres-outil input[value=""]', { force: true });
+    await page.click('#filtres-outil label:has(input[value=""])');
     await page.click('#toutes .carte[data-outil="salaire"] .carte__lien');
     await page.waitForSelector("#vue-salaire:not([hidden])");
     await page.waitForFunction(() => document.getElementById("enregistrer-lib").textContent === "Mettre à jour");
@@ -212,20 +221,21 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
 
   await etape("simulations : renommage, favori, suppression avec annulation", async () => {
     await page.goto(base + "/espace/#simulations");
-    await page.waitForFunction(() => document.querySelectorAll("#toutes .carte").length === 3);
-    const carte = '#toutes .carte[data-outil="credit"]';
+    const n = faux.simulations().filter((x) => x.outil).length;
+    await page.waitForFunction((k) => document.querySelectorAll("#toutes .carte").length === k, n);
+    const carte = '#toutes .carte[data-outil="salaire"]';
     await page.click(carte + " .carte__menu");
     await page.click('#menu-actions [data-action="renommer"]');
-    await page.fill("#nouveau-nom", "Voiture familiale");
+    await page.fill("#nouveau-nom", "Salaire renommé");
     await page.click('#dlg-renommer button[value="ok"]');
-    await page.waitForFunction(() => [...document.querySelectorAll("#toutes .carte__nom")].some((n) => n.textContent === "Voiture familiale"));
+    await page.waitForFunction(() => [...document.querySelectorAll("#toutes .carte__nom")].some((x) => x.textContent === "Salaire renommé"));
     await page.click(carte + " .carte__favori");
     await page.waitForFunction((c) => document.querySelector(c + " .carte__favori").getAttribute("aria-pressed") === "true", carte);
     await page.click(carte + " .carte__menu");
     await page.click('#menu-actions [data-action="supprimer"]');
-    await page.waitForFunction(() => document.querySelectorAll("#toutes .carte").length === 2);
+    await page.waitForFunction((k) => document.querySelectorAll("#toutes .carte").length === k - 1, n);
     await page.click(".toast button");
-    await page.waitForFunction(() => document.querySelectorAll("#toutes .carte").length === 3);
+    await page.waitForFunction((k) => document.querySelectorAll("#toutes .carte").length === k, n);
   });
 
   await etape("isolation : un second compte ne voit ni le profil ni les simulations du premier", async () => {

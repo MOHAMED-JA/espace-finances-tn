@@ -241,6 +241,7 @@
         if (obj && profil && !modulesInities[r.vue]) { modulesInities[r.vue] = true; if (obj.depuisProfil) obj.depuisProfil(profil); }
         if (obj && obj.afficher) obj.afficher();
       }
+      if (mod && !mod.objet()) relaisProvisoire(r.vue, r.params);
       doc.dispatchEvent(new CustomEvent("orbite:vue", { detail: { vue: r.vue, params: r.params } }));
       requestAnimationFrame(function () { placerPastilles($("vue-" + r.vue)); });
       if (focus) {
@@ -256,6 +257,36 @@
     } else changer();
   }
   window.addEventListener("hashchange", function () { afficher(true); });
+
+  /* Relais provisoire : tant qu'un module n'est pas chargé, sa vue ouvre le simulateur complet existant,
+     avec les montants choisis dans l'orbite. */
+  function relaisProvisoire(vue, params) {
+    var racine = $(vue + "-racine");
+    if (!racine) return;
+    var lien, titre, texte;
+    if (vue === "credit") {
+      var q = [];
+      if (params.get("capital")) q.push("c=" + encodeURIComponent(params.get("capital")));
+      if (params.get("mois")) q.push("m=" + encodeURIComponent(params.get("mois")));
+      if (params.get("taux")) q.push("t=" + encodeURIComponent(params.get("taux")));
+      lien = "/outils/credit/" + (q.length ? "?" + q.join("&") : "");
+      titre = "Simulateur de crédit";
+      texte = "Mensualité, TMM + marge, TEG, tableau d'amortissement, capacité, renégociation et tous les outils avancés.";
+    } else {
+      var v = params.get("versement");
+      lien = "/outils/assurance-vie/" + (v ? "#v=" + encodeURIComponent(v) : "");
+      titre = "Simulateur assurance vie & CEA";
+      texte = "Économie d'impôt (art. 39), capital projeté, rachat, retraite, Monte-Carlo et tous les outils avancés.";
+    }
+    racine.textContent = "";
+    var boite = doc.createElement("div");
+    boite.className = "panneau relais";
+    var h = doc.createElement("h2"); h.textContent = titre;
+    var p = doc.createElement("p"); p.textContent = texte + " Vos simulations s'enregistrent dans votre espace.";
+    var a = doc.createElement("a"); a.className = "bouton bouton--plein"; a.href = lien; a.textContent = "Ouvrir le simulateur";
+    boite.appendChild(h); boite.appendChild(p); boite.appendChild(a);
+    racine.appendChild(boite);
+  }
 
   /* ---------- Thème ---------- */
   function majTheme() {

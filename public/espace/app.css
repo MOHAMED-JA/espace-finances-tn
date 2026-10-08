@@ -297,3 +297,7 @@ body.attente .app { visibility: hidden; }
   .rail, .barre, .onglets-bas, .bouton { display: none !important; }
   .principal { padding: 0; }
 }
+
+.relais { display: grid; gap: 12px; justify-items: start; max-width: 640px; }
+.relais h2 { font-size: 24px; }
+.relais p { color: var(--encre-2); }
