@@ -107,7 +107,7 @@
 .module--credit .cr-champ-court { max-width: 220px; margin-top: 6px; }
 
 /* Taux */
-.module--credit .cr-taux { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-top: 4px; }
+.module--credit .cr-taux { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); align-items: start; margin-top: 4px; }
 .module--credit .cr-taux[data-mode="fixe"] .cr-si-tmm, .module--credit .cr-taux[data-mode="tmm"] .cr-si-fixe { display: none; }
 .module--credit .cr-taux__total { grid-column: 1 / -1; font-size: 14.5px; color: var(--encre-2); }
 .module--credit .cr-taux__total strong { color: var(--credit-t); font-weight: 720; }

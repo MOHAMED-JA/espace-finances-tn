@@ -344,3 +344,16 @@ Dans l'e2e, le choix du thème se fait par `dispatchEvent("click")` : la barre f
 - Base de calcul de la banque (8 oct.) : la bascule « Sur le net / Sur le brut » de « Ce que la banque peut vous prêter » enregistre maintenant `baseBanque` dans le profil. Avant, ce choix était temporaire et le profil restait sur le net, d'où les 1 484 DT affichés à l'utilisateur au lieu de 2 266.
   Contrôle de l'utilisateur : 4 000 × 17 ÷ 12 = 5 667 DT brut, × 40 % = 2 266,67 DT par mois ≈ 358 300 DT sur 20 ans à 4,5 % (test « calendrier sur le brut, 17 salaires »).
   Le calendrier cumule les mensualités libérées : mars 2032 893 DT, juin 2032 1 391 DT, février 2039 2 267 DT.
+- Plafonds par type de crédit (8 oct.) :
+  - Règle de l'utilisateur : hors immobilier, 7 ans au plus. `CREDITS_TYPES` auto et conso passent à 84 mois, ce qui touche aussi les cartes « ce que la banque peut vous prêter ».
+  - `tauxNouveaux(p)` donne les taux par type :
+    - immobilier : `tauxImmo` ;
+    - auto : taux du crédit auto en cours, sinon TMM + 3 ;
+    - conso : taux d'un crédit conso en cours, sinon 11 %.
+  - Chaque étape du calendrier a `offres` (immo 240 mois, auto 84, conso 84), avec un lien « Simuler » par type qui transmet la mensualité.
+  - Exemple sur le brut en février 2039 : immo 358 282 DT, auto 163 068 DT, conso 132 380 DT.
+- Module Crédit, TMM (8 oct.) :
+  - Un taux reçu par lien s'affiche toujours en taux fixe.
+  - Passer de fixe à « TMM + marge » garde le taux : la marge peut être négative (−20 à 20, type `signe`), affichée « TMM 7,5 % − 3 points = 4,5 % ». Avant, la marge était bloquée à 0 et le taux sautait à 7,5 %, ce qui faisait baisser le capital cible.
+  - Le décodeur de lien accepte `mg >= -tmm`.
+  - `.cr-taux` est en `align-items: start` (les champs TMM et marge étaient décalés).

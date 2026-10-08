@@ -322,7 +322,7 @@
           '<div class="cr-taux" id="cr-taux">' +
             champ({ id: "cr-taux-fixe", k: "taux", t: "taux", lib: "Taux annuel", unite: "%", min: 0, max: 100, cls: "cr-si-fixe" }) +
             champ({ id: "cr-tmm", k: "tmm", t: "taux", lib: "TMM", unite: "%", min: 0, max: 30, cls: "cr-si-tmm", aide: "Taux moyen du marché monétaire." }) +
-            champ({ id: "cr-marge", k: "marge", t: "taux", lib: "Marge de la banque", unite: "points", min: 0, max: 20, cls: "cr-si-tmm" }) +
+            champ({ id: "cr-marge", k: "marge", t: "signe", lib: "Marge de la banque", unite: "points", min: -20, max: 20, cls: "cr-si-tmm", aide: "Négative si votre taux est inférieur au TMM (taux préférentiel)." }) +
             '<p class="cr-taux__total cr-si-tmm" id="cr-taux-total"></p>' +
           '</div></fieldset>' +
         champ({ id: "cr-date", k: "dateDebut", t: "date", lib: "Première échéance", aide: "Le tableau et le calendrier sont datés à partir de ce mois." }) +
@@ -550,7 +550,8 @@
     }
     if (k === "mode") {
       if (v === "fixe" && sc.mode === "tmm") sc.taux = MC.tauxTmm(sc.tmm, sc.marge);
-      if (v === "tmm" && sc.mode === "fixe") sc.marge = Math.max(0, MC.arrondi6(sc.taux - sc.tmm));
+      /* Le taux reste le même : un taux inférieur au TMM donne une marge négative (taux préférentiel). */
+      if (v === "tmm" && sc.mode === "fixe") sc.marge = MC.arrondi6(sc.taux - sc.tmm);
       sc.mode = v;
       ecrireEditeur();
       calculer(true); signalerModif();
@@ -711,7 +712,7 @@
     } else { $("cr-res-int").textContent = dt(r.totI); $("cr-res-cout").textContent = dt(r.coutCredit); }
     var parts = ["intérêts"]; if (r.totAss) parts.push("assurance"); if (r.frais) parts.push("frais"); if (r.totIndem) parts.push("indemnités");
     $("cr-res-cout-note").textContent = parts.join(" + ");
-    $("cr-taux-total").innerHTML = e.tmm ? "Taux appliqué : TMM " + pc(e.tmm.tmm, 3) + " + " + nombre(e.tmm.marge, 3) + " points = <strong>" + pc(e.taux, 3) + "</strong>" : "";
+    $("cr-taux-total").innerHTML = e.tmm ? "Taux appliqué : TMM " + pc(e.tmm.tmm, 3) + (e.tmm.marge < 0 ? " − " : " + ") + nombre(Math.abs(e.tmm.marge), 3) + " points = <strong>" + pc(e.taux, 3) + "</strong>" : "";
     $("cr-res-teg").textContent = pc(r.teg, 2);
     $("cr-res-teg-note").textContent = "taux nominal " + pc(e.taux, 3);
     $("cr-res-fin").textContent = der.date ? moisAn(der.date) : "Échéance " + der.mois;
@@ -1167,7 +1168,7 @@
     var l = [nomScenario(d.sc), "",
       "Montant emprunté : " + dt(r.C),
       "Durée : " + dureeLib(e.mois) + " (" + pluriel(r.nPrevu, "échéance") + ")",
-      "Taux : " + (e.tmm ? "TMM " + pc(e.tmm.tmm, 3) + " + " + nombre(e.tmm.marge, 3) + " points = " : "") + pc(e.taux, 3),
+      "Taux : " + (e.tmm ? "TMM " + pc(e.tmm.tmm, 3) + (e.tmm.marge < 0 ? " − " : " + ") + nombre(Math.abs(e.tmm.marge), 3) + " points = " : "") + pc(e.taux, 3),
       info.echeance + " : " + dt(premiereEcheance(r)) + (r.totAss ? " (assurance comprise)" : ""),
       "Intérêts totaux : " + dt(r.totI),
       "Coût total du crédit : " + dt(r.coutCredit),
@@ -1966,11 +1967,8 @@
     if (prix > 0 && apport >= 0 && apport < prix) { sc.apport = { on: true, prix: prix, apport: apport }; sc.capital = arr(prix - apport); change = true; }
     if (capital > 0) { sc.capital = arr(capital); if (sc.apport.on && sc.apport.prix > capital) sc.apport.apport = arr(sc.apport.prix - capital); change = true; }
     if (mois >= 1 && mois <= 300) { sc.mois = Math.max(sc.periodicite, Math.round(mois / sc.periodicite) * sc.periodicite); change = true; }
-    if (taux >= 0 && taux <= 100) {
-      if (sc.mode === "tmm" && taux >= sc.tmm) sc.marge = MC.arrondi6(taux - sc.tmm);
-      else { sc.mode = "fixe"; sc.taux = taux; }
-      change = true;
-    }
+    /* Un taux transmis par un lien est le taux du crédit : on l'affiche en taux fixe, tel quel. */
+    if (taux >= 0 && taux <= 100) { sc.mode = "fixe"; sc.taux = taux; change = true; }
     if (!change) return;
     apresDuree(sc);
     ecrireEditeur();

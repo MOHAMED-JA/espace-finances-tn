@@ -253,14 +253,27 @@
       tete.appendChild(cree("span", "palier__fin", "Fin " + (x.credits.length > 1 ? "des crédits " : "du crédit ") + x.credits.map(function (c) { return c.toLowerCase().replace(/^crédit /, ""); }).join(" et ")));
       li.appendChild(tete);
       var corps = cree("div", "palier__corps");
-      corps.appendChild(cree("strong", "palier__mensualite chiffre", F.dt0(x.mensualiteMax) + " DT par mois"));
-      corps.appendChild(cree("span", "palier__capital", "soit jusqu'à " + F.dt0(x.capitalImmo) + " DT en immobilier sur " + Math.round(x.dureeImmoMois / 12) + " ans à " + F.pct(x.tauxPct / 100, 2)));
-      var a = cree("a", "lien-action", "Simuler"); a.appendChild(icone("fleche"));
-      /* La mensualité accompagne le lien : dans le module Crédit, le capital suit alors le taux et la durée choisis. */
-      a.href = "#credit?type=immo&capital=" + Math.floor(x.capitalImmo) + "&mois=" + x.dureeImmoMois + "&taux=" + x.tauxPct + "&mensualite=" + Math.floor(x.mensualiteMax * 100) / 100;
-      a.setAttribute("aria-label", "Simuler un crédit immobilier de " + F.dt0(x.capitalImmo) + " DT, possible en " + x.date);
-      corps.appendChild(a);
+      corps.appendChild(cree("strong", "palier__mensualite chiffre", F.dt0(x.mensualiteMax) + " DT par mois"));
+      corps.appendChild(cree("span", "palier__capital", "Montant maximal selon le crédit :"));
       li.appendChild(corps);
+      /* Un plafond par type de crédit, avec la même mensualité ; « Simuler » transmet la mensualité pour que
+         le capital suive le taux et la durée choisis dans le module Crédit. */
+      var ul = cree("ul", "palier__offres");
+      (x.offres || []).forEach(function (o) {
+        var it = cree("li", "palier__offre");
+        it.appendChild(icone(o.cle === "immo" ? "maison" : o.cle === "auto" ? "voiture" : "credit"));
+        var txt = cree("span", "palier__offre-txt");
+        txt.appendChild(cree("span", "palier__offre-lib", o.libelle));
+        txt.appendChild(cree("small", "palier__offre-cond", (o.dureeMois / 12).toLocaleString("fr-FR", { maximumFractionDigits: 1 }) + " ans à " + F.pct(o.tauxPct / 100, 2)));
+        it.appendChild(txt);
+        it.appendChild(cree("strong", "palier__offre-capital chiffre", F.dt0(o.capital) + " DT"));
+        var a = cree("a", "lien-action", "Simuler"); a.appendChild(icone("fleche"));
+        a.href = "#credit?type=" + o.cle + "&capital=" + Math.floor(o.capital) + "&mois=" + o.dureeMois + "&taux=" + o.tauxPct + "&mensualite=" + Math.floor(x.mensualiteMax * 100) / 100;
+        a.setAttribute("aria-label", "Simuler un crédit " + o.libelle.toLowerCase() + " de " + F.dt0(o.capital) + " DT, possible en " + x.date);
+        it.appendChild(a);
+        ul.appendChild(it);
+      });
+      li.appendChild(ul);
       ol.appendChild(li);
     });
   }
