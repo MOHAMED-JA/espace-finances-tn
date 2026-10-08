@@ -52,6 +52,13 @@ async function utilisateur(req: Request) {
   return error || !data.user ? null : data.user;
 }
 
+/* Mode test : paiement simulé réservé aux comptes testeurs ou à accès offert. */
+const MESSAGE_BIENTOT = "Le paiement en ligne ouvre très bientôt. Votre essai reste actif ; vous serez prévenu dès l'ouverture.";
+async function testeurAutorise(userId: string) {
+  const { data } = await admin.from("abonnements").select("testeur, offert").eq("user_id", userId).maybeSingle();
+  return !!(data && (data.testeur || data.offert));
+}
+
 async function paiementDe(reference: string) {
   const { data } = await admin.from("paiements").select("*").eq("reference", reference).maybeSingle();
   return data;
@@ -81,6 +88,8 @@ async function creer(req: Request, u: { id: string }, formule: string) {
 
   let pg;
   try { pg = passerelle(env); } catch (_e) { return repondre(req, { erreur: "Le paiement est momentanément indisponible." }, 503); }
+  /* Réponse 200 (et non 403) : c'est un état normal avant l'ouverture, pas une erreur technique. */
+  if (pg.nom === "test" && !(await testeurAutorise(u.id))) return repondre(req, { erreur: MESSAGE_BIENTOT, code: "bientot" });
   const reference = nouvelleReference();
   const { error } = await admin.from("paiements").insert({ user_id: u.id, formule: f.cle, montant_millimes: f.prix_millimes, passerelle: pg.nom, reference });
   if (error) return repondre(req, { erreur: "Commande impossible" }, 500);
@@ -134,6 +143,7 @@ Deno.serve(async (req) => {
   if (corps.action === "simuler") {
     /* Interdit dès que le serveur n'est plus en mode test, même pour d'anciennes commandes de test. */
     if (p.passerelle !== "test" || (env.PASSERELLE && env.PASSERELLE !== "test")) return repondre(req, { erreur: "Disponible en mode test uniquement" }, 403);
+    if (!(await testeurAutorise(u.id))) return repondre(req, { erreur: MESSAGE_BIENTOT, code: "bientot" });
     if (p.statut !== "cree") return repondre(req, { statut: p.statut });
     const resultat = corps.resultat === "ok" ? "ok" : "refuse";
     await admin.from("paiements").update({ detail: { test: resultat } }).eq("id", p.id);

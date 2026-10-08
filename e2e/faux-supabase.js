@@ -25,7 +25,7 @@ function creer() {
   const abonnements = new Map();  // user id -> { essai_fin, fin, formule, offert }
   let paiements = [];
   function abonnementDe(id) {
-    if (!abonnements.has(id)) abonnements.set(id, { essai_fin: new Date(Date.now() + 3 * 86400000).toISOString(), fin: null, formule: null, offert: false });
+    if (!abonnements.has(id)) abonnements.set(id, { essai_fin: new Date(Date.now() + 3 * 86400000).toISOString(), fin: null, formule: null, offert: false, testeur: false });
     return abonnements.get(id);
   }
   function acces(id) {
@@ -149,6 +149,10 @@ function creer() {
     /* ---------- Fonction serveur « paiement » (mode test) ---------- */
     if (url.pathname === "/functions/v1/paiement") {
       if (!u) return repondre(route, 401, { erreur: "Connexion requise" });
+      const ab = abonnementDe(u.id);
+      if ((corps.action === "creer" || corps.action === "simuler") && !(ab.testeur || ab.offert)) {
+        return repondre(route, 200, { erreur: "Le paiement en ligne ouvre très bientôt. Votre essai reste actif ; vous serez prévenu dès l'ouverture.", code: "bientot" });
+      }
       if (corps.action === "creer") {
         const f = FORMULES.find((x) => x.cle === corps.formule);
         if (!f) return repondre(route, 400, { erreur: "Formule inconnue" });
@@ -230,6 +234,7 @@ function creer() {
     simulations: () => simulations,
     paiements: () => paiements,
     abonnementDe(email) { return abonnementDe(comptes.get(email).user.id); },
+    marquerTesteur(email) { abonnementDe(comptes.get(email).user.id).testeur = true; },
     expirerEssai(email) { abonnementDe(comptes.get(email).user.id).essai_fin = new Date(Date.now() - 60000).toISOString(); },
     comptes,
     journal,

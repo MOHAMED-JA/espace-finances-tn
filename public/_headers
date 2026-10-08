@@ -13,14 +13,14 @@
 
 # --- Pages de l'Espace : CSP stricte, aucun style ni script en ligne ---
 /
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co wss://txrwgqgnqdkipwtwpevl.supabase.co; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co https://api.pwnedpasswords.com wss://txrwgqgnqdkipwtwpevl.supabase.co; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
 /index.html
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co wss://txrwgqgnqdkipwtwpevl.supabase.co; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co https://api.pwnedpasswords.com wss://txrwgqgnqdkipwtwpevl.supabase.co; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
 /connexion.html
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co wss://txrwgqgnqdkipwtwpevl.supabase.co; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co https://api.pwnedpasswords.com wss://txrwgqgnqdkipwtwpevl.supabase.co; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
   X-Robots-Tag: noindex
 /connexion
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co wss://txrwgqgnqdkipwtwpevl.supabase.co; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co https://api.pwnedpasswords.com wss://txrwgqgnqdkipwtwpevl.supabase.co; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
   X-Robots-Tag: noindex
 /404.html
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
@@ -28,7 +28,7 @@
 /confidentialite*
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
 /espace/*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co wss://txrwgqgnqdkipwtwpevl.supabase.co; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co https://api.pwnedpasswords.com wss://txrwgqgnqdkipwtwpevl.supabase.co; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
   X-Robots-Tag: noindex
   Cache-Control: no-store
 
