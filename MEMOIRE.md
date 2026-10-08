@@ -182,7 +182,7 @@ Précision de l'utilisateur : la **capacité** se calcule sur les salaires et le
   - le verdict sur la demande : « dans la limite », ou dépassement de X DT par mois avec le montant à viser.
 - Critères d'éligibilité : l'endettement sur l'autre base est marqué « (autres banques) » et ne compte plus dans le verdict.
 
-## 3 decies. Projet : abonnements payants avec ClicToPay (étude du 8 oct., pas encore codé)
+## 3 decies. Projet : abonnements payants avec ClicToPay (étude du 8 oct. ; réalisé, voir 3 duodecies)
 
 Demande de l'utilisateur : 3 jours d'essai gratuit, puis un abonnement mensuel, semestriel ou annuel. Les durées longues doivent être encouragées par des réductions.
 
@@ -229,6 +229,51 @@ Piste recommandée, à faire valider par l'utilisateur et un comptable :
 3. À **éviter** : encaisser par virement personnel ou via D17 sans statut. C'est impossible à automatiser, et c'est un risque fiscal.
 
 Conséquence technique : l'architecture de 3 decies reste valable, mais la passerelle devient interchangeable (ClicToPay, Konnect ou Flouci). Prévoir un adaptateur `passerelle.js` côté Worker : `creer(commande)` et `verifier(id)`, plus un webhook signé si la passerelle en propose un.
+
+## 3 duodecies. Abonnements : RÉALISÉ et en ligne en mode test (8 oct.)
+
+**Base de données** : migration `0003_abonnements.sql`, appliquée sur Supabase avec le correctif « essai conservé ».
+- Tables :
+  - `formules` (lecture publique ; prix en millimes : 9 900 / 49 900 / 79 900) ;
+  - `abonnements` (une ligne par compte : `essai_fin`, `fin`, `formule`, `offert`) ;
+  - `paiements` (historique, `reference` au format ORB-AAAAMMJJ-XXXXXXXX).
+- Le déclencheur `auth_creer_abonnement` donne 3 jours d'essai à l'inscription. Les comptes existants ont reçu 3 jours à partir du 8 oct.
+- `mon_acces()` renvoie l'état : essai, actif, offert ou expire.
+- `activer_paiement()` est réservée au serveur et idempotente. La période commence à `max(maintenant, fin, essai_fin)` : payer pendant l'essai ne fait perdre aucun jour.
+- Le navigateur ne peut que **lire** ces tables (vérifié : pas d'insert ni d'update, pas d'exécution d'`activer_paiement`).
+- Le **compte du propriétaire est `offert = true`**, réglé par SQL directement en base et non dans le dépôt, pour ne pas y écrire d'adresse e-mail.
+
+**Fonction serveur Supabase `paiement`** : sources dans `supabase/functions/paiement/`, déployée en version 2, `verify_jwt=false` avec authentification maison.
+- Actions : `creer`, `verifier`, `detail`, `simuler` (mode test uniquement, refusée dès que `PASSERELLE` ≠ test), plus le webhook `?webhook=1&ref=`, qui se contente de revérifier.
+- Anti-abus : 10 commandes non payées par heure au maximum.
+- CORS : l'URL de l'application et localhost uniquement.
+- `passerelles.js` contient les adaptateurs test, Konnect, Flouci et ClicToPay, testés avec un faux `fetch` (`tests/abonnement/`).
+- Les points d'API des passerelles sont à confirmer avec la documentation reçue à l'ouverture du compte marchand.
+
+**Interface** :
+- vue `#abonnement` : statut, 3 offres avec l'annuelle présélectionnée et mise en avant (« Le plus avantageux », 3 mois offerts, −33 %, placée en premier sur mobile), bouton de paiement, garanties, contenu inclus, historique ;
+- pastille « Essai : 3 j » dans la barre, badge dans le rail, encart dans « Compte » ;
+- garde : à l'expiration, seuls `profil`, `compte` et `abonnement` restent ouverts (`O.definirGarde`) ;
+- retour de passerelle sur `/espace/?paiement=REF[&echec=1]`, avec vérification et nouvelles tentatives ;
+- page `/espace/paiement-test.html`, qui tient lieu de passerelle en mode test ;
+- nouvelle page `/cgv.html` (provisoire : identité légale à compléter) et confidentialité mise à jour.
+
+**Tests** :
+- `npm test` : 277 réussis ;
+- e2e : 19/19, dont le parcours complet « essai → expiration → blocage → paiement test → réactivation » ;
+- axe : 0 violation ;
+- aucun débordement de 320 à 1920 px.
+
+**Passer en production**, quand l'utilisateur aura son compte marchand :
+1. Supabase → Edge Functions → Secrets : `PASSERELLE=konnect` (ou `flouci` / `clictopay`) et les clés de la passerelle (voir l'en-tête de `index.ts`).
+2. Tester en bac à sable (`KONNECT_SANDBOX` ou `CLICTOPAY_TEST` non nuls).
+3. Passer en production (`…=0`), puis compléter les CGV.
+
+Point de vigilance : en mode test, n'importe quel compte peut « simuler » un paiement. C'est acceptable avant le lancement, mais il faut configurer une vraie passerelle avant d'ouvrir l'application au public.
+
+À activer par l'utilisateur dans Supabase → Auth : la protection contre les mots de passe divulgués (alerte de l'outil de sécurité).
+
+Dans l'e2e, le choix du thème se fait par `dispatchEvent("click")` : la barre fixe peut recouvrir l'élément après une capture pleine page.
 
 ## 4. Prochaines actions (améliorations possibles, rien de bloquant)
 

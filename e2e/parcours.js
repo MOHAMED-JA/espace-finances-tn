@@ -254,13 +254,46 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.fill("#nom-affiche", "Aziz J.");
     await page.click("#form-nom button[type=submit]");
     await page.waitForSelector(".toast");
-    await page.check('#choix-theme input[value="dark"]', { force: true });
+    await page.locator('#choix-theme input[value="dark"]').dispatchEvent("click");
     await page.waitForFunction(() => document.documentElement.getAttribute("data-theme") === "dark");
     const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#exporter")]);
     const contenu = JSON.parse(fs.readFileSync(await dl.path(), "utf8"));
     assert(contenu.profil_orbite && contenu.profil_orbite.montant === 2500, "profil dans l'export");
     await page.screenshot({ path: path.join(CAPTURES, "06-compte-sombre.png"), fullPage: true });
-    await page.check('#choix-theme input[value="light"]', { force: true });
+    await page.locator('#choix-theme input[value="light"]').dispatchEvent("click");
+  });
+
+  await etape("abonnement : essai de 3 jours, expiration, blocage, paiement de test, réactivation", async () => {
+    await page.goto(base + "/espace/#abonnement");
+    await page.waitForSelector("#vue-abonnement:not([hidden])");
+    await page.waitForFunction(() => document.querySelectorAll("#ab-offres .ab-offre").length === 3);
+    assert((await page.inputValue('#ab-offres input:checked')) === "annuel", "annuel présélectionné");
+    assert(/Essai gratuit · 3 jours restants/.test(await page.textContent("#ab-statut-titre")), "essai de 3 jours");
+    assert(!(await page.isHidden("#pastille-acces")), "pastille d'essai visible");
+    assert(/79,900/.test(await page.textContent("#ab-payer-lib")), "prix annuel sur le bouton");
+    await page.screenshot({ path: path.join(CAPTURES, "07-abonnement.png"), fullPage: true });
+
+    faux.expirerEssai("aziz@exemple.tn");
+    await page.goto(base + "/espace/#salaire");
+    await page.reload();
+    await page.waitForSelector('#ab-statut[data-etat="expire"]');
+    assert(!(await page.isHidden("#vue-abonnement")), "module bloqué : page d'abonnement affichée");
+    assert(await page.isHidden("#vue-salaire"), "module salaire masqué");
+    await page.goto(base + "/espace/#profil");
+    await page.waitForSelector("#vue-profil:not([hidden])");
+
+    await page.goto(base + "/espace/#abonnement");
+    await page.waitForSelector('#ab-offres input[value="semestriel"]');
+    await page.locator('#ab-offres input[value="semestriel"]').dispatchEvent("click");
+    await Promise.all([page.waitForURL(/paiement-test\.html\?ref=ORB-/), page.click("#ab-payer")]);
+    await page.waitForSelector("#pt-ok:not([disabled])");
+    assert(/49,900/.test(await page.textContent("#pt-montant")), "montant semestriel");
+    await Promise.all([page.waitForURL(/\/espace\/#abonnement$/), page.click("#pt-ok")]);
+    await page.waitForSelector('#ab-statut[data-etat="actif"]');
+    await page.waitForSelector('#ab-historique .ab-ligne[data-statut="paye"]');
+    assert(faux.paiements().length === 1 && faux.paiements()[0].statut === "paye", "paiement enregistré");
+    await page.goto(base + "/espace/#salaire");
+    await page.waitForSelector("#vue-salaire:not([hidden])");
   });
 
   await etape("mobile : onglets du bas, orbite et modules sans défilement horizontal", async () => {

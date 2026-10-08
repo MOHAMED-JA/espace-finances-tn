@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr" data-protege>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Paiement de test — Orbite</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#F3F4F8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07090F" media="(prefers-color-scheme: dark)">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="icon" href="/orbite/icone.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/orbite/orbite.css">
+  <link rel="stylesheet" href="/espace/paiement-test.css">
+  <script src="/commun/config.js"></script>
+  <script src="/commun/garde.js"></script>
+  <script src="/commun/theme-init.js"></script>
+</head>
+<body>
+  <main class="pt" id="principal">
+    <a class="logo pt__logo" href="/espace/#abonnement" aria-label="Orbite, retour à l'abonnement">
+      <img class="logo__signe" src="/orbite/icone.svg" alt="" width="34" height="34"><span translate="no">Orbite</span>
+    </a>
+    <section class="pt__carte" aria-labelledby="pt-titre">
+      <p class="pt__bandeau"><svg aria-hidden="true"><use href="/orbite/icones.svg#info"/></svg>Mode test : aucun argent n'est débité. Cette page remplace la passerelle de paiement tant que le compte marchand n'est pas branché.</p>
+      <h1 id="pt-titre">Paiement sécurisé</h1>
+      <dl class="pt__recap" id="pt-recap" aria-busy="true">
+        <div><dt>Formule</dt><dd id="pt-formule">—</dd></div>
+        <div><dt>Durée</dt><dd id="pt-duree">—</dd></div>
+        <div><dt>Référence</dt><dd id="pt-ref" class="pt__ref">—</dd></div>
+        <div class="pt__total"><dt>Total à payer</dt><dd id="pt-montant">—</dd></div>
+      </dl>
+      <p class="pt__erreur" id="pt-erreur" role="alert" hidden></p>
+      <div class="pt__boutons">
+        <button type="button" class="bouton bouton--plein" id="pt-ok" disabled><svg aria-hidden="true"><use href="/orbite/icones.svg#valide"/></svg>Simuler un paiement accepté</button>
+        <button type="button" class="bouton" id="pt-refus" disabled>Simuler un refus</button>
+      </div>
+      <a class="pt__annuler" href="/espace/#abonnement">Annuler et revenir à Orbite</a>
+    </section>
+  </main>
+  <script src="/commun/vendor/supabase.js"></script>
+  <script src="/commun/modele.js"></script>
+  <script src="/commun/session.js"></script>
+  <script src="/espace/js/abonnement-calcul.js"></script>
+  <script src="/espace/js/paiement-test.js"></script>
+</body>
+</html>

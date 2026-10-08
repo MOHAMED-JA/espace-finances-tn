@@ -1,0 +1,19 @@
+/* Page de paiement de test */
+body { min-height: 100dvh; background: var(--fond); }
+.pt { display: grid; justify-items: center; gap: 24px; padding: max(24px, env(safe-area-inset-top)) 16px 40px; }
+.pt__logo { justify-self: center; }
+.pt__carte { width: min(100%, 460px); display: grid; gap: 18px; padding: 28px 24px; border-radius: var(--r-panneau); background: var(--surface); box-shadow: var(--ombre-3); }
+.pt__bandeau { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; background: var(--alerte-doux); color: var(--alerte); font-size: 13.5px; font-weight: 600; }
+.pt__bandeau svg { width: 18px; height: 18px; flex: none; margin-top: 1px; }
+.pt h1 { font-size: 26px; }
+.pt__recap { margin: 0; display: grid; gap: 10px; }
+.pt__recap > div { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--filet); }
+.pt__recap dt { color: var(--encre-3); font-weight: 600; }
+.pt__recap dd { margin: 0; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+.pt__ref { font-family: var(--mono); font-size: 13px; }
+.pt__total { border-bottom: 0 !important; font-size: 18px; }
+.pt__total dd { font-family: var(--affiche); font-size: 26px; color: var(--epargne-t); }
+.pt__erreur { color: var(--erreur); font-weight: 600; }
+.pt__boutons { display: grid; gap: 10px; }
+.pt__boutons .bouton { width: 100%; min-height: 50px; }
+.pt__annuler { justify-self: center; color: var(--encre-2); font-size: 14px; }
