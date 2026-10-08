@@ -285,7 +285,7 @@ body.attente .app { visibility: hidden; }
 @media (min-width: 860px) and (max-width: 1199px) { .parametres .reglage { grid-template-columns: minmax(0, 1fr); } }
 .reglage__texte h2 { font-size: 19px; }
 .reglage__texte p { color: var(--encre-2); font-size: 14.5px; margin-top: 4px; }
-.reglage__controle { display: grid; gap: 14px; max-width: 520px; }
+.reglage__controle { display: grid; gap: 14px; max-width: 520px; align-content: start; }
 .reglage__boutons { display: flex; flex-wrap: wrap; gap: 10px; align-content: start; }
 .valeur { font-weight: 600; }
 .jauge { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 8px; }
