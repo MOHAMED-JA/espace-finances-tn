@@ -188,3 +188,20 @@ test("conseils : date de retour sous 40 % d'endettement et net moyen sur 17 sala
   assert.match(sy.conseils[0].texte, /en comptant vos 17 salaires/);
   proche(sy.budget.net, sy.salaire.netMoyen);
 });
+
+test("contrat vie : mois écoulés, total versé, capital estimé, versements libres déductibles", () => {
+  const c = { type: "av", libelle: "Vie", versementMensuel: 100, anneeDebut: 2021, moisDebut: 12, versementsLibres: 1000, versementsLibresAn: 500 };
+  const e = O.estimationContrat(O.normaliser({ contrats: [c] }).contrats[0], MAINTENANT);
+  assert.equal(e.mois, 59);
+  assert.equal(e.verse, 6900);
+  assert.ok(e.estime && e.capitalEstime > e.verse && e.capitalEstime < e.verse * 1.2);
+  assert.equal(e.dateDureeFiscale, "décembre 2029");
+  assert.equal(e.dureeAtteinte, false);
+  const saisi = O.estimationContrat(O.normaliser({ contrats: [Object.assign({}, c, { capitalActuel: 8000 })] }).contrats[0], MAINTENANT);
+  assert.equal(saisi.estime, false);
+  assert.equal(saisi.capital, 8000);
+  const sans = O.synthese(Object.assign({}, PROFIL_ENDETTE, { contrats: [Object.assign({}, c, { versementsLibresAn: 0 })] }), {}, MAINTENANT);
+  const avec = O.synthese(Object.assign({}, PROFIL_ENDETTE, { contrats: [c] }), {}, MAINTENANT);
+  assert.ok(avec.epargne.economieContrats > sans.epargne.economieContrats, "les versements libres de l'année réduisent l'impôt");
+  assert.match(avec.conseils.map((x) => x.texte).join(" "), /6\u202f900 DT versés en 4 ans et 11 mois/);
+});
