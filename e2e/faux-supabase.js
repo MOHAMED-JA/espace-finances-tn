@@ -111,6 +111,7 @@ function creer() {
       return repondre(route, 204);
     }
     if (url.pathname === "/auth/v1/recover") return repondre(route, 200, {});
+    if (url.pathname === "/auth/v1/settings") return repondre(route, 200, { external: { email: true, google: true } });
 
     /* ---------- PostgREST ---------- */
     const u = auth(req);

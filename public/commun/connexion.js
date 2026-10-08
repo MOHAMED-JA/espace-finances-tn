@@ -57,7 +57,7 @@
         if (actif) panneau.setAttribute("aria-labelledby", b.id);
       });
     }
-    montrer('[data-groupe="identifiants"]', avecOnglets);
+    montrer('[data-groupe="identifiants"]', avecOnglets && googleActif);
     champ("nom", m === "inscription");
     champ("email", m !== "reinitialiser");
     champ("mdp", m !== "oubli");
@@ -190,10 +190,26 @@
     }).catch(function (err) { occupe(b, false); message(M.messageErreur(err), "erreur"); });
   });
 
+  /* Le bouton Google n'apparaît que si le fournisseur est réellement activé dans Supabase
+     (sinon l'utilisateur tomberait sur une erreur brute « provider is not enabled »). */
+  function verifierGoogle() {
+    var C = window.EF_CONFIG;
+    fetch(C.supabaseUrl + "/auth/v1/settings", { headers: { apikey: C.supabaseCle } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (s) {
+        var actif = !!(s && s.external && s.external.google);
+        if (!actif && (mode === "connexion" || mode === "inscription")) montrer('[data-groupe="identifiants"]', false);
+        googleActif = actif;
+      })
+      .catch(function () { /* en cas de doute, on laisse le bouton */ });
+  }
+  var googleActif = true;
+
   /* ---------- Démarrage ---------- */
   var modeDemande = params.get("mode");
   var erreurUrl = params.get("error_description") || new URLSearchParams(location.hash.slice(1)).get("error_description");
   changerMode(TEXTES[modeDemande] ? modeDemande : "connexion", { sansAnimation: true });
+  verifierGoogle();
   if (erreurUrl) message(/expired|invalid/i.test(erreurUrl) ? "Ce lien a expiré ou a déjà été utilisé. Demandez-en un nouveau." : M.messageErreur({ message: erreurUrl }), "erreur");
   else if (params.get("au-revoir")) message("Vous êtes déconnecté. À bientôt.", "succes");
   else if (params.get("confirme")) message("Adresse confirmée. Bienvenue !", "succes");
