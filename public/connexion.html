@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-  <title>Connexion — Espace Finances TN</title>
-  <meta name="description" content="Connectez-vous ou créez votre Espace Finances TN avec Google ou par e-mail.">
+  <title>Connexion — Orbite</title>
+  <meta name="description" content="Connectez-vous ou créez votre orbite avec Google ou par e-mail.">
   <meta name="robots" content="noindex">
-  <meta name="theme-color" content="#F4F5F2" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0A0C0F" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#F3F4F8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07090F" media="(prefers-color-scheme: dark)">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <link rel="icon" href="/commun/icone.svg" type="image/svg+xml">
+  <link rel="icon" href="/orbite/icone.svg" type="image/svg+xml">
   <link rel="preload" href="/commun/polices/mona-sans-latin-standard-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/commun/meridien.css">
   <link rel="stylesheet" href="/commun/connexion.css">
@@ -19,19 +19,20 @@
   <a class="evitement" href="#formulaire">Aller au formulaire</a>
   <div class="ecran">
     <aside class="ecran__marque bande-sombre" aria-label="Présentation">
-      <a class="marque" href="/" aria-label="Espace Finances TN, retour à l'accueil">
-        <span class="marque__signe" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 12.5 6 8l3 3 5-6.5"/><path d="M10.5 4.5H14v3.5"/></svg></span>
-        Espace Finances <span class="marque__tn">TN</span>
+      <a class="marque marque--orbite" href="/" aria-label="Orbite, retour à l'accueil">
+        <img src="/orbite/icone.svg" alt="" width="34" height="34">
+        Orbite
       </a>
       <div class="ecran__message">
-        <p class="ecran__titre">Salaire, épargne, crédit.<br>Calculés au millime, gardés pour vous seul.</p>
+        <div class="mini-orbite" aria-hidden="true"><i class="mini-orbite__noyau"></i><i class="mini-orbite__anneau mini-orbite__anneau--a"><b></b></i><i class="mini-orbite__anneau mini-orbite__anneau--b"><b></b></i><i class="mini-orbite__anneau mini-orbite__anneau--c"><b></b></i></div>
+        <p class="ecran__titre">Votre salaire au centre.<br>Tout le reste en orbite.</p>
         <ul class="ecran__points" role="list">
-          <li><span class="pastille" data-outil="salaire"></span>Salaire brut ⇄ net 2026</li>
-          <li><span class="pastille" data-outil="assurance_vie"></span>Assurance vie &amp; CEA</li>
-          <li><span class="pastille" data-outil="credit"></span>Crédit bancaire</li>
+          <li><span class="pastille" data-outil="salaire"></span>Salaire net, tranche d'impôt, augmentation</li>
+          <li><span class="pastille" data-outil="credit"></span>Capacité de crédit sur le net et sur le brut</li>
+          <li><span class="pastille" data-outil="assurance_vie"></span>Épargne vie &amp; CEA qui réduit vos impôts</li>
         </ul>
       </div>
-      <p class="ecran__note">Vos simulations sont isolées par compte au niveau de la base de données.</p>
+      <p class="ecran__note">Votre profil et vos simulations sont isolés par compte : vous seul y avez accès.</p>
     </aside>
 
     <main class="ecran__formulaire" id="formulaire">

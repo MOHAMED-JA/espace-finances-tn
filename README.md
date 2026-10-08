@@ -1,52 +1,52 @@
-# Espace Finances TN
+# Orbite
 
-Application web complète et privée : chaque utilisateur crée un compte (e-mail + mot de passe ou Google) et accède à son espace personnel, où il retrouve trois simulateurs tunisiens et ses simulations enregistrées.
+**Votre salaire au centre. Tout le reste en orbite.**
 
-| Outil | Ce qu'il calcule |
+Orbite est une application web privée destinée aux salariés tunisiens. Chaque utilisateur crée un compte (e-mail et mot de passe, ou Google), saisit son profil une seule fois, puis retrouve tout dans une seule application :
+
+| Module | Ce qu'il calcule |
 |---|---|
-| **Salaire brut ⇄ net** | CNSS / CNRPS, IRPP et CSS 2026, 12 à 18 salaires par an, primes, coût employeur, net → brut exact, comparateur A/B, augmentation, courbe |
-| **Assurance vie & CEA** | Économie d'impôt (art. 39), montant optimal, projection du capital, Monte-Carlo, rachat, stratégie |
-| **Crédit bancaire** | Mensualité, TMM + marge, TEG, différé, assurance, remboursements anticipés, capacité d'emprunt, renégociation |
+| **Mon orbite** | Synthèse du profil : net, tranche d'impôt, capacité d'emprunt **sur le net et sur le brut** (crédits en cours déduits), trois propositions d'épargne adaptées au net, budget mensuel, faisabilité des projets, conseils classés par priorité |
+| **Salaire** | CNSS / CNRPS, IRPP et CSS 2026, 12 à 18 salaires, primes, coût employeur, net → brut exact, offres A/B, courbe, **augmentation avec changement éventuel de tranche d'impôt** |
+| **Épargne vie & CEA** | Économie d'impôt (art. 39), montant optimal, projection, Monte-Carlo, rachat, retraite, protection, stratégie AV/CEA, exports |
+| **Crédit** | Mensualité, TMM + marge, TEG, différé, assurance, remboursements anticipés, règle de réduction du taux, capacité, renégociation, comparaison d'offres, stress test |
+| **Mon profil** | Identité, famille, salaire et primes, contrat, crédits en cours, contrats vie et CEA, budget, projets, règles de la banque |
 
 ## Architecture
 
 ```
-public/                  ← seul dossier publié (Cloudflare Pages, « Build output directory »)
-  index.html             accueil public (calculateur signature, présentation)
-  connexion.html         connexion, inscription, mot de passe oublié, Google
-  espace/                tableau de bord : aperçu, simulations, compte
-  outils/salaire/        simulateur de salaire (moteur testé)
-  outils/assurance-vie/  simulateur assurance vie & CEA
-  outils/credit/         simulateur de crédit (code découpé en js/ et css/)
-  commun/                design system Méridien (+ commun/outils/ : Méridien appliqué aux 3 outils), session Supabase, barre de l’Espace
-  _headers               en-têtes de sécurité (CSP par zone, HSTS, anti-iframe…)
-supabase/migrations/     schéma SQL (tables, RLS, export, suppression de compte)
-tests/                   tests unitaires (node --test) : Espace, salaire, assurance vie
-e2e/                     parcours navigateur complet contre un faux Supabase + serveur local avec CSP
-docs/                    guides (mise en ligne, sécurité, notes des simulateurs)
+public/                   ← seul dossier publié (Cloudflare Workers, assets statiques)
+  index.html              accueil public avec aperçu vivant (moteurs réels)
+  connexion.html          connexion, inscription, mot de passe oublié, Google
+  espace/                 l'application Orbite (une seule page, navigation par #vue)
+    js/app.js             cœur : navigation, profil partagé, enregistrement, outils d'interface
+    js/orbite-calcul.js   calculs croisés du profil (pur, testé)
+    js/vue-*.js, module-*.js, simulations.js
+  moteurs/                moteurs de calcul purs et testés : salaire/, vie/, credit/
+  orbite/                 système visuel (orbite.css, polices, icônes, logo)
+  commun/                 session Supabase, configuration, pages publiques
+  _headers                en-têtes de sécurité (CSP stricte, HSTS, anti-iframe…)
+supabase/migrations/      schéma SQL (tables, RLS, export, suppression de compte)
+tests/                    tests unitaires (node --test)
+e2e/                      parcours navigateur complet contre un faux Supabase, serveur local avec CSP
 ```
 
-- **Aucune étape de construction** : HTML, CSS et JavaScript natifs, polices et bibliothèques hébergées localement.
-- **Authentification et données** : Supabase (Auth + Postgres). La clé publique (« publishable ») est faite pour le navigateur ; l'accès aux données est verrouillé par les règles RLS.
-- **Enregistrement d'une simulation** : chaque outil expose `window.EspaceOutil` (`etat()`, `resume()`, `nomParDefaut()`). L'état est la chaîne de paramètres du lien de partage de l'outil ; l'ouvrir depuis l'espace recharge exactement la simulation.
+- **Pas de compilation** : HTML, CSS et JavaScript natifs. Les polices et le code sont hébergés sur le site. Aucun script ni style en ligne.
+- **Profil** : enregistré dans les métadonnées du compte Supabase Auth. Seul l'utilisateur y a accès, et il est inclus dans l'export JSON.
+- **Simulations** : table `simulations`, verrouillée par la RLS. Chaque module expose `etat()`, `resume()`, `nomParDefaut()` et `charger()`.
+- **Design** : voir [DESIGN.md](DESIGN.md).
 
 ## Développer et tester
 
 ```bash
-npm test                         # 175 tests unitaires
-node e2e/serveur.js 8300         # http://127.0.0.1:8300/ avec les en-têtes de _headers
-PLAYWRIGHT_CORE=… CHROMIUM=… node e2e/parcours.js   # 15 étapes de bout en bout, CSP vérifiée
+npm test                          # tests unitaires (salaire, vie, crédit, profil, Espace)
+node e2e/serveur.js 8300          # http://127.0.0.1:8300/ avec les en-têtes de _headers
+PLAYWRIGHT_CORE=… CHROMIUM=… node e2e/parcours.js   # parcours complet, CSP vérifiée
 ```
 
-Le parcours e2e simule Supabase (aucun compte réel n'est touché) et vérifie : calcul exact, redirection des pages protégées, inscription, enregistrement depuis les trois outils, isolation entre deux comptes, renommage, favori, suppression avec annulation, export, thème, mobile, suppression du compte, et l'absence de toute violation de CSP ou erreur JavaScript.
+## Mise en ligne et sécurité
 
-## Mise en ligne
-
-Voir [docs/MISE-EN-LIGNE.md](docs/MISE-EN-LIGNE.md) (Cloudflare Pages, Google OAuth, réglages Supabase, e-mails).
-
-## Sécurité
-
-Voir [docs/SECURITE.md](docs/SECURITE.md).
+Voir [docs/MISE-EN-LIGNE.md](docs/MISE-EN-LIGNE.md) et [docs/SECURITE.md](docs/SECURITE.md).
 
 ---
-Conçu par Mohamed Aziz Jaouadi. Estimations indicatives : ne remplacent ni un bulletin de paie, ni une offre bancaire, ni un conseil fiscal.
+Conçu par Mohamed Aziz Jaouadi. Estimations indicatives : elles ne remplacent ni un bulletin de paie, ni une offre bancaire, ni un conseil fiscal.

@@ -100,6 +100,8 @@ function creer() {
           if (corps.password === c.mdp) return repondre(route, 422, { code: 422, error_code: "same_password", msg: "New password should be different from the old password." });
           c.mdp = corps.password;
         }
+        if (corps.data && typeof corps.data === "object") c.user.user_metadata = Object.assign({}, c.user.user_metadata, corps.data);
+        return repondre(route, 200, c.user);
       }
       return repondre(route, 200, u);
     }

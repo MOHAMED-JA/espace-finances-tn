@@ -1,19 +1,23 @@
 {
-  "name": "Espace Finances TN",
-  "short_name": "Finances TN",
-  "description": "Salaire brut ⇄ net, assurance vie & CEA et crédit bancaire en Tunisie, avec vos simulations enregistrées.",
+  "name": "Orbite",
+  "short_name": "Orbite",
+  "description": "Votre salaire au centre, tout le reste en orbite : salaire net, tranche d'impôt, capacité de crédit et épargne assurance vie & CEA en Tunisie.",
   "lang": "fr",
   "start_url": "/espace/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#0A0C0F",
-  "theme_color": "#0A0C0F",
+  "background_color": "#F3F4F8",
+  "theme_color": "#0A0D16",
   "icons": [
-    { "src": "/commun/icone.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "/orbite/icone.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/orbite/icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/orbite/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/orbite/icone-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Salaire brut ⇄ net", "url": "/outils/salaire/" },
-    { "name": "Assurance vie & CEA", "url": "/outils/assurance-vie/" },
-    { "name": "Crédit bancaire", "url": "/outils/credit/" }
+    { "name": "Mon orbite", "url": "/espace/#orbite" },
+    { "name": "Salaire", "url": "/espace/#salaire" },
+    { "name": "Épargne vie & CEA", "url": "/espace/#epargne" },
+    { "name": "Crédit", "url": "/espace/#credit" }
   ]
 }

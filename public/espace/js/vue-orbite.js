@@ -1,0 +1,328 @@
+/*
+ * Orbite — vue « Mon orbite » : scène orbitale, budget, conseils, capacité d'emprunt,
+ * suggestions d'épargne et projets. Tout vient de OrbiteCalcul.synthese().
+ */
+(function () {
+  "use strict";
+  var O = window.Orbite, F = O.F, $ = O.$, doc = document;
+  var OC = window.OrbiteCalcul;
+  var NS = "http://www.w3.org/2000/svg";
+  var base = "net";
+
+  /* ---------- Scène orbitale ---------- */
+  var ORBITES = [
+    { cle: "salaire", rx: 150, ry: 62, incl: -18, vitesse: 1 / 78, angle: 200 },
+    { cle: "credit", rx: 172, ry: 78, incl: 22, vitesse: 1 / 96, angle: 330 },
+    { cle: "epargne", rx: 118, ry: 100, incl: 8, vitesse: 1 / 64, angle: 95 }
+  ];
+  var CIBLES = { salaire: 196, credit: 338, epargne: 92 };
+  var visuel = doc.querySelector(".scene__visuel");
+  var groupe = $("orbites");
+  ORBITES.forEach(function (o) {
+    var e = doc.createElementNS(NS, "ellipse");
+    e.setAttribute("rx", o.rx); e.setAttribute("ry", o.ry);
+    e.setAttribute("transform", "rotate(" + o.incl + ")");
+    e.setAttribute("class", "orbite orbite--" + o.cle);
+    groupe.appendChild(e);
+    var p = doc.createElementNS(NS, "circle");
+    p.setAttribute("r", "7");
+    p.setAttribute("class", "planete planete--" + o.cle);
+    groupe.appendChild(p);
+    o.planete = p;
+    o.etiquette = $("sat-" + o.cle);
+  });
+
+  function position(o, angleDeg) {
+    var a = angleDeg * Math.PI / 180, i = o.incl * Math.PI / 180;
+    var x = o.rx * Math.cos(a), y = o.ry * Math.sin(a);
+    return { x: x * Math.cos(i) - y * Math.sin(i), y: x * Math.sin(i) + y * Math.cos(i) };
+  }
+  function poser() {
+    var r = visuel.getBoundingClientRect(), echelle = Math.min(r.width, r.height) / 400;
+    ORBITES.forEach(function (o) {
+      var p = position(o, o.angle);
+      o.planete.setAttribute("cx", p.x.toFixed(2));
+      o.planete.setAttribute("cy", p.y.toFixed(2));
+      o.etiquette.style.setProperty("--x", (r.width / 2 + p.x * echelle).toFixed(1) + "px");
+      o.etiquette.style.setProperty("--y", (r.height / 2 + p.y * echelle).toFixed(1) + "px");
+      o.etiquette.classList.toggle("satellite--derriere", Math.sin(o.angle * Math.PI / 180) < -0.35);
+    });
+  }
+
+  var alignement = null, dernierT = null, boucle = null;
+  function tic(t) {
+    boucle = null;
+    if ($("vue-orbite").hidden || doc.hidden) { dernierT = null; return; }
+    var dt = dernierT === null ? 0 : Math.min(0.05, (t - dernierT) / 1000);
+    dernierT = t;
+    if (alignement) {
+      var p = Math.min(1, (t - alignement.debut) / 900);
+      var e = 1 - Math.pow(1 - p, 3) * Math.cos(p * Math.PI * 1.2) ;
+      ORBITES.forEach(function (o) { o.angle = alignement.depart[o.cle] + alignement.delta[o.cle] * Math.min(1.04, e); });
+      if (p >= 1) alignement = null;
+    } else if (!O.mouvementReduit.matches) {
+      ORBITES.forEach(function (o) { o.angle = (o.angle + 360 * o.vitesse * dt) % 360; });
+    }
+    poser();
+    if (!O.mouvementReduit.matches || alignement) boucle = requestAnimationFrame(tic);
+  }
+  function lancer() { if (!boucle) boucle = requestAnimationFrame(tic); }
+  function aligner() {
+    if (O.mouvementReduit.matches) { ORBITES.forEach(function (o) { o.angle = CIBLES[o.cle]; }); poser(); return; }
+    var depart = {}, delta = {};
+    ORBITES.forEach(function (o) {
+      depart[o.cle] = o.angle;
+      var d = ((CIBLES[o.cle] - o.angle) % 360 + 540) % 360 - 180;
+      delta[o.cle] = d;
+    });
+    alignement = { debut: performance.now(), depart: depart, delta: delta };
+    var n = $("noyau");
+    n.classList.remove("pulse"); void n.getBoundingClientRect(); n.classList.add("pulse");
+    lancer();
+  }
+  doc.addEventListener("visibilitychange", function () { if (!doc.hidden) lancer(); });
+  window.addEventListener("resize", poser);
+
+  /* ---------- Rendu ---------- */
+  function cree(tag, classe, texte) { var e = doc.createElement(tag); if (classe) e.className = classe; if (texte != null) e.textContent = texte; return e; }
+  function icone(nom) {
+    var s = doc.createElementNS(NS, "svg"); s.setAttribute("aria-hidden", "true");
+    var u = doc.createElementNS(NS, "use"); u.setAttribute("href", "/orbite/icones.svg#" + nom); s.appendChild(u); return s;
+  }
+  var premierRendu = true;
+
+  function rendreScene(sy) {
+    var s = sy.salaire, cap = sy.capacite[base];
+    var mensuel = sy.profil.periode !== "annuel";
+    O.animerNombre($("noyau-val"), s.netMensuel, function (v) { return F.dt0(v) + " DT"; });
+    $("noyau-lib").textContent = s.versements.nombre > 12 ? "Net du mois habituel" : "Net par mois";
+    $("noyau-sous").textContent = "sur " + F.dt0(s.brutMensuel) + " DT brut";
+    var tr = F.pct(s.tranche.taux, 0);
+    $("sat-salaire-val").textContent = tr;
+    O.animerNombre($("sat-credit-val"), cap.mensualiteMax, function (v) { return F.dt0(v) + " DT"; });
+    var opt = sy.epargne.propositions[sy.epargne.propositions.length - 1];
+    var eco = opt ? opt.economieAnnuelle : 0;
+    O.animerNombre($("sat-epargne-val"), eco, function (v) { return F.dt0(v) + " DT/an"; });
+    $("liste-salaire").textContent = F.dt3(s.netMensuel) + " DT net, tranche à " + tr;
+    $("liste-credit").textContent = F.dt0(cap.mensualiteMax) + " DT de mensualité possible";
+    $("liste-epargne").textContent = F.dt0(eco) + " DT d'impôt économisable par an";
+    var p = sy.profil;
+    $("phrase-orbite").textContent = "Avec " + F.dt0(s.netMensuel) + " DT net par mois" +
+      (p.credits.length ? " et " + p.credits.length + " crédit" + (p.credits.length > 1 ? "s" : "") + " en cours" : "") +
+      ", voici ce que votre salaire rend possible." + (mensuel ? "" : "");
+    aligner();
+  }
+
+  function rendreBudget(sy) {
+    var b = sy.budget, cumul = 0;
+    [["credits", b.parts.credits], ["logement", b.parts.logement], ["epargne", b.parts.epargne], ["reste", b.parts.reste]].forEach(function (x) {
+      var arc = $("arc-" + x[0]), longueur = Math.max(0, x[1] * 100 - (x[1] > 0.02 ? 1.2 : 0));
+      arc.style.setProperty("--l", longueur.toFixed(2));
+      arc.style.setProperty("--o", (-cumul).toFixed(2));
+      cumul += x[1] * 100;
+    });
+    function dt(v) { return F.dt0(v) + " DT"; }
+    O.animerNombre($("budget-reste"), b.reste, dt);
+    $("budget-reste-2").textContent = dt(b.reste);
+    $("budget-credits").textContent = dt(b.credits);
+    $("budget-logement").textContent = dt(b.logement);
+    $("budget-epargne").textContent = dt(b.epargne);
+    $("budget-sous").textContent = "Sur " + F.dt0(b.net) + " DT net par mois" + (b.credits > 0 ? ", taux d'endettement " + F.pct(b.tauxEndettement, 0) : "") + ".";
+    var al = $("budget-alerte");
+    al.hidden = !b.alerte;
+    al.textContent = b.alerte === "deficit" ? "Vos dépenses déclarées dépassent votre net de " + F.dt0(-b.reste) + " DT par mois." :
+      b.alerte === "endettement" ? "Votre endettement dépasse " + F.pct(sy.profil.quotiteNet, 0) + " : les banques seront réticentes." : "";
+  }
+
+  var ICONES_MODULE = { salaire: "salaire", credit: "credit", epargne: "epargne", budget: "maison" };
+  function rendreConseils(sy) {
+    var ol = $("conseils");
+    ol.textContent = "";
+    var liste = sy.conseils.slice(0, 6);
+    if (!liste.length) {
+      var li0 = cree("li", "conseil conseil--vide");
+      li0.appendChild(cree("p", null, "Tout est en ordre. Complétez votre profil (crédits, contrats, projets) pour des conseils plus précis."));
+      ol.appendChild(li0);
+      return;
+    }
+    liste.forEach(function (c, i) {
+      var li = cree("li", "conseil conseil--" + c.module + (c.niveau >= 3 ? " conseil--urgent" : ""));
+      li.style.setProperty("--i", String(i));
+      var ic = cree("span", "conseil__icone"); ic.appendChild(icone(c.niveau >= 3 ? "alerte" : ICONES_MODULE[c.module] || "info"));
+      var tx = cree("div", "conseil__texte");
+      tx.appendChild(cree("strong", null, c.titre));
+      tx.appendChild(cree("p", null, c.texte));
+      li.appendChild(ic); li.appendChild(tx);
+      if (c.module !== "budget") {
+        var a = cree("a", "lien-action"); a.href = "#" + c.module; a.textContent = "Voir";
+        a.setAttribute("aria-label", "Voir le module " + c.module + " : " + c.titre);
+        a.appendChild(icone("fleche")); li.appendChild(a);
+      }
+      ol.appendChild(li);
+    });
+  }
+
+  function rendreCapacite(sy) {
+    var cap = sy.capacite[base], autre = sy.capacite[base === "net" ? "brut" : "net"];
+    O.animerNombre($("cap-mensualite"), cap.mensualiteMax, function (v) { return F.dt0(v) + " DT"; });
+    $("cap-revenu").textContent = F.pct(cap.quotite, 0) + " de " + F.dt0(cap.revenu) + " DT " + (base === "net" ? "net" : "brut") +
+      (cap.charges > 0 ? ", moins " + F.dt0(cap.charges) + " DT de crédits en cours" : "") + ".";
+    $("capacite-sous").textContent = base === "net"
+      ? "Règle la plus courante : 40 % du salaire net. Sur le brut, la mensualité possible serait de " + F.dt0(autre.mensualiteMax) + " DT."
+      : "Certaines banques calculent sur le brut. Sur le net, la mensualité possible serait de " + F.dt0(autre.mensualiteMax) + " DT.";
+    var ul = $("cap-liste");
+    if (ul.children.length !== cap.credits.length) {
+      ul.textContent = "";
+      cap.credits.forEach(function (c) {
+        var li = cree("li", "capacite__ligne panneau");
+        li.setAttribute("data-cle", c.cle);
+        var tete = cree("div", "capacite__type");
+        tete.appendChild(icone(c.cle.indexOf("immo") === 0 ? "maison" : c.cle === "auto" ? "voiture" : "credit"));
+        tete.appendChild(cree("span", "capacite__lib"));
+        li.appendChild(tete);
+        li.appendChild(cree("strong", "capacite__capital chiffre"));
+        li.appendChild(cree("span", "capacite__cond"));
+        var a = cree("a", "lien-action", "Simuler"); a.appendChild(icone("fleche"));
+        li.appendChild(a);
+        ul.appendChild(li);
+      });
+    }
+    cap.credits.forEach(function (c, i) {
+      var li = ul.children[i];
+      li.querySelector(".capacite__lib").textContent = c.libelle;
+      O.animerNombre(li.querySelector(".capacite__capital"), c.capital, function (v) { return F.dt0(v) + " DT"; });
+      li.querySelector(".capacite__cond").textContent = (c.dureeMois / 12).toLocaleString("fr-FR", { maximumFractionDigits: 1 }) + " ans à " + F.pct(c.tauxPct / 100, 2) + (c.dureeLimitee ? " (durée limitée par l'âge)" : "");
+      var a = li.querySelector("a");
+      a.href = "#credit?type=" + c.cle + "&capital=" + Math.floor(c.capital) + "&mois=" + c.dureeMois + "&taux=" + c.tauxPct;
+      a.setAttribute("aria-label", "Simuler un " + c.libelle.toLowerCase() + " de " + F.dt0(c.capital) + " DT");
+    });
+  }
+
+  function rendreSuggestions(sy) {
+    var ul = $("suggestions"), ep = sy.epargne, choisie = O.choix().epargne;
+    ul.textContent = "";
+    $("suggestions-sous").textContent = ep.versementsExistants.av + ep.versementsExistants.cea > 0
+      ? "Vos contrats actuels vous font déjà économiser " + F.dt0(ep.economieContrats) + " DT d'impôt par an. Voici ce que rapporterait un versement de plus."
+      : "Assurance vie : vos versements réduisent votre impôt (art. 39 du Code de l'IRPP) et se capitalisent.";
+    ep.propositions.forEach(function (x, i) {
+      var li = cree("li", "suggestion panneau" + (x.cle === choisie ? " suggestion--choisie" : ""));
+      li.style.setProperty("--i", String(i));
+      var tete = cree("div", "suggestion__tete");
+      tete.appendChild(cree("span", "puce puce--epargne", x.libelle));
+      li.appendChild(tete);
+      var v = cree("p", "suggestion__montant");
+      v.appendChild(cree("strong", "chiffre", F.dt0(x.versementMensuel)));
+      v.appendChild(cree("span", null, " DT par mois"));
+      li.appendChild(v);
+      li.appendChild(cree("p", "suggestion__phrase", x.phrase));
+      var dl = cree("dl", "suggestion__chiffres");
+      [["Impôt économisé", F.dt0(x.economieAnnuelle) + " DT / an"], ["Coût réel", F.dt0(x.coutReelMensuel) + " DT / mois"], ["Capital en " + x.dureeAns + " ans", F.dt0(x.capital) + " DT"]].forEach(function (l) {
+        var d = cree("div"); d.appendChild(cree("dt", null, l[0])); d.appendChild(cree("dd", "chiffre", l[1])); dl.appendChild(d);
+      });
+      li.appendChild(dl);
+      var actions = cree("div", "suggestion__actions");
+      var b = cree("button", "bouton bouton--petit" + (x.cle === choisie ? " bouton--epargne" : ""), x.cle === choisie ? "Dans mon budget" : "Ajouter à mon budget");
+      b.type = "button";
+      b.setAttribute("aria-pressed", x.cle === choisie && O.choix().ajouterEpargne ? "true" : "false");
+      b.addEventListener("click", function () {
+        var deja = O.choix().epargne === x.cle && O.choix().ajouterEpargne;
+        O.choisir("epargne", x.cle);
+        O.choisir("ajouterEpargne", !deja);
+        if (!deja) O.puceVolante(b, $("arc-epargne"), "+" + F.dt0(x.versementMensuel) + " DT", "epargne");
+      });
+      if (x.cle === choisie && O.choix().ajouterEpargne) b.textContent = "Retirer du budget";
+      actions.appendChild(b);
+      var a = cree("a", "lien-action", "Simuler en détail"); a.href = "#epargne?versement=" + x.versementMensuel; a.appendChild(icone("fleche"));
+      actions.appendChild(a);
+      li.appendChild(actions);
+      ul.appendChild(li);
+    });
+    $("rendement-note") && ($("rendement-note").textContent = "");
+  }
+
+  var STATUTS = { ok: ["puce--succes", "À votre portée"], a_preparer: ["puce--alerte", "À préparer"], hors_portee: ["puce--erreur", "Hors de portée aujourd'hui"] };
+  function rendreProjets(sy) {
+    var ul = $("projets");
+    ul.textContent = "";
+    if (!sy.projets.length) {
+      var li0 = cree("li", "projet projet--vide panneau panneau--plat");
+      li0.appendChild(cree("p", null, "Ajoutez un projet (logement, voiture, études, retraite…) : Orbite calcule le crédit mobilisable, l'apport nécessaire et l'effort d'épargne mensuel."));
+      ul.appendChild(li0);
+      return;
+    }
+    sy.projets.forEach(function (pr) {
+      var li = cree("li", "projet panneau");
+      var st = STATUTS[pr.statut];
+      var tete = cree("div", "projet__tete");
+      tete.appendChild(cree("strong", null, pr.libelle));
+      tete.appendChild(cree("span", "puce " + st[0], st[1]));
+      li.appendChild(tete);
+      li.appendChild(cree("p", "projet__montant chiffre", F.dt0(pr.montant) + " DT" + (pr.horizonAns ? " · dans " + pr.horizonAns + " an" + (pr.horizonAns > 1 ? "s" : "") : "")));
+      var dl = cree("dl", "suggestion__chiffres");
+      var lignes = [];
+      if (pr.credit) {
+        lignes.push(["Crédit possible (" + pr.credit.court.toLowerCase() + ")", F.dt0(pr.credit.capitalMax) + " DT"]);
+        lignes.push(["Apport minimal", F.dt0(pr.apportMin) + " DT"]);
+        lignes.push(["Mensualité du crédit nécessaire", F.dt0(pr.credit.mensualite) + " DT"]);
+      }
+      if (pr.epargneMensuelle > 0) lignes.push(["À épargner chaque mois", F.dt0(pr.epargneMensuelle) + " DT"]);
+      lignes.forEach(function (l) { var d = cree("div"); d.appendChild(cree("dt", null, l[0])); d.appendChild(cree("dd", "chiffre", l[1])); dl.appendChild(d); });
+      li.appendChild(dl);
+      if (pr.credit) {
+        var a = cree("a", "lien-action", "Simuler ce crédit");
+        a.href = "#credit?type=" + pr.credit.cle + "&capital=" + Math.round(pr.credit.besoin) + "&mois=" + pr.credit.dureeMois + "&taux=" + pr.credit.tauxPct + "&prix=" + Math.round(pr.montant) + "&apport=" + Math.round(pr.apportDisponible);
+        a.appendChild(icone("fleche")); li.appendChild(a);
+      }
+      ul.appendChild(li);
+    });
+  }
+
+  function rendre(sy) {
+    if (!sy) return;
+    $("demarrage").hidden = !O.profilVierge();
+    $("orbite-contenu").classList.toggle("en-attente", O.profilVierge());
+    rendreScene(sy);
+    rendreBudget(sy);
+    rendreConseils(sy);
+    rendreCapacite(sy);
+    rendreSuggestions(sy);
+    rendreProjets(sy);
+    var badge = $("badge-profil");
+    badge.hidden = !O.profilVierge();
+    if (premierRendu) { premierRendu = false; doc.body.classList.add("orbite-entree"); setTimeout(function () { doc.body.classList.remove("orbite-entree"); }, 1200); }
+    O.remplirUtilisateur();
+  }
+
+  doc.querySelectorAll('input[name="base-capacite"]').forEach(function (r) {
+    r.addEventListener("change", function () { base = this.value; var sy = O.synthese(); if (sy) rendreCapacite(sy); if (sy) rendreScene(sy); });
+  });
+
+  /* ---------- Premier pas ---------- */
+  var formD = $("form-demarrage");
+  formD.addEventListener("change", function (e) {
+    if (e.target.name === "d-sens") $("d-montant-lib").textContent = "Salaire " + e.target.value + " par mois";
+  });
+  formD.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var lu = F.lire($("d-montant").value);
+    var champ = $("d-montant");
+    if (!lu.valide || lu.vide || lu.valeur <= 0) { champ.setAttribute("aria-invalid", "true"); champ.focus(); O.toast("Indiquez votre salaire, par exemple 2 500."); return; }
+    champ.setAttribute("aria-invalid", "false");
+    O.majProfil({
+      montant: lu.valeur, periode: "mensuel",
+      sens: (formD.querySelector('input[name="d-sens"]:checked') || {}).value,
+      secteur: (formD.querySelector('input[name="d-secteur"]:checked') || {}).value,
+      chefDeFamille: $("d-chef").checked
+    }, { immediat: true });
+    O.toast("Votre orbite est en mouvement. Complétez « Mon profil » pour des conseils encore plus précis.");
+    var scene = doc.querySelector(".scene");
+    if (scene) scene.scrollIntoView({ behavior: O.mouvementReduit.matches ? "auto" : "smooth", block: "start" });
+  });
+
+  O.surProfil(rendre);
+  doc.addEventListener("orbite:vue", function (e) {
+    if (e.detail.vue === "orbite") { requestAnimationFrame(function () { poser(); lancer(); }); }
+  });
+  poser();
+  lancer();
+})();
