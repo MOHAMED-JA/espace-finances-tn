@@ -182,6 +182,37 @@ Précision de l'utilisateur : la **capacité** se calcule sur les salaires et le
   - le verdict sur la demande : « dans la limite », ou dépassement de X DT par mois avec le montant à viser.
 - Critères d'éligibilité : l'endettement sur l'autre base est marqué « (autres banques) » et ne compte plus dans le verdict.
 
+## 3 decies. Projet : abonnements payants avec ClicToPay (étude du 8 oct., pas encore codé)
+
+Demande de l'utilisateur : 3 jours d'essai gratuit, puis un abonnement mensuel, semestriel ou annuel. Les durées longues doivent être encouragées par des réductions.
+
+Faisabilité : **oui**, avec ClicToPay (SMT, cartes tunisiennes, montants en millimes, devise 788). Points vérifiés :
+- l'API REST attendue est `register.do`, qui crée la commande et renvoie l'URL de la page de paiement, puis `getOrderStatusExtended.do` pour vérifier le paiement ;
+- le paiement **récurrent automatique** n'est pas documenté publiquement : il faut le demander à SMT ou à la banque.
+
+D'où le choix de départ : des **périodes prépayées** (1, 6 ou 12 mois payés d'avance, sans renouvellement automatique), avec rappels avant l'échéance. Le renouvellement automatique viendra plus tard, si SMT active la carte enregistrée.
+
+Architecture prévue :
+- **Secrets** : les identifiants ClicToPay sont stockés en secrets Cloudflare (`wrangler secret put`), **jamais dans le dépôt**.
+- **Points d'API dans le Worker** :
+  - `POST /api/paiement/creer` (formule) appelle `register.do` avec `orderNumber` unique, `returnUrl` et `failUrl` ;
+  - `GET /api/paiement/retour` vérifie **côté serveur** avec `getOrderStatusExtended.do` (`orderStatus` = 2) avant toute activation, sans jamais faire confiance à la seule redirection.
+- **Supabase** : table `abonnements` (user_id, formule, debut, fin, statut, order_id, montant_millimes), avec la RLS en lecture pour le propriétaire seulement ; les écritures se font uniquement par la clé de service, depuis le Worker. La fin de l'essai (`essai_fin` = inscription + 3 jours) est fixée côté serveur, une seule fois par compte.
+- **Application** : bandeau « Essai : J-2 », puis à l'expiration un écran d'abonnement. Pendant l'essai, les modules sont accessibles ; après, les calculs restent visibles en lecture et les modules sont bloqués (à confirmer).
+- Le simulateur public (`portail-rh`) reste gratuit et sert de porte d'entrée.
+
+Grille de prix proposée, en TTC, à valider par l'utilisateur :
+- mensuel : 9,900 DT ;
+- semestriel : 49,900 DT, soit 8,317 DT par mois (−16 %) ;
+- annuel : 79,900 DT, soit 6,658 DT par mois (−33 %, « 4 mois offerts »).
+
+L'offre annuelle est mise en avant et présélectionnée.
+
+À fournir par l'utilisateur :
+- un compte marchand ClicToPay, ouvert via sa banque (patente/RNE et contrat), avec les identifiants de test puis de production ;
+- les prix définitifs ;
+- les conditions générales de vente (TVA 19 % sur les services numériques, à confirmer avec le comptable).
+
 ## 4. Prochaines actions (améliorations possibles, rien de bloquant)
 
 1. Vérifier le site en ligne après chaque déploiement (Cloudflare se déploie depuis `main`).
