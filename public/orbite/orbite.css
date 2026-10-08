@@ -110,6 +110,8 @@ a { color: inherit; text-underline-offset: 3px; text-decoration-thickness: 1px; 
 img, svg { display: block; max-width: 100%; }
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
+button, a, label, summary, select { touch-action: manipulation; }
+select option { background-color: var(--surface); color: var(--encre); }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
 ::selection { background: color-mix(in srgb, var(--credit) 28%, transparent); }
 input { caret-color: var(--credit); }

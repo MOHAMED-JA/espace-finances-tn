@@ -304,6 +304,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* ---------- Dialogue ---------- */
 dialog.dialogue {
+  overscroll-behavior: contain;
   width: min(480px, calc(100vw - 32px)); padding: 0; border: 1px solid var(--hairline);
   border-radius: var(--r-panel); background: var(--surface-1); color: var(--ink); box-shadow: var(--e3), var(--edge);
   opacity: 1; transform: none;

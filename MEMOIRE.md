@@ -76,6 +76,18 @@ PUBLIÉ sur `main` (PR #3, puis PR « modules ») :
 - ✔ tests : `npm test` → 257 ✔ (4 tests de l'ancienne interface retirés : traductions, couleur d'agence) ;
   e2e 18/18 ✔ ; axe 0 violation sur les 7 vues, en clair et en sombre, à 1440 et 390 px.
 
+## 3 bis. Modules (« mods ») installés par l'utilisateur
+
+Ce sont des extensions de compétences, pas des scripts automatiques : design (critique, accessibilité, rédaction), `web-design-guidelines`, `impeccable`, `emil-design-eng`, `review-animations`, productivité, RH, finance (Daloopa), Playwright.
+- `web-design-guidelines` a été exécuté sur Orbite (8 oct.). Corrections appliquées :
+  - `touch-action: manipulation` ;
+  - fond explicite des `option` en mode sombre ;
+  - `overscroll-behavior: contain` sur les dialogues ;
+  - `translate="no"` sur la marque.
+  Le reste est conforme : focus, mouvement réduit, zones de sécurité, `theme-color`, `aria-live`, etc.
+- `review-animations` ne peut être lancé que par l'utilisateur (commande `/review-animations`).
+- Les connecteurs MCP de ces modules (Asana, Figma, Daloopa…) sont bloqués par le réseau du conteneur.
+
 ## 4. Prochaines actions (améliorations possibles, rien de bloquant)
 
 1. Vérifier le site en ligne après chaque déploiement (Cloudflare se déploie depuis `main`).
