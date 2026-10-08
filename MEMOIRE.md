@@ -155,6 +155,15 @@ BH Bank, la banque de l'utilisateur, prête 40 % du brut ; d'autres banques prê
   - le bloc « Le calendrier de votre marge » est ajouté (`#cap-paliers`).
 - Exemple de l'utilisateur, calculé sur le brut : mars 2032 : 226 DT par mois ; juin 2032 : 724 DT par mois (environ 75 000 DT) ; février 2039 : 1 600 DT par mois.
 
+## 3 septies. Échéancier des crédits et règle des 12 salaires (8 oct.)
+
+- Crédits : trois champs facultatifs, `moisDebut`, `anneeDebut` et `dureeMois`. S'ils sont renseignés, `echeancier()` calcule les échéances restantes : 12 par an, la première le mois suivant le déblocage. Ce calcul prime sur la saisie manuelle de `moisRestants` (le champ passe en lecture seule, bord en pointillés). La date de la dernière échéance s'affiche sous le crédit (`sy.credits`).
+- Règle de l'utilisateur : la cession sur salaire ne porte que sur **12 salaires**. Les salaires au-delà de 12 n'entrent pas dans la capacité d'emprunt, qui est calculée sur le salaire mensuel (`netMensuel` / `brutMensuel`).
+  - La mention « en comptant vos 17 salaires » a été retirée des conseils.
+  - L'alerte du budget suit la règle de la banque (`budget.endettementBanque`).
+  - Le budget reste calculé sur le net moyen, car c'est l'argent réellement reçu.
+- Exemple de l'utilisateur : auto débuté en avril 2025, mariage en juillet 2025. Les mois restants saisis (65 et 68) correspondent à des crédits d'environ 7 ans.
+
 ## 4. Prochaines actions (améliorations possibles, rien de bloquant)
 
 1. Vérifier le site en ligne après chaque déploiement (Cloudflare se déploie depuis `main`).

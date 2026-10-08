@@ -73,8 +73,26 @@
       mensualite: nombre(c.mensualite, 0, 0, 1e6),
       capitalRestant: nombre(c.capitalRestant, 0, 0, 1e8),
       tauxPct: nombre(c.tauxPct, 0, 0, 40),
-      moisRestants: entier(c.moisRestants, 0, 0, 480)
+      moisRestants: entier(c.moisRestants, 0, 0, 480),
+      /* Facultatif : date de début et durée totale ; les échéances restantes en sont alors déduites. */
+      moisDebut: entier(c.moisDebut, 0, 0, 12),
+      anneeDebut: entier(c.anneeDebut, 0, 0, 2100),
+      dureeMois: entier(c.dureeMois, 0, 0, 480)
     };
+  }
+
+  /* Échéances restantes d'après la date de début et la durée (12 échéances par an, la première le mois suivant le déblocage). */
+  function echeancier(c, maintenant) {
+    var m = maintenant || new Date();
+    if (!(c.dureeMois > 0) || !(c.anneeDebut > 1970) || !(c.moisDebut > 0)) return null;
+    var payees = Math.max(0, (m.getFullYear() - c.anneeDebut) * 12 + (m.getMonth() + 1 - c.moisDebut));
+    var restantes = Math.max(0, c.dureeMois - Math.min(payees, c.dureeMois));
+    var fin = c.moisDebut - 1 + c.dureeMois;
+    return { payees: Math.min(payees, c.dureeMois), restantes: restantes, fin: MOIS[fin % 12] + " " + (c.anneeDebut + Math.floor(fin / 12)) };
+  }
+  function appliquerEcheanciers(p, maintenant) {
+    p.credits.forEach(function (c) { var e = echeancier(c, maintenant); if (e) c.moisRestants = e.restantes; });
+    return p;
   }
   function normaliserContrat(c) {
     c = c || {};
@@ -123,7 +141,7 @@
       etudiants: entier(p.etudiants, 0, 0, 15),
       handicapes: entier(p.handicapes, 0, 0, 15),
       parents: entier(p.parents, 0, 0, 2),
-      credits: liste(p.credits, normaliserCredit, 12),
+      credits: liste(p.credits, normaliserCredit, 12).map(function (c) { var e = echeancier(c); if (e) c.moisRestants = e.restantes; return c; }),
       contrats: liste(p.contrats, normaliserContrat, 12),
       projets: liste(p.projets, normaliserProjet, 8),
       loyer: nombre(p.loyer, 0, 0, 1e6),
@@ -510,9 +528,8 @@
       if (b === "brut") {
         txt = "Vos crédits en cours (" + ent(sy.chargesCredits) + " DT par mois) représentent " + ent(endet * 100) + " % de votre salaire brut. " + nomBanque.charAt(0).toUpperCase() + nomBanque.slice(1) + " prête jusqu'à " + ent(q * 100) + " % du brut, soit " + ent(cap.revenu * q) + " DT par mois : un nouveau crédit n'est pas possible pour l'instant.";
       } else {
-        var moyen = s.netMoyen + p.autresRevenus > 0 ? sy.chargesCredits / (s.netMoyen + p.autresRevenus) : endet;
-        txt = "Vos crédits en cours absorbent " + ent(endet * 100) + " % de votre salaire net mensuel";
-        if (p.nombreSalaires > 12 && Math.round(moyen * 100) < Math.round(endet * 100)) txt += " (" + ent(moyen * 100) + " % en comptant vos " + p.nombreSalaires + " salaires sur l'année)";
+        txt = "Vos crédits en cours (" + ent(sy.chargesCredits) + " DT par mois) absorbent " + ent(endet * 100) + " % de votre salaire net mensuel" +
+          (p.nombreSalaires > 12 ? " (les banques ne comptent que 12 salaires par an : vos " + (p.nombreSalaires - 12) + " salaires en plus n'entrent pas dans le calcul)" : "");
         txt += " : " + (p.banque ? p.banque + " refusera" : "la plupart des banques refuseront") + " un nouveau crédit pour l'instant.";
       }
       if (taux.hauts.length) txt += " Renégocier " + liste_(taux.hauts.map(function (c) { return "le " + c.libelle.toLowerCase(); })) + " peut libérer de la marge.";
@@ -565,7 +582,7 @@
 
   /* Synthèse complète du profil, recalculée à chaque modification. */
   function synthese(p0, choix0, maintenant) {
-    var p = normaliser(p0);
+    var p = appliquerEcheanciers(normaliser(p0), maintenant);
     var ch = choix0 || {};
     var ageActuel = age(p, maintenant);
     var s = salaire(p);
@@ -590,6 +607,15 @@
     sy.projets = p.projets.map(function (pr) { return projet(pr, capNet, p, s.netMensuel + p.autresRevenus); });
     sy.maintenant = maintenant || new Date();
     sy.contrats = p.contrats.map(function (c) { return estimationContrat(c, sy.maintenant); });
+    sy.credits = p.credits.map(function (c) {
+      var e = echeancier(c, sy.maintenant), mois = e ? e.restantes : c.moisRestants;
+      var d = mois > 0 ? new Date(sy.maintenant.getFullYear(), sy.maintenant.getMonth() + mois, 1) : null;
+      return { calcule: !!e, payees: e ? e.payees : null, restantes: mois, duree: c.dureeMois || null, fin: e ? e.fin : d ? MOIS[d.getMonth()] + " " + d.getFullYear() : null };
+    });
+    /* L'alerte d'endettement du budget suit la règle de la banque (12 salaires, net ou brut). */
+    var capBanque = sy.capacite[p.baseBanque], qBanque = p.baseBanque === "brut" ? p.quotiteBrut : p.quotiteNet;
+    if (sy.budget.alerte !== "deficit") sy.budget.alerte = capBanque.tauxEndettementActuel > qBanque ? "endettement" : null;
+    sy.budget.endettementBanque = capBanque.tauxEndettementActuel;
     /* Capacité retrouvée à la fin des crédits qui dépassent la quotité (affichée quand elle est nulle aujourd'hui). */
     ["net", "brut"].forEach(function (b) {
       var c = sy.capacite[b], q = b === "net" ? p.quotiteNet : p.quotiteBrut;
@@ -609,7 +635,7 @@
     profilParDefaut: profilParDefaut, normaliser: normaliser, age: age, etatSalaire: etatSalaire, entreeBrut: entreeBrut,
     tranche: tranche, salaire: salaire, augmentation: augmentation,
     capitalPourMensualite: capitalPourMensualite, mensualitePourCapital: mensualitePourCapital, capacite: capacite,
-    epargnePour: epargnePour, suggestionsEpargne: suggestionsEpargne, budget: budget, estimationContrat: estimationContrat, paliersMarge: paliersMarge, analyseTaux: analyseTaux, sortieEndettement: sortieEndettement,
+    epargnePour: epargnePour, suggestionsEpargne: suggestionsEpargne, budget: budget, estimationContrat: estimationContrat, paliersMarge: paliersMarge, echeancier: echeancier, analyseTaux: analyseTaux, sortieEndettement: sortieEndettement,
     versementPourCapital: versementPourCapital, projet: projet, conseils: conseils, synthese: synthese
   };
 });

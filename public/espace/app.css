@@ -323,3 +323,6 @@ body.attente .app { visibility: hidden; }
 .palier__mensualite { font-size: 18px; font-weight: 760; color: var(--credit-t); }
 .palier__capital { color: var(--encre-2); font-size: 14px; }
 .palier .lien-action { margin-left: auto; font-size: 14px; }
+
+.ligne-liste__info--credit { background: var(--credit-doux); color: var(--credit-t); }
+.saisie--calculee { background: transparent; border: 1.5px dashed var(--filet-fort); }

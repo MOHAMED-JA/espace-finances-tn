@@ -593,8 +593,12 @@
         <div class="champ"><label>Mensualité</label><div class="saisie"><input data-c="mensualite" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
         <div class="champ"><label>Capital restant dû</label><div class="saisie"><input data-c="capitalRestant" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
         <div class="champ"><label>Taux</label><div class="saisie"><input data-c="tauxPct" data-type="decimal" type="text" inputmode="decimal" placeholder="10"><span class="saisie__unite">%</span></div></div>
-        <div class="champ"><label>Mois restants</label><div class="saisie"><input data-c="moisRestants" data-type="entier" type="text" inputmode="numeric" placeholder="60"><span class="saisie__unite">mois</span></div></div>
+        <div class="champ"><label>Début : mois</label><div class="saisie"><select data-c="moisDebut"><option value="0">—</option><option value="1">Janvier</option><option value="2">Février</option><option value="3">Mars</option><option value="4">Avril</option><option value="5">Mai</option><option value="6">Juin</option><option value="7">Juillet</option><option value="8">Août</option><option value="9">Septembre</option><option value="10">Octobre</option><option value="11">Novembre</option><option value="12">Décembre</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
+        <div class="champ"><label>Début : année</label><div class="saisie"><input data-c="anneeDebut" data-type="entier" type="text" inputmode="numeric" maxlength="4" placeholder="2025"></div></div>
+        <div class="champ"><label>Durée totale</label><div class="saisie"><input data-c="dureeMois" data-type="entier" type="text" inputmode="numeric" placeholder="84"><span class="saisie__unite">mois</span></div></div>
+        <div class="champ"><label>Échéances restantes</label><div class="saisie"><input data-c="moisRestants" data-type="entier" type="text" inputmode="numeric" placeholder="60"><span class="saisie__unite">mois</span></div></div>
       </div>
+      <p class="ligne-liste__info ligne-liste__info--credit" data-echeancier aria-live="polite">Indiquez la date de début et la durée : Orbite calcule les échéances restantes et la date de fin.</p>
       <div class="ligne-liste__actions">
         <a class="bouton bouton--petit" data-analyser href="#credit">Analyser ce crédit</a>
         <button type="button" class="bouton bouton--fantome bouton--petit" data-retirer><svg aria-hidden="true"><use href="/orbite/icones.svg#poubelle"/></svg>Retirer</button>
