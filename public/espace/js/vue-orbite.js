@@ -142,11 +142,11 @@
     $("budget-logement").textContent = dt(b.logement);
     $("budget-epargne").textContent = dt(b.epargne);
     var nbSal = sy.profil.nombreSalaires;
-    $("budget-sous").textContent = "Sur " + F.dt0(b.net) + " DT net par mois" + (nbSal > 12 ? " en moyenne (vos " + nbSal + " salaires répartis sur 12 mois)" : "") + (b.credits > 0 ? ", crédits : " + F.pct(b.tauxEndettement, 0) + " de ce net" : "") + ".";
+    $("budget-sous").textContent = "Sur " + F.dt0(b.net) + " DT net par mois" + (nbSal > 12 ? " en moyenne (vos " + nbSal + " salaires répartis sur 12 mois)" : "") + (b.credits > 0 ? ". Vos crédits se remboursent en 12 échéances par an" : "") + ".";
     var al = $("budget-alerte");
     al.hidden = !b.alerte;
     al.textContent = b.alerte === "deficit" ? "Vos dépenses déclarées dépassent votre net de " + F.dt0(-b.reste) + " DT par mois." :
-      b.alerte === "endettement" ? "Votre endettement dépasse " + F.pct(sy.profil.quotiteNet, 0) + " : les banques seront réticentes." : "";
+      b.alerte === "endettement" ? "Vos crédits représentent " + F.pct(b.endettementBanque, 0) + " de votre salaire " + sy.profil.baseBanque + " mensuel, au-delà des " + F.pct(sy.profil.baseBanque === "brut" ? sy.profil.quotiteBrut : sy.profil.quotiteNet, 0) + " admis par " + (sy.profil.banque || "les banques") + " (calcul sur 12 salaires)." : "";
   }
 
   var ICONES_MODULE = { salaire: "salaire", credit: "credit", epargne: "epargne", budget: "maison" };

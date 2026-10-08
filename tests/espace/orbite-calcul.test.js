@@ -177,7 +177,7 @@ test("conseils : pas de renégociation proposée pour des taux inférieurs au ma
   assert.match(cher.conseils.map((c) => c.texte).join(" "), /Renégocier le prêt perso/);
 });
 
-test("conseils : date de retour sous 40 % d'endettement et net moyen sur 17 salaires", () => {
+test("conseils : date de retour sous 40 % d'endettement, banques sur 12 salaires", () => {
   const sy = O.synthese(PROFIL_ENDETTE, {}, MAINTENANT);
   const s = O.sortieEndettement(sy.profil, sy.capacite.net.revenu, 0.4);
   assert.equal(s.mois, 68);
@@ -185,7 +185,8 @@ test("conseils : date de retour sous 40 % d'endettement et net moyen sur 17 sala
   assert.ok(s.taux < 0.4);
   const titres = sy.conseils.map((c) => c.titre).join(" | ");
   assert.match(titres, /Votre marge revient dans 5 ans et 8 mois/);
-  assert.match(sy.conseils[0].texte, /en comptant vos 17 salaires/);
+  assert.match(sy.conseils[0].texte, /ne comptent que 12 salaires par an/);
+  assert.doesNotMatch(sy.conseils.map((c) => c.texte).join(' '), /en comptant vos 17 salaires/);
   proche(sy.budget.net, sy.salaire.netMoyen);
 });
 
@@ -221,4 +222,17 @@ test("banque sur le brut : conseils et calendrier de la marge à chaque fin de c
   const net = O.synthese(PROFIL_ENDETTE, {}, MAINTENANT).capacite.net.paliers;
   assert.deepEqual(net[0].credits, ["Crédit automobile", "Crédit mariage"]);
   assert.equal(O.normaliser({}).baseBanque, "net");
+});
+
+test("crédit : échéances restantes et date de fin déduites du début et de la durée", () => {
+  const e = O.echeancier(O.normaliser({ credits: [{ mensualite: 695, moisDebut: 4, anneeDebut: 2025, dureeMois: 84 }] }).credits[0], MAINTENANT);
+  assert.equal(e.payees, 18);
+  assert.equal(e.restantes, 66);
+  assert.equal(e.fin, "avril 2032");
+  const sy = O.synthese({ montant: 4000, credits: [{ mensualite: 695, moisDebut: 4, anneeDebut: 2025, dureeMois: 84, moisRestants: 10 }] }, {}, MAINTENANT);
+  assert.equal(sy.profil.credits[0].moisRestants, 66, "la date de début prime sur la saisie manuelle");
+  assert.equal(sy.credits[0].fin, "avril 2032");
+  const sans = O.synthese({ montant: 4000, credits: [{ mensualite: 695, moisRestants: 65 }] }, {}, MAINTENANT);
+  assert.equal(sans.credits[0].calcule, false);
+  assert.equal(sans.credits[0].fin, "mars 2032");
 });

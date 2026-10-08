@@ -63,6 +63,7 @@
         var lab = el.closest(".champ") && el.closest(".champ").querySelector("label");
         if (lab) lab.setAttribute("for", id);
         if (el.tagName === "SELECT") el.value = v;
+        else if ((c === "anneeDebut" || c === "dureeMois") && !v) el.value = "";
         else el.value = c === "anneeDebut" ? String(v) : versTexte(el.getAttribute("data-type"), v);
       });
       var analyser = li.querySelector("[data-analyser]");
@@ -209,6 +210,18 @@
     $("sec-credits-sous").textContent = nc ? nc + " crédit" + (nc > 1 ? "s" : "") + " · " + F.dt0(sy.chargesCredits) + " DT par mois" : "Aucun crédit déclaré";
     $("sec-contrats-sous").textContent = nk ? nk + " contrat" + (nk > 1 ? "s" : "") + " · " + F.dt0(sy.epargne.economieContrats) + " DT d'impôt économisé par an" : "Aucun contrat déclaré";
     $("sec-projets-sous").textContent = np ? np + " projet" + (np > 1 ? "s" : "") : "Aucun projet";
+    /* Sous chaque crédit : échéances payées et restantes, date de fin (12 échéances par an). */
+    var lc = $("liste-credits").children;
+    (sy.credits || []).forEach(function (e, i) {
+      var li = lc[i]; if (!li) return;
+      var info = li.querySelector("[data-echeancier]"), champ = li.querySelector('[data-c="moisRestants"]');
+      if (champ) { champ.readOnly = e.calcule; champ.closest(".saisie").classList.toggle("saisie--calculee", e.calcule); }
+      if (champ && e.calcule && champ !== doc.activeElement) champ.value = String(e.restantes);
+      if (!info) return;
+      info.textContent = e.calcule
+        ? e.payees + " échéances payées sur " + e.duree + " · " + e.restantes + " restantes · dernière échéance en " + e.fin
+        : e.restantes > 0 ? e.restantes + " échéances restantes · fin prévue en " + e.fin + ". Indiquez la date de début et la durée pour un calcul exact." : "Indiquez la date de début et la durée : Orbite calcule les échéances restantes et la date de fin.";
+    });
     /* Sous chaque contrat : total versé et capital estimé (ou saisi). */
     var lis = $("liste-contrats").children;
     (sy.contrats || []).forEach(function (e, i) {
