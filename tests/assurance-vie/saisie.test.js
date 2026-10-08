@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { lireNombre } = require('../../public/outils/assurance-vie/js/saisie.js');
+const { lireNombre } = require('../../public/moteurs/vie/saisie.js');
 
 test('écriture française : espaces et virgule décimale', () => {
   assert.equal(lireNombre('45 000').v, 45000);

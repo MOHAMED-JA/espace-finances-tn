@@ -166,10 +166,6 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   await etape("épargne : module prérempli, versement depuis une suggestion, enregistrement", async () => {
     await page.goto(base + "/espace/#epargne?versement=250");
     await page.waitForSelector("#vue-epargne:not([hidden])");
-    if (!(await page.evaluate(() => !!window.ModuleEpargne))) {
-      assert((await page.getAttribute("#epargne-racine .relais a", "href")) === "/outils/assurance-vie/#v=250", "relais provisoire");
-      return;
-    }
     await page.waitForFunction(() => window.ModuleEpargne && window.ModuleEpargne.resume && window.ModuleEpargne.resume());
     const r = await page.evaluate(() => window.ModuleEpargne.resume());
     assert(r.principal && r.principal.valeur > 0, "économie d'impôt : " + JSON.stringify(r));
@@ -188,10 +184,6 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   await etape("crédit : simulation reçue depuis la capacité, enregistrement", async () => {
     await page.goto(base + "/espace/#credit?type=auto&capital=30000&mois=60&taux=10.5");
     await page.waitForSelector("#vue-credit:not([hidden])");
-    if (!(await page.evaluate(() => !!window.ModuleCredit))) {
-      assert((await page.getAttribute("#credit-racine .relais a", "href")) === "/outils/credit/?c=30000&m=60&t=10.5", "relais provisoire");
-      return;
-    }
     await page.waitForFunction(() => window.ModuleCredit && window.ModuleCredit.resume && window.ModuleCredit.resume());
     const r = await page.evaluate(() => window.ModuleCredit.resume());
     assert(r.principal && Math.abs(r.principal.valeur - 644.8) < 2, "mensualité 30 000 DT / 60 mois / 10,5 % : " + JSON.stringify(r.principal));

@@ -63,34 +63,29 @@ Supabase (projet `txrwgqgnqdkipwtwpevl`) : Google OAuth activé et migration 000
   - `theme-init.js` pose toujours `data-theme` (choix mémorisé, sinon celui de l'appareil).
 - Les pages publiques connexion, confidentialité et 404 utilisent `commun/meridien.css`, réaccordé aux couleurs d'Orbite.
 
-## 3. État (au 8 oct. 2026)
+## 3. État (au 8 oct. 2026, fin de journée)
 
-Branche `orbite` (dépôt espace-finances-tn) :
+PUBLIÉ sur `main` (PR #3, puis PR « modules ») :
 - ✔ système visuel, logo animé, icônes PWA, manifest ;
-- ✔ accueil (aperçu vivant, grille de points, carte inclinée), connexion, confidentialité (profil financier ajouté) ;
-- ✔ Mon orbite : scène orbitale, budget en anneau, conseils, capacité net/brut, 3 suggestions d'épargne, projets ;
-- ✔ Mon profil : toutes les données, enregistrement automatique, délai propre à chaque champ (bug de saisie rapide corrigé) ;
-- ✔ module Salaire : complet, avec la section tranche d'impôt (échelle, repères avant/après, marge avant la tranche suivante) ;
-- ✔ simulations, compte ; l'export inclut `profil_orbite` ;
-- ✔ moteur crédit : 72 tests (parité avec l'original) ;
-- ✔ tests : `npm test` → 261 ✔ ; e2e `node e2e/parcours.js` → 18/18 ✔ ;
-- ⏳ module Épargne : `public/espace/js/module-epargne.js` (≈148 Ko) et `epargne.css`, écrits par un agent interrompu par la limite d'utilisation.
-  Ils ne sont PAS commités ; les lignes ajoutées à `index.html` ne sont pas commitées non plus. À terminer, puis tester ;
-- ⏳ module Crédit : `public/espace/js/module-credit.js` (≈160 Ko) et `credit.css`, même situation ;
-- ⏳ contrôle axe : le script `addScriptTag` est bloqué par la CSP. Utiliser `newContext({ bypassCSP: true })` pour l'audit.
+- ✔ accueil, connexion, confidentialité ;
+- ✔ Mon orbite, Mon profil (enregistrement automatique, délai propre à chaque champ) ;
+- ✔ module Salaire, avec la tranche d'impôt lors d'une augmentation ;
+- ✔ module Épargne vie & CEA (`module-epargne.js`, `epargne.css`), complet : essentiel, mode expert, exports, PDF via `espace/vendor/jspdf` ;
+- ✔ module Crédit (`module-credit.js`, `credit.css`, moteur `moteurs/credit`), complet : scénarios A/B, éligibilité net/brut, outils avancés ;
+- ✔ anciens simulateurs `public/outils/`, pont, `espace.js` et règles `/outils` de `_headers` supprimés ; tests repointés vers `public/moteurs/` ;
+- ✔ tests : `npm test` → 257 ✔ (4 tests de l'ancienne interface retirés : traductions, couleur d'agence) ;
+  e2e 18/18 ✔ ; axe 0 violation sur les 7 vues, en clair et en sombre, à 1440 et 390 px.
 
-## 4. Prochaines actions (dans l'ordre)
+## 4. Prochaines actions (améliorations possibles, rien de bloquant)
 
-1. Publier la version courante, avec le relais provisoire : pousser `orbite`, ouvrir une PR vers `main`, fusionner, puis vérifier le déploiement.
-2. Terminer le module Crédit :
-   - relire `module-credit.js` et ajouter le script et la feuille de style dans `index.html`, avant `simulations.js` ;
-   - test navigateur avec le harnais `scratchpad/app-session.js` ;
-   - captures 1440/390 en clair et en sombre ; axe ; aucune erreur.
-3. Terminer le module Épargne de la même façon. Ses lignes de scripts `moteurs/vie/*` sont déjà dans `index.html`, non commitées.
-4. e2e complet : les étapes épargne et crédit passent alors par les vrais modules (le relais n'est plus utilisé).
-5. Retirer `public/outils/`, `commun/pont.*`, `commun/espace.*` et `e2e/assurance-vie-origine`. Nettoyer les règles `/outils` de `_headers`.
-   Repointer les tests `tests/assurance-vie` et `tests/salaire` vers `public/moteurs/`.
-6. PR, fusion, vérification en ligne, réponse finale avec les liens.
+1. Vérifier le site en ligne après chaque déploiement (Cloudflare se déploie depuis `main`).
+2. Idées de valeur ajoutée :
+   - historique du net (évolution du salaire) ;
+   - alertes sur la date de la réduction de taux de crédit ;
+   - comparaison de banques sur le brut ;
+   - mode « simulation de vie » (mariage, enfant, achat) qui met tout le profil à jour d'un coup.
+3. L'étape e2e « isolation » a échoué une fois (délai) : la rendre plus robuste si cela se reproduit, en attendant `#toutes[aria-busy=false]`.
+4. `docs/MISE-EN-LIGNE.md` et `docs/SECURITE.md` parlent encore des « outils » : à mettre à jour un jour.
 
 ## 5. Pièges connus
 

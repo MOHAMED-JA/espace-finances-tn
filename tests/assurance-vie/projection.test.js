@@ -1,8 +1,8 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const P = require('../../public/outils/assurance-vie/js/projection.js');
-const G = require('../../public/outils/assurance-vie/js/graphiques.js');
+const P = require('../../public/moteurs/vie/projection.js');
+const G = require('../../public/moteurs/vie/graphiques.js');
 
 const proche = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} ≠ ${b}`);
 const base = { versement: 100, periodesParAn: 12, dureeAns: 10, rendementPct: 6, fraisPct: 1, economieAnnuelle: 300, reinvestir: false };

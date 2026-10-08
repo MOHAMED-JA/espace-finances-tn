@@ -1,0 +1,280 @@
+/* Orbite — module Épargne vie & CEA. Tout est limité à .module--epargne ; jetons et composants de orbite.css. */
+
+.module--epargne {
+  --ep-reussite: #47CD89;
+  --ep-trait: var(--epargne);
+}
+.module--epargne .ep { display: grid; gap: 22px; container-type: inline-size; container-name: ep; min-width: 0; }
+.module--epargne .ep > * { min-width: 0; }
+.module--epargne .panneau { padding: clamp(18px, 3.4vw, 26px); }
+.module--epargne h2 { font-size: 21px; }
+.module--epargne .ep-tete { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 2px; }
+.module--epargne .ep-tete .panneau__sous { max-width: 62ch; }
+.module--epargne .ep-sous-titre { font-family: var(--affiche); font-size: 16.5px; font-weight: 720; letter-spacing: -.015em; }
+.module--epargne .ep-champ-lib { font-size: 14px; font-weight: 600; color: var(--encre-2); margin-bottom: -4px; }
+.module--epargne .ep-erreur { color: var(--erreur); font-size: 14px; font-weight: 600; }
+.module--epargne .ep-vide { color: var(--encre-3); font-size: 14.5px; }
+.module--epargne .champ__aide { font-size: 13px; color: var(--encre-3); }
+.module--epargne .interrupteur input:checked + .interrupteur__piste { background: var(--epargne); }
+.module--epargne .encart { align-items: flex-start; }
+.module--epargne .encart--succes svg { color: var(--succes); }
+.module--epargne .encart--succes { color: var(--encre); }
+.module--epargne .tableau-cadre { max-height: 480px; }
+.module--epargne .tableau small { color: var(--encre-3); font-size: 12px; }
+.module--epargne .tableau .ep-inactif td { color: var(--encre-3); }
+.module--epargne .tableau tbody th, .module--epargne .tableau tfoot td:first-child { text-align: left; font-weight: 650; padding: 9px 14px; border-top: 1px solid var(--filet); white-space: nowrap; }
+.module--epargne .ep-pos { color: var(--succes); font-weight: 650; }
+.module--epargne .ep-boutons { display: flex; flex-wrap: wrap; gap: 10px; }
+.module--epargne .ep-boutons--petits { gap: 8px; }
+
+/* ---------- Scène : saisie et résultat ---------- */
+.module--epargne .ep-scene { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); grid-template-areas: "v" "r" "s" "o"; align-items: start; }
+.module--epargne .ep-versement { grid-area: v; }
+.module--epargne .ep-resultat { grid-area: r; }
+.module--epargne .ep-situation { grid-area: s; }
+.module--epargne .ep-objectif { grid-area: o; }
+@container ep (min-width: 860px) {
+  .module--epargne .ep-scene { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); grid-template-areas: "v r" "s r" "o r"; gap: 20px 22px; }
+  .module--epargne .ep-resultat { position: sticky; top: 78px; }
+}
+
+.module--epargne .ep-versement, .module--epargne .ep-situation, .module--epargne .ep-objectif { display: grid; gap: 16px; }
+.module--epargne .ep-produits span { font-size: 14px; }
+.module--epargne .bascule span { padding: 0 6px; }
+.module--epargne .ep-grand-champ .saisie--grande input { font-size: clamp(30px, 8vw, 38px); }
+.module--epargne .ep-duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.module--epargne .ep-duo--seul { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 420px) { .module--epargne .ep-duo { grid-template-columns: minmax(0, 1fr); } }
+.module--epargne .ep-curseur { display: grid; gap: 6px; }
+.module--epargne .ep-curseur__haut { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.module--epargne .ep-curseur__haut label { font-size: 14px; font-weight: 600; color: var(--encre-2); }
+.module--epargne .ep-curseur__haut output { font-family: var(--affiche); font-size: 24px; font-weight: 760; letter-spacing: -.02em; color: var(--epargne-t); }
+.module--epargne .curseur:disabled { opacity: .5; cursor: not-allowed; }
+
+.module--epargne .ep-lignes-saisie { display: grid; border-top: 1px solid var(--filet); }
+.module--epargne .ep-ligne { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 0; min-height: 60px; border-bottom: 1px solid var(--filet); }
+.module--epargne .ep-ligne__txt { display: grid; gap: 2px; min-width: 0; }
+.module--epargne .ep-ligne__txt strong { font-size: 15px; font-weight: 650; }
+.module--epargne .ep-ligne__txt small { font-size: 13px; color: var(--encre-3); }
+.module--epargne .saisie select { padding-right: 26px; }
+.module--epargne .saisie .ep-select-ico { width: 18px; height: 18px; margin-left: -28px; pointer-events: none; color: var(--encre-3); }
+
+/* Contrats déjà détenus */
+.module--epargne .ep-contrats { display: grid; gap: 10px; }
+.module--epargne .ep-contrats__vide { display: flex; gap: 10px; font-size: 14px; color: var(--encre-2); padding: 12px 14px; border-radius: var(--r-int); background: var(--surface-2); }
+.module--epargne .ep-contrats__vide svg { width: 18px; height: 18px; flex: none; margin-top: 2px; color: var(--epargne-t); }
+.module--epargne .ep-contrats__vide a { font-weight: 650; color: var(--epargne-t); }
+.module--epargne .ep-contrats__liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.module--epargne .ep-contrats__liste li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; background: var(--surface-2); }
+.module--epargne .ep-contrats__nom { display: grid; min-width: 0; }
+.module--epargne .ep-contrats__nom strong { font-size: 14.5px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.module--epargne .ep-contrats__nom small { font-size: 12.5px; color: var(--encre-3); }
+
+/* Partir d'un objectif */
+.module--epargne .onglets { overflow: visible; flex-wrap: wrap; }
+.module--epargne .onglets button { flex: 1 1 auto; }
+.module--epargne .onglets button:focus-visible { outline-offset: -2px; }
+.module--epargne .ep-inverse { display: grid; gap: 12px; justify-items: start; }
+.module--epargne .ep-inverse > .champ { width: 100%; }
+.module--epargne .ep-inverse__res { font-size: 15px; color: var(--encre-2); line-height: 1.5; }
+.module--epargne .ep-inverse__res.ok { color: var(--encre); font-weight: 600; }
+.module--epargne .ep-inverse__res.ko { color: var(--alerte); font-weight: 600; }
+
+/* ---------- Résultat (panneau d'encre) ---------- */
+.module--epargne .ep-resultat { display: grid; gap: 14px; padding: clamp(20px, 3.4vw, 30px); box-shadow: var(--ombre-3); }
+.module--epargne .ep-resultat::before { content: ""; position: absolute; z-index: -1; right: -120px; top: -140px; width: 360px; height: 360px; border-radius: 50%; border: 1px solid rgba(167, 139, 250, .22); box-shadow: inset 0 0 0 46px rgba(167, 139, 250, .04); }
+.module--epargne .ep-res__haut { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.module--epargne .ep-res__lib { font-size: 15px; font-weight: 650; color: var(--cosmos-encre-2); }
+.module--epargne .ep-grand { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font-family: var(--affiche); font-weight: 800; font-size: clamp(54px, 13vw, 92px); line-height: .95; letter-spacing: -.045em; color: #fff; }
+.module--epargne .ep-grand__u { font-family: var(--texte); font-size: .26em; font-weight: 700; letter-spacing: 0; color: var(--epargne-lum); }
+.module--epargne .ep-res__sous { font-size: 14.5px; color: var(--cosmos-encre); }
+.module--epargne .ep-jauge { position: relative; height: 10px; border-radius: 999px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+.module--epargne .ep-jauge__fill { position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(90deg, var(--epargne), var(--epargne-lum)); transform-origin: left center; transform: scaleX(var(--r, 0)); transition: transform 620ms var(--ressort); }
+.module--epargne .ep-jauge__txt { font-size: 13px; color: var(--cosmos-encre-2); margin-top: -6px; }
+.module--epargne .ep-impots { display: grid; gap: 12px; padding: 14px 0 2px; border-top: 1px solid var(--cosmos-filet); }
+.module--epargne .ep-impot { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: baseline; font-size: 14px; color: var(--cosmos-encre-2); }
+.module--epargne .ep-impot strong { font-size: 16px; font-weight: 720; color: var(--cosmos-encre); white-space: nowrap; }
+.module--epargne .ep-impot__piste { grid-column: 1 / -1; position: relative; height: 8px; border-radius: 999px; background: rgba(255, 255, 255, .07); }
+.module--epargne .ep-impot__barre { position: absolute; inset: 0; border-radius: inherit; background: var(--epargne-lum); transform-origin: left center; transform: scaleX(var(--r, 0)); transition: transform 560ms var(--ressort); }
+.module--epargne .ep-impot__barre--avant { background: rgba(255, 255, 255, .34); }
+.module--epargne .ep-impot__plancher { position: absolute; top: -5px; bottom: -5px; left: calc(var(--r, .45) * 100%); width: 2px; border-radius: 2px; background: #fff; opacity: .8; }
+.module--epargne .ep-statut { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, .06); border: 1px solid var(--cosmos-filet); font-size: 14px; font-weight: 600; color: var(--cosmos-encre); }
+.module--epargne .ep-statut svg { width: 18px; height: 18px; flex: none; color: var(--epargne-lum); }
+.module--epargne .ep-statut--ok { border-color: rgba(71, 205, 137, .4); background: rgba(71, 205, 137, .1); }
+.module--epargne .ep-statut--ok svg { color: var(--ep-reussite); }
+.module--epargne .ep-tuiles { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.module--epargne .ep-tuiles li { display: grid; gap: 2px; padding: 12px 14px; border-radius: 14px; background: rgba(255, 255, 255, .05); border: 1px solid var(--cosmos-filet); min-width: 0; }
+.module--epargne .ep-tuiles span { font-size: 12.5px; font-weight: 600; color: var(--cosmos-encre-2); }
+.module--epargne .ep-tuiles strong { font-size: clamp(16px, 4.4vw, 19px); font-weight: 740; letter-spacing: -.01em; color: var(--cosmos-encre); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.module--epargne .ep-tuiles small { font-size: 12px; color: var(--encre-3); }
+.module--epargne .ep-tuiles--clair li { background: var(--surface-2); border-color: transparent; }
+.module--epargne .ep-tuiles--clair span { color: var(--encre-2); }
+.module--epargne .ep-tuiles--clair strong { color: var(--encre); }
+.module--epargne .ep-optimal { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 16px; border-radius: 16px; background: rgba(167, 139, 250, .12); border: 1px solid rgba(167, 139, 250, .3); }
+.module--epargne .ep-optimal > div { display: grid; gap: 2px; min-width: 0; }
+.module--epargne .ep-optimal__lib { font-size: 13px; font-weight: 600; color: var(--cosmos-encre-2); }
+.module--epargne .ep-optimal strong { font-family: var(--affiche); font-size: 22px; font-weight: 760; letter-spacing: -.02em; color: #fff; }
+.module--epargne .ep-optimal small { font-size: 13px; color: var(--cosmos-encre); }
+.module--epargne .ep-res__note { font-size: 13.5px; color: var(--cosmos-encre-2); line-height: 1.5; }
+.module--epargne .cosmos .bouton--plein:disabled { opacity: .5; }
+
+/* ---------- Résultats détaillés ---------- */
+.module--epargne .ep-sections { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
+.module--epargne .ep-sections > .panneau { display: grid; gap: 14px; align-content: start; }
+@container ep (min-width: 860px) {
+  .module--epargne .ep-sections { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+  .module--epargne .ep-projection, .module--epargne .ep-exports { grid-column: 1 / -1; }
+  .module--epargne .ep-proj-grille { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 26px; }
+}
+.module--epargne .ep-proj-grille { display: grid; gap: 18px; }
+.module--epargne .ep-proj-gauche, .module--epargne .ep-proj-droite { display: grid; gap: 14px; align-content: start; min-width: 0; }
+
+.module--epargne .ep-graphe { width: 100%; min-width: 0; }
+.module--epargne .ep-svg { display: block; max-width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
+.module--epargne .ep-graphe__info { font-size: 14px; color: var(--encre-2); }
+.module--epargne .ep-g-grille { stroke: var(--filet); stroke-width: 1; }
+.module--epargne .ep-g-txt { fill: var(--encre-3); font-size: 12px; font-weight: 550; font-family: var(--texte); }
+.module--epargne .ep-g-lib { fill: var(--encre-2); font-size: 12px; font-weight: 650; font-family: var(--texte); }
+.module--epargne .ep-c-aire { fill: color-mix(in srgb, var(--epargne) 14%, transparent); }
+.module--epargne .ep-c-ligne { fill: none; stroke: var(--epargne); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.module--epargne .ep-c-opt { stroke: var(--encre-3); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.module--epargne .ep-c-point, .module--epargne .ep-p-point { fill: var(--epargne); stroke: var(--surface); stroke-width: 3; }
+.module--epargne .ep-p-bande { fill: color-mix(in srgb, var(--epargne) 15%, transparent); }
+.module--epargne .ep-p-bord { fill: none; stroke: color-mix(in srgb, var(--epargne) 45%, transparent); stroke-width: 1.2; }
+.module--epargne .ep-p-med { fill: none; stroke: var(--epargne); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.module--epargne .ep-p-verse { fill: none; stroke: var(--encre-3); stroke-width: 1.6; stroke-dasharray: 5 4; }
+.module--epargne .ep-p-reel { fill: none; stroke: var(--encre-2); stroke-width: 1.8; stroke-dasharray: 1.5 4; stroke-linecap: round; }
+.module--epargne .ep-p-curseur { stroke: var(--encre-3); stroke-width: 1; stroke-dasharray: 2 3; }
+.module--epargne .ep-mc-b1 { fill: color-mix(in srgb, var(--epargne) 13%, transparent); }
+.module--epargne .ep-mc-b2 { fill: color-mix(in srgb, var(--epargne) 28%, transparent); }
+.module--epargne .ep-mc-obj { stroke: var(--succes); stroke-width: 1.5; stroke-dasharray: 6 4; }
+@media (prefers-reduced-motion: no-preference) {
+  .module--epargne .ep-trace .ep-anim { stroke-dasharray: 1; stroke-dashoffset: 1; animation: ep-trace 1100ms var(--sortie) 80ms forwards; }
+  .module--epargne .ep-trace .ep-anim-aire { animation: ep-fondu 900ms ease both; }
+}
+@keyframes ep-trace { to { stroke-dashoffset: 0; } }
+@keyframes ep-fondu { from { opacity: 0; } }
+
+.module--epargne .ep-legende { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--encre-2); }
+.module--epargne .ep-legende span { display: inline-flex; align-items: center; gap: 7px; }
+.module--epargne .ep-legende span::before { content: ""; width: 16px; height: 4px; border-radius: 3px; background: var(--epargne); }
+.module--epargne .ep-legende .l-bande::before, .module--epargne .ep-legende .l-mc1::before { height: 10px; background: color-mix(in srgb, var(--epargne) 20%, transparent); }
+.module--epargne .ep-legende .l-mc2::before { height: 10px; background: color-mix(in srgb, var(--epargne) 38%, transparent); }
+.module--epargne .ep-legende .l-verse::before { height: 0; border-top: 2px dashed var(--encre-3); background: none; }
+.module--epargne .ep-legende .l-reel::before { height: 0; border-top: 2px dotted var(--encre-2); background: none; }
+.module--epargne .ep-legende span[hidden] { display: none; }
+
+.module--epargne .ep-scen { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.module--epargne .ep-scen li { display: grid; gap: 2px; padding: 12px 14px; border-radius: 14px; background: var(--surface-2); min-width: 0; }
+.module--epargne .ep-scen span { font-size: 12.5px; font-weight: 600; color: var(--encre-2); }
+.module--epargne .ep-scen strong { font-family: var(--affiche); font-size: 21px; font-weight: 760; letter-spacing: -.02em; white-space: nowrap; }
+.module--epargne .ep-scen li.ep-scen--median { background: var(--epargne-doux); }
+.module--epargne .ep-scen--median strong, .module--epargne .ep-scen--median span { color: var(--epargne-t); }
+
+.module--epargne .ep-lignes { margin: 0; display: grid; }
+.module--epargne .ep-lig { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; padding: 9px 0; border-bottom: 1px solid var(--filet); }
+.module--epargne .ep-lig:last-child { border-bottom: 0; }
+.module--epargne .ep-lig dt { font-size: 14.5px; color: var(--encre-2); min-width: 0; }
+.module--epargne .ep-lig dd { margin: 0; font-weight: 650; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.module--epargne .ep-lig.fort dt { color: var(--encre); font-weight: 650; }
+.module--epargne .ep-lig.fort dd { font-weight: 780; }
+.module--epargne .ep-lig.sous dt { padding-left: 14px; color: var(--encre-3); font-size: 14px; }
+.module--epargne .ep-lig.sous dd { color: var(--encre-2); font-weight: 600; }
+.module--epargne .ep-lig.perte dd { color: var(--erreur); }
+
+.module--epargne .ep-comparatif { display: grid; gap: 12px; }
+.module--epargne .ep-cmp { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: baseline; }
+.module--epargne .ep-cmp__lib { font-size: 14px; color: var(--encre-2); }
+.module--epargne .ep-cmp__val { font-weight: 720; white-space: nowrap; }
+.module--epargne .ep-cmp__piste { grid-column: 1 / -1; display: block; position: relative; height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.module--epargne .ep-cmp__barre { position: absolute; inset: 0; border-radius: inherit; transform-origin: left center; transform: scaleX(var(--r, 0)); transition: transform 560ms var(--ressort); background: var(--epargne); }
+.module--epargne .ep-cmp__barre.c2 { background: var(--encre-3); }
+.module--epargne .ep-cmp__barre.c3 { background: var(--filet-fort); }
+.module--epargne .ep-cmp__barre.c4 { background: color-mix(in srgb, var(--encre) 18%, var(--surface-2)); }
+.module--epargne .ep-cmp__bilan { font-size: 14.5px; color: var(--encre-2); }
+.module--epargne .ep-cmp__bilan strong { color: var(--encre); font-weight: 760; }
+
+.module--epargne .ep-tranches .tableau td, .module--epargne .ep-tranches .tableau th { padding-left: 10px; padding-right: 10px; }
+
+/* ---------- Mode expert ---------- */
+.module--epargne .ep-expert { display: grid; gap: 14px; padding-top: 18px; }
+.module--epargne .ep-expert__tete h2 { font-size: clamp(24px, 3vw, 32px); font-weight: 760; letter-spacing: -.03em; }
+.module--epargne .ep-expert__tete p { margin-top: 6px; color: var(--encre-2); max-width: 64ch; }
+.module--epargne .ep-outils { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@container ep (min-width: 860px) {
+  .module--epargne .ep-outils { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: row dense; }
+  .module--epargne .ep-outil[open] { grid-column: 1 / -1; }
+  .module--epargne .ep-colonnes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.module--epargne .ep-outil > summary { padding: 16px 18px; }
+.module--epargne .ep-outil .depliant__icone { color: var(--epargne-t); background: var(--epargne-doux); }
+.module--epargne .ep-outil[open] > summary { border-bottom: 1px solid var(--filet); }
+.module--epargne .ep-outil .depliant__corps { display: grid; gap: 14px; padding: 18px; }
+.module--epargne .ep-bloc { display: grid; gap: 10px; padding-top: 6px; }
+.module--epargne .ep-bloc + .ep-bloc { border-top: 1px solid var(--filet); padding-top: 16px; }
+.module--epargne .ep-champs { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); align-items: start; }
+.module--epargne .ep-champs--un { grid-template-columns: minmax(0, 280px); }
+.module--epargne .ep-colonnes { display: grid; gap: 18px; }
+.module--epargne .ep-colonnes > div { display: grid; gap: 8px; align-content: start; }
+.module--epargne .ep-libres { display: grid; gap: 10px; }
+.module--epargne .ep-libre { display: grid; grid-template-columns: minmax(70px, 1fr) minmax(0, 1.6fr) auto; gap: 10px; align-items: end; }
+.module--epargne .ep-libre .bouton { margin-bottom: 6px; }
+.module--epargne .ep-fichier { position: relative; justify-self: start; cursor: pointer; }
+.module--epargne .ep-fichier:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
+.module--epargne .ep-releve { display: grid; gap: 10px; margin: 8px 0 0; padding: 14px; border: 1px solid var(--filet); border-radius: var(--r-int); }
+.module--epargne .ep-releve legend { font-weight: 650; font-size: 14px; padding: 0 6px; }
+.module--epargne .ep-coche { display: flex; align-items: center; gap: 10px; font-size: 14.5px; }
+.module--epargne .ep-coche input { width: 18px; height: 18px; accent-color: var(--epargne); }
+.module--epargne .ep-offres { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.module--epargne .ep-offre { display: grid; gap: 10px; margin: 0; padding: 14px; border: 1px solid var(--filet); border-radius: var(--r-int); min-width: 0; }
+.module--epargne .ep-table-scn th[scope="col"] { vertical-align: bottom; text-align: right; }
+.module--epargne .ep-scn-nom { display: block; font-size: 13.5px; color: var(--encre); white-space: normal; min-width: 110px; }
+.module--epargne .ep-scn-act { display: inline-flex; gap: 4px; margin-top: 6px; }
+.module--epargne .ep-meilleur { color: var(--succes); font-weight: 700; }
+.module--epargne .ep-cp-tuiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.module--epargne .ep-cp-tuile { display: grid; gap: 3px; padding: 14px; border-radius: var(--r-int); background: var(--surface-2); }
+.module--epargne .ep-cp-tuile span { font-size: 13px; font-weight: 650; color: var(--encre-2); }
+.module--epargne .ep-cp-tuile strong { font-family: var(--affiche); font-size: 22px; font-weight: 760; }
+.module--epargne .ep-cp-tuile small { font-size: 13px; color: var(--encre-2); }
+.module--epargne #ep-cp-res, .module--epargne #ep-obj-bilan, .module--epargne #ep-st-liste, .module--epargne #ep-r-res, .module--epargne #ep-st-resume { display: grid; gap: 12px; justify-items: stretch; }
+.module--epargne #ep-cp-res > .bouton, .module--epargne #ep-obj-bilan > .bouton { justify-self: start; }
+.module--epargne .ep-stress { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--filet); }
+.module--epargne .ep-stress__ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--surface-2); color: var(--encre-2); }
+.module--epargne .ep-stress__ico svg { width: 18px; height: 18px; }
+.module--epargne .ep-stress__txt { display: grid; gap: 4px; min-width: 0; }
+.module--epargne .ep-stress__txt strong { font-size: 15px; }
+.module--epargne .ep-stress__txt span { font-size: 13.5px; color: var(--encre-2); }
+.module--epargne .ep-stress__val { display: grid; justify-items: end; gap: 2px; }
+.module--epargne .ep-stress__val strong { white-space: nowrap; font-weight: 740; }
+.module--epargne .ep-stress__val span { font-size: 13px; font-weight: 650; color: var(--encre-2); white-space: nowrap; }
+.module--epargne .ep-stress__val span.perte { color: var(--erreur); }
+@media (max-width: 480px) {
+  .module--epargne .ep-stress { grid-template-columns: 40px minmax(0, 1fr); }
+  .module--epargne .ep-stress__val { grid-column: 2; justify-items: start; grid-auto-flow: column; gap: 10px; }
+}
+.module--epargne .ep-obj { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 10px; align-items: end; padding: 14px 0; border-bottom: 1px solid var(--filet); }
+.module--epargne .ep-obj__champs { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 130px), 1fr)); }
+.module--epargne .ep-obj__nom { grid-column: 1 / -1; }
+.module--epargne .ep-obj > .bouton { margin-bottom: 6px; }
+.module--epargne .ep-obj__res { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: center; font-size: 14px; color: var(--encre-2); }
+.module--epargne .ep-obj__res .ep-cmp__piste { grid-column: 1 / -1; grid-row: 2; }
+.module--epargne .ep-obj__res strong { font-size: 13.5px; color: var(--alerte); }
+.module--epargne .ep-obj__res strong.ok { color: var(--succes); }
+.module--epargne .ep-phrases { display: grid; gap: 6px; }
+.module--epargne .ep-phrase { font-size: 14.5px; color: var(--encre-2); }
+.module--epargne .ep-phrase.fort { color: var(--encre); font-weight: 700; font-size: 16px; }
+.module--epargne .ep-phrase.cible { color: var(--epargne-t); font-weight: 650; }
+.module--epargne .ep-methode { margin: 0; padding-left: 18px; display: grid; gap: 8px; font-size: 14.5px; color: var(--encre-2); }
+.module--epargne .ep-methode strong { color: var(--encre); }
+
+/* Reçu fiscal */
+.module--epargne .ep-recu { width: min(460px, calc(100vw - 24px)); }
+.module--epargne .ep-recu canvas { display: block; width: 100%; height: auto; border-radius: 16px; box-shadow: var(--ombre-2); margin-bottom: 10px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .module--epargne .ep-jauge__fill, .module--epargne .ep-impot__barre, .module--epargne .ep-cmp__barre { transition: none; }
+}
+@media print {
+  .module--epargne .ep-expert, .module--epargne .ep-exports, .module--epargne .ep-objectif { display: none; }
+  .module--epargne .ep-resultat { position: static; }
+}

@@ -32,20 +32,8 @@
   X-Robots-Tag: noindex
   Cache-Control: no-store
 
-# --- Outils : attributs style="" et styles générés autorisés, jamais de script en ligne ---
-/outils/salaire/*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co wss://txrwgqgnqdkipwtwpevl.supabase.co; manifest-src 'self'; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
-  X-Robots-Tag: noindex
-/outils/assurance-vie/*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co wss://txrwgqgnqdkipwtwpevl.supabase.co; manifest-src 'self'; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
-  X-Robots-Tag: noindex
-# Crédit : lecture d'offres par photo (Tesseract) et de PDF bancaires (pdf.js), chargés à la demande depuis jsDelivr
-/outils/credit/*
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co wss://txrwgqgnqdkipwtwpevl.supabase.co https://cdn.jsdelivr.net https://tessdata.projectnaptha.com data: blob:; manifest-src 'self'; worker-src 'self' blob: https://cdn.jsdelivr.net; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
-  X-Robots-Tag: noindex
-
 # --- Cache ---
 /commun/polices/*
   Cache-Control: public, max-age=31536000, immutable
-/outils/credit/polices/*
+/orbite/polices/*
   Cache-Control: public, max-age=31536000, immutable

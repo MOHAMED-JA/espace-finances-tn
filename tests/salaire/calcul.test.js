@@ -7,8 +7,8 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const P = require("../../public/outils/salaire/config/parametres.js");
-const C = require("../../public/outils/salaire/js/calcul.js");
+const P = require("../../public/moteurs/salaire/parametres.js");
+const C = require("../../public/moteurs/salaire/calcul.js");
 
 const TOL = 0.0005; // un demi-millime
 
