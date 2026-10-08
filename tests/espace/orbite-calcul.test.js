@@ -146,3 +146,45 @@ test("versementPourCapital : formule d'épargne", () => {
   let c = 0; for (let k = 0; k < 36; k++) c = c * (1 + 0.005) + v;
   proche(c, 10000, 0.01);
 });
+
+/* ---------- Conseils réalistes (retour utilisateur, 8 oct. 2026) ---------- */
+const PROFIL_ENDETTE = {
+  montant: 4000, sens: "brut", nombreSalaires: 17, situation: "marie", chefDeFamille: true, anneeNaissance: 1992,
+  credits: [
+    { type: "immo", libelle: "Crédit immobilier", tauxPct: 4.5, mensualite: 875.894, moisRestants: 148, capitalRestant: 98788.45 },
+    { type: "auto", libelle: "Crédit automobile", tauxPct: 4.5, mensualite: 695.008, moisRestants: 65, capitalRestant: 40024.887 },
+    { type: "autre", libelle: "Crédit mariage", tauxPct: 2, mensualite: 497.93, moisRestants: 68, capitalRestant: 31985.857 }
+  ],
+  contrats: [{ type: "av", libelle: "Contrat", anneeDebut: 2021, versementMensuel: 100 }]
+};
+
+test("suggestions d'épargne : jamais plus de 30 % de la marge mensuelle", () => {
+  const sy = O.synthese(PROFIL_ENDETTE, {}, MAINTENANT);
+  const marge = sy.epargne.margeMensuelle;
+  assert.ok(marge > 0);
+  sy.epargne.propositions.forEach((x) => assert.ok(x.versementMensuel <= Math.max(10, marge * 0.3) + 1e-9, x.cle));
+  assert.ok(sy.epargne.propositions.some((x) => x.plafonneBudget));
+  const textes = sy.conseils.map((c) => c.texte).join(" ");
+  assert.match(textes, /Dans votre budget actuel/);
+});
+
+test("conseils : pas de renégociation proposée pour des taux inférieurs au marché", () => {
+  const sy = O.synthese(PROFIL_ENDETTE, {}, MAINTENANT);
+  const textes = sy.conseils.map((c) => c.titre + " " + c.texte).join(" ");
+  assert.doesNotMatch(textes, /[Rr]enégocier (le|les) /);
+  assert.match(textes, /Des taux à garder/);
+  const cher = O.synthese(Object.assign({}, PROFIL_ENDETTE, { credits: [{ type: "conso", libelle: "Prêt perso", tauxPct: 13, mensualite: 2200, moisRestants: 30 }] }), {}, MAINTENANT);
+  assert.match(cher.conseils.map((c) => c.texte).join(" "), /Renégocier le prêt perso/);
+});
+
+test("conseils : date de retour sous 40 % d'endettement et net moyen sur 17 salaires", () => {
+  const sy = O.synthese(PROFIL_ENDETTE, {}, MAINTENANT);
+  const s = O.sortieEndettement(sy.profil, sy.capacite.net.revenu, 0.4);
+  assert.equal(s.mois, 68);
+  assert.deepEqual(s.credits, ["Crédit automobile", "Crédit mariage"]);
+  assert.ok(s.taux < 0.4);
+  const titres = sy.conseils.map((c) => c.titre).join(" | ");
+  assert.match(titres, /Votre marge revient dans 5 ans et 8 mois/);
+  assert.match(sy.conseils[0].texte, /en comptant vos 17 salaires/);
+  proche(sy.budget.net, sy.salaire.netMoyen);
+});

@@ -283,9 +283,13 @@
   $("deconnexion").addEventListener("click", function () { E.deconnexion(); });
 
   /* ---------- Identité ---------- */
+  /* « MOHAMED AZIZ » saisi en majuscules s'affiche « Mohamed Aziz ». */
+  function casse(t) {
+    return t && t === t.toUpperCase() && /[A-ZÀ-Þ]/.test(t) ? t.toLowerCase().replace(/(^|[\s'-])(\S)/g, function (m, a, b) { return a + b.toUpperCase(); }) : t;
+  }
   function nomAffiche() {
     var meta = (utilisateur && utilisateur.user_metadata) || {};
-    return (profil && profil.prenom) || meta.full_name || meta.name || (utilisateur && utilisateur.email ? utilisateur.email.split("@")[0] : "");
+    return casse((profil && profil.prenom) || "") || meta.full_name || meta.name || (utilisateur && utilisateur.email ? utilisateur.email.split("@")[0] : "");
   }
   function remplirUtilisateur() {
     if (!utilisateur) return;
