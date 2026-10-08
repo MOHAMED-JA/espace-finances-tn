@@ -168,9 +168,9 @@
       tx.appendChild(cree("strong", null, c.titre));
       tx.appendChild(cree("p", null, c.texte));
       li.appendChild(ic); li.appendChild(tx);
-      if (c.module !== "budget") {
-        var a = cree("a", "lien-action"); a.href = "#" + c.module; a.textContent = "Voir";
-        a.setAttribute("aria-label", "Voir le module " + c.module + " : " + c.titre);
+      if (c.lien) {
+        var a = cree("a", "lien-action conseil__lien"); a.href = c.lien.href; a.textContent = c.lien.libelle;
+        a.setAttribute("aria-label", c.lien.libelle + " (conseil : " + c.titre + ")");
         a.appendChild(icone("fleche")); li.appendChild(a);
       }
       ol.appendChild(li);
@@ -383,6 +383,13 @@
   O.surProfil(rendre);
   doc.addEventListener("orbite:vue", function (e) {
     if (e.detail.vue === "orbite") { requestAnimationFrame(function () { poser(); lancer(); }); }
+    /* #orbite?section=marge : défile jusqu'au calendrier de la marge (ou à la capacité). */
+    if (e.detail.vue === "orbite" && e.detail.params.get("section") === "marge") {
+      setTimeout(function () {
+        var cible = !$("cap-paliers").hidden ? $("cap-paliers") : doc.querySelector("[aria-labelledby=titre-capacite]");
+        if (cible) cible.scrollIntoView({ behavior: O.mouvementReduit.matches ? "auto" : "smooth", block: "start" });
+      }, 120);
+    }
   });
   poser();
   lancer();

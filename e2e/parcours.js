@@ -272,8 +272,12 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.fill("#nom-affiche", "Aziz J.");
     await page.click("#form-nom button[type=submit]");
     await page.waitForSelector(".toast");
+    await page.click("#tab-preferences");
+    await page.waitForSelector("#onglet-preferences:not([hidden])");
     await page.locator('#choix-theme input[value="dark"]').dispatchEvent("click");
     await page.waitForFunction(() => document.documentElement.getAttribute("data-theme") === "dark");
+    await page.click("#tab-donnees");
+    await page.waitForSelector("#onglet-donnees:not([hidden])");
     const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#exporter")]);
     const contenu = JSON.parse(fs.readFileSync(await dl.path(), "utf8"));
     assert(contenu.profil_orbite && contenu.profil_orbite.montant === 2500, "profil dans l'export");
@@ -347,8 +351,37 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await m.close();
   });
 
+  await etape("paramètres : onglets, photo importée, surnom, page d'ouverture, utilisation", async () => {
+    await page.goto(base + "/espace/#compte?onglet=profil");
+    await page.waitForSelector("#onglet-profil:not([hidden])");
+    const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGPQj34FRwzEcQBRIhdBsXYrNAAAAABJRU5ErkJggg==", "base64");
+    await page.setInputFiles("#param-photo", { name: "moi.png", mimeType: "image/png", buffer: png });
+    await page.waitForSelector("#avatar img");
+    await page.waitForSelector("#param-avatar img");
+    assert([...faux.photos().keys()].some((k) => k.endsWith("/avatar.webp")), "photo stockée dans le dossier du compte");
+    assert(!(await page.isHidden("#param-retirer")), "bouton « Retirer » proposé");
+    await page.fill("#param-appel", "Dali");
+    await page.selectOption("#param-metier", "conseiller");
+    await page.click("#form-identite button[type=submit]");
+    await page.waitForFunction(() => /Dali/.test(document.getElementById("salutation").textContent));
+    await page.click("#tab-preferences");
+    await page.selectOption("#param-accueil", "credit");
+    await page.waitForFunction(() => /« Crédit »/.test([...document.querySelectorAll(".toast")].map((t) => t.textContent).join(" ")));
+    await page.goto(base + "/espace/");
+    await page.waitForSelector("#vue-credit:not([hidden])");
+    await page.goto(base + "/espace/#compte?onglet=utilisation");
+    await page.waitForFunction(() => /sur 200/.test(document.getElementById("u-simulations").textContent));
+    await page.keyboard.press("Tab");
+    await page.goto(base + "/espace/#compte?onglet=profil");
+    await page.click("#param-retirer");
+    await page.waitForFunction(() => !document.querySelector("#avatar img"));
+    assert(faux.photos().size === 0, "photo effacée du stockage");
+    await page.click("#tab-preferences");
+    await page.selectOption("#param-accueil", "orbite");
+  });
+
   await etape("déconnexion puis suppression définitive du compte", async () => {
-    await page.goto(base + "/espace/#compte");
+    await page.goto(base + "/espace/#compte?onglet=donnees");
     await page.waitForSelector("#supprimer-compte");
     await page.click("#supprimer-compte");
     await page.waitForSelector("#dlg-supprimer-compte[open]");

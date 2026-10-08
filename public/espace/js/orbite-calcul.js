@@ -588,6 +588,28 @@
       if (pr.statut === "hors_portee") ajouter(2, pr.credit ? "credit" : "epargne", pr.libelle, "Ce projet dépasse aujourd'hui votre capacité" + (pr.epargneMensuelle > 0 ? " : il faudrait épargner " + ent(pr.epargneMensuelle) + " DT par mois" : "") + ". Allongez l'horizon, réduisez le montant ou augmentez l'apport.");
       else if (pr.statut === "a_preparer" && pr.epargneMensuelle > 0) ajouter(1, pr.credit ? "credit" : "epargne", pr.libelle, "Mettez de côté " + ent(pr.epargneMensuelle) + " DT par mois pendant " + pr.horizonAns + " an" + (pr.horizonAns > 1 ? "s" : "") + " pour le rendre possible.");
     });
+    /* Chaque conseil mène à l'action utile (et non au module en général). */
+    var immoAuj = (sy.capacite[b].credits || []).filter(function (c) { return c.cle === "immo"; })[0];
+    var versementConseil = (meilleure && meilleure.versementMensuel) || 0;
+    var LIENS = [
+      [/^Budget dépassé/, "#profil?section=budget", "Revoir mon budget"],
+      [/^Endettement/, "#profil?section=credits", "Voir mes crédits"],
+      [/^Votre marge revient/, "#orbite?section=marge", "Voir le calendrier de ma marge"],
+      [/^Des taux à garder/, "#profil?section=credits", "Voir mes crédits"],
+      [/^Votre capacité d'emprunt/, immoAuj ? "#credit?type=immo&capital=" + Math.floor(immoAuj.capital) + "&mois=" + immoAuj.dureeMois + "&taux=" + immoAuj.tauxPct : "#credit", "Simuler ce crédit"],
+      [/^Comparez les banques/, "#profil?section=banque", "Régler la règle de ma banque"],
+      [/^Réduisez votre impôt/, "#epargne" + (versementConseil ? "?versement=" + versementConseil : ""), versementConseil ? "Simuler " + versementConseil + " DT par mois" : "Simuler"],
+      [/^Avantage fiscal/, "#epargne", "Voir mon épargne"],
+      [/^Proche de la tranche/, "#salaire", "Voir mon salaire"],
+      [/^Chef de famille/, "#profil?section=identite", "Compléter ma situation"],
+      [/^Contrat à durée/, "#profil?section=identite", "Voir mon profil"],
+      [/^(Capital estimé|Votre épargne en cours)/, "#profil?section=contrats", "Mettre à jour mon contrat"],
+      [/^Épargne de précaution/, "#profil?section=budget", "Indiquer mon épargne"]
+    ];
+    liste.forEach(function (c) {
+      var r = LIENS.filter(function (l) { return l[0].test(c.titre); })[0];
+      c.lien = r ? { href: r[1], libelle: r[2] } : c.module === "budget" ? null : { href: "#profil?section=projets", libelle: "Voir mes projets" };
+    });
     return liste.sort(function (a, b) { return b.niveau - a.niveau; });
   }
 

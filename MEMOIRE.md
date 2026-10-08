@@ -278,6 +278,30 @@ L'alerte de l'outil de sécurité Supabase restera affichée tant que l'option n
 
 Dans l'e2e, le choix du thème se fait par `dispatchEvent("click")` : la barre fixe peut recouvrir l'élément après une capture pleine page.
 
+## 3 terdecies. Conseils cliquables, photo de profil, Paramètres façon Claude (8 oct.)
+
+- **Liens des conseils** : dans `orbite-calcul.js`, la fonction `conseils()` utilise une table `LIENS` qui attribue à chaque conseil `c.lien = {href, libelle}`. Chaque lien mène à l'endroit exact où agir, et non plus à un « Voir → » générique :
+  - endettement → `#profil?section=credits` ;
+  - marge → `#orbite?section=marge`, qui défile jusqu'au calendrier des paliers ;
+  - capacité → `#credit?type=immo&capital=…` ;
+  - banques → `#profil?section=banque` ;
+  - impôt → `#epargne?versement=N` ;
+  - contrats, précaution, chef de famille → sections correspondantes du profil.
+  Le rendu se fait dans `vue-orbite.js` (`a.lien-action.conseil__lien`, placé sous le texte).
+- **Photo Google absente** : la cause était la CSP, dont `img-src` bloquait `*.googleusercontent.com`. Elle autorise désormais ce domaine et `https://txrwgqgnqdkipwtwpevl.supabase.co`.
+- **Photo importée** : migration `0005_avatars.sql`, compartiment privé `avatars` (1 Mo, webp, png ou jpeg). Les politiques RLS limitent l'accès au dossier `{uid}/`. Le navigateur recadre l'image en 256 × 256 au format WebP. L'affichage passe par une URL signée valable 1 h.
+  Métadonnées : `orbite_avatar` vaut `stockage`, `google` ou `aucun` ; `orbite_avatar_v` sert à contourner le cache. La suppression du compte efface aussi la photo.
+- **Paramètres** (`#compte?onglet=…`, `parametres.js`) : onglets ARIA navigables au clavier.
+  - Profil : photo, nom complet, « Comment Orbite doit vous appeler ? » (`orbite_appel`, utilisé dans la salutation), activité (`orbite_metier`).
+  - Préférences : thème, animations (localStorage `ef-mouvement` et `data-mouvement="reduit"`), page d'ouverture (`orbite_accueil`).
+  - Sécurité : mot de passe, déconnexion partout, dernière connexion.
+  - Abonnement.
+  - Utilisation : membre depuis, profil complété à X %, simulations sur 200, nombre de conseils.
+  - Données : export et suppression.
+- **Mise en page** : sur mobile, les onglets passent à la ligne. Entre 860 et 1199 px, les réglages s'empilent sur une seule colonne (la colonne de 280 px faisait déborder les boutons à 1024 px).
+- **Tests** : le faux Supabase gère le stockage (envoi en multipart, signature, lecture, suppression). L'e2e importe un PNG valide, puis vérifie le surnom, la page d'ouverture et le retrait de la photo. Résultats : 20/20, `npm test` 282/282, aucun débordement de 320 à 1920 px.
+- **Reste à faire pour l'utilisateur** : dans Mon profil, choisir « BH Bank / Le brut » et indiquer décembre comme mois du contrat d'assurance vie.
+
 ## 4. Prochaines actions (améliorations possibles, rien de bloquant)
 
 1. Vérifier le site en ligne après chaque déploiement (Cloudflare se déploie depuis `main`).
