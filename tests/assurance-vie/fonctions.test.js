@@ -1,18 +1,18 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const Scenario = require('../../public/outils/assurance-vie/js/scenario.js');
-const Projection = require('../../public/outils/assurance-vie/js/projection.js');
-const Moteur = require('../../public/outils/assurance-vie/js/moteur-fiscal.js');
-const Stress = require('../../public/outils/assurance-vie/js/stress.js');
-const Couple = require('../../public/outils/assurance-vie/js/couple.js');
-const Objectifs = require('../../public/outils/assurance-vie/js/objectifs.js');
-const Comparateur = require('../../public/outils/assurance-vie/js/comparateur.js');
-const Historique = require('../../public/outils/assurance-vie/js/historique.js');
-const Xlsx = require('../../public/outils/assurance-vie/js/xlsx.js');
-const Releve = require('../../public/outils/assurance-vie/js/releve.js');
-const Commandes = require('../../public/outils/assurance-vie/js/commandes.js');
-const Rappels = require('../../public/outils/assurance-vie/js/rappels.js');
+const Scenario = require('../../public/moteurs/vie/scenario.js');
+const Projection = require('../../public/moteurs/vie/projection.js');
+const Moteur = require('../../public/moteurs/vie/moteur-fiscal.js');
+const Stress = require('../../public/moteurs/vie/stress.js');
+const Couple = require('../../public/moteurs/vie/couple.js');
+const Objectifs = require('../../public/moteurs/vie/objectifs.js');
+const Comparateur = require('../../public/moteurs/vie/comparateur.js');
+const Historique = require('../../public/moteurs/vie/historique.js');
+const Xlsx = require('../../public/moteurs/vie/xlsx.js');
+const Releve = require('../../public/moteurs/vie/releve.js');
+const Commandes = require('../../public/moteurs/vie/commandes.js');
+const Rappels = require('../../public/moteurs/vie/rappels.js');
 
 const etat = (x) => Object.assign(Scenario.defauts(), { revenu: 60000, versement: 400, versementCea: 200 }, x || {});
 
@@ -110,7 +110,7 @@ test('xlsx : archive ZIP valide avec feuilles, formules et caractères spéciaux
 });
 
 test('relevé PDF : texte extrait et valeurs repérées', async () => {
-  const { jsPDF } = require('../../public/outils/assurance-vie/assets/vendor/jspdf.umd.min.js');
+  const { jsPDF } = require('../../public/espace/vendor/jspdf.umd.min.js');
   const doc = new jsPDF({ compress: true });
   ['Valeur de rachat au 31/12/2025 : 12 345,678 TND', 'Taux de rendement net servi 2025 : 6,25 %', 'Taux minimum garanti : 2 %',
     'Frais de gestion annuels : 0,8 %', 'Frais sur versements : 3 %', 'Prime mensuelle : 450,000 TND'].forEach((l, i) => doc.text(l, 10, 10 + i * 10));

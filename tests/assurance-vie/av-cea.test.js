@@ -1,12 +1,12 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const M = require('../../public/outils/assurance-vie/js/moteur-fiscal.js');
-const P = require('../../public/outils/assurance-vie/js/projection.js');
-const S = require('../../public/outils/assurance-vie/js/scenario.js');
-const R = require('../../public/outils/assurance-vie/js/rachat.js');
-const Pv = require('../../public/outils/assurance-vie/js/prevoyance.js');
-const Baremes = require('../../public/outils/assurance-vie/js/baremes.js');
+const M = require('../../public/moteurs/vie/moteur-fiscal.js');
+const P = require('../../public/moteurs/vie/projection.js');
+const S = require('../../public/moteurs/vie/scenario.js');
+const R = require('../../public/moteurs/vie/rachat.js');
+const Pv = require('../../public/moteurs/vie/prevoyance.js');
+const Baremes = require('../../public/moteurs/vie/baremes.js');
 
 const proche = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} ≠ ${b}`);
 const base = (x) => Object.assign(S.defauts(), { revenu: 60000 }, x || {});

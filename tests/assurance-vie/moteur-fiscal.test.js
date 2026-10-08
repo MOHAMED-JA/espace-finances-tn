@@ -1,8 +1,8 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const Baremes = require('../../public/outils/assurance-vie/js/baremes.js');
-const M = require('../../public/outils/assurance-vie/js/moteur-fiscal.js');
+const Baremes = require('../../public/moteurs/vie/baremes.js');
+const M = require('../../public/moteurs/vie/moteur-fiscal.js');
 
 const proche = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} ≠ ${b}`);
 

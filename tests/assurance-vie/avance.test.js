@@ -1,13 +1,12 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const S = require('../../public/outils/assurance-vie/js/scenario.js');
-const P = require('../../public/outils/assurance-vie/js/projection.js');
-const MC = require('../../public/outils/assurance-vie/js/montecarlo.js');
-const St = require('../../public/outils/assurance-vie/js/strategie.js');
-const Ct = require('../../public/outils/assurance-vie/js/contrats.js');
-const Cal = require('../../public/outils/assurance-vie/js/calendrier.js');
-const Th = require('../../public/outils/assurance-vie/js/theme.js');
+const S = require('../../public/moteurs/vie/scenario.js');
+const P = require('../../public/moteurs/vie/projection.js');
+const MC = require('../../public/moteurs/vie/montecarlo.js');
+const St = require('../../public/moteurs/vie/strategie.js');
+const Ct = require('../../public/moteurs/vie/contrats.js');
+const Cal = require('../../public/moteurs/vie/calendrier.js');
 
 const proche = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} ≠ ${b}`);
 const base = (x) => Object.assign(S.defauts(), { revenu: 60000, versement: 500 }, x || {});
@@ -128,13 +127,3 @@ test('calendrier : échappement et repli des lignes longues', () => {
   assert.ok(ics.includes('FREQ=MONTHLY;INTERVAL=3;COUNT=40'));
 });
 
-/* ---------- Thème ---------- */
-test('thème : palette lisible (contraste ≥ 4,5 sur blanc), couleur invalide → null', () => {
-  ['#4f46e5', '#ffee00', '#00ff88', '#0f766e', '#c026d3', '#ffffff'].forEach((h) => {
-    const p = Th.palette(h);
-    assert.ok(p.contrasteBlanc >= 4.5, h + ' ' + p.contrasteBlanc);
-    assert.match(p.principale, /^#[0-9a-f]{6}$/);
-  });
-  assert.equal(Th.palette('rouge'), null);
-  assert.equal(Th.palette('#12345'), null);
-});
