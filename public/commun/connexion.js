@@ -6,6 +6,13 @@
   var params = new URLSearchParams(location.search);
   var suite = M.suiteSure(params.get("suite"));
   var origine = location.origin;
+  /* Lien d'invitation (?parrain=CODE) : le code est mémorisé, puis enregistré à la première ouverture d'Orbite. */
+  var parrain = (params.get("parrain") || "").toUpperCase();
+  if (/^[A-Z0-9]{8}$/.test(parrain)) {
+    try { localStorage.setItem("ef-parrain", parrain); } catch (e) {}
+    var invit = $("invitation");
+    if (invit) invit.hidden = false;
+  }
 
   var TEXTES = {
     connexion: { titre: "Bon retour", sous: "Connectez-vous pour retrouver vos simulations.", bouton: "Se connecter" },

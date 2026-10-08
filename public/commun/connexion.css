@@ -89,3 +89,4 @@
   .mini-orbite__anneau--c { animation: mo-tour 14s linear infinite reverse; }
 }
 @keyframes mo-tour { to { transform: rotate(360deg); } }
+.invitation { padding: 10px 14px; border-radius: 12px; border: 1px solid var(--signal); background: var(--signal-soft); color: var(--ink); font-size: 14px; }

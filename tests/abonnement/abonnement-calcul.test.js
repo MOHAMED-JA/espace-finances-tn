@@ -66,3 +66,24 @@ test('adresse de paiement : https ou chemin du site, rien d\'autre', () => {
   assert.equal(A.adressePaiementSure('http://insecure.example'), null);
   assert.ok(A.REFERENCE.test('ORB-20261008-AB12CD34'));
 });
+
+test('offres : prix du serveur (offre de lancement ou code promo) affiché à part des réductions de durée', () => {
+  const prix = [
+    { formule: 'mensuel', prix_initial: 9900, prix: 7900, code: 'LANCEMENT', remise_pct: 20, automatique: true, libelle: 'Offre de lancement' },
+    { formule: 'semestriel', prix_initial: 49900, prix: 49900, code: null, remise_pct: 0 },
+    { formule: 'annuel', prix_initial: 79900, prix: 55900, code: 'AMI30', remise_pct: 30, automatique: false }
+  ];
+  const o = Object.fromEntries(A.offres(FORMULES, prix).map((x) => [x.cle, x]));
+  assert.equal(o.mensuel.prix, 7.9);
+  assert.equal(o.mensuel.prixAvant, 9.9);
+  assert.deepEqual(o.mensuel.promo, { code: 'LANCEMENT', remisePct: 20, automatique: true, libelle: 'Offre de lancement', fin: null });
+  assert.equal(o.semestriel.promo, null);
+  assert.equal(o.semestriel.prixAvant, null);
+  assert.equal(o.annuel.prix, 55.9);
+  assert.equal(o.annuel.prixMois, 4.658);
+  assert.equal(o.annuel.reductionPct, 33, 'réduction de durée calculée sur les prix de base');
+  assert.ok(o.annuel.recommandee);
+  /* Sans prix du serveur : comportement inchangé. */
+  assert.equal(A.offres(FORMULES)[2].prix, 79.9);
+  assert.equal(A.offres(FORMULES)[2].promo, null);
+});

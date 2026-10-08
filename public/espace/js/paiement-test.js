@@ -16,7 +16,7 @@
     $("pt-formule").textContent = d.libelle || d.formule;
     $("pt-duree").textContent = d.mois === 1 ? "1 mois" : d.mois + " mois";
     $("pt-ref").textContent = d.reference;
-    $("pt-montant").textContent = montant(d.montant_millimes);
+    $("pt-montant").textContent = montant(d.montant_millimes) + (d.prix_initial_millimes && d.code_promo ? " (au lieu de " + montant(d.prix_initial_millimes) + ", code " + d.code_promo + ")" : "");
     $("pt-recap").setAttribute("aria-busy", "false");
     if (d.statut !== "cree") { erreur("Cette commande est déjà traitée."); return; }
     $("pt-ok").disabled = false; $("pt-refus").disabled = false;

@@ -343,6 +343,26 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Alerte par e-mail** : non faite, car il faut un service d'envoi (Resend, par exemple) et une clé que l'utilisateur doit créer. Les alertes passent pour l'instant par le tableau de bord et la pastille.
 - **Tests** : le faux Supabase gère les fonctions admin et `marquerAdmin()`. Une étape e2e vérifie le refus pour un compte ordinaire, les compteurs, la liste, « marquer lu », la recherche et l'absence de données personnelles dans les compteurs. Résultat : 21/21.
 
+## 3 sexdecies. Codes promo, offre de lancement, parrainage (9 oct., lot 2 sur 6)
+
+- **Migration `0007_promo_parrainage.sql`** (appliquée).
+  - Codes promo : table `codes_promo` (remise de 1 à 90 %, formules à `null` = toutes, début et fin, nombre maximal d'utilisations, `automatique` pour l'offre de lancement, `actif`). La table `paiements` reçoit les colonnes `code_promo` et `prix_initial_millimes`.
+  - Calcul du prix : `prix_formule(formule, code)` calcule le prix côté serveur. Il retient la meilleure remise entre l'offre automatique et le code saisi (pas de cumul), arrondie à 100 millimes, et au moins 1 DT. Le navigateur n'y a pas accès directement ; la fonction serveur l'appelle.
+  - `offres_en_cours(code)` est accessible aux visiteurs, mais le code est ignoré s'ils ne sont pas connectés. `verifier_code(code)` est réservé aux comptes connectés.
+  - Parrainage : tables `parrains` (code de 8 caractères généré à la première demande) et `parrainages` (filleul, parrain, `recompense_le`). Fonctions `mon_parrainage()` et `utiliser_code_parrain(code)`, valable dans les 14 jours après l'inscription, avant tout paiement, ni son propre code ni un second code.
+  - `activer_paiement` compte l'utilisation du code. Au premier paiement d'un filleul, il ajoute 1 mois au filleul et 1 mois au parrain (fin de son accès en cours, ou maintenant).
+  - Administration : `admin_codes()`, `admin_code_enregistrer(jsonb)`, `admin_code_activer(code, actif)`.
+  - Test complet effectué par SQL (transaction annulée) : le filleul obtient 399 j, soit l'essai + 12 mois + 1 mois ; le parrain obtient l'essai + 1 mois.
+- **Fonction `paiement` v4** : l'action `creer` accepte `code`. Le prix vient de `prix_formule`. La commande enregistre le code et le prix initial, et la description affiche la remise. L'action `detail` renvoie aussi le prix initial et le code.
+- **En production** : `LANCEMENT`, −30 % automatique jusqu'au 31/12/2026. Prix : mensuel 6,900, semestriel 34,900, annuel 55,900. Modifiable dans Administration → Codes promo.
+- **Client** :
+  - Les prix serveur arrivent dans `abonnement-calcul.offres(formules, prixServeur)` : `promo`, `prixAvant`, et `prix` = prix final. Les réductions de durée restent calculées sur les prix de base.
+  - La page d'abonnement affiche les prix barrés, la pastille de l'offre et le champ « Code promo » (Appliquer / Retirer).
+  - Bloc parrainage : code, « Copier le lien », « Partager » (si `navigator.share`), bilan, et saisie d'un code si `peut_saisir`.
+  - Lien d'invitation `/connexion.html?mode=inscription&parrain=CODE` : le code est mémorisé dans localStorage `ef-parrain`, puis enregistré à l'ouverture d'Orbite.
+  - L'administration permet de lister, créer, modifier et activer les codes, et affiche le bilan du parrainage. Les CGV ont une nouvelle section « Offres, codes promo et parrainage ».
+- **Tests** : nouvelle étape e2e. L'admin crée LANCEMENT et AMI30 ; on vérifie les prix barrés, un code faux, AMI30 sur l'annuel (55,900), puis le filleul inscrit par le lien qui paie l'annuel. Résultats : le parrain gagne environ 30 j, e2e 22/22, unitaires 286.
+
 ## 4. Prochaines actions (améliorations possibles, rien de bloquant)
 
 1. Vérifier le site en ligne après chaque déploiement (Cloudflare se déploie depuis `main`).

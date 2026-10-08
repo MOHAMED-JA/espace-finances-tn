@@ -2,7 +2,8 @@
  * Orbite — fonction serveur « paiement » (Supabase Edge Function).
  *
  * Actions (POST JSON, utilisateur connecté : en-tête Authorization: Bearer <jeton>) :
- *   { action: "creer", formule }        → crée la commande et renvoie l'adresse de la page de paiement
+ *   { action: "creer", formule, code? } → crée la commande (prix calculé par la base : offre de lancement
+ *                                         ou code promo) et renvoie l'adresse de la page de paiement
  *   { action: "verifier", reference }   → interroge la passerelle ; active l'abonnement si le paiement est confirmé
  *   { action: "detail", reference }     → résumé d'une commande de l'utilisateur (page de paiement de test)
  *   { action: "simuler", reference, resultat: "ok" | "refuse" } → mode test uniquement
@@ -78,9 +79,13 @@ async function verifierEtActiver(p: Record<string, any>) {
   return { statut: v.statut };
 }
 
-async function creer(req: Request, u: { id: string }, formule: string) {
+async function creer(req: Request, u: { id: string }, formule: string, code: string) {
   const { data: f } = await admin.from("formules").select("*").eq("cle", formule).eq("actif", true).maybeSingle();
   if (!f) return repondre(req, { erreur: "Formule inconnue" }, 400);
+  /* Prix final calculé par la base (meilleure remise entre l'offre automatique et le code saisi). */
+  const codeNorm = /^[A-Za-z0-9-]{3,20}$/.test(code) ? code.toUpperCase() : null;
+  const { data: px, error: ePx } = await admin.rpc("prix_formule", { p_formule: f.cle, p_code: codeNorm });
+  if (ePx || !px || !(px.prix > 0)) return repondre(req, { erreur: "Prix indisponible" }, 500);
   /* Anti-abus : au plus 10 commandes non payées par heure et par compte. */
   const depuis = new Date(Date.now() - 3600_000).toISOString();
   const { count } = await admin.from("paiements").select("id", { count: "exact", head: true }).eq("user_id", u.id).eq("statut", "cree").gte("cree_le", depuis);
@@ -91,11 +96,14 @@ async function creer(req: Request, u: { id: string }, formule: string) {
   /* Réponse 200 (et non 403) : c'est un état normal avant l'ouverture, pas une erreur technique. */
   if (pg.nom === "test" && !(await testeurAutorise(u.id))) return repondre(req, { erreur: MESSAGE_BIENTOT, code: "bientot" });
   const reference = nouvelleReference();
-  const { error } = await admin.from("paiements").insert({ user_id: u.id, formule: f.cle, montant_millimes: f.prix_millimes, passerelle: pg.nom, reference });
+  const { error } = await admin.from("paiements").insert({
+    user_id: u.id, formule: f.cle, montant_millimes: px.prix, passerelle: pg.nom, reference,
+    code_promo: px.code || null, prix_initial_millimes: px.code ? px.prix_initial : null
+  });
   if (error) return repondre(req, { erreur: "Commande impossible" }, 500);
   try {
     const c = await pg.creer({
-      reference, montantMillimes: f.prix_millimes, description: "Orbite — abonnement " + f.libelle.toLowerCase(),
+      reference, montantMillimes: px.prix, description: "Orbite — abonnement " + f.libelle.toLowerCase() + (px.code ? " (−" + px.remise_pct + " %)" : ""),
       urlRetour: env.URL_APPLICATION + "/espace/?paiement=" + reference,
       urlEchec: env.URL_APPLICATION + "/espace/?paiement=" + reference + "&echec=1",
       urlWebhook: URL_FONCTION + "?webhook=1&ref=" + reference
@@ -128,7 +136,7 @@ Deno.serve(async (req) => {
   let corps: Record<string, any>;
   try { corps = await req.json(); } catch { return repondre(req, { erreur: "Requête invalide" }, 400); }
 
-  if (corps.action === "creer") return creer(req, u, String(corps.formule || ""));
+  if (corps.action === "creer") return creer(req, u, String(corps.formule || ""), String(corps.code || ""));
 
   const ref = String(corps.reference || "");
   if (!REFERENCE_VALIDE.test(ref)) return repondre(req, { erreur: "Référence invalide" }, 400);
@@ -137,7 +145,7 @@ Deno.serve(async (req) => {
 
   if (corps.action === "detail") {
     const { data: f } = await admin.from("formules").select("libelle, mois").eq("cle", p.formule).maybeSingle();
-    return repondre(req, { reference: p.reference, formule: p.formule, libelle: f && f.libelle, mois: f && f.mois, montant_millimes: p.montant_millimes, statut: p.statut, passerelle: p.passerelle });
+    return repondre(req, { reference: p.reference, formule: p.formule, libelle: f && f.libelle, mois: f && f.mois, montant_millimes: p.montant_millimes, prix_initial_millimes: p.prix_initial_millimes, code_promo: p.code_promo, statut: p.statut, passerelle: p.passerelle });
   }
 
   if (corps.action === "simuler") {

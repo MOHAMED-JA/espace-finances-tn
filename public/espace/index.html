@@ -535,6 +535,15 @@
               <legend class="ab-legende">Choisissez votre formule</legend>
               <div class="ab-offres" id="ab-offres" aria-busy="true"></div>
             </fieldset>
+            <div class="ab-code">
+              <label for="ab-code" class="champ__lib">Code promo</label>
+              <div class="ab-code__ligne">
+                <div class="saisie"><input id="ab-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" placeholder="Ex. BIENVENUE" aria-describedby="ab-code-msg"></div>
+                <button type="button" class="bouton bouton--petit" id="ab-code-appliquer">Appliquer</button>
+                <button type="button" class="bouton bouton--petit bouton--fantome" id="ab-code-retirer" hidden>Retirer</button>
+              </div>
+              <p class="ab-code__msg" id="ab-code-msg" aria-live="polite"></p>
+            </div>
             <div class="ab-action">
               <button type="submit" class="bouton bouton--plein ab-payer" id="ab-payer" disabled><svg aria-hidden="true"><use href="/orbite/icones.svg#cadenas"/></svg><span id="ab-payer-lib">Choisir une formule</span></button>
               <p class="ab-action__note" id="ab-erreur" role="alert" hidden></p>
@@ -554,6 +563,30 @@
               <li>Épargne vie & CEA : économie d'impôt, projections, stratégie</li>
               <li>Conseils personnalisés et simulations enregistrées (jusqu'à 200)</li>
             </ul>
+          </section>
+          <section class="panneau ab-parrainage" id="ab-parrainage" aria-labelledby="ab-parr-titre" hidden>
+            <div class="ab-parrainage__tete">
+              <span class="ab-parrainage__icone" aria-hidden="true"><svg><use href="/orbite/icones.svg#etoile"/></svg></span>
+              <div><h2 id="ab-parr-titre">Parrainez vos proches : un mois offert chacun</h2>
+              <p>Quand une personne inscrite avec votre lien prend son premier abonnement, vous recevez tous les deux un mois gratuit.</p></div>
+            </div>
+            <div class="ab-parrainage__code">
+              <span class="champ__lib">Votre code</span>
+              <strong class="chiffre" id="ab-parr-code">—</strong>
+              <div class="ab-parrainage__actions">
+                <button type="button" class="bouton bouton--petit" id="ab-parr-copier"><svg aria-hidden="true"><use href="/orbite/icones.svg#copier"/></svg>Copier le lien</button>
+                <button type="button" class="bouton bouton--petit" id="ab-parr-partager" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#partager"/></svg>Partager</button>
+              </div>
+            </div>
+            <p class="ab-parrainage__bilan" id="ab-parr-bilan"></p>
+            <form class="ab-parrainage__saisie" id="ab-parr-form" hidden novalidate>
+              <label for="ab-parr-saisie" class="champ__lib">Quelqu'un vous a invité ? Saisissez son code</label>
+              <div class="ab-code__ligne">
+                <div class="saisie"><input id="ab-parr-saisie" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="8" placeholder="Ex. HDWESDS4" aria-describedby="ab-parr-msg"></div>
+                <button type="submit" class="bouton bouton--petit">Valider</button>
+              </div>
+              <p class="ab-code__msg" id="ab-parr-msg" aria-live="polite"></p>
+            </form>
           </section>
           <section class="panneau ab-historique" aria-labelledby="ab-hist-titre">
             <h2 id="ab-hist-titre">Historique des paiements</h2>
@@ -607,6 +640,34 @@
                   <div><h3>Pages les plus visitées</h3><ol class="admin__classement" id="admin-vues"></ol></div>
                   <div><h3>Simulateurs les plus utilisés</h3><ol class="admin__classement" id="admin-simulations"></ol></div>
                 </div>
+              </section>
+              <section class="panneau admin__bloc" aria-labelledby="admin-t-codes">
+                <h2 id="admin-t-codes">Codes promo et parrainage</h2>
+                <p class="admin__note" id="admin-parrainage"></p>
+                <div class="admin__table-zone" tabindex="0" role="region" aria-labelledby="admin-t-codes">
+                  <table class="admin__table">
+                    <thead><tr><th scope="col">Code</th><th scope="col">Remise</th><th scope="col">Formules</th><th scope="col">Validité</th><th scope="col">Utilisations</th><th scope="col">Actif</th></tr></thead>
+                    <tbody id="admin-codes"></tbody>
+                  </table>
+                </div>
+                <details class="admin__nouveau">
+                  <summary>Créer ou modifier un code</summary>
+                  <form id="admin-code-form" class="admin__form" novalidate>
+                    <div class="champ"><label for="ac-code">Code</label><div class="saisie"><input id="ac-code" required maxlength="20" autocomplete="off" placeholder="BIENVENUE" pattern="[A-Za-z0-9-]{3,20}"></div></div>
+                    <div class="champ"><label for="ac-remise">Remise</label><div class="saisie"><input id="ac-remise" type="text" inputmode="numeric" required placeholder="20"><span class="saisie__unite">%</span></div></div>
+                    <div class="champ"><label for="ac-libelle">Libellé affiché</label><div class="saisie"><input id="ac-libelle" maxlength="80" placeholder="Offre de lancement"></div></div>
+                    <div class="champ"><label for="ac-fin">Fin (facultatif)</label><div class="saisie"><input id="ac-fin" type="date"></div></div>
+                    <div class="champ"><label for="ac-max">Utilisations max. (facultatif)</label><div class="saisie"><input id="ac-max" type="text" inputmode="numeric" placeholder="100"></div></div>
+                    <fieldset class="champ admin__formules"><legend>Formules concernées (aucune cochée : toutes)</legend>
+                      <label><input type="checkbox" name="ac-formule" value="mensuel"> Mensuel</label>
+                      <label><input type="checkbox" name="ac-formule" value="semestriel"> Semestriel</label>
+                      <label><input type="checkbox" name="ac-formule" value="annuel"> Annuel</label>
+                    </fieldset>
+                    <label class="admin__case"><input type="checkbox" id="ac-auto"> Offre automatique (offre de lancement : appliquée à tous, sans saisie)</label>
+                    <p class="erreur-champ" id="ac-erreur" role="alert" hidden></p>
+                    <button type="submit" class="bouton bouton--plein bouton--petit">Enregistrer le code</button>
+                  </form>
+                </details>
               </section>
               <section class="panneau admin__bloc" aria-labelledby="admin-t-liste">
                 <div class="admin__tete"><h2 id="admin-t-liste">Comptes</h2>

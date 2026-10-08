@@ -15,8 +15,12 @@
 
   function dt(millimes) { return Math.round(millimes) / 1000; }
 
-  /* Offres présentées : la formule la plus longue est mise en avant et présélectionnée. */
-  function offres(formules) {
+  /* Offres présentées : la formule la plus longue est mise en avant et présélectionnée.
+     prixServeur (facultatif, fonction offres_en_cours) : prix final par formule, offre de lancement ou code promo compris.
+     Les réductions de durée se calculent sur les prix de base ; la remise promo est présentée à part. */
+  function offres(formules, prixServeur) {
+    var px = {};
+    (prixServeur || []).forEach(function (x) { if (x && x.formule && x.prix > 0) px[x.formule] = x; });
     var liste = (formules || []).filter(function (f) { return f && f.mois > 0 && f.prix_millimes > 0; })
       .slice().sort(function (a, b) { return a.mois - b.mois; });
     if (!liste.length) return [];
@@ -27,12 +31,16 @@
       var prixMois = f.prix_millimes / f.mois;
       var sansRemise = prixMoisRef * f.mois;
       var economie = Math.max(0, sansRemise - f.prix_millimes);
+      var p = px[f.cle], promo = p && p.prix < f.prix_millimes && p.code ? { code: p.code, remisePct: p.remise_pct, automatique: !!p.automatique, libelle: p.libelle || "", fin: p.fin || null } : null;
+      var paye = promo ? p.prix : f.prix_millimes;
       return {
         cle: f.cle,
         libelle: f.libelle,
         mois: f.mois,
-        prix: dt(f.prix_millimes),
-        prixMois: Math.round(prixMois) / 1000,
+        prix: dt(paye),
+        prixAvant: promo ? dt(f.prix_millimes) : null,
+        promo: promo,
+        prixMois: Math.round(paye / f.mois) / 1000,
         reductionPct: f === reference ? 0 : Math.round((1 - prixMois / prixMoisRef) * 100),
         economie: dt(economie),
         moisOfferts: f === reference ? 0 : Math.floor(economie / prixMoisRef + 1e-9),
