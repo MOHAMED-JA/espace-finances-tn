@@ -135,9 +135,10 @@ body.attente .app { visibility: hidden; }
 .point--epargne { color: var(--epargne-lum); }
 
 /* ---------- Budget orbital ---------- */
-.budget { display: flex; flex-direction: column; gap: 16px; }
+.budget { display: flex; flex-direction: column; gap: 16px; container-type: inline-size; }
 .budget__corps { position: relative; display: grid; gap: 20px; align-items: center; }
-@media (min-width: 520px) { .budget__corps { grid-template-columns: 200px 1fr; } }
+/* Anneau et légende côte à côte seulement si le panneau est assez large (et non selon l'écran). */
+@container (min-width: 470px) { .budget__corps { grid-template-columns: 200px minmax(0, 1fr); } }
 .anneau { width: 200px; height: 200px; transform: rotate(-90deg); justify-self: center; }
 .anneau__fond { fill: none; stroke: var(--surface-2); stroke-width: 14; }
 .anneau__arc { fill: none; stroke-width: 14; stroke-linecap: round; stroke-dasharray: var(--l, 0) 100; stroke-dashoffset: var(--o, 0); transition: stroke-dasharray 700ms var(--ressort), stroke-dashoffset 700ms var(--ressort); }
@@ -145,12 +146,12 @@ body.attente .app { visibility: hidden; }
 .arc--logement { stroke: var(--ambre); background: var(--ambre); }
 .arc--epargne { stroke: var(--epargne); background: var(--epargne); }
 .arc--reste { stroke: var(--salaire); background: var(--salaire); }
-.anneau__centre { position: absolute; left: 100px; top: 100px; transform: translate(-50%, -50%); display: grid; justify-items: center; align-content: center; text-align: center; pointer-events: none; width: 140px; height: 140px; border-radius: 50%; background: var(--surface); }
-@media (max-width: 519px) { .anneau__centre { left: 50%; } }
+.anneau__centre { position: absolute; left: 50%; top: 100px; transform: translate(-50%, -50%); display: grid; justify-items: center; align-content: center; text-align: center; pointer-events: none; width: 140px; height: 140px; border-radius: 50%; background: var(--surface); }
+@container (min-width: 470px) { .anneau__centre { left: 100px; } }
 .anneau__centre span { font-size: 12px; color: var(--encre-3); font-weight: 600; }
 .anneau__centre strong { font-family: var(--affiche); font-size: 24px; font-weight: 760; letter-spacing: -.03em; }
 .budget__legende { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-.budget__legende li { display: grid; grid-template-columns: 12px 1fr auto; align-items: center; gap: 10px; font-size: 14.5px; }
+.budget__legende li { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; align-items: center; gap: 10px; font-size: 14.5px; }
 .budget__legende i { width: 12px; height: 12px; border-radius: 4px; }
 .budget__legende strong { font-weight: 700; }
 

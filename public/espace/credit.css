@@ -379,3 +379,7 @@
   .module--credit .cr-tableau td, .module--credit .cr-tableau th { font-size: 10px; padding: 3px 6px; }
   .module--credit .cr-tableau tr { break-inside: avoid; }
 }
+
+/* Onglets du graphique : sur petit écran, ils passent à la ligne au lieu de défiler (aucun onglet caché). */
+.module--credit #cr-gr-onglets { flex-wrap: wrap; overflow: visible; }
+.module--credit #cr-gr-onglets button { flex: 1 1 auto; }

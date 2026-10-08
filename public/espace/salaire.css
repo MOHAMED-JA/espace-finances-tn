@@ -87,9 +87,9 @@
 .module--salaire .actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
 /* Sections */
-.module--salaire .section { padding: 56px 0 4px; display: grid; gap: 22px; }
+.module--salaire .section { padding: 56px 0 4px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; }
 @media (min-width: 1100px) { .module--salaire .section { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 22px 44px; } }
-.module--salaire .section--large { grid-template-columns: 1fr !important; }
+.module--salaire .section--large { grid-template-columns: minmax(0, 1fr) !important; }
 .module--salaire .section__tete h2 { font-size: clamp(26px, 3vw, 36px); font-weight: 760; letter-spacing: -.035em; }
 .module--salaire .section__tete p { margin-top: 10px; font-size: 16.5px; color: var(--encre-2); max-width: 60ch; }
 .module--salaire .section__tete p b { font-weight: 780; }
@@ -109,9 +109,9 @@
 @media (prefers-reduced-motion: no-preference) { .module--salaire .grille-cent.attente span { transform: scale(.4); background: var(--filet); } }
 
 /* Augmentation et tranche d'impôt */
-.module--salaire .hausse-grille { display: grid; gap: 18px; }
+.module--salaire .hausse-grille { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
 @media (min-width: 1000px) { .module--salaire .hausse-grille { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; } }
-.module--salaire .hausse-reglage { display: grid; gap: 16px; }
+.module--salaire .hausse-reglage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .module--salaire .curseur-bloc { display: grid; gap: 6px; }
 .module--salaire .curseur-bloc__haut { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-weight: 650; }
 .module--salaire .curseur-bloc__val { font-family: var(--affiche); font-size: 30px; font-weight: 780; letter-spacing: -.02em; color: var(--net-t); }
@@ -175,7 +175,7 @@
 @media (max-width: 639px) {
   .module--salaire .detail table, .module--salaire .detail tbody, .module--salaire .detail tr, .module--salaire .detail td, .module--salaire .detail caption { display: block; }
   .module--salaire .detail thead { display: none; }
-  .module--salaire .detail tr { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; padding: 10px 16px; border-top: 1px solid var(--filet); }
+  .module--salaire .detail tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2px 12px; padding: 10px 16px; border-top: 1px solid var(--filet); }
   .module--salaire .detail td { padding: 0; border: 0; }
   .module--salaire .detail td:first-child { grid-column: 1 / -1; }
   .module--salaire .detail td.v { text-align: left; font-size: 14px; }
@@ -185,6 +185,10 @@
   .module--salaire .detail tr.sous td:first-child, .module--salaire .detail tr.sous td.v { padding-left: 14px; }
   .module--salaire .detail tr.cle { background: var(--net-doux); }
   .module--salaire .detail tr.cle td { background: transparent !important; }
+}
+/* Très petits écrans : « par mois » et « par an » l'un sous l'autre. */
+@media (max-width: 380px) {
+  .module--salaire .detail tr { grid-template-columns: minmax(0, 1fr); }
 }
 
 .module--salaire .courbe { padding: 16px 16px 8px; }

@@ -375,3 +375,6 @@ dialog.dialogue[open] { animation: dialogue-entre 260ms var(--sortie); }
   .panneau { transition: box-shadow 240ms ease; }
   .panneau:hover { box-shadow: var(--ombre-3); }
 }
+
+/* Très petits écrans : un bouton au libellé long passe à la ligne plutôt que de déborder. */
+@media (max-width: 400px) { .bouton { white-space: normal; text-align: center; padding-block: 8px; max-width: 100%; } }
