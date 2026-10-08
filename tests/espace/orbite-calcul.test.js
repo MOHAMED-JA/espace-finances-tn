@@ -272,3 +272,18 @@ test("taux du futur crédit immobilier : choisi, sinon crédit immobilier en cou
   assert.equal(a.capacite.net.credits.filter((c) => c.cle === "immo")[0].tauxPct, 4.5);
   assert.equal(a.capacite.net.credits.filter((c) => c.cle === "auto")[0].tauxPct, O.TMM + 3);
 });
+
+test("calendrier sur le brut, 17 salaires : à la fin de tous les crédits, 40 % de 68 000 ÷ 12", () => {
+  const sy = O.synthese(Object.assign({}, PROFIL_ENDETTE, { baseBanque: "brut", revenuBanque: "annuel" }), {}, MAINTENANT);
+  const pal = sy.capacite.brut.paliers, der = pal[pal.length - 1];
+  proche(sy.capacite.brut.revenu, 68000 / 12);
+  proche(der.mensualiteMax, 0.4 * 68000 / 12);
+  assert.equal(der.charges, 0);
+  assert.equal(der.dureeImmoMois, 240);
+  assert.equal(der.tauxPct, 4.5);
+  /* Vérification de l'utilisateur : 358 000 DT sur 20 ans à 4,5 % donnent une échéance d'environ 2 265 DT. */
+  assert.ok(der.capitalImmo > 358000 && der.capitalImmo < 358500, String(der.capitalImmo));
+  /* Chaque fin de crédit libère sa mensualité, en cumulant. */
+  proche(pal[0].mensualiteMax, 0.4 * 68000 / 12 - 875.894 - 497.93);
+  proche(pal[1].mensualiteMax, 0.4 * 68000 / 12 - 875.894);
+});

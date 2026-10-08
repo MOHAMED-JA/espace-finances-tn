@@ -7,7 +7,7 @@
   var O = window.Orbite, F = O.F, $ = O.$, doc = document;
   var OC = window.OrbiteCalcul;
   var NS = "http://www.w3.org/2000/svg";
-  var base = "net", baseChoisie = false;
+  var base = "net";
 
   /* ---------- Scène orbitale ---------- */
   var ORBITES = [
@@ -179,7 +179,7 @@
 
   /* Par défaut, la base de calcul est celle de la banque de l'utilisateur (profil). */
   function syncBase(sy) {
-    if (baseChoisie || base === sy.profil.baseBanque) return;
+    if (base === sy.profil.baseBanque) return;
     base = sy.profil.baseBanque;
     var r = doc.querySelector('input[name="base-capacite"][value="' + base + '"]');
     if (r) { r.checked = true; if (O.placerPastilles) O.placerPastilles(r.closest(".bloc-orbite")); }
@@ -362,7 +362,16 @@
   }
 
   doc.querySelectorAll('input[name="base-capacite"]').forEach(function (r) {
-    r.addEventListener("change", function () { base = this.value; baseChoisie = true; var sy = O.synthese(); if (sy) rendreCapacite(sy); if (sy) rendreScene(sy); });
+    /* Le choix est enregistré dans le profil (règle de la banque) : il reste valable à la prochaine visite
+       et s'applique au calendrier de la marge, aux conseils et au module Crédit. */
+    r.addEventListener("change", function () {
+      base = this.value;
+      var p = O.profil();
+      if (p && p.baseBanque !== base) {
+        O.majProfil({ baseBanque: base });
+        O.toast("Calcul sur le " + base + (p.banque ? ", comme " + p.banque : "") + " : enregistré dans votre profil.");
+      } else { var sy = O.synthese(); if (sy) { rendreCapacite(sy); rendreScene(sy); } }
+    });
   });
 
   /* ---------- Premier pas ---------- */

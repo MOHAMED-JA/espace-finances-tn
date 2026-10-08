@@ -341,3 +341,6 @@ Dans l'e2e, le choix du thème se fait par `dispatchEvent("click")` : la barre f
 - Crédit, scénarios (8 oct.) : un bouton corbeille `#cr-supprimer`, à côté de Dupliquer, supprime le scénario affiché. La touche Suppr fonctionne aussi sur un onglet. Le dernier scénario restant ne peut pas être supprimé. Un toast « Annuler » rétablit le scénario. Les lettres suivantes se décalent.
   Quand la colonne fait moins de 520 px (requête de conteneur sur `.cr-editeur__tete`), les actions passent sous les onglets, car les 3 onglets ne descendent pas sous ~304 px.
   Un clic sur un onglet redessine la liste : le focus est donc replacé sur l'onglet choisi.
+- Base de calcul de la banque (8 oct.) : la bascule « Sur le net / Sur le brut » de « Ce que la banque peut vous prêter » enregistre maintenant `baseBanque` dans le profil. Avant, ce choix était temporaire et le profil restait sur le net, d'où les 1 484 DT affichés à l'utilisateur au lieu de 2 266.
+  Contrôle de l'utilisateur : 4 000 × 17 ÷ 12 = 5 667 DT brut, × 40 % = 2 266,67 DT par mois ≈ 358 300 DT sur 20 ans à 4,5 % (test « calendrier sur le brut, 17 salaires »).
+  Le calendrier cumule les mensualités libérées : mars 2032 893 DT, juin 2032 1 391 DT, février 2039 2 267 DT.
