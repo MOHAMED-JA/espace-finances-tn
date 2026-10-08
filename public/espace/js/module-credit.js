@@ -306,7 +306,8 @@
     return '<section class="panneau cr-editeur" aria-labelledby="cr-ed-titre">' +
       '<div class="cr-editeur__tete"><h2 id="cr-ed-titre" class="panneau__titre">Votre crédit</h2>' +
         '<div class="cr-scenarios"><div class="onglets cr-onglets-sc" role="tablist" aria-label="Scénarios" id="cr-onglets-sc"></div>' +
-        '<button type="button" class="bouton bouton--petit cr-dupliquer" id="cr-dupliquer">' + ico("copier") + '<span>Dupliquer</span></button></div>' +
+        '<button type="button" class="bouton bouton--petit cr-dupliquer" id="cr-dupliquer">' + ico("copier") + '<span>Dupliquer</span></button>' +
+        '<button type="button" class="bouton bouton--petit cr-dupliquer cr-supprimer" id="cr-supprimer" hidden>' + ico("poubelle") + '<span>Supprimer</span></button></div>' +
       '</div>' +
       '<div class="cr-formulaire" id="cr-formulaire" role="tabpanel" aria-labelledby="cr-tab-0">' +
         '<fieldset class="cr-groupe"><legend class="champ__lib">Type de crédit</legend><div class="cr-puces" id="cr-types">' + puces + '</div></fieldset>' +
@@ -863,6 +864,10 @@
     var dup = $("cr-dupliquer");
     dup.disabled = S.scenarios.length >= 3;
     dup.setAttribute("aria-label", S.scenarios.length >= 3 ? "Trois scénarios au maximum" : "Dupliquer le scénario " + LETTRES[S.actif] + " en scénario " + LETTRES[S.scenarios.length]);
+    var sup = $("cr-supprimer");
+    sup.hidden = S.scenarios.length < 2;
+    sup.setAttribute("aria-label", "Supprimer le scénario " + LETTRES[S.actif]);
+    sup.title = "Supprimer le scénario " + LETTRES[S.actif];
   }
   function choisirScenario(i) {
     if (i === S.actif || !S.scenarios[i]) return;
@@ -885,13 +890,25 @@
     var t = $("cr-tab-" + S.actif); if (t) t.focus();
     signalerModif();
   }
+  /* Supprime un scénario (le dernier restant est conservé) ; les suivants changent de lettre. Annulable. */
   function supprimerScenario(i) {
-    if (i <= 0 || !S.scenarios[i]) return;
-    S.scenarios.splice(i, 1);
-    if (S.actif >= S.scenarios.length) S.actif = S.scenarios.length - 1;
+    if (S.scenarios.length < 2 || !S.scenarios[i]) return;
+    var retire = S.scenarios.splice(i, 1)[0], actifAvant = S.actif, lettre = LETTRES[i];
+    if (S.actif > i || S.actif >= S.scenarios.length) S.actif = Math.max(0, S.actif - 1);
     ecrireEditeur();
     calculer(true);
-    toast("Scénario retiré.");
+    var O = Orb(); if (O) requestAnimationFrame(function () { O.placerPastilles(racine); });
+    var t = $("cr-tab-" + S.actif); if (t) t.focus();
+    signalerModif();
+    toast("Scénario " + lettre + " supprimé.", { action: { libelle: "Annuler", fn: function () {
+      if (S.scenarios.length >= 3) return;
+      S.scenarios.splice(i, 0, retire);
+      S.actif = actifAvant;
+      ecrireEditeur();
+      calculer(true);
+      var O2 = Orb(); if (O2) requestAnimationFrame(function () { O2.placerPastilles(racine); });
+      signalerModif();
+    } } });
   }
 
   function rendreComparaison() {
@@ -928,7 +945,7 @@
       ecartTxt +
       '<div class="cr-graphe" id="cr-cmp-graphe"></div><p class="cr-graphe__resume" id="cr-cmp-resume"></p>' +
       '<div class="cr-cmp-actions">' + S.scenarios.map(function (sc, i) {
-        return i === 0 ? "" : '<button type="button" class="bouton bouton--petit bouton--fantome" data-sc-suppr="' + i + '">' + ico("poubelle") + 'Retirer le scénario ' + LETTRES[i] + '</button>';
+        return '<button type="button" class="bouton bouton--petit bouton--fantome" data-sc-suppr="' + i + '">' + ico("poubelle") + 'Supprimer le scénario ' + LETTRES[i] + '</button>';
       }).join("") + '</div>';
     var zone = $("cr-cmp-graphe"), w = largeur(zone);
     var series = res.map(function (r, i) {
@@ -1819,7 +1836,13 @@
       if (t.classList.contains("cr-outil")) construireOutil(t.getAttribute("data-outil"));
     }, true);
     /* Scénarios */
-    $("cr-onglets-sc").addEventListener("click", function (ev) { var b = ev.target.closest("[data-sc]"); if (b) choisirScenario(+b.getAttribute("data-sc")); });
+    $("cr-onglets-sc").addEventListener("click", function (ev) {
+      var b = ev.target.closest("[data-sc]");
+      if (!b) return;
+      choisirScenario(+b.getAttribute("data-sc"));
+      /* Les onglets sont redessinés : le focus revient sur l'onglet choisi. */
+      var t = $("cr-tab-" + S.actif); if (t && doc.activeElement !== t) t.focus();
+    });
     $("cr-onglets-sc").addEventListener("keydown", function (ev) {
       if (["ArrowLeft", "ArrowRight", "Home", "End"].indexOf(ev.key) === -1) return;
       ev.preventDefault();
@@ -1828,6 +1851,12 @@
       var t = $("cr-tab-" + i); if (t) t.focus();
     });
     $("cr-dupliquer").addEventListener("click", dupliquer);
+    $("cr-supprimer").addEventListener("click", function () { supprimerScenario(S.actif); });
+    /* Touche Suppr sur un onglet de scénario. */
+    $("cr-onglets-sc").addEventListener("keydown", function (ev) {
+      var b = ev.target.closest("[data-sc]");
+      if (b && (ev.key === "Delete" || ev.key === "Backspace")) { ev.preventDefault(); supprimerScenario(+b.getAttribute("data-sc")); }
+    });
     /* Onglets graphiques et tableau (clavier compris) */
     ongletsSimples($("cr-gr-onglets"), "data-graphe", function (v) { S.vueGraphe = v; $("cr-gr-zone").setAttribute("aria-labelledby", "cr-gr-tab-" + v); rendreGraphe(); });
     ongletsSimples($("cr-tab-onglets"), "data-vue", function (v) { S.vueTableau = v; rendreTableau(); });
