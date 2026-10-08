@@ -200,6 +200,19 @@
     simuler: function (reference, resultat) { return appelPaiement({ action: "simuler", reference: reference, resultat: resultat }); }
   };
 
+  /* Administration : chaque fonction vérifie côté serveur que le compte est administrateur. */
+  var admin = {
+    est: function () { return client.rpc("est_admin").then(verifier).then(function (v) { return v === true; }, function () { return false; }); },
+    tableau: function () { return client.rpc("admin_tableau").then(verifier); },
+    alertes: function () { return client.rpc("admin_alertes_liste").then(verifier); },
+    alertesLues: function () { return client.rpc("admin_alertes_lues").then(verifier); },
+    statistiques: function (jours) { return client.rpc("admin_statistiques", { p_jours: jours || 30 }).then(verifier); }
+  };
+  /* Statistiques anonymes : un simple compteur (type, page), jamais d'identifiant ni de contenu. Sans effet en cas d'erreur. */
+  function compterUsage(type, cle) {
+    try { return client.rpc("compter_usage", { p_type: type, p_cle: cle }).then(function () {}, function () {}); } catch (e) { return Promise.resolve(); }
+  }
+
   /* ---------- Interface ---------- */
   function zoneToasts() {
     var z = document.querySelector(".toasts");
@@ -289,6 +302,8 @@
     simulations: simulations,
     abonnement: abonnement,
     avatar: avatar,
+    admin: admin,
+    compterUsage: compterUsage,
     compte: compte,
     toast: toast,
     themeActuel: themeActuel,

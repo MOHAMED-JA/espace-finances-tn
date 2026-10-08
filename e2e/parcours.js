@@ -380,6 +380,33 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.selectOption("#param-accueil", "orbite");
   });
 
+  await etape("administration : réservée à l'admin, compteurs, inscriptions, usage anonyme", async () => {
+    await page.goto(base + "/espace/#admin");
+    await page.waitForSelector("#admin-refus:not([hidden])");
+    assert(await page.isHidden("#rail-admin"), "lien Administration caché pour un compte ordinaire");
+    assert(await page.isHidden("#admin-corps"), "aucune donnée affichée sans le rôle admin");
+    faux.marquerAdmin("aziz@exemple.tn");
+    await page.reload();
+    await page.waitForSelector("#rail-admin:not([hidden])");
+    await page.waitForSelector("#admin-corps:not([hidden])");
+    await page.waitForFunction(() => document.querySelectorAll("#admin-comptes tr").length >= 2);
+    const kpi = await page.textContent("#admin-kpi-comptes");
+    assert(/Inscrits/.test(kpi) && /Connectés aujourd'hui/.test(kpi), "compteurs des utilisateurs : " + kpi);
+    assert(/aziz@exemple\.tn/.test(await page.textContent("#admin-comptes")), "le compte figure dans la liste");
+    assert(/Conversion après l'essai/.test(await page.textContent("#admin-kpi-abos")), "indicateurs d'abonnement");
+    assert(!(await page.isHidden("#badge-admin")), "pastille des nouvelles inscriptions");
+    await page.click("#admin-lues");
+    await page.waitForSelector("#badge-admin", { state: "hidden" });
+    await page.fill("#admin-recherche", "zzz-introuvable");
+    assert(/Aucun compte/.test(await page.textContent("#admin-comptes")), "filtre de recherche");
+    await page.fill("#admin-recherche", "");
+    await page.waitForFunction(() => /Crédit/.test(document.getElementById("admin-vues").textContent));
+    const u = faux.usage();
+    assert(u.get("vue:credit") > 0 && u.get("simulation:credit") > 0 && u.get("simulation:epargne") > 0, "compteurs anonymes de pages et de simulateurs");
+    assert([...u.keys()].every((k) => /^(vue|simulation):[a-z]+$/.test(k)), "aucune donnée personnelle dans les compteurs");
+    await page.screenshot({ path: path.join(CAPTURES, "admin.png"), fullPage: true });
+  });
+
   await etape("déconnexion puis suppression définitive du compte", async () => {
     await page.goto(base + "/espace/#compte?onglet=donnees");
     await page.waitForSelector("#supprimer-compte");
