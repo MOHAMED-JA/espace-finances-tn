@@ -92,7 +92,7 @@
     if (el.type === "radio") { if (!el.checked) return; partiel[cle] = el.value; }
     else if (el.type === "checkbox") partiel[cle] = el.checked;
     else if (el.tagName === "SELECT") partiel[cle] = el.value;
-    else if (cle === "prenom") partiel[cle] = el.value;
+    else if (cle === "prenom" || cle === "banque") partiel[cle] = el.value;
     else if (cle === "anneeNaissance") { var a = parseInt(el.value, 10); if (!(a > 1900)) return; partiel[cle] = a; }
     else {
       var v = depuisTexte(el.getAttribute("data-type"), el.value);
@@ -218,6 +218,7 @@
       info.textContent = F.dt0(e.verse) + " DT versés depuis l'ouverture · " + (e.estime ? "capital estimé ≈ " + F.dt0(e.capitalEstime) + " DT (5 % net par an)" : "capital " + F.dt0(e.capital) + " DT") +
         " · " + (e.dureeAtteinte ? e.dureeFiscale + " ans atteints" : e.dureeFiscale + " ans en " + e.dateDureeFiscale);
     });
+    $("sec-banque-sous").textContent = (p.banque ? p.banque + " · " : "") + "calcul sur le " + p.baseBanque + " à " + F.pct(p.baseBanque === "brut" ? p.quotiteBrut : p.quotiteNet, 0);
     var pr = progression(p);
     $("profil-jauge").style.setProperty("--p", String(pr));
     $("profil-progression-texte").textContent = "Profil complété à " + Math.round(pr * 100) + " %" + (pr < 1 ? " : chaque information affine vos conseils." : ". Merci, vos conseils sont aussi précis que possible.");

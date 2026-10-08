@@ -131,7 +131,9 @@
       epargneDisponible: nombre(p.epargneDisponible, 0, 0, 1e9),
       autresRevenus: nombre(p.autresRevenus, 0, 0, 1e7),
       quotiteNet: nombre(p.quotiteNet, QUOTITE, 0.1, 0.8),
-      quotiteBrut: nombre(p.quotiteBrut, QUOTITE, 0.1, 0.8)
+      quotiteBrut: nombre(p.quotiteBrut, QUOTITE, 0.1, 0.8),
+      baseBanque: p.baseBanque === "brut" ? "brut" : "net",
+      banque: texte(p.banque, 40)
     };
   }
 
@@ -283,6 +285,29 @@
       }
     }
     return null;
+  }
+
+  /* Étapes de la marge d'emprunt : à chaque fin de crédit, la mensualité possible augmente. */
+  function paliersMarge(p, revenu, quotite, ageActuel, maintenant) {
+    var m = maintenant || new Date();
+    var actifs = p.credits.filter(function (c) { return c.mensualite > 0 && c.moisRestants > 0; })
+      .sort(function (a, b) { return a.moisRestants - b.moisRestants; });
+    var charges = p.credits.reduce(function (t, c) { return t + (c.mensualite > 0 ? c.mensualite : 0); }, 0);
+    var res = [], i = 0, avant = Math.max(0, revenu * quotite - charges), finis = [];
+    while (i < actifs.length) {
+      var mois = actifs[i].moisRestants;
+      while (i < actifs.length && actifs[i].moisRestants === mois) { charges -= actifs[i].mensualite; finis.push(actifs[i].libelle); i++; }
+      var marge = Math.max(0, revenu * quotite - charges);
+      if (marge > avant + 0.5) {
+        var d = new Date(m.getFullYear(), m.getMonth() + mois, 1);
+        var n = Math.min(240, Math.max(0, (AGE_MAX - ageActuel - Math.ceil(mois / 12)) * 12));
+        res.push({ mois: mois, date: MOIS[d.getMonth()] + " " + d.getFullYear(), credits: finis, charges: Math.max(0, charges),
+          mensualiteMax: marge, capitalImmo: capitalPourMensualite(marge, TMM + 2.5, n), dureeImmoMois: n });
+        finis = [];
+      }
+      avant = marge;
+    }
+    return res;
   }
 
   function chargesCredits(p) {
@@ -470,32 +495,47 @@
   function conseils(sy) {
     var p = sy.profil, s = sy.salaire, liste = [];
     function ajouter(niveau, module, titre, texte) { liste.push({ niveau: niveau, module: module, titre: titre, texte: texte }); }
-    var cap = sy.capacite.net, endet = cap.tauxEndettementActuel;
+    /* Base de calcul de la banque de l'utilisateur (net ou brut) et sa quotité. */
+    var b = p.baseBanque, q = b === "brut" ? p.quotiteBrut : p.quotiteNet;
+    var cap = sy.capacite[b], endet = cap.tauxEndettementActuel;
+    var nomBanque = p.banque ? p.banque : "votre banque";
     var taux = analyseTaux(p);
     function ent(x) { return String(Math.round(x)).replace(/\B(?=(\d{3})+(?!\d))/g, "\u202f"); }
     function pct(x) { return String(Math.round(x * 10) / 10).replace(".", ","); }
     function liste_(noms) { return noms.length > 1 ? noms.slice(0, -1).join(", ") + " et " + noms[noms.length - 1] : noms[0]; }
+    function court(x) { return x.toLowerCase().replace(/^crédit /, ""); }
     if (sy.budget.alerte === "deficit") ajouter(3, "budget", "Budget dépassé", "Vos dépenses fixes dépassent votre net. Commencez par revoir les charges" + (taux.hauts.length ? " ou renégocier un crédit." : "."));
-    if (endet > p.quotiteNet) {
-      var moyen = s.netMoyen + p.autresRevenus > 0 ? sy.chargesCredits / (s.netMoyen + p.autresRevenus) : endet;
-      var txt = "Vos crédits en cours absorbent " + ent(endet * 100) + " % de votre salaire net mensuel";
-      if (p.nombreSalaires > 12 && Math.round(moyen * 100) < Math.round(endet * 100)) txt += " (" + ent(moyen * 100) + " % en comptant vos " + p.nombreSalaires + " salaires sur l'année)";
-      txt += " : la plupart des banques refuseront un nouveau crédit pour l'instant.";
-      if (taux.hauts.length) txt += " Renégocier " + liste_(taux.hauts.map(function (c) { return "le " + c.libelle.toLowerCase(); })) + " peut libérer de la marge.";
-      ajouter(3, "credit", "Endettement au-dessus de " + ent(p.quotiteNet * 100) + " %", txt);
-      var sortie = sortieEndettement(p, cap.revenu, p.quotiteNet);
-      if (sortie) {
-        var ans = Math.floor(sortie.mois / 12), m = sortie.mois % 12;
-        var duree = (ans ? ans + " an" + (ans > 1 ? "s" : "") : "") + (ans && m ? " et " : "") + (m ? m + " mois" : "");
-        var date = "";
-        if (sy.maintenant) { var d = new Date(sy.maintenant.getFullYear(), sy.maintenant.getMonth() + sortie.mois, 1); date = " (" + MOIS[d.getMonth()] + " " + d.getFullYear() + ")"; }
-        ajouter(2, "credit", "Votre marge revient dans " + duree, "À la fin " + (sortie.credits.length > 1 ? "des crédits " : "du crédit ") + liste_(sortie.credits.map(function (x) { return x.toLowerCase().replace(/^crédit /, ""); })) + date +
-          ", votre endettement tombera à " + ent(sortie.taux * 100) + " % : vous pourrez de nouveau emprunter, avec une mensualité possible d'environ " + ent(sortie.mensualiteLiberee) + " DT.");
+    if (endet > q) {
+      var txt;
+      if (b === "brut") {
+        txt = "Vos crédits en cours (" + ent(sy.chargesCredits) + " DT par mois) représentent " + ent(endet * 100) + " % de votre salaire brut. " + nomBanque.charAt(0).toUpperCase() + nomBanque.slice(1) + " prête jusqu'à " + ent(q * 100) + " % du brut, soit " + ent(cap.revenu * q) + " DT par mois : un nouveau crédit n'est pas possible pour l'instant.";
+      } else {
+        var moyen = s.netMoyen + p.autresRevenus > 0 ? sy.chargesCredits / (s.netMoyen + p.autresRevenus) : endet;
+        txt = "Vos crédits en cours absorbent " + ent(endet * 100) + " % de votre salaire net mensuel";
+        if (p.nombreSalaires > 12 && Math.round(moyen * 100) < Math.round(endet * 100)) txt += " (" + ent(moyen * 100) + " % en comptant vos " + p.nombreSalaires + " salaires sur l'année)";
+        txt += " : " + (p.banque ? p.banque + " refusera" : "la plupart des banques refuseront") + " un nouveau crédit pour l'instant.";
       }
+      if (taux.hauts.length) txt += " Renégocier " + liste_(taux.hauts.map(function (c) { return "le " + c.libelle.toLowerCase(); })) + " peut libérer de la marge.";
+      ajouter(3, "credit", "Endettement au-dessus de " + ent(q * 100) + " % du " + b, txt);
+    }
+    /* Calendrier de la marge : chaque fin de crédit libère une mensualité. */
+    var paliers = cap.paliers || [];
+    if (endet > q && paliers.length) {
+      var p0 = paliers[0];
+      var ans = Math.floor(p0.mois / 12), mm = p0.mois % 12;
+      var duree = (ans ? ans + " an" + (ans > 1 ? "s" : "") : "") + (ans && mm ? " et " : "") + (mm ? mm + " mois" : "");
+      var t2 = "En " + p0.date + ", à la fin " + (p0.credits.length > 1 ? "des crédits " : "du crédit ") + liste_(p0.credits.map(court)) + ", vous pourrez emprunter avec une mensualité d'environ " + ent(p0.mensualiteMax) + " DT (jusqu'à " + ent(p0.capitalImmo) + " DT en immobilier sur 20 ans).";
+      paliers.slice(1, 3).forEach(function (x) {
+        t2 += " En " + x.date + ", après " + (x.credits.length > 1 ? "les crédits " : "le crédit ") + liste_(x.credits.map(court)) + " : " + ent(x.mensualiteMax) + " DT par mois, soit environ " + ent(x.capitalImmo) + " DT.";
+      });
+      ajouter(2, "credit", "Votre marge revient dans " + duree, t2 + " Calcul sur le " + b + ", comme " + nomBanque + ".");
     }
     if (taux.bas.length) ajouter(2, "credit", "Des taux à garder", "Vos taux (" + liste_(taux.bas.map(function (c) { return pct(c.tauxPct) + " %"; }).filter(function (x, i, a) { return a.indexOf(x) === i; })) + ") sont bien inférieurs à ceux du marché (environ " + pct(taux.bas[0].marchePct) + " %) : inutile de renégocier, et ne remboursez pas ces crédits par anticipation. Votre épargne rapporte davantage ailleurs.");
-    else if (p.credits.length && endet > 0) ajouter(1, "credit", "Marge d'endettement", "Vos crédits représentent " + ent(endet * 100) + " % de votre net ; il reste " + ent((p.quotiteNet - endet) * 100) + " points avant la limite habituelle.");
-    if (sy.capacite.meilleure === "brut" && sy.capacite.brut.mensualiteMax - cap.mensualiteMax > 1) ajouter(2, "credit", "Comparez les banques", "Une banque qui calcule sur le brut vous prêterait davantage : la mensualité possible passe de " + ent(cap.mensualiteMax) + " à " + ent(sy.capacite.brut.mensualiteMax) + " DT.");
+    else if (p.credits.length && endet > 0 && endet <= q) ajouter(1, "credit", "Marge d'endettement", "Vos crédits représentent " + ent(endet * 100) + " % de votre " + b + " ; il reste " + ent((q - endet) * 100) + " points avant la limite de " + nomBanque + ".");
+    /* Autre base de calcul : une banque concurrente prêterait-elle davantage ? */
+    var autreB = b === "net" ? "brut" : "net", capA = sy.capacite[autreB];
+    if (capA.mensualiteMax - cap.mensualiteMax > 1) ajouter(2, "credit", "Comparez les banques", "Une banque qui calcule sur le " + autreB + " vous prêterait davantage : la mensualité possible passe de " + ent(cap.mensualiteMax) + " à " + ent(capA.mensualiteMax) + " DT.");
+    else if (cap.mensualiteMax < 1 && capA.paliers && capA.paliers.length && paliers.length && capA.paliers[0].mois < paliers[0].mois) ajouter(1, "credit", "Comparez les banques", "Une banque qui calcule sur le " + autreB + " vous prêterait dès " + capA.paliers[0].date + ", plus tôt que " + nomBanque + ".");
     var opt = sy.epargne.propositions.filter(function (x) { return x.cle === "optimale"; })[0];
     var meilleure = opt || sy.epargne.propositions[sy.epargne.propositions.length - 1];
     if (meilleure && meilleure.plafonneBudget && meilleure.economieAnnuelle > 50) {
@@ -553,6 +593,7 @@
     /* Capacité retrouvée à la fin des crédits qui dépassent la quotité (affichée quand elle est nulle aujourd'hui). */
     ["net", "brut"].forEach(function (b) {
       var c = sy.capacite[b], q = b === "net" ? p.quotiteNet : p.quotiteBrut;
+      c.paliers = paliersMarge(p, c.revenu, q, ageActuel, sy.maintenant);
       if (c.mensualiteMax >= 1) return;
       var so = sortieEndettement(p, c.revenu, q);
       if (!so) return;
@@ -568,7 +609,7 @@
     profilParDefaut: profilParDefaut, normaliser: normaliser, age: age, etatSalaire: etatSalaire, entreeBrut: entreeBrut,
     tranche: tranche, salaire: salaire, augmentation: augmentation,
     capitalPourMensualite: capitalPourMensualite, mensualitePourCapital: mensualitePourCapital, capacite: capacite,
-    epargnePour: epargnePour, suggestionsEpargne: suggestionsEpargne, budget: budget, estimationContrat: estimationContrat, analyseTaux: analyseTaux, sortieEndettement: sortieEndettement,
+    epargnePour: epargnePour, suggestionsEpargne: suggestionsEpargne, budget: budget, estimationContrat: estimationContrat, paliersMarge: paliersMarge, analyseTaux: analyseTaux, sortieEndettement: sortieEndettement,
     versementPourCapital: versementPourCapital, projet: projet, conseils: conseils, synthese: synthese
   };
 });
