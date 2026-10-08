@@ -1,0 +1,18 @@
+/* Pages de texte (confidentialité, 404) */
+.marque__tn { color: var(--signal); }
+.doc-barre { display: flex; align-items: center; height: var(--barre); padding: 0 max(16px, calc((100% - 760px) / 2)); border-bottom: 1px solid var(--hairline); }
+.doc { width: min(760px, 100% - 32px); margin: 0 auto; padding: 48px 0 96px; }
+.doc h1 { font-size: clamp(32px, 4vw, 48px); font-weight: 660; font-stretch: 112%; letter-spacing: -.03em; }
+.doc h2 { margin-top: 40px; font-size: 20px; }
+.doc p, .doc li, .doc dd { color: var(--ink-2); max-width: 68ch; }
+.doc p, .doc ul, .doc dl { margin-top: 12px; }
+.doc ul { padding-left: 20px; display: grid; gap: 8px; }
+.doc dt { margin-top: 16px; font-weight: 600; }
+.doc dd { margin: 4px 0 0; }
+.doc__maj { font-size: 14px; color: var(--ink-3) !important; margin-top: 8px !important; }
+.doc__retour { margin-top: 48px !important; }
+.introuvable { min-height: 100svh; display: grid; place-content: center; justify-items: start; gap: 16px; padding: 32px 16px; width: min(560px, 100%); margin: 0 auto; }
+.introuvable__code { font-size: 14px; font-weight: 600; color: var(--signal); font-variant-numeric: tabular-nums; }
+.introuvable h1 { font-size: clamp(32px, 5vw, 52px); font-weight: 660; font-stretch: 112%; letter-spacing: -.03em; }
+.introuvable p { color: var(--ink-2); }
+.introuvable__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }

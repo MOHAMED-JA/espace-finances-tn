@@ -1,0 +1,19 @@
+{
+  "name": "Espace Finances TN",
+  "short_name": "Finances TN",
+  "description": "Salaire brut ⇄ net, assurance vie & CEA et crédit bancaire en Tunisie, avec vos simulations enregistrées.",
+  "lang": "fr",
+  "start_url": "/espace/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0A0C0F",
+  "theme_color": "#0A0C0F",
+  "icons": [
+    { "src": "/commun/icone.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Salaire brut ⇄ net", "url": "/outils/salaire/" },
+    { "name": "Assurance vie & CEA", "url": "/outils/assurance-vie/" },
+    { "name": "Crédit bancaire", "url": "/outils/credit/" }
+  ]
+}

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light" data-protege>
+<head>
+<meta charset="UTF-8">
+<script src="/commun/config.js"></script>
+<script src="/commun/garde.js"></script>
+<link rel="stylesheet" href="/commun/pont.css">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Simulateur de crédit en Dinar Tunisien</title>
+<meta name="description" content="Simulez votre crédit en dinars tunisiens : mensualité, coût des intérêts, tableau d'amortissement, capacité d'emprunt et comparaison de scénarios.">
+<meta name="theme-color" content="#7c3aed">
+<!-- Aperçu du lien (LinkedIn, Facebook, WhatsApp, X) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Simulateur de crédit en Dinar Tunisien">
+<meta property="og:title" content="Simulateur de crédit en Dinar Tunisien">
+<meta property="og:description" content="Mensualité, TEG et tableau d'amortissement en temps réel. Taux fixe ou TMM + marge, assurance, remboursement anticipé, exports PDF et Excel. Gratuit, installable, en français et en arabe.">
+<meta property="og:url" content="https://mohamed-ja.github.io/simulateur-credit/">
+<meta property="og:image" content="https://mohamed-ja.github.io/simulateur-credit/apercu-linkedin-2026-10-03.jpg">
+<meta property="og:image:secure_url" content="https://mohamed-ja.github.io/simulateur-credit/apercu-linkedin-2026-10-03.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1254">
+<meta property="og:image:alt" content="Simulateur de crédit en Dinar Tunisien : mensualité, coût du crédit et TEG">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:locale:alternate" content="ar_TN">
+<meta name="author" content="Mohamed Aziz Jaouadi">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Simulateur de crédit en Dinar Tunisien">
+<meta name="twitter:description" content="Mensualité, TEG et tableau d'amortissement en temps réel. Gratuit, installable, en français et en arabe.">
+<meta name="twitter:image" content="https://mohamed-ja.github.io/simulateur-credit/apercu-linkedin-2026-10-03.jpg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Crédit TND">
+<script src="js/theme-init.js"></script>
+<link rel="stylesheet" href="css/polices.css">
+<link rel="stylesheet" href="css/app.css">
+<script defer src="vendor/xlsx.full.min.js"></script>
+<script defer src="vendor/chart.umd.min.js"></script>
+<script defer src="vendor/jspdf.umd.min.js"></script>
+<script defer src="vendor/jspdf.plugin.autotable.min.js"></script>
+<script defer src="vendor/qrcode.js"></script>
+</head>
+<body>
+
+<!-- Icônes -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+    <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol>
+    <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></symbol>
+    <symbol id="i-compare" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="18" rx="2"/><rect x="14" y="8" width="7" height="13" rx="2"/></symbol>
+    <symbol id="i-percent" viewBox="0 0 24 24"><path d="M19 5 5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="m22 17-8.5-8.5-5 5L2 7"/><path d="M16 17h6v-6"/></symbol>
+    <symbol id="i-sheet" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8M12 13v8"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></symbol>
+    <symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 14 4-4 4 4 5-5"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></symbol>
+    <symbol id="i-calc" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol>
+    <symbol id="i-cash" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+    <symbol id="i-coins" viewBox="0 0 24 24"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18M7 6h1v4M16.71 13.88l.7.71-2.82 2.82"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></symbol>
+    <symbol id="i-qr" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></symbol>
+    <symbol id="i-car" viewBox="0 0 24 24"><path d="M5 17h14M3 13l2.2-5.6A2 2 0 0 1 7.1 6h9.8a2 2 0 0 1 1.9 1.4L21 13v4a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M3 13h18"/><circle cx="7.5" cy="15" r=".5"/><circle cx="16.5" cy="15" r=".5"/></symbol>
+    <symbol id="i-bag" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+    <symbol id="i-building" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+    <symbol id="i-printer" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="i-fast" viewBox="0 0 24 24"><path d="m13 19 9-7-9-7zM2 19l9-7-9-7z"/></symbol>
+    <symbol id="i-trend" viewBox="0 0 24 24"><path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></symbol>
+    <symbol id="i-amort" viewBox="0 0 24 24"><path d="M5 5v14h14"/><path d="M8 8c3 .5 6 3.5 8.5 8"/><circle cx="16.6" cy="16" r=".75"/></symbol>
+    <symbol id="i-voiture" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></symbol>
+    <symbol id="i-pousse" viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-whatsapp" viewBox="0 0 24 24"><path d="M3 21l1.65-4.8A9 9 0 1 1 8 19.4z"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/></symbol>
+    <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18M5 21h14M3 7h18"/><path d="m6 7-3 7a3 3 0 0 0 6 0zM18 7l-3 7a3 3 0 0 0 6 0z"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5M3 12A9 9 0 0 1 18.5 5.8L21 8"/><path d="M21 3v5h-5"/></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9Z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z"/><path d="M5 2.5l.6 1.4L7 4.5l-1.4.6L5 6.5l-.6-1.4L3 4.5l1.4-.6Z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5Z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7.5 6.5H4a2 2 0 0 0-2 2V18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8.5a2 2 0 0 0-2-2h-3.5Z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+    <symbol id="i-scan" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 9h10M7 12h10M7 15h6"/></symbol>
+    <symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="9" r="6"/><path d="M8.2 13.7 7 22l5-3 5 3-1.2-8.3"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h16"/></symbol>
+    <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16M15.5 10 13.5 12l2 2"/></symbol>
+    <symbol id="i-externe" viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5M12 3v12"/></symbol>
+  </defs>
+</svg>
+
+<a class="lien-evitement" href="#contenu" data-t="Aller au contenu">Aller au contenu</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <button class="btn btn-quiet btn-sm btn-icon btn-nav" id="btnNav" aria-controls="nav-lat" aria-expanded="false" aria-label="Rubriques" data-t-aria-label="Rubriques" title="Rubriques" data-t-title="Rubriques">
+      <svg class="ico"><use href="#i-menu"/></svg>
+    </button>
+    <a class="brand" href="#" aria-label="Simulateur de crédit, accueil" data-t-aria-label="Simulateur de crédit, accueil">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M5 5v14h14"/><path d="M8 8c3 .5 6 3.5 8.5 8"/><circle cx="16.6" cy="16" r=".75"/></svg>
+      </span>
+      <span class="brand-name"><span data-t="Simulateur de crédit">Simulateur de crédit</span> <span class="brand-tag" data-t="TND" translate="no">TND</span></span>
+      <span class="brand-agence" id="brand-agence" hidden></span>
+    </a>
+    <nav class="top-actions" aria-label="Outils" data-t-aria-label="Outils">
+      <button class="btn btn-quiet btn-sm palette-btn" id="btnPalette" title="Rechercher une action (Ctrl + K)" data-t-title="Rechercher une action (Ctrl + K)" aria-label="Rechercher une action" data-t-aria-label="Rechercher une action">
+        <svg class="ico"><use href="#i-search"/></svg><kbd>Ctrl K</kbd>
+      </button>
+      <div class="outils">
+        <button class="btn btn-quiet btn-sm" id="btnOutils" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-outils" title="Capacité d'emprunt, calcul inverse, plan de financement, offres, renégociation" data-t-title="Capacité d'emprunt, calcul inverse, plan de financement, offres, renégociation">
+          <svg class="ico"><use href="#i-calc"/></svg><span class="lbl" data-t="Outils">Outils</span><svg class="ico chev lbl"><use href="#i-chevron"/></svg>
+        </button>
+        <div class="menu" id="menu-outils" role="menu" aria-label="Outils" data-t-aria-label="Outils" hidden></div>
+      </div>
+      <button class="btn btn-quiet btn-sm" id="btnHistorique" title="Historique des simulations" data-t-title="Historique des simulations">
+        <svg class="ico"><use href="#i-history"/></svg><span class="lbl" data-t="Historique">Historique</span>
+      </button>
+      <button class="btn btn-quiet btn-sm" id="btnComparer" title="Comparer jusqu'à 3 simulations" data-t-title="Comparer jusqu'à 3 simulations">
+        <svg class="ico"><use href="#i-compare"/></svg><span class="lbl" data-t="Comparer">Comparer</span>
+      </button>
+      <button class="btn btn-quiet btn-sm" id="btnAgence" title="Agence, logo, TMM et types de crédit" data-t-title="Agence, logo, TMM et types de crédit">
+        <svg class="ico"><use href="#i-building"/></svg><span class="lbl" data-t="Agence">Agence</span>
+      </button>
+      <button class="btn btn-quiet btn-sm lang-btn" id="btnLangue" title="Afficher en arabe" data-t-title="Afficher en arabe">
+        <svg class="ico"><use href="#i-globe"/></svg><span class="lbl" data-t="العربية">العربية</span><span class="lang-court" data-t="ع">ع</span>
+      </button>
+      <button class="btn btn-ghost btn-sm btn-icon theme-btn" id="btnTheme" aria-label="Changer de thème" title="Changer de thème">
+        <svg class="ico ico-moon"><use href="#i-moon"/></svg>
+        <svg class="ico ico-sparkle"><use href="#i-sparkle"/></svg>
+        <svg class="ico ico-sun"><use href="#i-sun"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<div class="coque">
+<aside class="nav-lat" id="nav-lat" aria-label="Rubriques"></aside>
+<main class="page" id="contenu" tabindex="-1">
+  <section class="hero" aria-labelledby="titre-app">
+    <div class="hero-in">
+      <div>
+        <h1 id="titre-app" data-t="Simulateur de crédit en Dinar Tunisien">Simulateur de crédit en Dinar Tunisien</h1>
+        <p class="lead" data-t="Mensualité, coût des intérêts et tableau d'amortissement détaillé, mis à jour en temps réel. Taux fixe ou indexé sur le TMM, remboursement anticipé, exports Excel et PDF, comparaison de scénarios.">Mensualité, coût des intérêts et tableau d'amortissement détaillé, mis à jour en temps réel. Taux fixe ou indexé sur le TMM, remboursement anticipé, exports Excel et PDF, comparaison de scénarios.</p>
+      </div>
+      <div class="hero-actions">
+        <button class="hero-guide" id="btnGuide">
+          <span class="g-ico" aria-hidden="true"><svg class="ico"><use href="#i-sparkle"/></svg></span><span><strong data-t="Simulation guidée">Simulation guidée</strong><small data-t="5 questions simples, sans jargon">5 questions simples, sans jargon</small></span>
+        </button>
+        <button class="hero-install" id="btnInstaller" hidden>
+          <svg class="ico"><use href="#i-phone"/></svg><span data-t="Installer l'application">Installer l'application</span>
+        </button>
+        <a class="hero-author" href="https://www.linkedin.com/in/mohamed-aziz-jaouadi-%D9%85%D8%AD%D9%85%D8%AF-%D8%B9%D8%B2%D9%8A%D8%B2-%D8%A7%D9%84%D8%AC%D9%88%D8%A7%D8%AF%D9%8A-%C2%AEpsm-i-%C2%AEpspo-l-%C2%AEistqb-851009115/" target="_blank" rel="noopener noreferrer">
+          <span class="li" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.93v-5.569c0-1.327-.024-3.036-1.849-3.036-1.851 0-2.134 1.447-2.134 2.942v5.663h-3.93V9h3.77v1.561h.054c.525-.998 1.807-2.049 3.721-2.049 3.979 0 4.713 2.618 4.713 6.018v6.922h-.001zM5.337 7.433c-1.27 0-2.297-1.026-2.297-2.295 0-1.269 1.028-2.296 2.297-2.296 1.27 0 2.297 1.027 2.297 2.296 0 1.269-1.028 2.295-2.297 2.295zm1.967 13.019H3.37V9h3.934v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.732v20.535C0 23.227.792 24 1.771 24h20.451c.979 0 1.772-.773 1.772-1.732V1.732C23.998.774 23.205 0 22.225 0z"/></svg>
+          </span>
+          <span><small data-t="Application faite par">Application faite par</small>Mohamed Aziz Jaouadi</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <div class="impression" id="impression" aria-hidden="true"></div>
+
+  <div class="scenario-bar">
+    <div class="tabs" role="tablist" aria-label="Scénarios" data-t-aria-label="Scénarios">
+      <button class="tab" role="tab" id="tab-a" aria-controls="scenario-a" aria-selected="true">
+        <span class="dot"></span><span data-t="Scénario A">Scénario A</span>
+      </button>
+      <button class="tab" role="tab" id="tab-b" aria-controls="scenario-b" aria-selected="false" hidden>
+        <span class="dot"></span><span data-t="Scénario B">Scénario B</span>
+        <span class="tab-close" id="tab-b-close" role="button" tabindex="0" aria-label="Masquer le scénario B" data-t-aria-label="Masquer le scénario B" title="Masquer le scénario B" data-t-title="Masquer le scénario B">
+          <svg class="ico ico-sm"><use href="#i-x"/></svg>
+        </span>
+      </button>
+    </div>
+    <button class="btn btn-ghost btn-sm" id="btnAjouterScenario">
+      <svg class="ico"><use href="#i-plus"/></svg><span data-t="Ajouter un scénario">Ajouter un scénario</span>
+    </button>
+  </div>
+
+  <div class="versus" id="versus" hidden aria-live="polite"></div>
+
+  <section class="scenario" id="scenario-a" role="tabpanel" aria-labelledby="tab-a"></section>
+  <section class="scenario" id="scenario-b" role="tabpanel" aria-labelledby="tab-b" hidden></section>
+
+  <section class="xsim" aria-labelledby="xsim-titre">
+    <span class="xsim-orbe" aria-hidden="true"></span>
+    <div class="xsim-tete"><div><span class="xsim-sur" data-t="Du même auteur · gratuits et installables">Du même auteur · gratuits et installables</span><h2 class="xsim-titre" id="xsim-titre" data-t="Les autres simulateurs">Les autres simulateurs</h2></div></div>
+    <div class="xsim-grille">
+      <a class="xsim-carte xsim--vie" href="/outils/assurance-vie/">
+        <span class="xsim-halo" aria-hidden="true"></span>
+        <svg class="xsim-logo" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="xsim-titre-vie" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f46e5"/><stop offset=".55" stop-color="#7c3aed"/><stop offset="1" stop-color="#c026d3"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#xsim-titre-vie)"/><g fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 32) scale(2.3) translate(-12 -12.5)"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></g></svg>
+        <span class="xsim-txt"><strong data-t="Simulateur Assurance Vie et CEA">Simulateur Assurance Vie et CEA</strong><span data-t="Économie d'impôt, montant optimal à investir et projection du capital.">Économie d'impôt, montant optimal à investir et projection du capital.</span></span>
+        <span class="xsim-fleche" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg></span>
+      </a>
+      <a class="xsim-carte xsim--auto" href="https://mohamed-ja.github.io/simulateur-Assurance-Automobile/" target="_blank" rel="noopener">
+        <span class="xsim-halo" aria-hidden="true"></span>
+        <svg class="xsim-logo" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="xsim-titre-auto" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2f5bea"/><stop offset="1" stop-color="#1e88e5"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#xsim-titre-auto)"/><g fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 32) scale(2.35) translate(-12 -12.5)"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></g></svg>
+        <span class="xsim-txt"><strong data-t="Simulateur Assurance Automobile">Simulateur Assurance Automobile</strong><span data-t="Prime détaillée par garantie, offre imprimable et constat amiable.">Prime détaillée par garantie, offre imprimable et constat amiable.</span></span>
+        <span class="xsim-fleche" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg></span>
+      </a>
+      <a class="xsim-carte xsim--salaire" href="/outils/salaire/">
+        <span class="xsim-halo" aria-hidden="true"></span>
+        <svg class="xsim-logo" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="xsim-titre-salaire" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d9488"/><stop offset=".6" stop-color="#0891b2"/><stop offset="1" stop-color="#2563eb"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#xsim-titre-salaire)"/><g fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 32) scale(2.4) translate(-12 -12)"><path d="M4 9h14l-3.5-3.5"/><path d="M20 15H6l3.5 3.5"/></g></svg>
+        <span class="xsim-txt"><strong data-t="Calculateur de salaire brut ⇄ net">Calculateur de salaire brut ⇄ net</strong><span data-t="CNSS ou CNRPS, IRPP et CSS : du brut au net et inversement.">CNSS ou CNRPS, IRPP et CSS : du brut au net et inversement.</span></span>
+        <span class="xsim-fleche" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg></span>
+      </a>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span data-t="Calculs indicatifs : taux mensuel = taux annuel ÷ 12, montants arrondis au millime à chaque échéance.">Calculs indicatifs : taux mensuel = taux annuel ÷ 12, montants arrondis au millime à chaque échéance.</span>
+    <span>© <span id="annee-courante"></span></span>
+  </footer>
+  <!-- Signature commune aux simulateurs de Mohamed Aziz Jaouadi -->
+  <div class="mj-sig">
+    <a class="mj-sig__auteur" href="https://www.linkedin.com/in/mohamed-aziz-jaouadi-%D9%85%D8%AD%D9%85%D8%AF-%D8%B9%D8%B2%D9%8A%D8%B2-%D8%A7%D9%84%D8%AC%D9%88%D8%A7%D8%AF%D9%8A-%C2%AEpsm-i-%C2%AEpspo-l-%C2%AEistqb-851009115/" target="_blank" rel="noopener" aria-label="Application développée par Mohamed Aziz Jaouadi : profil LinkedIn (nouvel onglet)" data-t-aria-label="Application développée par Mohamed Aziz Jaouadi : profil LinkedIn (nouvel onglet)">
+      <span class="mj-sig__mono" aria-hidden="true">MJ</span>
+      <span class="mj-sig__txt" aria-hidden="true"><span class="mj-sig__lab" data-t="Application développée par">Application développée par</span><span class="mj-sig__nom" translate="no">Mohamed Aziz Jaouadi</span></span>
+      <svg class="mj-sig__in" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.23 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>
+    </a>
+    <nav class="mj-sig__nav" aria-label="Simulateurs du même auteur" data-t-aria-label="Simulateurs du même auteur">
+      <ul class="mj-sig__apps">
+        <li><a class="mj-sig__app" style="--mj-c: #a855f7" href="/outils/credit/" aria-current="page" data-t="Crédit">Crédit</a></li>
+        <li><a class="mj-sig__app" style="--mj-c: #6366f1" href="/outils/assurance-vie/" data-t="Assurance vie">Assurance vie</a></li>
+        <li><a class="mj-sig__app" style="--mj-c: #3b82f6" href="https://mohamed-ja.github.io/simulateur-Assurance-Automobile/" target="_blank" rel="noopener" data-t="Assurance auto">Assurance auto</a></li>
+        <li><a class="mj-sig__app" style="--mj-c: #14b8a6" href="/outils/salaire/" data-t="Salaire brut ⇄ net">Salaire brut ⇄ net</a></li>
+      </ul>
+    </nav>
+  </div>
+</main>
+</div>
+<div class="nl-fond" id="nl-fond" aria-hidden="true"></div>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<script src="js/ar.js"></script>
+<script src="js/app.js"></script>
+<script src="/commun/vendor/supabase.js"></script>
+<script src="/commun/modele.js"></script>
+<script src="/commun/session.js"></script>
+<script src="/commun/pont.js"></script>
+</body>
+</html>

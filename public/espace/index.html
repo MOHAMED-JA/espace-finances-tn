@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="fr" data-protege>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <title>Mon espace — Espace Finances TN</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#F4F5F2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0A0C0F" media="(prefers-color-scheme: dark)">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="icon" href="/commun/icone.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="preload" href="/commun/polices/mona-sans-latin-standard-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/commun/meridien.css">
+  <link rel="stylesheet" href="/commun/espace.css">
+  <script src="/commun/config.js"></script>
+  <script src="/commun/garde.js"></script>
+  <script src="/commun/theme-init.js"></script>
+</head>
+<body class="attente">
+  <a class="evitement" href="#principal">Aller au contenu</a>
+  <svg class="visuellement-cache" aria-hidden="true">
+    <symbol id="i-apercu" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></symbol>
+    <symbol id="i-liste" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7 5h10M7 10h10M7 15h10"/><circle cx="3.5" cy="5" r=".9" fill="currentColor"/><circle cx="3.5" cy="10" r=".9" fill="currentColor"/><circle cx="3.5" cy="15" r=".9" fill="currentColor"/></symbol>
+    <symbol id="i-compte" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="7" r="3.2"/><path d="M3.5 17c1.2-3 3.6-4.5 6.5-4.5s5.3 1.5 6.5 4.5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></symbol>
+    <symbol id="i-sortie" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M13 6.5 16.5 10 13 13.5M16 10H8"/></symbol>
+    <symbol id="i-soleil" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="3.2"/><path d="M10 2.5v1.8M10 15.7v1.8M2.5 10h1.8M15.7 10h1.8M4.7 4.7l1.3 1.3M14 14l1.3 1.3M4.7 15.3 6 14M14 6l1.3-1.3"/></symbol>
+    <symbol id="i-lune" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M16 12.5A6.5 6.5 0 0 1 7.5 4a6.5 6.5 0 1 0 8.5 8.5z"/></symbol>
+    <symbol id="i-etoile" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="m10 2.8 2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L2.8 8.1l5-.7z"/></symbol>
+    <symbol id="i-plus-actions" viewBox="0 0 20 20" fill="currentColor"><circle cx="4.5" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="15.5" cy="10" r="1.5"/></symbol>
+    <symbol id="i-fleche" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10h10M11 6l4 4-4 4"/></symbol>
+  </svg>
+
+  <div class="app">
+    <nav class="rail" aria-label="Navigation principale">
+      <a class="marque rail__marque" href="/" aria-label="Espace Finances TN, accueil public">
+        <span class="marque__signe" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 12.5 6 8l3 3 5-6.5"/><path d="M10.5 4.5H14v3.5"/></svg></span>
+        <span class="rail__nom">Espace Finances <span class="marque__tn">TN</span></span>
+      </a>
+      <ul class="rail__liens" role="list">
+        <li><a href="#apercu" data-vue="apercu"><svg aria-hidden="true"><use href="#i-apercu"/></svg><span>Aperçu</span></a></li>
+        <li><a href="#simulations" data-vue="simulations"><svg aria-hidden="true"><use href="#i-liste"/></svg><span>Simulations</span><span class="rail__compte num" id="compte-total" aria-label="simulations enregistrées"></span></a></li>
+        <li><a href="#compte" data-vue="compte"><svg aria-hidden="true"><use href="#i-compte"/></svg><span>Compte</span></a></li>
+      </ul>
+      <p class="rail__titre" id="rail-outils">Outils</p>
+      <ul class="rail__outils" role="list" aria-labelledby="rail-outils">
+        <li><a href="/outils/salaire/" data-outil="salaire"><span class="trait" aria-hidden="true"></span>Salaire brut ⇄ net</a></li>
+        <li><a href="/outils/assurance-vie/" data-outil="assurance_vie"><span class="trait" aria-hidden="true"></span>Assurance vie &amp; CEA</a></li>
+        <li><a href="/outils/credit/" data-outil="credit"><span class="trait" aria-hidden="true"></span>Crédit bancaire</a></li>
+      </ul>
+      <div class="rail__pied">
+        <div class="utilisateur">
+          <span class="avatar" id="avatar" aria-hidden="true"></span>
+          <span class="utilisateur__texte"><span class="utilisateur__nom" id="nom-utilisateur"></span><span class="utilisateur__email" id="email-utilisateur"></span></span>
+        </div>
+        <div class="rail__actions">
+          <button type="button" class="bouton-icone" id="bascule-theme" aria-label="Changer de thème"><svg aria-hidden="true"><use href="#i-lune"/></svg></button>
+          <button type="button" class="bouton-icone" id="deconnexion" aria-label="Se déconnecter"><svg aria-hidden="true"><use href="#i-sortie"/></svg></button>
+        </div>
+      </div>
+    </nav>
+
+    <main class="principal" id="principal" tabindex="-1">
+      <!-- Aperçu -->
+      <section class="vue" id="vue-apercu" data-vue="apercu" aria-labelledby="titre-apercu">
+        <header class="vue__entete">
+          <div>
+            <h1 id="titre-apercu"><span id="salutation">Bonjour</span></h1>
+            <p class="vue__sous-titre" id="resume-espace">Chargement de votre espace…</p>
+          </div>
+        </header>
+
+        <div class="kpis" id="kpis" aria-label="Vos simulations par outil">
+          <a class="kpi" href="#simulations?outil=salaire" data-outil="salaire"><span class="kpi__lib"><span class="pastille"></span>Salaire</span><span class="kpi__val num" data-kpi="salaire">–</span></a>
+          <a class="kpi" href="#simulations?outil=assurance_vie" data-outil="assurance_vie"><span class="kpi__lib"><span class="pastille"></span>Assurance vie &amp; CEA</span><span class="kpi__val num" data-kpi="assurance_vie">–</span></a>
+          <a class="kpi" href="#simulations?outil=credit" data-outil="credit"><span class="kpi__lib"><span class="pastille"></span>Crédit</span><span class="kpi__val num" data-kpi="credit">–</span></a>
+        </div>
+
+        <h2 class="titre-bloc">Nouvelle simulation</h2>
+        <ul class="lanceurs" role="list">
+          <li><a class="lanceur" href="/outils/salaire/" data-outil="salaire">
+            <span class="lanceur__trait" aria-hidden="true"></span>
+            <span class="lanceur__texte"><strong>Salaire brut ⇄ net</strong><span>Net à payer, coût employeur, 12 à 18 salaires.</span></span>
+            <svg class="lanceur__fleche" aria-hidden="true"><use href="#i-fleche"/></svg></a></li>
+          <li><a class="lanceur" href="/outils/assurance-vie/" data-outil="assurance_vie">
+            <span class="lanceur__trait" aria-hidden="true"></span>
+            <span class="lanceur__texte"><strong>Assurance vie &amp; CEA</strong><span>Économie d'impôt, capital projeté, rachat.</span></span>
+            <svg class="lanceur__fleche" aria-hidden="true"><use href="#i-fleche"/></svg></a></li>
+          <li><a class="lanceur" href="/outils/credit/" data-outil="credit">
+            <span class="lanceur__trait" aria-hidden="true"></span>
+            <span class="lanceur__texte"><strong>Crédit bancaire</strong><span>Mensualité, TEG, amortissement, renégociation.</span></span>
+            <svg class="lanceur__fleche" aria-hidden="true"><use href="#i-fleche"/></svg></a></li>
+        </ul>
+
+        <div class="titre-bloc titre-bloc--action">
+          <h2>Dernières simulations</h2>
+          <a class="lien-fleche" href="#simulations">Tout voir<svg aria-hidden="true"><use href="#i-fleche"/></svg></a>
+        </div>
+        <ul class="cartes" id="recentes" role="list" aria-busy="true"></ul>
+      </section>
+
+      <!-- Simulations -->
+      <section class="vue" id="vue-simulations" data-vue="simulations" aria-labelledby="titre-simulations" hidden>
+        <header class="vue__entete">
+          <div>
+            <h1 id="titre-simulations">Simulations</h1>
+            <p class="vue__sous-titre" id="quota">0 sur 200 enregistrées</p>
+          </div>
+        </header>
+        <div class="filtres">
+          <div class="puces" role="radiogroup" aria-label="Filtrer par outil" id="filtres-outil">
+            <label><input type="radio" name="outil" value="" checked><span>Toutes</span></label>
+            <label data-outil="salaire"><input type="radio" name="outil" value="salaire"><span><span class="pastille"></span>Salaire</span></label>
+            <label data-outil="assurance_vie"><input type="radio" name="outil" value="assurance_vie"><span><span class="pastille"></span>Assurance vie &amp; CEA</span></label>
+            <label data-outil="credit"><input type="radio" name="outil" value="credit"><span><span class="pastille"></span>Crédit</span></label>
+          </div>
+          <div class="recherche">
+            <label for="recherche" class="visuellement-cache">Rechercher une simulation</label>
+            <input id="recherche" type="search" placeholder="Rechercher par nom…" autocomplete="off" spellcheck="false" enterkeyhint="search">
+          </div>
+          <label class="tri">
+            <span class="visuellement-cache">Trier</span>
+            <select id="tri">
+              <option value="recent">Plus récentes</option>
+              <option value="ancien">Plus anciennes</option>
+              <option value="nom">Nom (A → Z)</option>
+              <option value="favori">Favoris d'abord</option>
+            </select>
+          </label>
+        </div>
+        <ul class="cartes" id="toutes" role="list" aria-busy="true"></ul>
+      </section>
+
+      <!-- Compte -->
+      <section class="vue" id="vue-compte" data-vue="compte" aria-labelledby="titre-compte" hidden>
+        <header class="vue__entete">
+          <div>
+            <h1 id="titre-compte">Compte</h1>
+            <p class="vue__sous-titre">Profil, sécurité et données personnelles.</p>
+          </div>
+        </header>
+
+        <div class="reglages">
+          <section class="reglage" aria-labelledby="r-profil">
+            <div class="reglage__texte"><h2 id="r-profil">Profil</h2><p>Le nom affiché dans votre espace.</p></div>
+            <form class="reglage__controle" id="form-profil" novalidate>
+              <div class="champ">
+                <label for="nom-affiche">Nom affiché</label>
+                <input id="nom-affiche" type="text" maxlength="80" autocomplete="name" spellcheck="false">
+              </div>
+              <div class="champ">
+                <span class="etiquette">Adresse e-mail</span>
+                <p class="valeur" id="email-compte"></p>
+              </div>
+              <div class="champ">
+                <span class="etiquette">Méthode de connexion</span>
+                <p class="valeur" id="methode-compte"></p>
+              </div>
+              <div><button type="submit" class="bouton bouton--principal bouton--petit">Enregistrer</button></div>
+            </form>
+          </section>
+
+          <section class="reglage" aria-labelledby="r-mdp" id="bloc-mdp">
+            <div class="reglage__texte"><h2 id="r-mdp">Mot de passe</h2><p>10 caractères au moins. Toutes vos autres sessions resteront ouvertes.</p></div>
+            <form class="reglage__controle" id="form-mdp" novalidate>
+              <div class="champ">
+                <label for="nouveau-mdp">Nouveau mot de passe</label>
+                <div class="champ-mdp">
+                  <input id="nouveau-mdp" type="password" autocomplete="new-password" minlength="10" aria-describedby="nouveau-mdp-erreur">
+                  <button type="button" class="afficher" aria-controls="nouveau-mdp" aria-pressed="false">Afficher</button>
+                </div>
+                <div class="jauge" id="jauge-compte" data-niveau="0" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                <p class="erreur" id="nouveau-mdp-erreur" hidden></p>
+              </div>
+              <div><button type="submit" class="bouton bouton--principal bouton--petit">Changer le mot de passe</button></div>
+            </form>
+          </section>
+
+          <section class="reglage" aria-labelledby="r-theme">
+            <div class="reglage__texte"><h2 id="r-theme">Apparence</h2><p>Le thème de votre espace.</p></div>
+            <div class="reglage__controle">
+              <div class="puces" role="radiogroup" aria-label="Thème" id="choix-theme">
+                <label><input type="radio" name="theme" value=""><span>Système</span></label>
+                <label><input type="radio" name="theme" value="light"><span>Clair</span></label>
+                <label><input type="radio" name="theme" value="dark"><span>Sombre</span></label>
+              </div>
+            </div>
+          </section>
+
+          <section class="reglage" aria-labelledby="r-donnees">
+            <div class="reglage__texte"><h2 id="r-donnees">Vos données</h2><p>Téléchargez une copie complète de votre profil et de vos simulations (JSON).</p></div>
+            <div class="reglage__controle"><div><button type="button" class="bouton bouton--contour bouton--petit" id="exporter">Exporter mes données</button></div></div>
+          </section>
+
+          <section class="reglage" aria-labelledby="r-sessions">
+            <div class="reglage__texte"><h2 id="r-sessions">Sessions</h2><p>Déconnecte cet appareil et tous les autres.</p></div>
+            <div class="reglage__controle"><div><button type="button" class="bouton bouton--contour bouton--petit" id="deconnexion-partout">Se déconnecter partout</button></div></div>
+          </section>
+
+          <section class="reglage reglage--danger" aria-labelledby="r-suppression">
+            <div class="reglage__texte"><h2 id="r-suppression">Supprimer le compte</h2><p>Efface définitivement votre compte et toutes vos simulations. Cette action est irréversible.</p></div>
+            <div class="reglage__controle"><div><button type="button" class="bouton bouton--danger bouton--petit" id="supprimer-compte">Supprimer mon compte</button></div></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <nav class="onglets-bas" aria-label="Navigation">
+      <a href="#apercu" data-vue="apercu"><svg aria-hidden="true"><use href="#i-apercu"/></svg><span>Aperçu</span></a>
+      <a href="#simulations" data-vue="simulations"><svg aria-hidden="true"><use href="#i-liste"/></svg><span>Simulations</span></a>
+      <button type="button" id="ouvrir-outils" aria-haspopup="dialog"><svg aria-hidden="true"><use href="#i-plus"/></svg><span>Nouvelle</span></button>
+      <a href="#compte" data-vue="compte"><svg aria-hidden="true"><use href="#i-compte"/></svg><span>Compte</span></a>
+    </nav>
+  </div>
+
+  <template id="modele-carte">
+    <li class="carte">
+      <a class="carte__lien" href="#">
+        <span class="carte__entete"><span class="pastille"></span><span class="carte__outil"></span><span class="carte__date"></span></span>
+        <span class="carte__nom"></span>
+        <span class="carte__principal"><span class="carte__principal-lib"></span><span class="carte__principal-val num"></span></span>
+        <span class="carte__secondaires"></span>
+      </a>
+      <div class="carte__actions">
+        <button type="button" class="bouton-icone carte__favori" aria-pressed="false"><svg aria-hidden="true"><use href="#i-etoile"/></svg></button>
+        <button type="button" class="bouton-icone carte__menu" aria-haspopup="menu" aria-expanded="false"><svg aria-hidden="true"><use href="#i-plus-actions"/></svg></button>
+      </div>
+    </li>
+  </template>
+
+  <div class="menu-actions" id="menu-actions" role="menu" hidden>
+    <button type="button" role="menuitem" data-action="ouvrir">Ouvrir</button>
+    <button type="button" role="menuitem" data-action="renommer">Renommer</button>
+    <button type="button" role="menuitem" data-action="dupliquer">Dupliquer</button>
+    <button type="button" role="menuitem" data-action="supprimer" class="danger">Supprimer</button>
+  </div>
+
+  <dialog class="dialogue" id="dlg-renommer" aria-labelledby="dlg-renommer-titre">
+    <form method="dialog" class="dialogue__forme">
+      <div class="dialogue__corps">
+        <h2 id="dlg-renommer-titre">Renommer la simulation</h2>
+        <div class="champ"><label for="nouveau-nom">Nom</label><input id="nouveau-nom" type="text" maxlength="120" required spellcheck="false"></div>
+      </div>
+      <div class="dialogue__pied">
+        <button type="submit" class="bouton bouton--discret" value="annuler" formnovalidate>Annuler</button>
+        <button type="submit" class="bouton bouton--principal" value="ok">Renommer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialogue" id="dlg-supprimer-compte" aria-labelledby="dlg-sc-titre">
+    <form method="dialog" class="dialogue__forme">
+      <div class="dialogue__corps">
+        <h2 id="dlg-sc-titre">Supprimer définitivement votre compte&nbsp;?</h2>
+        <p>Votre profil et vos <strong id="sc-nombre">0</strong> simulations seront effacés immédiatement. Vous pouvez d'abord exporter vos données.</p>
+        <div class="champ"><label for="sc-confirmation">Tapez <strong>SUPPRIMER</strong> pour confirmer</label><input id="sc-confirmation" type="text" autocomplete="off" spellcheck="false" autocapitalize="characters"></div>
+      </div>
+      <div class="dialogue__pied">
+        <button type="submit" class="bouton bouton--discret" value="annuler" formnovalidate>Annuler</button>
+        <button type="submit" class="bouton bouton--danger" value="ok" id="sc-valider" disabled>Supprimer mon compte</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialogue" id="dlg-outils" aria-labelledby="dlg-outils-titre">
+    <div class="dialogue__corps">
+      <h2 id="dlg-outils-titre">Nouvelle simulation</h2>
+      <ul class="lanceurs lanceurs--compact" role="list">
+        <li><a class="lanceur" href="/outils/salaire/" data-outil="salaire"><span class="lanceur__trait" aria-hidden="true"></span><span class="lanceur__texte"><strong>Salaire brut ⇄ net</strong></span><svg class="lanceur__fleche" aria-hidden="true"><use href="#i-fleche"/></svg></a></li>
+        <li><a class="lanceur" href="/outils/assurance-vie/" data-outil="assurance_vie"><span class="lanceur__trait" aria-hidden="true"></span><span class="lanceur__texte"><strong>Assurance vie &amp; CEA</strong></span><svg class="lanceur__fleche" aria-hidden="true"><use href="#i-fleche"/></svg></a></li>
+        <li><a class="lanceur" href="/outils/credit/" data-outil="credit"><span class="lanceur__trait" aria-hidden="true"></span><span class="lanceur__texte"><strong>Crédit bancaire</strong></span><svg class="lanceur__fleche" aria-hidden="true"><use href="#i-fleche"/></svg></a></li>
+      </ul>
+    </div>
+    <div class="dialogue__pied"><form method="dialog"><button class="bouton bouton--discret">Fermer</button></form></div>
+  </dialog>
+
+  <script src="/commun/vendor/supabase.js"></script>
+  <script src="/commun/modele.js"></script>
+  <script src="/commun/session.js"></script>
+  <script src="/commun/espace.js"></script>
+</body>
+</html>

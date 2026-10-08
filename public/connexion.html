@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <title>Connexion — Espace Finances TN</title>
+  <meta name="description" content="Connectez-vous ou créez votre Espace Finances TN avec Google ou par e-mail.">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#F4F5F2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0A0C0F" media="(prefers-color-scheme: dark)">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="icon" href="/commun/icone.svg" type="image/svg+xml">
+  <link rel="preload" href="/commun/polices/mona-sans-latin-standard-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/commun/meridien.css">
+  <link rel="stylesheet" href="/commun/connexion.css">
+  <script src="/commun/theme-init.js"></script>
+</head>
+<body>
+  <a class="evitement" href="#formulaire">Aller au formulaire</a>
+  <div class="ecran">
+    <aside class="ecran__marque bande-sombre" aria-label="Présentation">
+      <a class="marque" href="/" aria-label="Espace Finances TN, retour à l'accueil">
+        <span class="marque__signe" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 12.5 6 8l3 3 5-6.5"/><path d="M10.5 4.5H14v3.5"/></svg></span>
+        Espace Finances <span class="marque__tn">TN</span>
+      </a>
+      <div class="ecran__message">
+        <p class="ecran__titre">Salaire, épargne, crédit.<br>Calculés au millime, gardés pour vous seul.</p>
+        <ul class="ecran__points" role="list">
+          <li><span class="pastille" data-outil="salaire"></span>Salaire brut ⇄ net 2026</li>
+          <li><span class="pastille" data-outil="assurance_vie"></span>Assurance vie &amp; CEA</li>
+          <li><span class="pastille" data-outil="credit"></span>Crédit bancaire</li>
+        </ul>
+      </div>
+      <p class="ecran__note">Vos simulations sont isolées par compte au niveau de la base de données.</p>
+    </aside>
+
+    <main class="ecran__formulaire" id="formulaire">
+      <div class="carte-auth">
+        <div class="onglets-auth" role="tablist" aria-label="Accès au compte" data-onglets>
+          <button type="button" role="tab" id="tab-connexion" aria-controls="panneau-auth" aria-selected="true" data-mode="connexion">Se connecter</button>
+          <button type="button" role="tab" id="tab-inscription" aria-controls="panneau-auth" aria-selected="false" tabindex="-1" data-mode="inscription">Créer un compte</button>
+          <span class="onglets-auth__indicateur" aria-hidden="true"></span>
+        </div>
+
+        <section id="panneau-auth" role="tabpanel" aria-labelledby="tab-connexion" class="panneau-auth">
+          <h1 id="titre-auth">Bon retour</h1>
+          <p class="sous-titre" id="sous-titre-auth">Connectez-vous pour retrouver vos simulations.</p>
+
+          <div id="message" class="message" role="alert" hidden></div>
+
+          <button type="button" class="bouton bouton--contour bouton--plein bouton-google" id="google" data-groupe="identifiants">
+            <svg viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.72A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.72V4.95H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>
+            Continuer avec Google
+          </button>
+
+          <div class="separateur" data-groupe="identifiants"><span>ou par e-mail</span></div>
+
+          <form id="form-auth" novalidate>
+            <div class="champ" data-champ="nom" hidden>
+              <label for="nom">Nom affiché <span class="facultatif">(facultatif)</span></label>
+              <input id="nom" name="nom" type="text" autocomplete="name" maxlength="80" spellcheck="false">
+            </div>
+            <div class="champ" data-champ="email">
+              <label for="email">Adresse e-mail</label>
+              <input id="email" name="email" type="email" autocomplete="email" inputmode="email" spellcheck="false" autocapitalize="none" required aria-describedby="email-erreur">
+              <p class="erreur" id="email-erreur" hidden></p>
+            </div>
+            <div class="champ" data-champ="mdp">
+              <div class="champ__entete">
+                <label for="mdp">Mot de passe</label>
+                <button type="button" class="lien-discret" id="oubli" data-mode-lien="oubli">Mot de passe oublié&nbsp;?</button>
+              </div>
+              <div class="champ-mdp">
+                <input id="mdp" name="mdp" type="password" autocomplete="current-password" required minlength="10" aria-describedby="mdp-aide mdp-erreur">
+                <button type="button" class="afficher" aria-controls="mdp" aria-pressed="false">Afficher</button>
+              </div>
+              <div class="jauge" id="jauge" data-niveau="0" hidden aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+              <p class="aide" id="mdp-aide" hidden>10 caractères au moins. Mélangez majuscules, chiffres et symboles.</p>
+              <p class="erreur" id="mdp-erreur" hidden></p>
+            </div>
+            <div class="champ" data-champ="mdp2" hidden>
+              <label for="mdp2">Confirmer le mot de passe</label>
+              <div class="champ-mdp">
+                <input id="mdp2" name="mdp2" type="password" autocomplete="new-password" minlength="10" aria-describedby="mdp2-erreur">
+                <button type="button" class="afficher" aria-controls="mdp2" aria-pressed="false">Afficher</button>
+              </div>
+              <p class="erreur" id="mdp2-erreur" hidden></p>
+            </div>
+            <label class="case" data-champ="cgu" hidden>
+              <input type="checkbox" id="cgu" name="cgu">
+              <span>J'accepte la <a href="/confidentialite.html" target="_blank" rel="noopener">politique de confidentialité<span class="visuellement-cache"> (nouvel onglet)</span></a>.</span>
+            </label>
+            <p class="erreur" id="cgu-erreur" hidden></p>
+            <button type="submit" class="bouton bouton--principal bouton--plein bouton-envoi" id="envoyer">Se connecter</button>
+          </form>
+
+          <p class="bas-formulaire" id="bas-formulaire">
+            <button type="button" class="lien-discret" data-mode-lien="connexion" hidden>← Retour à la connexion</button>
+          </p>
+        </section>
+      </div>
+      <p class="mentions"><a href="/">Accueil</a> · <a href="/confidentialite.html">Confidentialité</a></p>
+    </main>
+  </div>
+
+  <script src="/commun/vendor/supabase.js"></script>
+  <script src="/commun/config.js"></script>
+  <script src="/commun/modele.js"></script>
+  <script src="/commun/session.js"></script>
+  <script src="/commun/connexion.js"></script>
+</body>
+</html>

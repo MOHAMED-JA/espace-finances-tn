@@ -1,0 +1,51 @@
+# En-têtes de sécurité (Cloudflare Pages)
+# Attention : quand plusieurs règles s'appliquent à une même adresse, Cloudflare
+# concatène les valeurs d'un même en-tête. La CSP et X-Robots-Tag sont donc posées
+# par des règles qui ne se chevauchent jamais.
+
+/*
+  Strict-Transport-Security: max-age=63072000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+
+# --- Pages de l'Espace : CSP stricte, aucun style ni script en ligne ---
+/
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co wss://txrwgqgnqdkipwtwpevl.supabase.co; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+/index.html
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co wss://txrwgqgnqdkipwtwpevl.supabase.co; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+/connexion.html
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co wss://txrwgqgnqdkipwtwpevl.supabase.co; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  X-Robots-Tag: noindex
+/connexion
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co wss://txrwgqgnqdkipwtwpevl.supabase.co; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  X-Robots-Tag: noindex
+/404.html
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  X-Robots-Tag: noindex
+/confidentialite*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+/espace/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co wss://txrwgqgnqdkipwtwpevl.supabase.co; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  X-Robots-Tag: noindex
+  Cache-Control: no-store
+
+# --- Outils : attributs style="" et styles générés autorisés, jamais de script en ligne ---
+/outils/salaire/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co wss://txrwgqgnqdkipwtwpevl.supabase.co; manifest-src 'self'; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  X-Robots-Tag: noindex
+/outils/assurance-vie/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co wss://txrwgqgnqdkipwtwpevl.supabase.co; manifest-src 'self'; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  X-Robots-Tag: noindex
+# Crédit : lecture d'offres par photo (Tesseract) et de PDF bancaires (pdf.js), chargés à la demande depuis jsDelivr
+/outils/credit/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://txrwgqgnqdkipwtwpevl.supabase.co wss://txrwgqgnqdkipwtwpevl.supabase.co https://cdn.jsdelivr.net https://tessdata.projectnaptha.com data: blob:; manifest-src 'self'; worker-src 'self' blob: https://cdn.jsdelivr.net; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  X-Robots-Tag: noindex
+
+# --- Cache ---
+/commun/polices/*
+  Cache-Control: public, max-age=31536000, immutable
+/outils/credit/polices/*
+  Cache-Control: public, max-age=31536000, immutable

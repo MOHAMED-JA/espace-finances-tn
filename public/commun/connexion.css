@@ -1,0 +1,69 @@
+/* Connexion / inscription */
+.ecran { min-height: 100dvh; display: grid; }
+@media (min-width: 980px) { .ecran { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); } }
+
+.ecran__marque {
+  display: flex; flex-direction: column; justify-content: space-between; gap: 32px;
+  padding: max(20px, env(safe-area-inset-top)) clamp(20px, 4vw, 56px) 24px;
+  border-bottom: 1px solid var(--hairline);
+}
+@media (min-width: 980px) { .ecran__marque { border-bottom: 0; border-right: 1px solid var(--hairline); padding-block: 32px 40px; position: sticky; top: 0; height: 100dvh; } }
+.marque__tn { color: var(--signal); }
+.ecran__message { display: none; }
+.ecran__note { display: none; font-size: 13px; color: var(--ink-3); max-width: 40ch; }
+@media (min-width: 980px) {
+  .ecran__message, .ecran__note { display: block; }
+  .ecran__titre { font-size: clamp(32px, 3.2vw, 48px); line-height: 1.05; font-weight: 660; font-stretch: 114%; letter-spacing: -.03em; max-width: 16ch; text-wrap: balance; }
+  .ecran__points { list-style: none; padding: 0; margin: 32px 0 0; display: grid; gap: 12px; color: var(--ink-2); }
+  .ecran__points li { display: flex; align-items: center; gap: 10px; }
+}
+
+.ecran__formulaire { display: grid; align-content: center; justify-items: center; gap: 20px; padding: 32px 16px calc(32px + env(safe-area-inset-bottom)); }
+.carte-auth { width: min(440px, 100%); }
+
+.onglets-auth {
+  position: relative; display: grid; grid-template-columns: 1fr 1fr; padding: 4px;
+  background: var(--surface-2); border: 1px solid var(--hairline); border-radius: var(--r-pill); margin-bottom: 32px;
+}
+.onglets-auth button {
+  position: relative; z-index: 1; min-height: 40px; border: 0; background: transparent; border-radius: var(--r-pill);
+  font-size: 14px; font-weight: 580; color: var(--ink-2); cursor: pointer; user-select: none; touch-action: manipulation;
+  transition: color 120ms var(--ease-out);
+}
+.onglets-auth button[aria-selected="true"] { color: var(--ink); }
+.onglets-auth__indicateur {
+  position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px); border-radius: var(--r-pill);
+  background: var(--surface-1); box-shadow: var(--e1), var(--edge); border: 1px solid var(--hairline);
+  transition: transform var(--t-tab) var(--ease-out);
+}
+.onglets-auth[data-actif="inscription"] .onglets-auth__indicateur { transform: translateX(100%); }
+.onglets-auth.sans-anim .onglets-auth__indicateur { transition: none; }
+.onglets-auth[hidden] { display: none; }
+
+.panneau-auth { display: grid; gap: 20px; }
+.panneau-auth h1 { font-size: 32px; font-weight: 660; font-stretch: 112%; letter-spacing: -.025em; }
+.sous-titre { color: var(--ink-2); margin-top: -12px; }
+
+.bouton-google { min-height: 52px; gap: 12px; }
+.bouton-google svg { width: 18px; height: 18px; }
+
+.separateur { display: flex; align-items: center; gap: 12px; color: var(--ink-3); font-size: 13px; }
+.separateur::before, .separateur::after { content: ""; flex: 1; height: 1px; background: var(--hairline); }
+
+#form-auth { display: grid; gap: 16px; }
+.champ__entete { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.facultatif { color: var(--ink-3); font-weight: 450; }
+.lien-discret {
+  border: 0; background: transparent; padding: 4px 0; font-size: 13px; font-weight: 560; color: var(--ink-2);
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
+.lien-discret:hover { color: var(--ink); }
+.case { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--ink-2); cursor: pointer; }
+.case input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--signal); flex: none; }
+.bouton-envoi { min-height: 52px; font-size: 16px; margin-top: 4px; }
+.bas-formulaire { text-align: center; min-height: 0; }
+.mentions { font-size: 13px; color: var(--ink-3); }
+.mentions a { color: var(--ink-2); }
+
+.panneau-auth.bascule > * { animation: bascule 200ms var(--ease-out); }
+@keyframes bascule { from { opacity: .4; transform: translateY(calc(var(--motion-distance) / 2)); } }

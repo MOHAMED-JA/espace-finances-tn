@@ -1,0 +1,47 @@
+# Publication sur GitHub Pages à chaque push sur main.
+# Les tests unitaires doivent passer ; seuls les fichiers de l'application sont publiés (pas tests/, e2e/ ni .github/).
+name: Deploy static content to Pages
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Une seule publication à la fois, sans annuler celle en cours
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tests unitaires
+        run: npm test
+      - name: Préparer le site (fichiers publiés uniquement)
+        run: |
+          mkdir _site
+          cp -r index.html manifest.webmanifest sw.js assets js _site/
+          touch _site/.nojekyll
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
