@@ -306,3 +306,20 @@ body.attente .app { visibility: hidden; }
   .principal { padding: 0; }
 }
 
+
+/* ---------- Calendrier de la marge d'emprunt ---------- */
+.paliers { margin-top: 16px; display: grid; gap: 6px; }
+.paliers__titre { font-size: 18px; }
+.paliers__sous { color: var(--encre-2); font-size: 14px; max-width: 70ch; }
+.paliers__liste { list-style: none; margin: 10px 0 0; padding: 0 0 0 18px; display: grid; gap: 14px; position: relative; }
+.paliers__liste::before { content: ""; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: linear-gradient(var(--credit), var(--salaire)); opacity: .5; }
+.palier { position: relative; display: grid; gap: 6px; padding: 12px 14px; border-radius: 14px; background: var(--surface-2); }
+.palier::before { content: ""; position: absolute; left: -19px; top: 16px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface); border: 3px solid var(--credit); }
+.palier:last-child::before { border-color: var(--salaire); }
+.palier__tete { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.palier__date { font-family: var(--affiche); font-weight: 720; font-size: 16px; }
+.palier__fin { color: var(--encre-3); font-size: 13.5px; }
+.palier__corps { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.palier__mensualite { font-size: 18px; font-weight: 760; color: var(--credit-t); }
+.palier__capital { color: var(--encre-2); font-size: 14px; }
+.palier .lien-action { margin-left: auto; font-size: 14px; }

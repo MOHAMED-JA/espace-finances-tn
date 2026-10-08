@@ -195,6 +195,11 @@
               </div>
               <ul class="capacite__liste" id="cap-liste"></ul>
             </div>
+            <div class="paliers panneau" id="cap-paliers" hidden>
+              <h3 class="paliers__titre">Le calendrier de votre marge</h3>
+              <p class="paliers__sous" id="cap-paliers-sous">Chaque crédit qui se termine libère une partie de votre capacité d'emprunt.</p>
+              <ol class="paliers__liste" id="cap-paliers-liste"></ol>
+            </div>
           </section>
 
           <!-- Suggestions d'épargne -->
@@ -301,11 +306,13 @@
             </details>
 
             <details class="depliant" id="sec-banque">
-              <summary><span class="depliant__icone"><svg aria-hidden="true"><use href="/orbite/icones.svg#outils"/></svg></span><span>Règles de votre banque<small>Taux d'endettement maximal sur le net et sur le brut</small></span><svg class="chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
+              <summary><span class="depliant__icone"><svg aria-hidden="true"><use href="/orbite/icones.svg#outils"/></svg></span><span>Règles de votre banque<small id="sec-banque-sous">Taux d'endettement maximal sur le net et sur le brut</small></span><svg class="chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
               <div class="depliant__corps grille-champs">
+                <div class="champ"><label for="p-banque">Votre banque (facultatif)</label><div class="saisie"><input id="p-banque" data-p="banque" type="text" maxlength="40" autocomplete="off" placeholder="BH Bank, BIAT, STB…"></div></div>
+                <div class="champ"><span class="champ__lib" id="lib-base-banque">Elle calcule votre capacité sur</span><div class="bascule" role="radiogroup" aria-labelledby="lib-base-banque"><label><input type="radio" name="p-base-banque" data-p="baseBanque" value="net"><span>Le net</span></label><label><input type="radio" name="p-base-banque" data-p="baseBanque" value="brut"><span>Le brut</span></label><i class="bascule__pastille" aria-hidden="true"></i></div></div>
                 <div class="champ"><label for="p-qnet">Sur le salaire net</label><div class="saisie"><input id="p-qnet" data-p="quotiteNet" data-type="pourcent" type="text" inputmode="decimal"><span class="saisie__unite">%</span></div></div>
                 <div class="champ"><label for="p-qbrut">Sur le salaire brut</label><div class="saisie"><input id="p-qbrut" data-p="quotiteBrut" data-type="pourcent" type="text" inputmode="decimal"><span class="saisie__unite">%</span></div></div>
-                <p class="champ__aide champ--large">40 % est la règle la plus courante en Tunisie. Certaines banques calculent sur le salaire brut, ce qui augmente la mensualité possible.</p>
+                <p class="champ__aide champ--large">40 % est la règle la plus courante en Tunisie. Certaines banques (par exemple BH Bank) calculent sur le salaire brut, d'autres sur le net : choisissez la règle de votre banque, Orbite s'en servira dans tous ses conseils.</p>
               </div>
             </details>
           </form>

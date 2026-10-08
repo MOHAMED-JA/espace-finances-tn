@@ -205,3 +205,20 @@ test("contrat vie : mois écoulés, total versé, capital estimé, versements li
   assert.ok(avec.epargne.economieContrats > sans.epargne.economieContrats, "les versements libres de l'année réduisent l'impôt");
   assert.match(avec.conseils.map((x) => x.texte).join(" "), /6\u202f900 DT versés en 4 ans et 11 mois/);
 });
+
+test("banque sur le brut : conseils et calendrier de la marge à chaque fin de crédit", () => {
+  const sy = O.synthese(Object.assign({}, PROFIL_ENDETTE, { baseBanque: "brut", banque: "BH Bank" }), {}, MAINTENANT);
+  const pal = sy.capacite.brut.paliers;
+  assert.deepEqual(pal.map((x) => x.mois), [65, 68, 148]);
+  assert.deepEqual(pal[0].credits, ["Crédit automobile"]);
+  proche(pal[1].mensualiteMax, 1600 - 875.894);
+  assert.ok(pal[1].capitalImmo > 70000 && pal[1].capitalImmo < 80000);
+  const textes = sy.conseils.map((c) => c.titre + " " + c.texte).join(" | ");
+  assert.match(textes, /Endettement au-dessus de 40 % du brut/);
+  assert.match(textes, /BH Bank prête jusqu'à 40 % du brut/);
+  assert.match(textes, /Votre marge revient dans 5 ans et 5 mois/);
+  /* Sur le net, la première étape cite tous les crédits terminés depuis la précédente. */
+  const net = O.synthese(PROFIL_ENDETTE, {}, MAINTENANT).capacite.net.paliers;
+  assert.deepEqual(net[0].credits, ["Crédit automobile", "Crédit mariage"]);
+  assert.equal(O.normaliser({}).baseBanque, "net");
+});

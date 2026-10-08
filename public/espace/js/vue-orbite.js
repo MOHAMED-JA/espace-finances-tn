@@ -7,7 +7,7 @@
   var O = window.Orbite, F = O.F, $ = O.$, doc = document;
   var OC = window.OrbiteCalcul;
   var NS = "http://www.w3.org/2000/svg";
-  var base = "net";
+  var base = "net", baseChoisie = false;
 
   /* ---------- Scène orbitale ---------- */
   var ORBITES = [
@@ -177,7 +177,15 @@
     });
   }
 
+  /* Par défaut, la base de calcul est celle de la banque de l'utilisateur (profil). */
+  function syncBase(sy) {
+    if (baseChoisie || base === sy.profil.baseBanque) return;
+    base = sy.profil.baseBanque;
+    var r = doc.querySelector('input[name="base-capacite"][value="' + base + '"]');
+    if (r) { r.checked = true; if (O.placerPastilles) O.placerPastilles(r.closest(".bloc-orbite")); }
+  }
   function rendreCapacite(sy) {
+    syncBase(sy);
     var cap = sy.capacite[base], autre = sy.capacite[base === "net" ? "brut" : "net"];
     /* Aucune marge aujourd'hui : on montre ce qui redevient possible à la fin des crédits en cours. */
     var futur = cap.futur || null, vue = futur ? futur.capacite : cap;
@@ -217,6 +225,34 @@
       var a = li.querySelector("a");
       a.href = "#credit?type=" + c.cle + "&capital=" + Math.floor(c.capital) + "&mois=" + c.dureeMois + "&taux=" + c.tauxPct;
       a.setAttribute("aria-label", "Simuler un " + c.libelle.toLowerCase() + " de " + F.dt0(c.capital) + " DT");
+    });
+    rendrePaliers(sy, cap);
+  }
+
+  /* Calendrier de la marge : une étape par fin de crédit qui augmente la mensualité possible. */
+  function rendrePaliers(sy, cap) {
+    var bloc = $("cap-paliers"), ol = $("cap-paliers-liste"), paliers = cap.paliers || [];
+    bloc.hidden = !paliers.length;
+    if (!paliers.length) return;
+    var p = sy.profil;
+    $("cap-paliers-sous").textContent = "Calcul à " + F.pct(cap.quotite, 0) + " du salaire " + base + (p.banque && base === p.baseBanque ? ", comme " + p.banque : "") +
+      ". Chaque crédit qui se termine libère une partie de votre capacité d'emprunt. Les montants d'une même étape ne s'additionnent pas : c'est l'un ou l'autre.";
+    ol.textContent = "";
+    paliers.forEach(function (x) {
+      var li = cree("li", "palier");
+      var tete = cree("div", "palier__tete");
+      tete.appendChild(cree("span", "palier__date", x.date.charAt(0).toUpperCase() + x.date.slice(1)));
+      tete.appendChild(cree("span", "palier__fin", "Fin " + (x.credits.length > 1 ? "des crédits " : "du crédit ") + x.credits.map(function (c) { return c.toLowerCase().replace(/^crédit /, ""); }).join(" et ")));
+      li.appendChild(tete);
+      var corps = cree("div", "palier__corps");
+      corps.appendChild(cree("strong", "palier__mensualite chiffre", F.dt0(x.mensualiteMax) + " DT par mois"));
+      corps.appendChild(cree("span", "palier__capital", "soit jusqu'à " + F.dt0(x.capitalImmo) + " DT en immobilier sur " + Math.round(x.dureeImmoMois / 12) + " ans à 10 %"));
+      var a = cree("a", "lien-action", "Simuler"); a.appendChild(icone("fleche"));
+      a.href = "#credit?type=immo&capital=" + Math.floor(x.capitalImmo) + "&mois=" + x.dureeImmoMois + "&taux=10";
+      a.setAttribute("aria-label", "Simuler un crédit immobilier de " + F.dt0(x.capitalImmo) + " DT, possible en " + x.date);
+      corps.appendChild(a);
+      li.appendChild(corps);
+      ol.appendChild(li);
     });
   }
 
@@ -300,6 +336,7 @@
   }
 
   function rendre(sy) {
+    if (sy) syncBase(sy);
     if (!sy) return;
     $("demarrage").hidden = !O.profilVierge();
     $("orbite-contenu").classList.toggle("en-attente", O.profilVierge());
@@ -316,7 +353,7 @@
   }
 
   doc.querySelectorAll('input[name="base-capacite"]').forEach(function (r) {
-    r.addEventListener("change", function () { base = this.value; var sy = O.synthese(); if (sy) rendreCapacite(sy); if (sy) rendreScene(sy); });
+    r.addEventListener("change", function () { base = this.value; baseChoisie = true; var sy = O.synthese(); if (sy) rendreCapacite(sy); if (sy) rendreScene(sy); });
   });
 
   /* ---------- Premier pas ---------- */
