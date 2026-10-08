@@ -441,7 +441,7 @@
   }
 
   function afficherTranches(sim) {
-    var couleurs = ['#64748b', '#0ea5e9', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e'];
+    var couleurs = ['#64748b', '#0ea5e9', '#6A55E0', '#8b5cf6', '#7A66E8', '#d946ef', '#7A66E8', '#f43f5e'];
     var totAv = 0, totAp = 0;
     $('tax-brackets-comparison').innerHTML = sim.avant.parTranche.map(function (bd, i) {
       var ad = sim.apres.parTranche[i] || { impot: 0 };
@@ -925,7 +925,7 @@
   }
 
   /* Agence : coordonnées et logo mémorisés sur cet appareil (localStorage), jamais transmis */
-  var COULEUR_ORIGINE = '#4f46e5';
+  var COULEUR_ORIGINE = '#5B45D6';
   var CHAMPS_AGENCE = { nom: 'ag-nom', tel: 'ag-tel', email: 'ag-email', adresse: 'ag-adresse' };
   var agence = { nom: '', tel: '', email: '', adresse: '', logo: null, conseiller: '', couleur: '' };
 
@@ -3109,7 +3109,7 @@
      =================================================================== */
   function couleursRecu() {
     var pal = agence.couleur ? Theme.palette(agence.couleur) : null;
-    return pal ? [pal.principale, pal.secondaire, pal.tertiaire] : ['#4f46e5', '#7c3aed', '#c026d3'];
+    return pal ? [pal.principale, pal.secondaire, pal.tertiaire] : ['#5B45D6', '#5B45D6', '#4A36B8'];
   }
   function dessinerRecu(cv) {
     var calc = ui.calc, sim = calc.sim, e = calc.etat;

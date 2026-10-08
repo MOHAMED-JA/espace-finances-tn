@@ -18,7 +18,7 @@ public/                  ← seul dossier publié (Cloudflare Pages, « Build ou
   outils/salaire/        simulateur de salaire (moteur testé)
   outils/assurance-vie/  simulateur assurance vie & CEA
   outils/credit/         simulateur de crédit (code découpé en js/ et css/)
-  commun/                design system Méridien, session Supabase, barre de l'Espace (pont)
+  commun/                design system Méridien (+ commun/outils/ : Méridien appliqué aux 3 outils), session Supabase, barre de l’Espace
   _headers               en-têtes de sécurité (CSP par zone, HSTS, anti-iframe…)
 supabase/migrations/     schéma SQL (tables, RLS, export, suppression de compte)
 tests/                   tests unitaires (node --test) : Espace, salaire, assurance vie

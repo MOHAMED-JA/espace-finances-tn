@@ -793,7 +793,7 @@
         '<div class="empty" id="' + k + '-vide">' +
           '<div>' +
             '<svg class="empty-art" viewBox="0 0 140 140" aria-hidden="true">' +
-              '<defs><linearGradient id="' + k + '-g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c3aed"/><stop offset=".55" stop-color="#ec4899"/><stop offset="1" stop-color="#f97316"/></linearGradient></defs>' +
+              '<defs><linearGradient id="' + k + '-g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8C5000"/><stop offset=".55" stop-color="#C27A1A"/><stop offset="1" stop-color="#f97316"/></linearGradient></defs>' +
               '<circle cx="70" cy="70" r="62" fill="url(#' + k + '-g1)" opacity=".12"/>' +
               '<circle cx="70" cy="70" r="44" fill="none" stroke="url(#' + k + '-g1)" stroke-width="12" stroke-dasharray="190 90" stroke-linecap="round" transform="rotate(-90 70 70)"/>' +
               '<path d="M52 78l12-12 9 9 16-17" fill="none" stroke="url(#' + k + '-g1)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>' +
@@ -819,8 +819,8 @@
 
           '<div class="card split">' +
             '<div class="split-head"><strong style="font-size:14px">' + T('Répartition du coût') + '</strong>' +
-              '<div class="split-legend"><span><i style="background:linear-gradient(90deg,#7c3aed,#a855f7)"></i>' + T('Capital') + ' <b class="num" id="' + k + '-pc"></b></span>' +
-              '<span><i style="background:linear-gradient(90deg,#ec4899,#f97316)"></i>' + T('Intérêts') + ' <b class="num" id="' + k + '-pi"></b></span>' +
+              '<div class="split-legend"><span><i style="background:linear-gradient(90deg,#8C5000,#B86E00)"></i>' + T('Capital') + ' <b class="num" id="' + k + '-pc"></b></span>' +
+              '<span><i style="background:linear-gradient(90deg,#C27A1A,#f97316)"></i>' + T('Intérêts') + ' <b class="num" id="' + k + '-pi"></b></span>' +
               '<span id="' + k + '-pa-leg" hidden><i style="background:linear-gradient(90deg,#0891b2,#22d3ee)"></i>' + T('Assurance et frais') + ' <b class="num" id="' + k + '-pa"></b></span></div></div>' +
             '<div class="split-bar" role="img" id="' + k + '-bar"><span class="s-cap" id="' + k + '-bc"></span><span class="s-int" id="' + k + '-bi"></span><span class="s-ass" id="' + k + '-ba"></span></div>' +
           '</div>' +
@@ -1341,8 +1341,8 @@
       f('thead').innerHTML = '<tr>' +
         '<th scope="col">' + echapper(annuel ? t('Année') : t('Échéance')) + '</th>' +
         '<th scope="col">' + echapper(annuel ? t('Total payé') : (avecAss ? t('Échéance totale') : nomEcheance())) + '</th>' +
-        '<th scope="col"><span class="cle" style="background:#ec4899"></span>' + echapper(t('Intérêts')) + '</th>' +
-        '<th scope="col"><span class="cle" style="background:#7c3aed"></span>' + echapper(t('Principal')) + '</th>' +
+        '<th scope="col"><span class="cle" style="background:#C27A1A"></span>' + echapper(t('Intérêts')) + '</th>' +
+        '<th scope="col"><span class="cle" style="background:#8C5000"></span>' + echapper(t('Principal')) + '</th>' +
         (avecAss ? '<th scope="col"><span class="cle" style="background:#0891b2"></span>' + echapper(t('Assurance')) + '</th>' : '') +
         '<th scope="col">' + echapper(t('Capital restant dû')) + '</th>' +
         (avecRatio ? '<th scope="col" title="' + echapper(t('Intérêts cumulés (36 mois)')) + '">' + echapper(t('Intérêts 36 mois')) + '</th><th scope="col">' + echapper(t('Ratio')) + '</th>' : '') + '</tr>';
@@ -3235,7 +3235,7 @@
         '<div class="input-wrap sm"><input type="text" inputmode="decimal" data-k="valeur" value="' + echapper(fmtSaisie(p.valeur)) + '" aria-label="' + echapper(t('Taux ou marge ({n})', { n: t(ty.nom) })) + '"><span class="suffix">%</span></div>' +
       '</div>';
     }).join('');
-    function couleurA() { return /^#[0-9a-f]{6}$/i.test(a.couleur || '') ? a.couleur.toLowerCase() : '#7c3aed'; }
+    function couleurA() { return /^#[0-9a-f]{6}$/i.test(a.couleur || '') ? a.couleur.toLowerCase() : '#8C5000'; }
     function apercu() {
       return a.logo ? '<img src="' + echapper(a.logo) + '" alt="' + echapper(t('Logo de l\'agence')) + '">' : '<span>' + ico('building') + echapper(t('Aucun logo')) + '</span>';
     }
@@ -3445,8 +3445,8 @@
   /* Diagramme de flux : chaque composante du coût se déverse dans le coût total */
   function fluxSVG(r) {
     var postes = [
-      { lib: t('Capital'), v: r.C, c: '#7c3aed' },
-      { lib: t('Intérêts'), v: r.totI, c: '#ec4899' },
+      { lib: t('Capital'), v: r.C, c: '#8C5000' },
+      { lib: t('Intérêts'), v: r.totI, c: '#C27A1A' },
       { lib: t('Assurance'), v: r.totAss, c: '#0891b2' },
       { lib: t('Frais'), v: r.frais, c: '#f59e0b' },
       { lib: t('Indemnités'), v: r.totIndem, c: '#10b981' }
@@ -3470,7 +3470,7 @@
       '<text x="' + (xD + 22) + '" y="' + (yTot + hUtile / 2 - 6) + '" class="flux-lib">' + echapper(t('Coût total')) + '</text>' +
       '<text x="' + (xD + 22) + '" y="' + (yTot + hUtile / 2 + 14) + '" class="flux-tot">' + echapper(fmtMoney(r.coutTotal)) + '</text>';
     return '<svg viewBox="0 0 ' + L + ' ' + H + '" class="flux-svg" role="img" aria-label="' + echapper(t('Composition du coût total')) + '" style="direction:ltr">' +
-      '<defs><linearGradient id="flux-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7c3aed"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs>' + out + '</svg>';
+      '<defs><linearGradient id="flux-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8C5000"/><stop offset="1" stop-color="#C27A1A"/></linearGradient></defs>' + out + '</svg>';
   }
 
   /* Valeur actuelle des remboursements, actualisés au taux d'inflation */
@@ -3490,7 +3490,7 @@
     /* Jauges */
     var autres = roundPrec(r.totAss + r.frais + r.totIndem);
     var total = r.C + r.totI + autres;
-    var j1 = jaugeSVG([{ v: r.C, c: '#7c3aed' }, { v: r.totI, c: '#ec4899' }, { v: autres, c: '#0891b2' }], total,
+    var j1 = jaugeSVG([{ v: r.C, c: '#8C5000' }, { v: r.totI, c: '#C27A1A' }, { v: autres, c: '#0891b2' }], total,
       fmtPct(r.C / total * 100, 0), t('capital'));
     var teg = isFinite(r.teg) ? r.teg : e.taux;
     var j2 = jaugeSVG([{ v: teg, c: teg > 12 ? '#f43f5e' : teg > 9 ? '#f59e0b' : '#10b981' }], 20, fmtPct(teg, 2), t('TEG'));
@@ -3559,7 +3559,7 @@
     var rng = $('[data-temps-range]', el);
     rng.style.setProperty('--pct', (n ? k / n * 100 : 0) + '%');
     $('[data-temps-anneau]', el).innerHTML = jaugeSVG([{ v: pct, c: 'url(#temps-g)' }], 100, fmtPct(pct, 0), t('remboursé'))
-      .replace('<circle', '<defs><linearGradient id="temps-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c3aed"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><circle');
+      .replace('<circle', '<defs><linearGradient id="temps-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8C5000"/><stop offset="1" stop-color="#C27A1A"/></linearGradient></defs><circle');
     var quand = k === 0 ? t('Au départ') : (date ? t('Après l\'échéance {n} · {d}', { n: k, d: moisLong(date) }) : t('Après l\'échéance {n}', { n: k }));
     $('[data-temps-stats]', el).innerHTML =
       '<p class="temps-quand">' + echapper(quand) + '</p>' +
@@ -4391,7 +4391,7 @@
      Couleurs de l'agence
      =================================================================== */
   var COULEURS_MARQUE = [
-    { cle: '#7c3aed', nom: 'Violet' }, { cle: '#2563eb', nom: 'Bleu' }, { cle: '#059669', nom: 'Émeraude' },
+    { cle: '#8C5000', nom: 'Violet' }, { cle: '#2563eb', nom: 'Bleu' }, { cle: '#059669', nom: 'Émeraude' },
     { cle: '#dc2626', nom: 'Rouge' }, { cle: '#ea580c', nom: 'Orange' }, { cle: '#0891b2', nom: 'Turquoise' }, { cle: '#1e3a8a', nom: 'Bleu nuit' }
   ];
   function hexVersRgb(h) { var n = parseInt(h.replace('#', ''), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
@@ -4410,13 +4410,13 @@
     var f = function (n) { return Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))))); };
     return '#' + [f(0), f(8), f(4)].map(function (x) { return x.toString(16).padStart(2, '0'); }).join('');
   }
-  function couleurMarque() { return /^#[0-9a-f]{6}$/i.test(agence.couleur || '') ? agence.couleur : '#7c3aed'; }
+  function couleurMarque() { return /^#[0-9a-f]{6}$/i.test(agence.couleur || '') ? agence.couleur : '#8C5000'; }
   function couleurSecondaire(hex) { var c = rgbVersHsl(hexVersRgb(hex)); return hslVersHex(c[0] + 38, Math.min(90, c[1] + 5), Math.min(60, c[2] + 6)); }
 
   function appliquerMarque() {
     var st = $('#style-marque');
     var hex = couleurMarque();
-    if (hex.toLowerCase() === '#7c3aed') { if (st) st.textContent = ''; return; }
+    if (hex.toLowerCase() === '#8C5000') { if (st) st.textContent = ''; return; }
     var h = rgbVersHsl(hexVersRgb(hex)), c2 = couleurSecondaire(hex), c3 = hslVersHex(h[0] + 70, Math.min(95, h[1] + 10), Math.min(62, h[2] + 10));
     var clair = hslVersHex(h[0], Math.min(95, h[1] + 5), Math.min(78, h[2] + 22));
     var grad = 'linear-gradient(135deg, ' + hex + ' 0%, ' + c2 + ' 55%, ' + c3 + ' 100%)';
@@ -4929,7 +4929,7 @@
       var mieuxA = moinsMieux ? va < vb : va > vb, egal = Math.abs(va - vb) < 0.0005;
       return '<tr><th scope="row">' + echapper(lib) + '</th><td class="' + (!egal && mieuxA ? 'best' : '') + '">' + echapper(fmt(va)) + '</td><td class="' + (!egal && !mieuxA ? 'best' : '') + '">' + echapper(fmt(vb)) + '</td></tr>';
     }
-    var violet = '#7c3aed', rose = '#ec4899';
+    var violet = '#8C5000', rose = '#C27A1A';
     ouvrirDialogue({
       titre: t('Comparateur A / B'), sousTitre: echapper(t('Capital restant dû et écart cumulé de paiements, mois par mois.')), icone: 'compare', large: true,
       corps:
@@ -4991,7 +4991,7 @@
     function maj() {
       var k = +$('#qr-r', el).value, r = ratios[k - 37], ok = r[1] > 8;
       $('#qr-r', el).style.setProperty('--pct', ((k - 37) / Math.max(1, n - 37) * 100) + '%');
-      $('#qr-g', el).innerHTML = grapheLignes([{ pts: affiches, c: '#7c3aed' }], { ref: 8, zones: zones, curseur: k, xmin: 37, fmtY: function (v) { return fmtSaisie(Math.round(v * 10) / 10) + ' %'; },
+      $('#qr-g', el).innerHTML = grapheLignes([{ pts: affiches, c: '#8C5000' }], { ref: 8, zones: zones, curseur: k, xmin: 37, fmtY: function (v) { return fmtSaisie(Math.round(v * 10) / 10) + ' %'; },
         xTicks: ticksAnnees(n, 1, base.debut).filter(function (x) { return x[0] >= 37; }), aria: t('Évolution du ratio') });
       var res = '';
       var date = L[k - 1].date;
@@ -5068,7 +5068,7 @@
               return '<div class="mc-reduc"><span class="mc-n">' + (i + 1) + '</span><div><strong>' + echapper(z.date ? moisLong(z.date) : t('échéance {n}', { n: z.mois })) + '</strong><small>' + echapper(t('Ratio {r} · {a} → {b} · mensualité {m}', { r: fmtPct(z.ratio * 100, 3), a: fmtTauxPrecis(z.avant), b: fmtTauxPrecis(z.apres), m: fmtMoney(z.M) })) + '</small></div></div>';
             }).join('') + '</div>'
           : '<p class="ra-note">' + echapper(t('Aucune réduction de taux possible : le ratio ne dépasse pas 8 % ou la durée initiale est de 84 mois ou moins.')) + '</p>') : '') +
-        '<div class="graphe-zone" style="margin-top:12px">' + grapheLignes([{ pts: [[0, r.C]].concat(r.lignes.map(function (l) { return [l.mois, resteFin(l)]; })), c: '#7c3aed', aire: true }], { xTicks: ticksAnnees(r.n, 1, r.debut), curseur: passees, aria: t('Capital restant dû') }) + '</div>';
+        '<div class="graphe-zone" style="margin-top:12px">' + grapheLignes([{ pts: [[0, r.C]].concat(r.lignes.map(function (l) { return [l.mois, resteFin(l)]; })), c: '#8C5000', aire: true }], { xTicks: ticksAnnees(r.n, 1, r.debut), curseur: passees, aria: t('Capital restant dû') }) + '</div>';
     }
     el.addEventListener('input', function () { clearTimeout(el._t); el._t = setTimeout(calculer, 200); });
     el.addEventListener('change', function (ev) { if (ev.target.type === 'checkbox' || ev.target.type === 'date') calculer(); });
@@ -5754,8 +5754,8 @@
         '<button type="button" class="btn btn-primary btn-sm" data-au="lettre">' + ico('file', 'ico-sm') + echapper(t('Préparer la lettre')) + '</button></div>' : '') +
       '<h3 class="ag-titre">' + echapper(t('Constats ({n})', { n: a.anomalies.length + a.infos.length })) + '</h3>' +
       ((a.anomalies.length + a.infos.length) ? '<ul class="au-liste">' + a.anomalies.concat(a.infos).sort(function (x, y) { return x.i - y.i; }).map(ligneAno).join('') + '</ul>' : '<p class="ra-note">' + echapper(t('Aucun constat.')) + '</p>') +
-      '<h3 class="ag-titre">' + echapper(t('Capital restant dû')) + '</h3><div class="graphe-zone">' + grapheLignes([{ pts: crdPts, c: '#7c3aed', aire: true }], { xTicks: ticks, aria: t('Capital restant dû') }) + '</div>' +
-      (ratioPts.length ? '<h3 class="ag-titre">' + echapper(t('Ratio de la règle des 8 %')) + '</h3><div class="graphe-zone">' + grapheLignes([{ pts: ratioPts, c: '#ec4899' }], { xTicks: ticks, ref: 8, zones: zones, xmin: ratioPts[0][0], fmtY: function (v) { return fmtSaisie(Math.round(v * 10) / 10) + ' %'; }, aria: t('Ratio de la règle des 8 %') }) + '</div>' : '') +
+      '<h3 class="ag-titre">' + echapper(t('Capital restant dû')) + '</h3><div class="graphe-zone">' + grapheLignes([{ pts: crdPts, c: '#8C5000', aire: true }], { xTicks: ticks, aria: t('Capital restant dû') }) + '</div>' +
+      (ratioPts.length ? '<h3 class="ag-titre">' + echapper(t('Ratio de la règle des 8 %')) + '</h3><div class="graphe-zone">' + grapheLignes([{ pts: ratioPts, c: '#C27A1A' }], { xTicks: ticks, ref: 8, zones: zones, xmin: ratioPts[0][0], fmtY: function (v) { return fmtSaisie(Math.round(v * 10) / 10) + ' %'; }, aria: t('Ratio de la règle des 8 %') }) + '</div>' : '') +
       '<h3 class="ag-titre">' + echapper(t('Lignes lues et recalculées')) + '</h3>' +
       '<div class="au-tab-wrap" translate="no"><table class="au-tab"><thead><tr><th>' + echapper(t('N°')) + '</th><th>' + echapper(t('Date')) + '</th><th>' + echapper(t('Capital dû')) + '</th><th>' + echapper(t('Amort.')) + '</th><th>' + echapper(t('Intérêts')) + '</th><th>' + echapper(t('Attendus')) + '</th><th>' + echapper(t('Écart')) + '</th><th>' + echapper(t('Échéance')) + '</th><th>' + echapper(t('Taux')) + '</th><th>' + echapper(t('Ratio')) + '</th></tr></thead><tbody>' + lignesTab + '</tbody></table></div>' +
       '<div class="au-actions">' +
@@ -6128,7 +6128,7 @@
         '<div class="au-verdict ok" style="margin-top:14px">' + ico('sparkle') + '<div><strong>' + echapper(t('Meilleure stratégie : {d}', { d: desc(meilleur) })) + '</strong><small>' +
           echapper(t('Échéance {m}, coût total {c}', { m: fmtMoney(meilleur.M), c: fmtMoney(meilleur.cout) }) + (actuel ? ' · ' + (actuel.cout - meilleur.cout > 0.5 ? t('{e} de moins que votre scénario actuel', { e: fmtMoney(roundPrec(actuel.cout - meilleur.cout)) }) : t('équivalent à votre scénario actuel')) : '')) + '</small></div></div>' +
         '<div class="graphe-zone" style="margin-top:12px"><svg viewBox="0 0 ' + L + ' ' + H + '" class="graphe-l op-nuage" role="img" style="direction:ltr" aria-label="' + echapper(t('Coût total selon l\'échéance')) + '">' + svg + '</svg></div>' +
-        '<p class="legende-g"><span class="lg" style="background:#c4b5fd;border-radius:50%;width:10px"></span>' + echapper(t('combinaisons possibles')) + ' <span class="lg" style="background:#7c3aed;height:3px"></span>' + echapper(t('meilleurs compromis')) + ' <span class="lg" style="background:#ec4899;border-radius:50%;width:10px"></span>' + echapper(t('votre scénario')) + ' <span class="lg" style="background:rgba(244,63,94,.18)"></span>' + echapper(t('hors budget')) + '</p>' +
+        '<p class="legende-g"><span class="lg" style="background:#c4b5fd;border-radius:50%;width:10px"></span>' + echapper(t('combinaisons possibles')) + ' <span class="lg" style="background:#8C5000;height:3px"></span>' + echapper(t('meilleurs compromis')) + ' <span class="lg" style="background:#C27A1A;border-radius:50%;width:10px"></span>' + echapper(t('votre scénario')) + ' <span class="lg" style="background:rgba(244,63,94,.18)"></span>' + echapper(t('hors budget')) + '</p>' +
         '<div class="cmp-table-wrap" style="margin-top:10px"><table class="cmp"><thead><tr><th>' + echapper(t('Stratégie')) + '</th><th>' + echapper(t('Échéance')) + '</th><th>' + echapper(t('Durée réelle')) + '</th><th>' + echapper(t('Coût total')) + '</th><th>' + echapper(t('Réductions')) + '</th><th></th></tr></thead><tbody>' +
           solutions.map(function (x, i) {
             return '<tr><td>' + (i ? '' : '<b>★ </b>') + echapper(desc(x)) + '</td><td>' + echapper(fmtMoney(x.M)) + '</td><td>' + echapper(libMois(x.duree)) + '</td><td class="' + (i ? '' : 'best') + '">' + echapper(fmtMoney(x.cout)) + '</td><td>' + x.red + '</td><td><button type="button" class="btn btn-ghost btn-sm" data-op="' + i + '">' + echapper(t('Appliquer')) + '</button></td></tr>';
@@ -6287,7 +6287,7 @@
         groupeHtml('dossier', 'Dossier et documents', DOSSIER.map(function (o) { return itemHtml(o, 'action'); }).join(''), g.dossier, false) +
       '</nav>' +
       '<a class="nl-item nl-av" href="/outils/assurance-vie/" data-tip="' + echapper(t('Simulateur Assurance Vie et CEA')) + '">' +
-        '<span class="nl-ico nl-av-ico" aria-hidden="true"><svg class="av-logo" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="av-g2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f46e5"/><stop offset=".55" stop-color="#7c3aed"/><stop offset="1" stop-color="#c026d3"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#av-g2)"/><g fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 32) scale(2.3) translate(-12 -12.5)"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></g></svg></span>' +
+        '<span class="nl-ico nl-av-ico" aria-hidden="true"><svg class="av-logo" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="av-g2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f46e5"/><stop offset=".55" stop-color="#8C5000"/><stop offset="1" stop-color="#B86E00"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#av-g2)"/><g fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 32) scale(2.3) translate(-12 -12.5)"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></g></svg></span>' +
         '<span class="nl-txt"><b>' + echapper(t('Assurance vie')) + '</b><small>' + echapper(t('CEA, épargne et impôt')) + '</small></span>' + ico('externe', 'ico-sm nl-av-fl') + '</a>' +
       '<a class="nl-item nl-av" href="https://mohamed-ja.github.io/simulateur-Assurance-Automobile/" target="_blank" rel="noopener" data-tip="' + echapper(t('Simulateur Assurance Automobile')) + '">' +
         '<span class="nl-ico nl-av-ico" aria-hidden="true"><svg class="av-logo" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="av-g3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2f5bea"/><stop offset="1" stop-color="#1e88e5"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#av-g3)"/><g fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 32) scale(2.35) translate(-12 -12.5)"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></g></svg></span>' +
@@ -6616,7 +6616,7 @@
     c.direction = rtl ? 'rtl' : 'ltr';
     c.fillStyle = '#ffffff'; c.fillRect(0, 0, L, H);
     var g = c.createLinearGradient(0, 0, L, 520);
-    g.addColorStop(0, '#7c3aed'); g.addColorStop(0.55, '#c026d3'); g.addColorStop(1, '#ec4899');
+    g.addColorStop(0, '#8C5000'); g.addColorStop(0.55, '#B86E00'); g.addColorStop(1, '#C27A1A');
     c.fillStyle = g;
     c.beginPath(); c.moveTo(0, 0); c.lineTo(L, 0); c.lineTo(L, 440); c.quadraticCurveTo(L / 2, 560, 0, 440); c.closePath(); c.fill();
     c.fillStyle = '#ffffff'; c.textAlign = 'center';
@@ -6629,14 +6629,14 @@
     /* QR code dans une carte */
     var n = qr.getModuleCount(), taille = 640, mod = Math.floor(taille / (n + 8)), cote = mod * (n + 8);
     var x0 = Math.round((L - cote) / 2), y0 = 520;
-    c.fillStyle = '#7c3aed';
+    c.fillStyle = '#8C5000';
     arrondi(c, x0 - 14, y0 - 14, cote + 28, cote + 28, 40); c.fill();
     c.fillStyle = '#ffffff';
     arrondi(c, x0, y0, cote, cote, 28); c.fill();
     c.fillStyle = '#161229';
     for (var y = 0; y < n; y++) for (var x = 0; x < n; x++) if (qr.isDark(y, x)) c.fillRect(x0 + (x + 4) * mod, y0 + (y + 4) * mod, mod, mod);
     var yT = y0 + cote + 110;
-    c.fillStyle = '#6d28d9'; c.font = '800 54px ' + police;
+    c.fillStyle = '#6E3F00'; c.font = '800 54px ' + police;
     c.fillText(t('Scannez pour installer l\'application'), L / 2, yT);
     c.fillStyle = '#3d3857'; c.font = '500 34px ' + police;
     var lignes = [
