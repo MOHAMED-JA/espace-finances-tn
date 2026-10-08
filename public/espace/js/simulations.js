@@ -323,12 +323,15 @@
   });
 
   /* ---------- Démarrage (après la vérification de session faite par app.js) ---------- */
-  document.addEventListener("orbite:pret", function () {
+  /* La session peut être prête avant le chargement de ce script : on démarre alors tout de suite. */
+  function demarrer() {
     utilisateur = window.Orbite.utilisateur();
     remplirCompte();
     E.compte.profil().then(function (p) { profil = p; remplirCompte(); }).catch(function () {});
     charger();
-  });
+  }
+  if (window.Orbite && window.Orbite.pret) demarrer();
+  else document.addEventListener("orbite:pret", demarrer, { once: true });
   document.addEventListener("orbite:vue", function (e) { if (e.detail.vue === "simulations") rendreToutes(); });
 
   window.OrbiteSimulations = { recharger: charger, liste: function () { return liste; } };

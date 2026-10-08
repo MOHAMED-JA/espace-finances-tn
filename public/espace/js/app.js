@@ -227,6 +227,10 @@
     var r = lireRoute();
     var changer = function () {
       doc.querySelectorAll("section.vue").forEach(function (s) { s.hidden = s.getAttribute("data-vue") !== r.vue; });
+      if (r.vue !== vueAffichee) {
+        var entree = doc.querySelector('section.vue[data-vue="' + r.vue + '"]');
+        if (entree) { entree.classList.add("vue--entree"); setTimeout(function () { entree.classList.remove("vue--entree"); }, 900); }
+      }
       doc.querySelectorAll("a[data-vue]").forEach(function (a) {
         var vues = (a.getAttribute("data-vues") || a.getAttribute("data-vue")).split(" ");
         if (vues.indexOf(r.vue) !== -1) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
@@ -328,6 +332,7 @@
     remplirUtilisateur();
     doc.body.classList.remove("attente");
     afficher(false);
+    window.Orbite.pret = true;
     doc.dispatchEvent(new CustomEvent("orbite:pret"));
   });
 })();

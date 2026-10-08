@@ -70,18 +70,18 @@
   .module--credit .cr-onglet__val { font-size: 12px; }
   .module--credit .cr-onglets-sc button { gap: 5px; padding: 0 6px; }
 }
-.module--credit .cr-formulaire { display: grid; gap: 20px; }
-.module--credit .cr-groupe { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 8px; }
+.module--credit .cr-formulaire { display: grid; gap: 26px; }
+.module--credit .cr-groupe { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 10px; }
 .module--credit .cr-groupe legend { padding: 0; margin-bottom: 8px; }
 
 /* Puces de type (ressort à la sélection) */
-.module--credit .cr-puces { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-@media (min-width: 560px) { .module--credit .cr-puces { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-@media (min-width: 1000px) and (max-width: 1599px) { .module--credit .cr-puces { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.module--credit .cr-groupe { container-type: inline-size; }
+.module--credit .cr-puces { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding-top: 4px; }
+@container (min-width: 620px) { .module--credit .cr-puces { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .module--credit .cr-puce { position: relative; min-width: 0; }
 .module--credit .cr-puce input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
 .module--credit .cr-puce span {
-  display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 0 12px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 0 14px; border-radius: 14px;
   background: var(--surface-2); border: 1.5px solid transparent; color: var(--encre-2); font-weight: 650; font-size: 14.5px; white-space: nowrap;
   transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease, transform 140ms var(--sortie);
 }
@@ -126,7 +126,7 @@
   .module--credit .cr-option[open] .cr-option__corps { animation: cr-deplie 300ms var(--sortie); }
 }
 @keyframes cr-deplie { from { opacity: 0; transform: translateY(-6px); } }
-.module--credit .cr-grille-champs { display: grid; gap: 12px 14px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); align-items: start; }
+.module--credit .cr-grille-champs { display: grid; gap: 16px 16px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); align-items: start; }
 .module--credit .cr-grille-champs--5 { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
 .module--credit .cr-grille-champs--offre { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
 .module--credit .cr-pile { display: grid; gap: 14px; }
@@ -172,8 +172,9 @@
 .module--credit .cr-resultat__sous { color: var(--cosmos-encre-2); font-size: 14px; }
 .module--credit .cr-resultat__palier { font-size: 14px; color: var(--cosmos-encre); padding: 10px 14px; border-radius: 14px; background: rgba(255, 255, 255, .06); border: 1px solid var(--cosmos-filet); }
 .module--credit .cr-chiffres { margin: 4px 0 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; border-radius: 16px; overflow: hidden; background: var(--cosmos-filet); }
-@media (min-width: 720px) { .module--credit .cr-chiffres { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-.module--credit .cr-chiffres > div { background: var(--cosmos); padding: 12px 14px; display: grid; gap: 2px; align-content: start; min-width: 0; }
+.module--credit .cr-resultat { container-type: inline-size; }
+@container (min-width: 680px) { .module--credit .cr-chiffres { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.module--credit .cr-chiffres > div { background: var(--cosmos); padding: 14px 16px; display: grid; gap: 2px; align-content: start; min-width: 0; }
 .module--credit .cr-chiffres dt { font-size: 12.5px; color: var(--cosmos-encre-2); font-weight: 600; }
 .module--credit .cr-chiffres dd { margin: 0; font-size: 17px; font-weight: 720; color: var(--cosmos-encre); letter-spacing: -.01em; overflow-wrap: anywhere; }
 .module--credit .cr-chiffres small { font-size: 12px; color: var(--cosmos-encre-2); }

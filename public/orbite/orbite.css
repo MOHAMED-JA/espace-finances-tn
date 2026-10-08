@@ -113,6 +113,8 @@ button { cursor: pointer; }
 button, a, label, summary, select { touch-action: manipulation; }
 select option { background-color: var(--surface); color: var(--encre); }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+/* Titres ciblés par programme à chaque changement de vue : pas de cadre de focus. */
+h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus { outline: none; }
 ::selection { background: color-mix(in srgb, var(--credit) 28%, transparent); }
 input { caret-color: var(--credit); }
 * { scrollbar-width: thin; scrollbar-color: var(--filet-fort) transparent; }
@@ -316,6 +318,60 @@ dialog.dialogue[open] { animation: dialogue-entre 260ms var(--sortie); }
 .puce-volante { position: fixed; z-index: 95; pointer-events: none; left: 0; top: 0; }
 
 /* ---------- Mouvement réduit ---------- */
+/* Mouvement réduit (souvent activé par défaut sous Windows) : on retire les déplacements,
+   mais on garde des fondus et des changements de couleur courts pour que l'interface reste vivante. */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
+  *, *::before, *::after { animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+  .logo--vivant .orb-a, .logo--vivant .orb-b { animation: none !important; }
+}
+
+/* ==========================================================================
+   Couche vivante : cadres de sélection modernes, focus lumineux, relief au survol,
+   entrées en douceur. Couleur d'accent par module (--sel).
+   ========================================================================== */
+:root { --sel: var(--focus); --sel-anneau: color-mix(in srgb, var(--sel) 22%, transparent); }
+.module--salaire { --sel: var(--salaire); }
+.module--epargne { --sel: var(--epargne); }
+.module--credit { --sel: var(--credit); }
+
+/* Champs : halo coloré au focus, bord visible au survol */
+.saisie { transition: border-color 160ms ease, background-color 160ms ease, box-shadow 220ms var(--sortie); }
+.saisie:hover:not(:focus-within) { border-color: var(--filet-fort); }
+.saisie:focus-within { border-color: var(--sel); background: var(--surface); box-shadow: 0 0 0 4px var(--sel-anneau), var(--ombre-2); }
+
+/* Bascule : la pastille active porte un cadre à l'accent du module */
+.bascule__pastille { box-shadow: var(--ombre-2), inset 0 0 0 1.5px color-mix(in srgb, var(--sel) 60%, transparent); }
+.bascule input:checked + span { color: color-mix(in srgb, var(--sel) 70%, var(--encre)); }
+.bascule label:hover input:not(:checked) + span { color: var(--encre-2); }
+
+/* Cartes de choix génériques (puces) : relief, cadre dégradé et coche à la sélection */
+.module--credit .cr-puce span { transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease, box-shadow 220ms var(--sortie), transform 160ms var(--sortie); }
+.module--credit .cr-puce:hover input:not(:checked) + span { border-color: var(--filet-fort); background: var(--surface); box-shadow: var(--ombre-2); }
+.module--credit .cr-puce input:checked + span {
+  border-width: 2px; border-color: var(--sel);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--sel) 16%, var(--surface)), color-mix(in srgb, var(--sel) 6%, var(--surface)));
+  box-shadow: 0 0 0 4px var(--sel-anneau), 0 12px 26px -14px color-mix(in srgb, var(--sel) 70%, transparent);
+}
+.module--credit .cr-puce input:checked + span::after {
+  content: "✓"; position: absolute; top: -7px; right: -7px; width: 20px; height: 20px; display: grid; place-items: center;
+  border-radius: 50%; background: var(--sel); color: #fff; font-size: 11px; font-weight: 800; line-height: 1;
+  box-shadow: 0 0 0 2px var(--surface); animation: coche 260ms var(--ressort);
+}
+@keyframes coche { from { opacity: 0; transform: scale(.6); } }
+
+/* Boutons : appui ressenti */
+.bouton:active:not(:disabled) { transform: scale(.97); }
+
+/* Panneaux : arrivée en douceur à chaque vue, relief léger au survol (pointeur fin) */
+.vue--entree .panneau { animation: panneau-entre 420ms var(--sortie) both; }
+.vue--entree .panneau:nth-child(2) { animation-delay: 60ms; }
+.vue--entree .panneau:nth-child(3) { animation-delay: 120ms; }
+@keyframes panneau-entre { from { opacity: 0; transform: translateY(10px); } }
+@media (prefers-reduced-motion: reduce) {
+  @keyframes panneau-entre { from { opacity: 0; } }
+  @keyframes coche { from { opacity: 0; } }
+}
+@media (hover: hover) and (pointer: fine) {
+  .panneau { transition: box-shadow 240ms ease; }
+  .panneau:hover { box-shadow: var(--ombre-3); }
 }
