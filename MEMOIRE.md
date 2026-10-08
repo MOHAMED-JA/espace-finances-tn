@@ -213,6 +213,23 @@ L'offre annuelle est mise en avant et présélectionnée.
 - les prix définitifs ;
 - les conditions générales de vente (TVA 19 % sur les services numériques, à confirmer avec le comptable).
 
+## 3 undecies. Statut de l'utilisateur pour encaisser (8 oct.)
+
+L'utilisateur est une **personne physique sans patente**, salarié en CDI. Il veut vendre des abonnements à tout le monde et recevoir l'argent sur son RIB.
+
+Piste recommandée, à faire valider par l'utilisateur et un comptable :
+1. **Statut d'auto-entrepreneur** (décret-loi 2020-30) :
+   - inscription en ligne au Registre national des auto-entrepreneurs, avec Mobile ID, environ 10 DT de frais et une carte valable 3 ans ;
+   - chiffre d'affaires plafonné à 75 000 DT par an ; impôt et cotisation forfaitaires.
+   - À vérifier : que l'activité « service numérique / logiciel en ligne » figure dans la liste des activités autorisées, le cumul avec un CDI, et la clause d'exclusivité du contrat de travail.
+2. **Passerelle de paiement agréée BCT (PayFac)**, plus simple que ClicToPay en direct :
+   - **Konnect** : liens de paiement, API et plugins, pour freelances et entrepreneurs ;
+   - ou **Flouci** : compte professionnel gratuit avec RIB, réservé en principe aux titulaires d'une patente ou d'un statut, plugins e-commerce.
+   Les deux acceptent les cartes tunisiennes et les portefeuilles, et versent l'argent sur un RIB.
+3. À **éviter** : encaisser par virement personnel ou via D17 sans statut. C'est impossible à automatiser, et c'est un risque fiscal.
+
+Conséquence technique : l'architecture de 3 decies reste valable, mais la passerelle devient interchangeable (ClicToPay, Konnect ou Flouci). Prévoir un adaptateur `passerelle.js` côté Worker : `creer(commande)` et `verifier(id)`, plus un webhook signé si la passerelle en propose un.
+
 ## 4. Prochaines actions (améliorations possibles, rien de bloquant)
 
 1. Vérifier le site en ligne après chaque déploiement (Cloudflare se déploie depuis `main`).
