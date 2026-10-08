@@ -37,14 +37,26 @@
     var x = o.rx * Math.cos(a), y = o.ry * Math.sin(a);
     return { x: x * Math.cos(i) - y * Math.sin(i), y: x * Math.sin(i) + y * Math.cos(i) };
   }
+  var RAYON_NOYAU = 64;
   function poser() {
     var r = visuel.getBoundingClientRect(), echelle = Math.min(r.width, r.height) / 400;
+    visuel.style.setProperty("--d", (RAYON_NOYAU * 2 * echelle).toFixed(1) + "px");
     ORBITES.forEach(function (o) {
       var p = position(o, o.angle);
       o.planete.setAttribute("cx", p.x.toFixed(2));
       o.planete.setAttribute("cy", p.y.toFixed(2));
       o.etiquette.style.setProperty("--x", (r.width / 2 + p.x * echelle).toFixed(1) + "px");
       o.etiquette.style.setProperty("--y", (r.height / 2 + p.y * echelle).toFixed(1) + "px");
+      /* L'étiquette se place du côté extérieur de la planète : elle ne recouvre jamais le noyau. */
+      var l = Math.sqrt(p.x * p.x + p.y * p.y) || 1, nx = p.x / l, ny = p.y / l;
+      var w = o.etiquette.offsetWidth, h = o.etiquette.offsetHeight, marge = 6;
+      var gx = r.width / 2 + p.x * echelle - (0.5 - 0.5 * nx) * w + nx * 14;
+      var gy = r.height / 2 + p.y * echelle - (0.5 - 0.5 * ny) * h + ny * 14;
+      /* … et reste toujours dans le cadre de la scène. */
+      gx = Math.max(marge, Math.min(r.width - w - marge, gx));
+      gy = Math.max(marge, Math.min(r.height - h - marge, gy));
+      o.etiquette.style.setProperty("--gx", gx.toFixed(1) + "px");
+      o.etiquette.style.setProperty("--gy", gy.toFixed(1) + "px");
       o.etiquette.classList.toggle("satellite--derriere", Math.sin(o.angle * Math.PI / 180) < -0.35);
     });
   }
@@ -95,16 +107,18 @@
     var s = sy.salaire, cap = sy.capacite[base];
     var mensuel = sy.profil.periode !== "annuel";
     O.animerNombre($("noyau-val"), s.netMensuel, function (v) { return F.dt0(v) + " DT"; });
-    $("noyau-lib").textContent = s.versements.nombre > 12 ? "Net du mois habituel" : "Net par mois";
-    $("noyau-sous").textContent = "sur " + F.dt0(s.brutMensuel) + " DT brut";
+    $("noyau-lib").textContent = "Net par mois";
+    $("noyau-sous").textContent = "sur " + F.dt0(s.brutMensuel) + " DT brut" + (s.versements.nombre > 12 ? " · " + s.versements.nombre + " salaires" : "");
     var tr = F.pct(s.tranche.taux, 0);
     $("sat-salaire-val").textContent = tr;
-    O.animerNombre($("sat-credit-val"), cap.mensualiteMax, function (v) { return F.dt0(v) + " DT"; });
+    var capVue = cap.futur ? cap.futur.capacite : cap;
+    $("sat-credit-lib").textContent = cap.futur ? "Mensualité dès " + cap.futur.date : "Mensualité possible";
+    O.animerNombre($("sat-credit-val"), capVue.mensualiteMax, function (v) { return F.dt0(v) + " DT"; });
     var opt = sy.epargne.propositions[sy.epargne.propositions.length - 1];
     var eco = opt ? opt.economieAnnuelle : 0;
     O.animerNombre($("sat-epargne-val"), eco, function (v) { return F.dt0(v) + " DT/an"; });
     $("liste-salaire").textContent = F.dt3(s.netMensuel) + " DT net, tranche à " + tr;
-    $("liste-credit").textContent = F.dt0(cap.mensualiteMax) + " DT de mensualité possible";
+    $("liste-credit").textContent = cap.futur ? "Aucune marge aujourd'hui, " + F.dt0(capVue.mensualiteMax) + " DT par mois dès " + cap.futur.date : F.dt0(cap.mensualiteMax) + " DT de mensualité possible";
     $("liste-epargne").textContent = F.dt0(eco) + " DT d'impôt économisable par an";
     var p = sy.profil;
     $("phrase-orbite").textContent = "Avec " + F.dt0(s.netMensuel) + " DT net par mois" +
@@ -127,7 +141,8 @@
     $("budget-credits").textContent = dt(b.credits);
     $("budget-logement").textContent = dt(b.logement);
     $("budget-epargne").textContent = dt(b.epargne);
-    $("budget-sous").textContent = "Sur " + F.dt0(b.net) + " DT net par mois" + (b.credits > 0 ? ", taux d'endettement " + F.pct(b.tauxEndettement, 0) : "") + ".";
+    var nbSal = sy.profil.nombreSalaires;
+    $("budget-sous").textContent = "Sur " + F.dt0(b.net) + " DT net par mois" + (nbSal > 12 ? " en moyenne (vos " + nbSal + " salaires répartis sur 12 mois)" : "") + (b.credits > 0 ? ", crédits : " + F.pct(b.tauxEndettement, 0) + " de ce net" : "") + ".";
     var al = $("budget-alerte");
     al.hidden = !b.alerte;
     al.textContent = b.alerte === "deficit" ? "Vos dépenses déclarées dépassent votre net de " + F.dt0(-b.reste) + " DT par mois." :
@@ -164,10 +179,17 @@
 
   function rendreCapacite(sy) {
     var cap = sy.capacite[base], autre = sy.capacite[base === "net" ? "brut" : "net"];
-    O.animerNombre($("cap-mensualite"), cap.mensualiteMax, function (v) { return F.dt0(v) + " DT"; });
-    $("cap-revenu").textContent = F.pct(cap.quotite, 0) + " de " + F.dt0(cap.revenu) + " DT " + (base === "net" ? "net" : "brut") +
-      (cap.charges > 0 ? ", moins " + F.dt0(cap.charges) + " DT de crédits en cours" : "") + ".";
-    $("capacite-sous").textContent = base === "net"
+    /* Aucune marge aujourd'hui : on montre ce qui redevient possible à la fin des crédits en cours. */
+    var futur = cap.futur || null, vue = futur ? futur.capacite : cap;
+    $("capacite").classList.toggle("capacite--futur", !!futur);
+    $("cap-tete-lib").textContent = futur ? "Mensualité possible à partir de " + futur.date : "Mensualité maximale";
+    O.animerNombre($("cap-mensualite"), vue.mensualiteMax, function (v) { return F.dt0(v) + " DT"; });
+    $("cap-revenu").textContent = futur
+      ? "Aujourd'hui, vos crédits en cours (" + F.dt0(cap.charges) + " DT par mois) dépassent déjà " + F.pct(cap.quotite, 0) + " de " + F.dt0(cap.revenu) + " DT : aucun nouveau crédit n'est possible avant " + futur.date + "."
+      : F.pct(cap.quotite, 0) + " de " + F.dt0(cap.revenu) + " DT " + (base === "net" ? "net" : "brut") + (cap.charges > 0 ? ", moins " + F.dt0(cap.charges) + " DT de crédits en cours" : "") + ".";
+    $("capacite-sous").textContent = autre.mensualiteMax < 1 && cap.mensualiteMax < 1
+      ? "Calculé à " + F.pct(cap.quotite, 0) + " du salaire " + (base === "net" ? "net" : "brut") + ", crédits en cours déduits. Ni sur le net ni sur le brut, il n'y a de marge aujourd'hui."
+      : base === "net"
       ? "Règle la plus courante : 40 % du salaire net. Sur le brut, la mensualité possible serait de " + F.dt0(autre.mensualiteMax) + " DT."
       : "Certaines banques calculent sur le brut. Sur le net, la mensualité possible serait de " + F.dt0(autre.mensualiteMax) + " DT.";
     var ul = $("cap-liste");
@@ -187,11 +209,11 @@
         ul.appendChild(li);
       });
     }
-    cap.credits.forEach(function (c, i) {
+    vue.credits.forEach(function (c, i) {
       var li = ul.children[i];
       li.querySelector(".capacite__lib").textContent = c.libelle;
       O.animerNombre(li.querySelector(".capacite__capital"), c.capital, function (v) { return F.dt0(v) + " DT"; });
-      li.querySelector(".capacite__cond").textContent = (c.dureeMois / 12).toLocaleString("fr-FR", { maximumFractionDigits: 1 }) + " ans à " + F.pct(c.tauxPct / 100, 2) + (c.dureeLimitee ? " (durée limitée par l'âge)" : "");
+      li.querySelector(".capacite__cond").textContent = (futur ? "Dès " + futur.date + " · " : "") + (c.dureeMois / 12).toLocaleString("fr-FR", { maximumFractionDigits: 1 }) + " ans à " + F.pct(c.tauxPct / 100, 2) + (c.dureeLimitee ? " (durée limitée par l'âge)" : "");
       var a = li.querySelector("a");
       a.href = "#credit?type=" + c.cle + "&capital=" + Math.floor(c.capital) + "&mois=" + c.dureeMois + "&taux=" + c.tauxPct;
       a.setAttribute("aria-label", "Simuler un " + c.libelle.toLowerCase() + " de " + F.dt0(c.capital) + " DT");

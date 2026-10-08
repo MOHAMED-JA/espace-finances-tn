@@ -130,11 +130,11 @@
                   </defs>
                   <circle class="scene__halo" r="120" fill="url(#noyau-lum)"/>
                   <g id="orbites"></g>
-                  <g class="noyau" id="noyau"><circle class="noyau__pulse" r="54"/><circle class="noyau__disque" r="54"/></g>
+                  <g class="noyau" id="noyau"><circle class="noyau__pulse" r="64"/><circle class="noyau__disque" r="64"/></g>
                 </svg>
                 <div class="noyau__texte"><span id="noyau-lib">Net par mois</span><strong id="noyau-val">—</strong><span id="noyau-sous"></span></div>
                 <a class="satellite satellite--salaire" id="sat-salaire" href="#salaire" tabindex="-1"><span class="satellite__lib">Tranche d'impôt</span><strong id="sat-salaire-val">—</strong></a>
-                <a class="satellite satellite--credit" id="sat-credit" href="#credit" tabindex="-1"><span class="satellite__lib">Mensualité possible</span><strong id="sat-credit-val">—</strong></a>
+                <a class="satellite satellite--credit" id="sat-credit" href="#credit" tabindex="-1"><span class="satellite__lib" id="sat-credit-lib">Mensualité possible</span><strong id="sat-credit-val">—</strong></a>
                 <a class="satellite satellite--epargne" id="sat-epargne" href="#epargne" tabindex="-1"><span class="satellite__lib">Impôt économisable</span><strong id="sat-epargne-val">—</strong></a>
               </div>
               <ul class="scene__liste" aria-label="Vos trois repères">
@@ -187,9 +187,9 @@
                 <i class="bascule__pastille" aria-hidden="true"></i>
               </div>
             </div>
-            <div class="capacite">
+            <div class="capacite" id="capacite">
               <div class="capacite__tete panneau">
-                <span>Mensualité maximale</span>
+                <span id="cap-tete-lib">Mensualité maximale</span>
                 <strong id="cap-mensualite">—</strong>
                 <span id="cap-revenu" class="capacite__note"></span>
               </div>
