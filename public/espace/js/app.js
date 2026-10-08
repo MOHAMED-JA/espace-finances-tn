@@ -216,8 +216,8 @@
   }
 
   /* ---------- Navigation ---------- */
-  var VUES = ["orbite", "profil", "salaire", "epargne", "credit", "simulations", "abonnement", "compte"];
-  var TITRES = { orbite: "Mon orbite", profil: "Mon profil", salaire: "Salaire", epargne: "Épargne vie & CEA", credit: "Crédit", simulations: "Simulations", abonnement: "Abonnement", compte: "Paramètres" };
+  var VUES = ["orbite", "profil", "salaire", "epargne", "credit", "simulations", "abonnement", "compte", "admin"];
+  var TITRES = { orbite: "Mon orbite", profil: "Mon profil", salaire: "Salaire", epargne: "Épargne vie & CEA", credit: "Crédit", simulations: "Simulations", abonnement: "Abonnement", compte: "Paramètres", admin: "Administration" };
   /* Garde d'accès (abonnement) : une vue refusée mène à la page d'abonnement. */
   var garde = null;
   function lireRoute() {
@@ -227,6 +227,18 @@
     if (garde && !garde(vue)) { vue = "abonnement"; i = -1; }
     return { vue: vue, params: new URLSearchParams(i === -1 ? "" : h.slice(i + 1)) };
   }
+  /* Statistiques anonymes : un simulateur compte une fois par visite, dès la première modification. */
+  var simulesCompte = {};
+  function compterSimulation(m) { if (simulesCompte[m]) return; simulesCompte[m] = true; E.compterUsage("simulation", m); }
+  ["salaire", "epargne", "credit"].forEach(function (m) {
+    var v = $("vue-" + m);
+    if (!v) return;
+    v.addEventListener("input", function () { compterSimulation(m); }, true);
+    v.addEventListener("change", function () { compterSimulation(m); }, true);
+    v.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("button, label, [data-appliquer]")) compterSimulation(m); }, true);
+  });
+  /* Une simulation ouverte depuis un lien (« Simuler », conseil, simulation enregistrée) compte aussi. */
+  doc.addEventListener("orbite:vue", function (e) { if (/^(salaire|epargne|credit)$/.test(e.detail.vue) && e.detail.params && e.detail.params.toString()) compterSimulation(e.detail.vue); });
   var vueAffichee = null;
   function afficher(focus) {
     var r = lireRoute();
@@ -257,6 +269,7 @@
         var h1 = doc.querySelector('section.vue[data-vue="' + r.vue + '"] h1');
         if (h1) { h1.tabIndex = -1; h1.focus({ preventScroll: true }); }
       }
+      if (r.vue !== vueAffichee) E.compterUsage("vue", r.vue);
       vueAffichee = r.vue;
     };
     if (vueAffichee && vueAffichee !== r.vue && doc.startViewTransition && !mouvementReduit.matches) {

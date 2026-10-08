@@ -11,7 +11,7 @@
 
   var JOUR = 86400000;
   /* Vues accessibles sans abonnement actif : le profil, le compte et la page d'abonnement. */
-  var VUES_LIBRES = ["profil", "compte", "abonnement"];
+  var VUES_LIBRES = ["profil", "compte", "abonnement", "admin"];
 
   function dt(millimes) { return Math.round(millimes) / 1000; }
 

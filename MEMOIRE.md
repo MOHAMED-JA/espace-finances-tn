@@ -314,6 +314,35 @@ Dans l'e2e, le choix du thème se fait par `dispatchEvent("click")` : la barre f
 - **Module Crédit** : nouveau paramètre de route `mensualite=`. Il crée `S.cible = {mensualite, scenario}`. `suivreCible()` est appelé au début de `calculer()` et recalcule le capital pour garder la même échéance quand le taux, la durée ou la périodicité changent. Saisir un capital, un prix ou un apport annule la cible. L'aide sous le montant explique ce fonctionnement. Les liens transmettent l'échéance avec 2 décimales (sinon le capital était un peu inférieur à celui du calendrier).
 - **Vérification** : à 4,5 %, l'étape de mars 2032 donne 17 348 DT ; à 3,75 %, 18 512 DT ; à 2,5 % dans le module Crédit, 20 569 DT. Tests : 283/283, e2e 20/20.
 
+## 3 quindecies. Administration, alertes, statistiques anonymes (9 oct., lot 1 sur 6)
+
+Feuille de route demandée par l'utilisateur, livrée lot par lot :
+1. admin, alertes et statistiques ;
+2. codes promo, offre de lancement, parrainage ;
+3. score de santé, simulateur de vie, optimiseur fiscal ;
+4. mode couple / foyer ;
+5. application installable (PWA), hors connexion, notifications ;
+6. Assistant Orbite (IA, clé API à fournir par l'utilisateur en secret Supabase).
+
+- **Migration `0006_admin_statistiques.sql`** (appliquée, plus `0006b` qui exclut les paiements de test des revenus) :
+  - Tables `admins`, `admin_alertes` (déclencheur sur `auth.users`) et `statistiques` (jour, type vue/simulation, clé, nombre). Elles sont protégées par RLS sans politique, donc inaccessibles directement.
+  - Fonctions SECURITY DEFINER : `est_admin()`, `admin_tableau()`, `admin_alertes_liste()`, `admin_alertes_lues()`, `admin_statistiques(jours)`. Toutes passent par `exiger_admin()`, qui lève l'erreur 42501.
+  - `compter_usage(type, cle)` n'accepte qu'une liste fermée de clés.
+  - Les avertissements « authenticated security definer » de l'outil de conseil sont attendus.
+- **Admin** : le compte de l'utilisateur a été ajouté par SQL directement en base, jamais dans le dépôt (pour ne pas y écrire son e-mail). Ajouter un admin : `insert into public.admins (user_id) select id from auth.users where email = '…';`.
+- **Indicateurs** :
+  - Revenus : seulement les paiements dont la passerelle n'est pas `test`.
+  - Conversion : comptes ayant payé ÷ essais terminés (hors offerts).
+  - Désabonnés : comptes ayant déjà payé dont l'abonnement est expiré.
+- **Client** :
+  - `session.js` expose `E.admin.*` et `E.compterUsage`.
+  - `app.js` compte une vue à chaque changement de vue. Il compte un simulateur une fois par visite : saisie, clic sur un bouton ou un label, ou ouverture par lien avec paramètres.
+  - `admin.js` gère la vue `#admin`. Les liens `#rail-admin` et `#param-admin` (ce dernier pour le mobile) n'apparaissent que si `est_admin` le confirme. Une pastille `#badge-admin` signale les inscriptions non lues.
+  - `admin` fait partie de `VUES_LIBRES`.
+- **Confidentialité** : nouvelle section « Ce que voit l'administrateur », et statistiques anonymes ajoutées aux données traitées.
+- **Alerte par e-mail** : non faite, car il faut un service d'envoi (Resend, par exemple) et une clé que l'utilisateur doit créer. Les alertes passent pour l'instant par le tableau de bord et la pastille.
+- **Tests** : le faux Supabase gère les fonctions admin et `marquerAdmin()`. Une étape e2e vérifie le refus pour un compte ordinaire, les compteurs, la liste, « marquer lu », la recherche et l'absence de données personnelles dans les compteurs. Résultat : 21/21.
+
 ## 4. Prochaines actions (améliorations possibles, rien de bloquant)
 
 1. Vérifier le site en ligne après chaque déploiement (Cloudflare se déploie depuis `main`).

@@ -384,3 +384,46 @@ body.attente .app { visibility: hidden; }
 :root[data-mouvement="reduit"] *, :root[data-mouvement="reduit"] *::before, :root[data-mouvement="reduit"] *::after {
   animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important;
 }
+
+/* ---------- Administration ---------- */
+.admin { display: grid; gap: 16px; }
+.admin__corps { display: grid; gap: 16px; }
+.admin__refus { padding: 18px; border-radius: var(--r-int); background: var(--surface-2); color: var(--encre-2); }
+.admin__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.admin__maj { color: var(--encre-3); font-size: 13.5px; }
+.admin__bloc { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.admin__bloc h2 { font-size: 18px; }
+.admin__bloc h3 { font-size: 15px; margin-bottom: 8px; }
+.admin__tete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.admin__note { color: var(--encre-3); font-size: 13.5px; }
+.admin__deux { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.admin__kpi { margin: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); }
+.param-admin { margin-top: 8px; }
+.admin__k { display: grid; gap: 4px; align-content: start; padding: 14px; border-radius: var(--r-int); background: var(--surface-2); min-width: 0; }
+.admin__k dt { color: var(--encre-3); font-size: 13px; font-weight: 600; }
+.admin__k dd { margin: 0; font-family: var(--affiche); font-size: 24px; font-weight: 760; overflow-wrap: anywhere; }
+.admin__k--fort dd:not(.admin__k-sous) { color: var(--credit-t); }
+.admin__k dd.admin__k-sous { font-family: inherit; font-size: 12.5px; font-weight: 500; color: var(--encre-3); }
+.admin__alertes { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.admin__alerte { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); font-size: 14px; }
+.admin__alerte-lib { min-width: 0; overflow-wrap: anywhere; }
+.admin__alerte time { color: var(--encre-3); font-size: 13px; }
+.admin__alerte--nouvelle { box-shadow: inset 3px 0 0 var(--credit); }
+.admin__alerte--nouvelle .admin__alerte-lib { font-weight: 650; }
+.admin__vide { color: var(--encre-3); font-size: 14px; list-style: none; }
+.admin__barres { display: grid; grid-template-columns: repeat(30, minmax(0, 1fr)); align-items: end; gap: 3px; height: 120px; padding: 8px; border-radius: var(--r-int); background: var(--surface-2); }
+.admin__barre { display: block; height: max(4px, var(--h, 0%)); border-radius: 3px 3px 1px 1px; background: var(--credit); }
+.admin__barre--vide { background: var(--filet); height: 4px; }
+.admin__classement { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.admin__classement li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; font-size: 14px; }
+.admin__jauge { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--surface-2); position: relative; overflow: hidden; }
+.admin__jauge::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--p, 0%); border-radius: 3px; background: linear-gradient(90deg, var(--credit), var(--salaire)); }
+.admin__filtre input { min-height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--filet); background: var(--surface-2); color: var(--encre); font: inherit; width: min(260px, 100%); }
+.admin__table-zone { overflow-x: auto; border-radius: var(--r-int); }
+.admin__table-zone:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.admin__table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 620px; }
+.admin__table th { text-align: left; font-size: 12.5px; font-weight: 650; color: var(--encre-3); padding: 8px 10px; border-bottom: 1px solid var(--filet); }
+.admin__table td { padding: 10px; border-bottom: 1px solid var(--filet); vertical-align: top; }
+.admin__table td strong, .admin__table td small { display: block; }
+.admin__table td small { color: var(--encre-3); font-size: 12.5px; overflow-wrap: anywhere; }
+.admin__aujourdhui { color: var(--succes, var(--salaire)); font-weight: 650; }

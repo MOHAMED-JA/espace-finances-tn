@@ -56,6 +56,7 @@
         <li><a href="#simulations" data-vue="simulations"><svg aria-hidden="true"><use href="/orbite/icones.svg#liste"/></svg><span>Simulations</span><span class="rail__compte" id="compte-total"></span></a></li>
         <li><a href="#abonnement" data-vue="abonnement"><svg aria-hidden="true"><use href="/orbite/icones.svg#couronne"/></svg><span>Abonnement</span><span class="rail__badge rail__badge--acces" id="badge-abonnement" hidden></span></a></li>
         <li><a href="#compte" data-vue="compte"><svg aria-hidden="true"><use href="/orbite/icones.svg#compte"/></svg><span>Paramètres</span></a></li>
+        <li id="rail-admin" hidden><a href="#admin" data-vue="admin"><svg aria-hidden="true"><use href="/orbite/icones.svg#bouclier"/></svg><span>Administration</span><span class="rail__badge" id="badge-admin" hidden></span></a></li>
       </ul>
       <div class="rail__pied">
         <div class="utilisateur">
@@ -562,10 +563,69 @@
         </section>
 
         <!-- ======== Paramètres (route #compte, onglet par #compte?onglet=…) ======== -->
+        <section class="vue" id="vue-admin" data-vue="admin" aria-labelledby="titre-admin" hidden>
+          <header class="vue__tete">
+            <h1 id="titre-admin">Administration</h1>
+            <p class="vue__sous" id="admin-sous">Visible uniquement par l'administrateur. Les chiffres viennent directement du serveur.</p>
+          </header>
+          <div class="admin" id="admin" aria-busy="true">
+            <p class="admin__refus" id="admin-refus" hidden>Cette page est réservée à l'administrateur d'Orbite.</p>
+            <div class="admin__corps" id="admin-corps" hidden>
+              <div class="admin__actions">
+                <button type="button" class="bouton bouton--petit" id="admin-actualiser"><svg aria-hidden="true"><use href="/orbite/icones.svg#horloge"/></svg>Actualiser</button>
+                <span class="admin__maj" id="admin-maj"></span>
+              </div>
+              <section class="panneau admin__bloc" aria-labelledby="admin-t-comptes">
+                <h2 id="admin-t-comptes">Utilisateurs</h2>
+                <dl class="admin__kpi" id="admin-kpi-comptes"></dl>
+              </section>
+              <section class="panneau admin__bloc" aria-labelledby="admin-t-abos">
+                <h2 id="admin-t-abos">Abonnements et revenus</h2>
+                <dl class="admin__kpi" id="admin-kpi-abos"></dl>
+                <p class="admin__note" id="admin-note-test" hidden></p>
+              </section>
+              <div class="admin__deux">
+                <section class="panneau admin__bloc" aria-labelledby="admin-t-alertes">
+                  <div class="admin__tete"><h2 id="admin-t-alertes">Nouvelles inscriptions</h2><button type="button" class="bouton bouton--petit bouton--fantome" id="admin-lues" hidden>Tout marquer comme lu</button></div>
+                  <ol class="admin__alertes" id="admin-alertes"></ol>
+                </section>
+                <section class="panneau admin__bloc" aria-labelledby="admin-t-inscr">
+                  <h2 id="admin-t-inscr">Inscriptions sur 30 jours</h2>
+                  <div class="admin__barres" id="admin-inscriptions" role="img"></div>
+                </section>
+              </div>
+              <section class="panneau admin__bloc" aria-labelledby="admin-t-usage">
+                <div class="admin__tete"><h2 id="admin-t-usage">Usage anonyme</h2>
+                  <div class="bascule bascule--compacte" role="radiogroup" aria-label="Période">
+                    <label><input type="radio" name="admin-periode" value="7"><span>7 jours</span></label>
+                    <label><input type="radio" name="admin-periode" value="30" checked><span>30 jours</span></label>
+                    <label><input type="radio" name="admin-periode" value="90"><span>90 jours</span></label>
+                    <i class="bascule__pastille" aria-hidden="true"></i>
+                  </div></div>
+                <p class="admin__note">Un compteur par page et par simulateur, sans identifiant ni contenu de profil.</p>
+                <div class="admin__deux">
+                  <div><h3>Pages les plus visitées</h3><ol class="admin__classement" id="admin-vues"></ol></div>
+                  <div><h3>Simulateurs les plus utilisés</h3><ol class="admin__classement" id="admin-simulations"></ol></div>
+                </div>
+              </section>
+              <section class="panneau admin__bloc" aria-labelledby="admin-t-liste">
+                <div class="admin__tete"><h2 id="admin-t-liste">Comptes</h2>
+                  <label class="admin__filtre"><span class="cache">Rechercher un compte</span><input type="search" id="admin-recherche" placeholder="Nom ou e-mail" autocomplete="off"></label></div>
+                <div class="admin__table-zone" tabindex="0" role="region" aria-labelledby="admin-t-liste">
+                  <table class="admin__table">
+                    <thead><tr><th scope="col">Compte</th><th scope="col">Connexion</th><th scope="col">Dernière connexion</th><th scope="col">Inscrit le</th><th scope="col">Statut</th></tr></thead>
+                    <tbody id="admin-comptes"></tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
         <section class="vue" id="vue-compte" data-vue="compte" aria-labelledby="titre-compte" hidden>
           <header class="vue__tete">
             <h1 id="titre-compte">Paramètres</h1>
             <p class="vue__sous">Profil, préférences, sécurité, abonnement et données personnelles.</p>
+            <a class="lien-action param-admin" id="param-admin" href="#admin" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#bouclier"/></svg>Administration<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
           </header>
           <div class="parametres">
             <nav class="param-nav" role="tablist" aria-label="Rubriques des paramètres">
@@ -851,5 +911,6 @@
   <script src="/espace/js/abonnement-calcul.js"></script>
   <script src="/espace/js/abonnement.js"></script>
   <script src="/espace/js/parametres.js"></script>
+  <script src="/espace/js/admin.js"></script>
 </body>
 </html>

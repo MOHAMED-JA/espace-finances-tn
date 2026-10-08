@@ -25,6 +25,10 @@ function creer() {
   const abonnements = new Map();  // user id -> { essai_fin, fin, formule, offert }
   let paiements = [];
   const photos = new Map();  // chemin -> Buffer (stockage privé « avatars »)
+  /* Administration (migration 0006) : admins, alertes d'inscription, compteurs anonymes. */
+  const admins = new Set();
+  const alertes = [];
+  const usage = new Map();  // "type:cle" -> nombre
   function abonnementDe(id) {
     if (!abonnements.has(id)) abonnements.set(id, { essai_fin: new Date(Date.now() + 3 * 86400000).toISOString(), fin: null, formule: null, offert: false, testeur: false });
     return abonnements.get(id);
@@ -65,6 +69,7 @@ function creer() {
       user_metadata: meta || {}
     };
     comptes.set(email, { user, mdp });
+    alertes.unshift({ id: alertes.length + 1, type: "inscription", libelle: email, cree_le: new Date().toISOString(), lue: false });
     profils.set(user.id, { id: user.id, nom_affiche: (meta && meta.full_name) || email.split("@")[0], cree_le: new Date().toISOString() });
     return user;
   }
@@ -258,6 +263,23 @@ function creer() {
       if (methode === "PATCH") { Object.assign(p, { nom_affiche: corps.nom_affiche }); return repondre(route, 204); }
     }
     if (url.pathname === "/rest/v1/rpc/mon_acces") return repondre(route, 200, acces(u.id));
+    if (url.pathname === "/rest/v1/rpc/est_admin") return repondre(route, 200, admins.has(u.id));
+    if (url.pathname === "/rest/v1/rpc/compter_usage") { const k = corps.p_type + ":" + corps.p_cle; usage.set(k, (usage.get(k) || 0) + 1); return repondre(route, 204); }
+    if (url.pathname.indexOf("/rest/v1/rpc/admin_") === 0 && !admins.has(u.id)) return repondre(route, 403, { code: "42501", message: "Réservé à l'administrateur" });
+    if (url.pathname === "/rest/v1/rpc/admin_tableau") {
+      const liste = [...comptes.values()].map(({ user }) => ({ nom: (user.user_metadata || {}).nom || "", email: user.email, methode: "email", inscrit_le: user.created_at, derniere_connexion: user.last_sign_in_at || user.created_at, etat: acces(user.id).etat, formule: abonnementDe(user.id).formule, testeur: !!abonnementDe(user.id).testeur }));
+      const n = liste.length;
+      return repondre(route, 200, { maintenant: new Date().toISOString(), inscrits: n, nouveaux_jour: n, nouveaux_7j: n, nouveaux_30j: n, connectes_jour: n, connectes_7j: n,
+        essais: liste.filter((x) => x.etat === "essai").length, abonnes: liste.filter((x) => x.etat === "actif").length, offerts: 0, expires: liste.filter((x) => x.etat === "expire").length,
+        par_formule: {}, revenus_total: 0, revenus_30j: 0, paiements_30j: 0, paiements_test: paiements.filter((p) => p.statut === "paye").length,
+        essais_termines: 0, convertis: 0, desabonnes: 0, inscriptions_30j: [{ jour: new Date().toISOString().slice(0, 10), n }], utilisateurs: liste, alertes_non_lues: alertes.filter((a) => !a.lue).length });
+    }
+    if (url.pathname === "/rest/v1/rpc/admin_alertes_liste") return repondre(route, 200, alertes);
+    if (url.pathname === "/rest/v1/rpc/admin_alertes_lues") { alertes.forEach((a) => { a.lue = true; }); return repondre(route, 204); }
+    if (url.pathname === "/rest/v1/rpc/admin_statistiques") {
+      const de = (t) => [...usage.entries()].filter(([k]) => k.indexOf(t + ":") === 0).map(([k, v]) => ({ cle: k.slice(t.length + 1), n: v })).sort((a, b) => b.n - a.n);
+      return repondre(route, 200, { jours: corps.p_jours || 30, vues: de("vue"), simulations: de("simulation"), par_jour: [] });
+    }
     if (url.pathname === "/rest/v1/paiements") {
       return repondre(route, 200, paiements.filter((p) => p.user_id === u.id).sort((a, b) => b.cree_le.localeCompare(a.cree_le))
         .map(({ reference, formule, montant_millimes, statut, cree_le, paye_le }) => ({ reference, formule, montant_millimes, statut, cree_le, paye_le })));
@@ -282,6 +304,8 @@ function creer() {
     paiements: () => paiements,
     photos: () => photos,
     abonnementDe(email) { return abonnementDe(comptes.get(email).user.id); },
+    marquerAdmin(email) { admins.add(comptes.get(email).user.id); },
+    usage() { return new Map(usage); },
     marquerTesteur(email) { abonnementDe(comptes.get(email).user.id).testeur = true; },
     expirerEssai(email) { abonnementDe(comptes.get(email).user.id).essai_fin = new Date(Date.now() - 60000).toISOString(); },
     comptes,
