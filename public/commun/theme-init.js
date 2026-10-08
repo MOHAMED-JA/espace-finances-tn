@@ -7,5 +7,7 @@
   function appliquer() { racine.setAttribute("data-theme", memorise() || (mq && mq.matches ? "dark" : "light")); }
   appliquer();
   if (mq && mq.addEventListener) mq.addEventListener("change", function () { if (!memorise()) appliquer(); });
+  /* Animations réduites choisies dans les paramètres (en plus du réglage de l'appareil). */
+  try { if (localStorage.getItem("ef-mouvement") === "reduit") racine.setAttribute("data-mouvement", "reduit"); } catch (e) {}
   window.EFTheme = { appliquer: appliquer };
 })();

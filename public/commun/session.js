@@ -125,13 +125,16 @@
     },
     supprimer: function () {
       sortieVolontaire();
-      return client.rpc("supprimer_mon_compte").then(verifier).then(function () {
+      /* La photo de profil (espace privé) est effacée d'abord, puis le compte et toutes ses données. */
+      return avatar.supprimer().catch(function () {}).then(function () { return client.rpc("supprimer_mon_compte"); }).then(verifier).then(function () {
         return client.auth.signOut({ scope: "local" }).catch(function () {});
       }, function (err) {
         document.documentElement.setAttribute("data-protege", "");
         throw err;
       });
     },
+    /* Préférences synchronisées entre appareils (user_metadata) : surnom, activité, page d'ouverture. */
+    preferences: function (donnees) { return client.auth.updateUser({ data: donnees }).then(verifier); },
     changerMotDePasse: function (mdp) {
       return client.auth.updateUser({ password: mdp }).then(verifier);
     }
@@ -152,6 +155,38 @@
       throw new Error("Le service de paiement ne répond pas.");
     });
   }
+  /* ---------- Photo de profil ----------
+   * Préférence dans user_metadata.orbite_avatar : "stockage" (photo importée, espace privé),
+   * "google" (photo du compte Google), "aucun" (initiales). Par défaut : Google s'il y en a une. */
+  var CHEMIN_AVATAR = function (id) { return id + "/avatar.webp"; };
+  function photoGoogle(u) {
+    var m = (u && u.user_metadata) || {}, url = m.avatar_url || m.picture || "";
+    return /^https:\/\/[a-z0-9.-]+\.googleusercontent\.com\//i.test(url) ? url : null;
+  }
+  var avatar = {
+    google: photoGoogle,
+    /* Adresse à afficher (ou null pour les initiales). */
+    source: function (u) {
+      var m = (u && u.user_metadata) || {}, choix = m.orbite_avatar || (photoGoogle(u) ? "google" : "aucun");
+      if (choix === "google") return Promise.resolve(photoGoogle(u));
+      if (choix !== "stockage") return Promise.resolve(null);
+      return client.storage.from("avatars").createSignedUrl(CHEMIN_AVATAR(u.id), 3600).then(function (r) { return r.error ? null : r.data.signedUrl; }).catch(function () { return null; });
+    },
+    envoyer: function (blob) {
+      return utilisateur().then(function (u) {
+        if (!u) throw new Error("not authenticated");
+        return client.storage.from("avatars").upload(CHEMIN_AVATAR(u.id), blob, { upsert: true, contentType: "image/webp", cacheControl: "3600" }).then(verifier);
+      }).then(function () { return client.auth.updateUser({ data: { orbite_avatar: "stockage", orbite_avatar_v: Date.now() } }).then(verifier); });
+    },
+    choisir: function (choix) { return client.auth.updateUser({ data: { orbite_avatar: choix } }).then(verifier); },
+    supprimer: function () {
+      return utilisateur().then(function (u) {
+        if (!u) throw new Error("not authenticated");
+        return client.storage.from("avatars").remove([CHEMIN_AVATAR(u.id)]).then(function () {});
+      }).then(function () { return client.auth.updateUser({ data: { orbite_avatar: "aucun" } }).then(verifier); });
+    }
+  };
+
   var abonnement = {
     acces: function () { return client.rpc("mon_acces").then(verifier); },
     formules: function () { return client.from("formules").select("cle, libelle, mois, prix_millimes, ordre").order("ordre").then(verifier); },
@@ -253,6 +288,7 @@
     deconnexion: deconnexion,
     simulations: simulations,
     abonnement: abonnement,
+    avatar: avatar,
     compte: compte,
     toast: toast,
     themeActuel: themeActuel,

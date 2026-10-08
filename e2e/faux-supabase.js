@@ -24,6 +24,7 @@ function creer() {
   ];
   const abonnements = new Map();  // user id -> { essai_fin, fin, formule, offert }
   let paiements = [];
+  const photos = new Map();  // chemin -> Buffer (stockage privé « avatars »)
   function abonnementDe(id) {
     if (!abonnements.has(id)) abonnements.set(id, { essai_fin: new Date(Date.now() + 3 * 86400000).toISOString(), fin: null, formule: null, offert: false, testeur: false });
     return abonnements.get(id);
@@ -86,6 +87,23 @@ function creer() {
       body: corps === undefined ? "" : JSON.stringify(corps)
     });
   }
+  /* Corps d'un envoi de fichier : brut, ou partie « image » d'un formulaire multipart (comme storage-js). */
+  function fichierEnvoye(req) {
+    const brut = req.postDataBuffer() || Buffer.alloc(0);
+    const m = /boundary=([^;]+)/.exec(req.headers()["content-type"] || "");
+    if (!m) return brut;
+    const sep = Buffer.from("--" + m[1]);
+    let debut = 0, idx;
+    while ((idx = brut.indexOf(sep, debut)) !== -1) {
+      const fin = brut.indexOf(sep, idx + sep.length);
+      if (fin === -1) break;
+      const partie = brut.subarray(idx + sep.length, fin);
+      const entete = partie.indexOf("\r\n\r\n");
+      if (entete !== -1 && /content-type:\s*image\//i.test(partie.subarray(0, entete).toString())) return partie.subarray(entete + 4, partie.length - 2);
+      debut = fin;
+    }
+    return brut;
+  }
   function unique(req) { return (req.headers()["accept"] || "").includes("vnd.pgrst.object"); }
 
   async function gerer(route) {
@@ -139,6 +157,35 @@ function creer() {
     }
     if (url.pathname === "/auth/v1/recover") return repondre(route, 200, {});
     if (url.pathname === "/auth/v1/settings") return repondre(route, 200, { external: { email: true, google: true } });
+
+    /* ---------- Stockage « avatars » (privé : un dossier par compte, lecture par URL signée) ---------- */
+    const mSigne = /^\/storage\/v1\/object\/sign\/avatars\/(.+)$/.exec(url.pathname);
+    if (mSigne && methode === "GET") {
+      const b = photos.get(decodeURIComponent(mSigne[1]));
+      if (!b || !url.searchParams.get("token")) return repondre(route, 404, { message: "not found" });
+      return route.fulfill({ status: 200, headers: { "Content-Type": "image/webp", "Access-Control-Allow-Origin": "*" }, body: b });
+    }
+    if (url.pathname.startsWith("/storage/v1/")) {
+      const us = auth(req);
+      if (!us) return repondre(route, 401, { message: "unauthorized" });
+      if (mSigne && methode === "POST") {
+        const chemin = decodeURIComponent(mSigne[1]);
+        if (!chemin.startsWith(us.id + "/") || !photos.has(chemin)) return repondre(route, 400, { message: "Object not found" });
+        return repondre(route, 200, { signedURL: "/object/sign/avatars/" + chemin + "?token=jeton-" + Date.now() });
+      }
+      const mObj = /^\/storage\/v1\/object\/avatars\/(.+)$/.exec(url.pathname);
+      if (mObj && (methode === "POST" || methode === "PUT")) {
+        const chemin = decodeURIComponent(mObj[1]);
+        if (!chemin.startsWith(us.id + "/")) return repondre(route, 403, { message: "new row violates row-level security policy" });
+        photos.set(chemin, fichierEnvoye(req));
+        return repondre(route, 200, { Key: "avatars/" + chemin, Id: crypto.randomUUID() });
+      }
+      if (url.pathname === "/storage/v1/object/avatars" && methode === "DELETE") {
+        ((corps && corps.prefixes) || []).filter((c) => c.startsWith(us.id + "/")).forEach((c) => photos.delete(c));
+        return repondre(route, 200, []);
+      }
+      return repondre(route, 404, { message: "Route de stockage inconnue : " + methode + " " + url.pathname });
+    }
 
     /* ---------- Formules (lecture publique) ---------- */
     if (url.pathname === "/rest/v1/formules") return repondre(route, 200, FORMULES);
@@ -233,6 +280,7 @@ function creer() {
     ajouterCompte,
     simulations: () => simulations,
     paiements: () => paiements,
+    photos: () => photos,
     abonnementDe(email) { return abonnementDe(comptes.get(email).user.id); },
     marquerTesteur(email) { abonnementDe(comptes.get(email).user.id).testeur = true; },
     expirerEssai(email) { abonnementDe(comptes.get(email).user.id).essai_fin = new Date(Date.now() - 60000).toISOString(); },

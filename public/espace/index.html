@@ -55,7 +55,7 @@
       <ul class="rail__liens" role="list" aria-labelledby="rail-perso">
         <li><a href="#simulations" data-vue="simulations"><svg aria-hidden="true"><use href="/orbite/icones.svg#liste"/></svg><span>Simulations</span><span class="rail__compte" id="compte-total"></span></a></li>
         <li><a href="#abonnement" data-vue="abonnement"><svg aria-hidden="true"><use href="/orbite/icones.svg#couronne"/></svg><span>Abonnement</span><span class="rail__badge rail__badge--acces" id="badge-abonnement" hidden></span></a></li>
-        <li><a href="#compte" data-vue="compte"><svg aria-hidden="true"><use href="/orbite/icones.svg#compte"/></svg><span>Compte</span></a></li>
+        <li><a href="#compte" data-vue="compte"><svg aria-hidden="true"><use href="/orbite/icones.svg#compte"/></svg><span>Paramètres</span></a></li>
       </ul>
       <div class="rail__pied">
         <div class="utilisateur">
@@ -556,35 +556,54 @@
           <p class="ab-legal">En payant, vous acceptez les <a href="/cgv.html">conditions générales de vente</a>. Prix en dinars tunisiens, toutes taxes comprises.</p>
         </section>
 
-        <!-- ======== Compte ======== -->
+        <!-- ======== Paramètres (route #compte, onglet par #compte?onglet=…) ======== -->
         <section class="vue" id="vue-compte" data-vue="compte" aria-labelledby="titre-compte" hidden>
           <header class="vue__tete">
-            <h1 id="titre-compte">Compte</h1>
-            <p class="vue__sous">Identité, sécurité, thème et données personnelles.</p>
+            <h1 id="titre-compte">Paramètres</h1>
+            <p class="vue__sous">Profil, préférences, sécurité, abonnement et données personnelles.</p>
           </header>
-          <div class="reglages">
+          <div class="parametres">
+            <nav class="param-nav" role="tablist" aria-label="Rubriques des paramètres">
+              <button type="button" role="tab" class="param-onglet" id="tab-profil" data-onglet="profil" aria-controls="onglet-profil" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span>Profil</span></button>
+              <button type="button" role="tab" class="param-onglet" id="tab-preferences" data-onglet="preferences" aria-controls="onglet-preferences" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="/orbite/icones.svg#outils"/></svg><span>Préférences</span></button>
+              <button type="button" role="tab" class="param-onglet" id="tab-securite" data-onglet="securite" aria-controls="onglet-securite" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="/orbite/icones.svg#bouclier"/></svg><span>Sécurité</span></button>
+              <button type="button" role="tab" class="param-onglet" id="tab-abonnement" data-onglet="abonnement" aria-controls="onglet-abonnement" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="/orbite/icones.svg#couronne"/></svg><span>Abonnement</span></button>
+              <button type="button" role="tab" class="param-onglet" id="tab-utilisation" data-onglet="utilisation" aria-controls="onglet-utilisation" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="/orbite/icones.svg#hausse"/></svg><span>Utilisation</span></button>
+              <button type="button" role="tab" class="param-onglet" id="tab-donnees" data-onglet="donnees" aria-controls="onglet-donnees" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg><span>Vos données</span></button>
+            </nav>
+            <div class="param-contenu">
+            <div class="param-panneau reglages" role="tabpanel" id="onglet-profil" data-onglet="profil" aria-labelledby="tab-profil">
+            <section class="panneau reglage" aria-labelledby="r-photo">
+              <div class="reglage__texte"><h2 id="r-photo">Photo de profil</h2><p>PNG, JPEG ou WebP, jusqu'à 10 Mo. Elle est recadrée en carré et allégée automatiquement, puis conservée dans un espace privé.</p></div>
+              <div class="reglage__controle param-photo">
+                <span class="avatar avatar--grand" id="param-avatar" aria-hidden="true"></span>
+                <div class="reglage__boutons">
+                  <label class="bouton bouton--petit param-fichier"><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg>Importer une photo<input type="file" id="param-photo" accept="image/png,image/jpeg,image/webp" class="cache-fichier"></label>
+                  <button type="button" class="bouton bouton--petit" id="param-google" hidden><span class="param-g" aria-hidden="true">G</span>Utiliser ma photo Google</button>
+                  <button type="button" class="bouton bouton--petit bouton--fantome" id="param-retirer" hidden>Retirer la photo</button>
+                </div>
+                <p class="erreur-champ" id="param-photo-erreur" role="alert" hidden></p>
+              </div>
+            </section>
             <section class="panneau reglage" aria-labelledby="r-profil">
-              <div class="reglage__texte"><h2 id="r-profil">Identité</h2><p>Le nom affiché dans votre espace.</p></div>
+              <div class="reglage__texte"><h2 id="r-profil">Identité</h2><p>Votre nom, tel qu'il apparaît dans votre espace.</p></div>
               <form class="reglage__controle" id="form-nom" novalidate>
-                <div class="champ"><label for="nom-affiche">Nom affiché</label><div class="saisie"><input id="nom-affiche" type="text" maxlength="80" autocomplete="name" spellcheck="false"></div></div>
+                <div class="champ"><label for="nom-affiche">Nom complet</label><div class="saisie"><input id="nom-affiche" type="text" maxlength="80" autocomplete="name" spellcheck="false"></div></div>
                 <div class="champ"><span class="champ__lib">Adresse e-mail</span><p class="valeur" id="email-compte"></p></div>
                 <div class="champ"><span class="champ__lib">Méthode de connexion</span><p class="valeur" id="methode-compte"></p></div>
                 <div><button type="submit" class="bouton bouton--plein bouton--petit">Enregistrer</button></div>
               </form>
             </section>
-            <section class="panneau reglage" id="bloc-mdp" aria-labelledby="r-mdp">
-              <div class="reglage__texte"><h2 id="r-mdp">Mot de passe</h2><p>10 caractères au moins, avec lettres, chiffres et symbole.</p></div>
-              <form class="reglage__controle" id="form-mdp" novalidate>
-                <div class="champ"><label for="nouveau-mdp">Nouveau mot de passe</label><div class="saisie"><input id="nouveau-mdp" type="password" autocomplete="new-password" aria-describedby="nouveau-mdp-erreur"><button type="button" class="bouton bouton--fantome bouton--petit afficher" aria-controls="nouveau-mdp" aria-pressed="false">Afficher</button></div>
-                  <div class="jauge" id="jauge-compte" data-niveau="0" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-                  <p class="erreur-champ" id="nouveau-mdp-erreur" hidden></p></div>
-                <div><button type="submit" class="bouton bouton--plein bouton--petit">Changer le mot de passe</button></div>
+            <section class="panneau reglage" aria-labelledby="r-appel">
+              <div class="reglage__texte"><h2 id="r-appel">Vous connaître</h2><p>Pour une salutation personnelle et des conseils adaptés à votre activité.</p></div>
+              <form class="reglage__controle" id="form-identite" novalidate>
+                <div class="champ"><label for="param-appel">Comment Orbite doit vous appeler ?</label><div class="saisie"><input id="param-appel" type="text" maxlength="40" autocomplete="nickname" spellcheck="false" placeholder="Votre prénom"></div></div>
+                <div class="champ"><label for="param-metier">Quelle est votre activité ?</label><div class="saisie"><select id="param-metier"><option value="">Non précisée</option><option value="salarie">Salarié du privé</option><option value="fonctionnaire">Fonctionnaire</option><option value="conseiller">Conseiller financier ou bancaire</option><option value="independant">Indépendant ou auto-entrepreneur</option><option value="cadre-rh">Ressources humaines ou paie</option><option value="etudiant">Étudiant</option><option value="retraite">Retraité</option><option value="autre">Autre</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
+                <div><button type="submit" class="bouton bouton--plein bouton--petit">Enregistrer</button></div>
               </form>
             </section>
-            <section class="panneau reglage" aria-labelledby="r-abonnement">
-              <div class="reglage__texte"><h2 id="r-abonnement">Abonnement</h2><p id="compte-abonnement">—</p></div>
-              <div class="reglage__controle reglage__boutons"><a class="bouton bouton--petit" href="#abonnement"><svg aria-hidden="true"><use href="/orbite/icones.svg#couronne"/></svg>Gérer mon abonnement</a></div>
-            </section>
+            </div>
+            <div class="param-panneau reglages" role="tabpanel" id="onglet-preferences" data-onglet="preferences" aria-labelledby="tab-preferences" hidden>
             <section class="panneau reglage" aria-labelledby="r-theme">
               <div class="reglage__texte"><h2 id="r-theme">Apparence</h2><p>Clair, sombre, ou comme votre appareil.</p></div>
               <div class="reglage__controle">
@@ -596,14 +615,69 @@
                 </div>
               </div>
             </section>
+            <section class="panneau reglage" aria-labelledby="r-mouvement">
+              <div class="reglage__texte"><h2 id="r-mouvement">Animations</h2><p>Réduisez les mouvements si les animations vous gênent ; les fondus doux restent.</p></div>
+              <div class="reglage__controle">
+                <div class="bascule" id="choix-mouvement" role="radiogroup" aria-label="Animations">
+                  <label><input type="radio" name="mouvement" value=""><span>Selon l'appareil</span></label>
+                  <label><input type="radio" name="mouvement" value="reduit"><span>Réduites</span></label>
+                  <i class="bascule__pastille" aria-hidden="true"></i>
+                </div>
+              </div>
+            </section>
+            <section class="panneau reglage" aria-labelledby="r-accueil">
+              <div class="reglage__texte"><h2 id="r-accueil">Page d'ouverture</h2><p>La page affichée quand vous ouvrez Orbite, sur tous vos appareils.</p></div>
+              <div class="reglage__controle">
+                <div class="champ"><label for="param-accueil">Ouvrir Orbite sur</label><div class="saisie"><select id="param-accueil"><option value="orbite">Mon orbite</option><option value="salaire">Salaire</option><option value="credit">Crédit</option><option value="epargne">Épargne vie &amp; CEA</option><option value="simulations">Simulations</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
+              </div>
+            </section>
+            </div>
+            <div class="param-panneau reglages" role="tabpanel" id="onglet-securite" data-onglet="securite" aria-labelledby="tab-securite" hidden>
+            <section class="panneau reglage" id="bloc-mdp" aria-labelledby="r-mdp">
+              <div class="reglage__texte"><h2 id="r-mdp">Mot de passe</h2><p>10 caractères au moins, avec lettres, chiffres et symbole.</p></div>
+              <form class="reglage__controle" id="form-mdp" novalidate>
+                <div class="champ"><label for="nouveau-mdp">Nouveau mot de passe</label><div class="saisie"><input id="nouveau-mdp" type="password" autocomplete="new-password" aria-describedby="nouveau-mdp-erreur"><button type="button" class="bouton bouton--fantome bouton--petit afficher" aria-controls="nouveau-mdp" aria-pressed="false">Afficher</button></div>
+                  <div class="jauge" id="jauge-compte" data-niveau="0" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+                  <p class="erreur-champ" id="nouveau-mdp-erreur" hidden></p></div>
+                <div><button type="submit" class="bouton bouton--plein bouton--petit">Changer le mot de passe</button></div>
+              </form>
+            </section>
+            <section class="panneau reglage" aria-labelledby="r-sessions">
+              <div class="reglage__texte"><h2 id="r-sessions">Sessions</h2><p id="param-connexion">Fermez Orbite sur tous vos appareils, par exemple après avoir utilisé un ordinateur partagé.</p></div>
+              <div class="reglage__controle reglage__boutons">
+                <button type="button" class="bouton bouton--petit" id="deconnexion-partout"><svg aria-hidden="true"><use href="/orbite/icones.svg#sortie"/></svg>Me déconnecter partout</button>
+              </div>
+            </section>
+            </div>
+            <div class="param-panneau reglages" role="tabpanel" id="onglet-abonnement" data-onglet="abonnement" aria-labelledby="tab-abonnement" hidden>
+            <section class="panneau reglage" aria-labelledby="r-abonnement">
+              <div class="reglage__texte"><h2 id="r-abonnement">Abonnement</h2><p id="compte-abonnement">—</p></div>
+              <div class="reglage__controle reglage__boutons"><a class="bouton bouton--petit" href="#abonnement"><svg aria-hidden="true"><use href="/orbite/icones.svg#couronne"/></svg>Gérer mon abonnement</a></div>
+            </section>
+            </div>
+            <div class="param-panneau reglages" role="tabpanel" id="onglet-utilisation" data-onglet="utilisation" aria-labelledby="tab-utilisation" hidden>
+            <section class="panneau param-stats" aria-labelledby="r-utilisation">
+              <h2 id="r-utilisation">Votre utilisation</h2>
+              <dl class="param-stats__grille">
+                <div><dt>Membre depuis</dt><dd id="u-membre">—</dd></div>
+                <div><dt>Dernière connexion</dt><dd id="u-connexion">—</dd></div>
+                <div><dt>Profil complété</dt><dd><span id="u-profil">—</span><span class="param-barre" aria-hidden="true"><i id="u-profil-barre"></i></span></dd></div>
+                <div><dt>Simulations enregistrées</dt><dd><span id="u-simulations">—</span><span class="param-barre" aria-hidden="true"><i id="u-simulations-barre"></i></span></dd></div>
+                <div><dt>Abonnement</dt><dd id="u-abonnement">—</dd></div>
+                <div><dt>Conseils actifs</dt><dd id="u-conseils">—</dd></div>
+              </dl>
+            </section>
+            </div>
+            <div class="param-panneau reglages" role="tabpanel" id="onglet-donnees" data-onglet="donnees" aria-labelledby="tab-donnees" hidden>
             <section class="panneau reglage" aria-labelledby="r-donnees">
-              <div class="reglage__texte"><h2 id="r-donnees">Vos données</h2><p>Votre profil et vos simulations ne sont visibles que par vous. Vous pouvez tout télécharger, ou tout effacer.</p></div>
+              <div class="reglage__texte"><h2 id="r-donnees">Vos données</h2><p>Votre profil, vos simulations et votre abonnement ne sont visibles que par vous. Vous pouvez tout télécharger, ou tout effacer. <a href="/confidentialite.html">Confidentialité</a> · <a href="/cgv.html">Conditions de vente</a></p></div>
               <div class="reglage__controle reglage__boutons">
                 <button type="button" class="bouton bouton--petit" id="exporter"><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg>Exporter mes données</button>
-                <button type="button" class="bouton bouton--petit" id="deconnexion-partout"><svg aria-hidden="true"><use href="/orbite/icones.svg#sortie"/></svg>Me déconnecter partout</button>
                 <button type="button" class="bouton bouton--petit bouton--danger" id="supprimer-compte"><svg aria-hidden="true"><use href="/orbite/icones.svg#poubelle"/></svg>Supprimer mon compte</button>
               </div>
             </section>
+            </div>
+            </div>
           </div>
         </section>
       </main>
@@ -771,5 +845,6 @@
   <script src="/espace/js/simulations.js"></script>
   <script src="/espace/js/abonnement-calcul.js"></script>
   <script src="/espace/js/abonnement.js"></script>
+  <script src="/espace/js/parametres.js"></script>
 </body>
 </html>

@@ -8,7 +8,9 @@
   var E = window.Espace, M = window.EFModele, OC = window.OrbiteCalcul;
   var doc = document;
   function $(id) { return doc.getElementById(id); }
-  var mouvementReduit = window.matchMedia ? matchMedia("(prefers-reduced-motion: reduce)") : { matches: false };
+  /* Mouvement réduit : réglage de l'appareil OU choix « Réduites » dans les paramètres. */
+  var mqMouvement = window.matchMedia ? matchMedia("(prefers-reduced-motion: reduce)") : { matches: false };
+  var mouvementReduit = { get matches() { return mqMouvement.matches || doc.documentElement.getAttribute("data-mouvement") === "reduit"; } };
 
   /* ---------- Formats ---------- */
   function nbsp(s) { return String(s).replace(/[  ]/g, " "); }
@@ -215,7 +217,7 @@
 
   /* ---------- Navigation ---------- */
   var VUES = ["orbite", "profil", "salaire", "epargne", "credit", "simulations", "abonnement", "compte"];
-  var TITRES = { orbite: "Mon orbite", profil: "Mon profil", salaire: "Salaire", epargne: "Épargne vie & CEA", credit: "Crédit", simulations: "Simulations", abonnement: "Abonnement", compte: "Compte" };
+  var TITRES = { orbite: "Mon orbite", profil: "Mon profil", salaire: "Salaire", epargne: "Épargne vie & CEA", credit: "Crédit", simulations: "Simulations", abonnement: "Abonnement", compte: "Paramètres" };
   /* Garde d'accès (abonnement) : une vue refusée mène à la page d'abonnement. */
   var garde = null;
   function lireRoute() {
@@ -294,14 +296,39 @@
     var meta = (utilisateur && utilisateur.user_metadata) || {};
     return casse((profil && profil.prenom) || "") || meta.full_name || meta.name || (utilisateur && utilisateur.email ? utilisateur.email.split("@")[0] : "");
   }
+  /* Photo de profil (Google ou importée) ; initiales si absente ou illisible. */
+  function peindreAvatar(el, url, initiales) {
+    if (!el) return;
+    el.textContent = "";
+    el.classList.toggle("avatar--photo", !!url);
+    if (!url) { el.textContent = initiales; return; }
+    var img = new Image();
+    img.alt = ""; img.decoding = "async"; img.referrerPolicy = "no-referrer";
+    img.addEventListener("error", function () { el.classList.remove("avatar--photo"); el.textContent = initiales; });
+    img.src = url;
+    el.appendChild(img);
+  }
+  var avatarUrl = null;
+  function rafraichirAvatar() {
+    if (!utilisateur) return Promise.resolve(null);
+    var meta = utilisateur.user_metadata || {};
+    var ini = E.initiales(meta.full_name || nomAffiche(), utilisateur.email);
+    return E.avatar.source(utilisateur).then(function (url) {
+      avatarUrl = url;
+      doc.querySelectorAll("#avatar, #param-avatar").forEach(function (el) { peindreAvatar(el, url, ini); });
+      return url;
+    });
+  }
   function remplirUtilisateur() {
     if (!utilisateur) return;
-    var nom = nomAffiche();
-    $("nom-utilisateur").textContent = (utilisateur.user_metadata && utilisateur.user_metadata.full_name) || nom;
+    var nom = nomAffiche(), meta = utilisateur.user_metadata || {};
+    $("nom-utilisateur").textContent = casse(meta.full_name || "") || nom;
     $("email-utilisateur").textContent = utilisateur.email || "";
-    $("avatar").textContent = E.initiales((utilisateur.user_metadata && utilisateur.user_metadata.full_name) || nom, utilisateur.email);
+    if (!$("avatar").firstChild) $("avatar").textContent = E.initiales(meta.full_name || nom, utilisateur.email);
     var heure = new Date().getHours();
-    $("salutation").textContent = (heure >= 18 || heure < 5 ? "Bonsoir" : "Bonjour") + (nom ? ", " + nom.split(" ")[0] : "");
+    /* Le nom choisi dans « Comment Orbite doit vous appeler ? » prime sur le prénom. */
+    var appel = (meta.orbite_appel || "").trim() || (nom ? nom.split(" ")[0] : "");
+    $("salutation").textContent = (heure >= 18 || heure < 5 ? "Bonsoir" : "Bonjour") + (appel ? ", " + appel : "");
   }
 
   /* ---------- API publique ---------- */
@@ -326,7 +353,11 @@
     lireRoute: lireRoute,
     remplirUtilisateur: remplirUtilisateur,
     enregistrerModule: function (vue) { if (lireRoute().vue === vue) afficher(false); },
-    definirGarde: function (fn) { garde = fn; afficher(false); }
+    definirGarde: function (fn) { garde = fn; afficher(false); },
+    rafraichirAvatar: rafraichirAvatar,
+    peindreAvatar: peindreAvatar,
+    avatarUrl: function () { return avatarUrl; },
+    definirUtilisateur: function (u) { if (u) { utilisateur = u; remplirUtilisateur(); } }
   };
 
   /* ---------- Démarrage ---------- */
@@ -338,6 +369,10 @@
     profil = OC.normaliser(p || {});
     recalculer();
     remplirUtilisateur();
+    rafraichirAvatar();
+    /* Page d'ouverture choisie dans les paramètres (seulement sans adresse précise). */
+    var accueil = (u.user_metadata || {}).orbite_accueil;
+    if (!location.hash && accueil && VUES.indexOf(accueil) !== -1 && accueil !== "orbite") history.replaceState(null, "", "#" + accueil);
     doc.body.classList.remove("attente");
     afficher(false);
     window.Orbite.pret = true;
