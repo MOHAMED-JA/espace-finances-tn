@@ -1120,7 +1120,7 @@
     var ty = q.get('ty');
     v.type = TYPES.some(function (x) { return x.cle === ty; }) ? ty : 'libre';
     var tmm = num('i'), mg = num('mg');
-    if (isFinite(tmm) && isFinite(mg) && tmm >= 0 && mg >= 0) {
+    if (isFinite(tmm) && isFinite(mg) && tmm >= 0 && mg >= -tmm && mg <= 20) {
       v.tmm = { tmm: tmm, marge: mg };
       var dv = num('dv'), dn = ent('dn');
       if (isFinite(dv) && dv !== 0 && Math.abs(dv) <= 20 && dn >= 2 && dn <= N) v.variation = { delta: dv, des: dn };

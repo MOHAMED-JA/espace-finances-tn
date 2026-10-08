@@ -270,7 +270,9 @@ test("taux du futur crédit immobilier : choisi, sinon crédit immobilier en cou
   assert.ok(a.capacite.brut.paliers[1].capitalImmo > b.capacite.brut.paliers[1].capitalImmo);
   assert.equal(a.capacite.brut.paliers[1].mensualiteMax, b.capacite.brut.paliers[1].mensualiteMax);
   assert.equal(a.capacite.net.credits.filter((c) => c.cle === "immo")[0].tauxPct, 4.5);
-  assert.equal(a.capacite.net.credits.filter((c) => c.cle === "auto")[0].tauxPct, O.TMM + 3);
+  /* Crédit auto : taux du crédit auto en cours (4,5 %) ; consommation : marché (11 %). */
+  assert.equal(a.capacite.net.credits.filter((c) => c.cle === "auto")[0].tauxPct, 4.5);
+  assert.equal(a.capacite.net.credits.filter((c) => c.cle === "conso")[0].tauxPct, 11);
 });
 
 test("calendrier sur le brut, 17 salaires : à la fin de tous les crédits, 40 % de 68 000 ÷ 12", () => {
@@ -286,4 +288,23 @@ test("calendrier sur le brut, 17 salaires : à la fin de tous les crédits, 40 %
   /* Chaque fin de crédit libère sa mensualité, en cumulant. */
   proche(pal[0].mensualiteMax, 0.4 * 68000 / 12 - 875.894 - 497.93);
   proche(pal[1].mensualiteMax, 0.4 * 68000 / 12 - 875.894);
+});
+
+test("calendrier : plafond de chaque type de crédit, 7 ans au plus hors immobilier", () => {
+  const sy = O.synthese(Object.assign({}, PROFIL_ENDETTE, { baseBanque: "brut", revenuBanque: "annuel" }), {}, MAINTENANT);
+  const der = sy.capacite.brut.paliers[sy.capacite.brut.paliers.length - 1];
+  const o = Object.fromEntries(der.offres.map((x) => [x.cle, x]));
+  assert.deepEqual(Object.keys(o), ["immo", "auto", "conso"]);
+  assert.equal(o.immo.dureeMois, 240);
+  assert.equal(o.auto.dureeMois, 84);
+  assert.equal(o.conso.dureeMois, 84);
+  assert.equal(o.auto.tauxPct, 4.5);
+  assert.equal(o.auto.source, "credit");
+  assert.equal(o.conso.tauxPct, 11);
+  proche(o.immo.capital, der.capitalImmo);
+  /* 2 266,67 DT par mois pendant 84 mois à 4,5 % ≈ 163 068 DT. */
+  assert.ok(o.auto.capital > 163000 && o.auto.capital < 163100, String(o.auto.capital));
+  assert.ok(o.conso.capital < o.auto.capital);
+  /* Les cartes « ce que la banque peut vous prêter » suivent la même règle des 7 ans. */
+  sy.capacite.brut.credits.filter((c) => c.cle === "auto" || c.cle === "conso").forEach((c) => assert.equal(c.dureeMois, 84));
 });
