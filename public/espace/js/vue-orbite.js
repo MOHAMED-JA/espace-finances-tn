@@ -239,6 +239,12 @@
     var p = sy.profil;
     $("cap-paliers-sous").textContent = "Calcul à " + F.pct(cap.quotite, 0) + " de " + F.dt0(cap.revenu) + " DT " + base + " par mois (" + (p.revenuBanque === "annuel" ? "salaires et primes de l'année ÷ 12" : "salaire mensuel") + ")" + (p.banque && base === p.baseBanque ? ", comme " + p.banque : "") +
       ". Chaque crédit qui se termine libère une partie de votre capacité d'emprunt. Les montants d'une même étape ne s'additionnent pas : c'est l'un ou l'autre.";
+    var ti = sy.tauxImmo, champTaux = $("cap-taux-immo");
+    if (doc.activeElement !== champTaux) champTaux.value = String(ti.tauxPct).replace(".", ",");
+    $("cap-taux-aide").textContent = ti.source === "choisi" ? "Taux que vous avez indiqué. Modifiez-le pour voir l'effet sur le capital."
+      : ti.source === "credit" ? "Repris de votre " + ti.libelle.toLowerCase() + ". Indiquez le taux proposé par votre banque s'il est différent."
+      : "Taux moyen du marché (TMM " + F.pct(OC.TMM / 100, 2) + " + 2,5 points). Indiquez le taux proposé par votre banque.";
+    $("cap-taux-auto").hidden = ti.source !== "choisi";
     ol.textContent = "";
     paliers.forEach(function (x) {
       var li = cree("li", "palier");
@@ -248,9 +254,10 @@
       li.appendChild(tete);
       var corps = cree("div", "palier__corps");
       corps.appendChild(cree("strong", "palier__mensualite chiffre", F.dt0(x.mensualiteMax) + " DT par mois"));
-      corps.appendChild(cree("span", "palier__capital", "soit jusqu'à " + F.dt0(x.capitalImmo) + " DT en immobilier sur " + Math.round(x.dureeImmoMois / 12) + " ans à 10 %"));
+      corps.appendChild(cree("span", "palier__capital", "soit jusqu'à " + F.dt0(x.capitalImmo) + " DT en immobilier sur " + Math.round(x.dureeImmoMois / 12) + " ans à " + F.pct(x.tauxPct / 100, 2)));
       var a = cree("a", "lien-action", "Simuler"); a.appendChild(icone("fleche"));
-      a.href = "#credit?type=immo&capital=" + Math.floor(x.capitalImmo) + "&mois=" + x.dureeImmoMois + "&taux=10";
+      /* La mensualité accompagne le lien : dans le module Crédit, le capital suit alors le taux et la durée choisis. */
+      a.href = "#credit?type=immo&capital=" + Math.floor(x.capitalImmo) + "&mois=" + x.dureeImmoMois + "&taux=" + x.tauxPct + "&mensualite=" + Math.floor(x.mensualiteMax * 100) / 100;
       a.setAttribute("aria-label", "Simuler un crédit immobilier de " + F.dt0(x.capitalImmo) + " DT, possible en " + x.date);
       corps.appendChild(a);
       li.appendChild(corps);
@@ -378,6 +385,20 @@
     O.toast("Votre orbite est en mouvement. Complétez « Mon profil » pour des conseils encore plus précis.");
     var scene = doc.querySelector(".scene");
     if (scene) scene.scrollIntoView({ behavior: O.mouvementReduit.matches ? "auto" : "smooth", block: "start" });
+  });
+
+  /* Taux du futur crédit immobilier : enregistré dans le profil, le calendrier et la capacité suivent. */
+  var champTauxImmo = $("cap-taux-immo"), minuterieTaux = null;
+  champTauxImmo.addEventListener("input", function () {
+    clearTimeout(minuterieTaux);
+    var lu = F.lire(champTauxImmo.value), ok = lu.valide && !lu.vide && lu.valeur >= 0 && lu.valeur <= 30;
+    champTauxImmo.setAttribute("aria-invalid", ok || lu.vide ? "false" : "true");
+    if (!ok) return;
+    minuterieTaux = setTimeout(function () { O.majProfil({ tauxImmoPct: lu.valeur }); }, 350);
+  });
+  $("cap-taux-auto").addEventListener("click", function () {
+    O.majProfil({ tauxImmoPct: null });
+    O.toast("Taux automatique rétabli.");
   });
 
   O.surProfil(rendre);

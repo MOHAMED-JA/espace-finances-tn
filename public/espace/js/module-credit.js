@@ -133,7 +133,8 @@
     vueGraphe: "crd",
     dernier: null,
     precedentM: null,
-    routeAppliquee: ""
+    routeAppliquee: "",
+    cible: null
   };
   function sc0() { return S.scenarios[S.actif]; }
 
@@ -562,6 +563,8 @@
       calculer(true); signalerModif();
       return;
     }
+    /* Un montant saisi à la main remplace l'échéance cible. */
+    if (S.cible && (k === "capital" || k === "apport.prix" || k === "apport.apport")) S.cible = null;
     poser(sc, k, v);
     /* Dépendances : prix, apport et capital restent cohérents */
     if (k === "apport.on" && v) {
@@ -622,8 +625,26 @@
      Calcul et affichage du résultat
      =================================================================== */
   var lourdEnAttente = null;
+  /* Échéance cible (lien « Simuler » du calendrier de la marge) : le capital est recalculé pour que
+     l'échéance reste la même quand le taux, la durée ou la périodicité changent. */
+  function capitalCible(sc) {
+    var p = sc.periodicite || 1, n = sc.mois / p, m = S.cible.mensualite * p, i = tauxApplique(sc) / 100 * p / 12;
+    if (!(n > 0) || !isFinite(i)) return sc.capital;
+    return Math.max(100, Math.floor(i === 0 ? m * n : m * (1 - Math.pow(1 + i, -n)) / i));
+  }
+  function suivreCible(sc) {
+    if (!S.cible) return;
+    if (S.cible.scenario !== sc) { S.cible = null; return; }
+    var c = capitalCible(sc);
+    if (c === sc.capital) return;
+    sc.capital = c;
+    if (sc.apport.on) sc.apport.prix = arr(c + sc.apport.apport);
+    ecrireChamp($("cr-capital"), c); marquer($("cr-capital"), null);
+  }
+
   function calculer(anime) {
     var sc = sc0();
+    suivreCible(sc);
     if (!valide(sc)) return;
     var e = entree(sc, true), r;
     try { r = MC.echeancier(e); } catch (err) { if (window.console) console.error(err); return; }
@@ -708,7 +729,9 @@
     }).join("");
     /* Capacité affichée sous le capital */
     var aide = $("cr-capital-aide-txt");
-    if (S.emp.net > 0) {
+    if (S.cible && S.cible.scenario === sc0()) {
+      aide.textContent = "Montant calculé pour une échéance de " + dt0(S.cible.mensualite) + " par mois : il augmente quand le taux baisse ou que la durée s'allonge. Saisissez un montant pour le fixer.";
+    } else if (S.emp.net > 0) {
       var cap = capaciteBanque(e);
       aide.textContent = cap.capital > 0 ? "Votre capacité sur cette durée et à ce taux : " + dt0(cap.capital) + " (échéance maximale " + dt0(cap.mensualiteMax) + ")." : "Vos crédits en cours ne laissent pas de capacité d'emprunt sur votre " + S.emp.base + ".";
     } else aide.textContent = "Renseignez votre salaire dans le profil pour voir votre capacité.";
@@ -1909,7 +1932,8 @@
       if (t === "immo25") sc.mois = 300;
       change = true;
     }
-    var capital = num("capital"), mois = num("mois"), taux = num("taux"), prix = num("prix"), apport = num("apport");
+    var capital = num("capital"), mois = num("mois"), taux = num("taux"), prix = num("prix"), apport = num("apport"), mensualite = num("mensualite");
+    S.cible = mensualite > 0 && mensualite <= 1e6 ? { mensualite: mensualite, scenario: sc } : null;
     if (prix > 0 && apport >= 0 && apport < prix) { sc.apport = { on: true, prix: prix, apport: apport }; sc.capital = arr(prix - apport); change = true; }
     if (capital > 0) { sc.capital = arr(capital); if (sc.apport.on && sc.apport.prix > capital) sc.apport.apport = arr(sc.apport.prix - capital); change = true; }
     if (mois >= 1 && mois <= 300) { sc.mois = Math.max(sc.periodicite, Math.round(mois / sc.periodicite) * sc.periodicite); change = true; }
