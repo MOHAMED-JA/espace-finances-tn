@@ -61,7 +61,9 @@
 .apercu .bascule { background: rgba(255, 255, 255, .06); }
 .apercu .bascule span { color: var(--cosmos-encre-2); }
 .apercu .bascule input:checked + span { color: #0A0D14; }
-.apercu .bascule__pastille { background: #fff; }
+/* Pastille blanche et texte foncé, quel que soit le thème (la règle sombre générale est plus spécifique). */
+.apercu .bascule__pastille, :root[data-theme] .apercu .bascule__pastille { background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .3); }
+.apercu .bascule input:checked + span, :root[data-theme] .apercu .bascule input:checked + span { color: #0A0D14; }
 .apercu__chef { gap: 12px; color: var(--cosmos-encre); font-weight: 600; font-size: 14.5px; }
 .apercu .interrupteur input:checked + .interrupteur__piste { background: var(--salaire); }
 .apercu__orbite { position: relative; display: grid; gap: 12px; padding-top: 6px; }
