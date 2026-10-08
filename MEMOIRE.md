@@ -88,6 +88,28 @@ Ce sont des extensions de compétences, pas des scripts automatiques : design (c
 - `review-animations` ne peut être lancé que par l'utilisateur (commande `/review-animations`).
 - Les connecteurs MCP de ces modules (Asana, Figma, Daloopa…) sont bloqués par le réseau du conteneur.
 
+## 3 ter. Lisibilité et signature (8 oct., retour de l'utilisateur)
+
+Retour : affichage tassé, pas d'animation, cadres de sélection peu visibles.
+- Cause probable de l'absence d'animation : Windows avec « Effets d'animation » coupés, ce qui donne `prefers-reduced-motion: reduce`.
+  L'ancienne règle globale coupait alors toute transition. Désormais on retire les déplacements mais on garde les fondus et les couleurs.
+  Il ne faut pas remettre de règle `transition-duration: 1ms` globale.
+- « Couche vivante » en fin de `orbite.css` :
+  - `--sel`, la couleur d'accent de chaque module ;
+  - halo au focus des champs ;
+  - pastille de bascule encadrée ;
+  - puces sélectionnées avec cadre dégradé et coche ;
+  - entrée des panneaux à chaque changement de vue (classe `vue--entree` posée par `app.js`).
+- Crédit, plus aéré :
+  - les puces de type sont en 2×2 grâce à une requête de conteneur ;
+  - les chiffres du résultat aussi (4 colonnes seulement si le panneau fait 680 px ou plus) ;
+  - les espacements sont plus grands.
+- Signature « Powered by Mohamed Aziz Jaouadi », avec un lien vers son profil LinkedIn :
+  - styles dans `public/orbite/signature.css`, en cadre à bordure dégradée ;
+  - placée sous le logo dans le rail, en bandeau sur mobile, et sur l'accueil, la connexion et la confidentialité.
+- Bogue corrigé : la liste des simulations pouvait rester vide, car l'événement `orbite:pret` partait avant le chargement de `simulations.js`.
+  La correction : `Orbite.pret = true` et un démarrage immédiat. C'était la cause de l'échec « isolation » de l'e2e.
+
 ## 4. Prochaines actions (améliorations possibles, rien de bloquant)
 
 1. Vérifier le site en ligne après chaque déploiement (Cloudflare se déploie depuis `main`).
@@ -96,10 +118,11 @@ Ce sont des extensions de compétences, pas des scripts automatiques : design (c
    - alertes sur la date de la réduction de taux de crédit ;
    - comparaison de banques sur le brut ;
    - mode « simulation de vie » (mariage, enfant, achat) qui met tout le profil à jour d'un coup.
-3. L'étape e2e « isolation » a échoué une fois (délai) : la rendre plus robuste si cela se reproduit, en attendant `#toutes[aria-busy=false]`.
 4. `docs/MISE-EN-LIGNE.md` et `docs/SECURITE.md` parlent encore des « outils » : à mettre à jour un jour.
 
 ## 5. Pièges connus
+
+- Lancer l'e2e : `CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome NODE_PATH=/home/user/portail-rh/node_modules node e2e/parcours.js`.
 
 - Les sous-agents s'arrêtent à la limite d'utilisation : toujours vérifier les fichiers partiels avant de relancer.
 - Les captures pleine page Playwright décalent les éléments `sticky` : vérifier aussi la capture de la fenêtre.

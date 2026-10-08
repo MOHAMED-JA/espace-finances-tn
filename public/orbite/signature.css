@@ -1,0 +1,69 @@
+/*
+ * Orbite — signature « Powered by Mohamed Aziz Jaouadi » placée sous le logo.
+ * Cadre à bordure dégradée (couleurs des trois modules), lien LinkedIn animé.
+ * Autonome : fonctionne avec orbite.css comme avec meridien.css.
+ */
+.signature {
+  --sg-fond: rgba(255, 255, 255, .78);
+  --sg-encre: #0A0D16;
+  --sg-pale: #5B6274;
+  --sg-halo: rgba(47, 91, 234, .22);
+  --sg-degrade: linear-gradient(120deg, #12B76A, #2F5BEA 50%, #7A5AF8);
+  position: relative; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; max-width: 100%;
+  margin: 0; padding: 6px 7px 6px 12px; border-radius: 999px; border: 1.5px solid transparent;
+  background: linear-gradient(var(--sg-fond), var(--sg-fond)) padding-box, var(--sg-degrade) border-box;
+  box-shadow: 0 1px 2px rgba(10, 13, 20, .06), 0 10px 24px -14px var(--sg-halo);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3); backdrop-filter: blur(10px) saturate(1.3);
+  font-family: "Mona Sans", system-ui, sans-serif; font-size: 12.5px; line-height: 1.2; color: var(--sg-pale);
+}
+:root[data-theme="dark"] .signature, .bande-sombre .signature {
+  --sg-fond: rgba(17, 21, 33, .82); --sg-encre: #F4F6FB; --sg-pale: #A3AABB; --sg-halo: rgba(126, 162, 255, .3);
+}
+.signature__pre { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+.signature__nom {
+  position: relative; display: inline-flex; align-items: center; gap: 7px; min-height: 30px; padding: 3px 10px 3px 4px; border-radius: 999px;
+  color: var(--sg-encre); font-weight: 700; font-size: 13px; text-decoration: none; white-space: nowrap; overflow: hidden; isolation: isolate;
+  background: color-mix(in srgb, var(--sg-encre) 6%, transparent);
+  transition: background-color 180ms ease, box-shadow 180ms ease, transform 140ms cubic-bezier(.16, 1, .3, 1);
+  touch-action: manipulation;
+}
+.signature__nom::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--sg-degrade); opacity: 0;
+  transition: opacity 220ms ease;
+}
+.signature__in {
+  display: inline-grid; place-items: center; width: 22px; height: 22px; flex: none; border-radius: 7px;
+  background: #0A66C2; color: #fff; font-family: system-ui, sans-serif; font-weight: 800; font-size: 12px; letter-spacing: -.02em;
+}
+.signature__fleche { display: inline-block; font-size: 13px; transition: transform 220ms cubic-bezier(.16, 1, .3, 1); }
+.signature__nom:hover, .signature__nom:focus-visible { color: #fff; box-shadow: 0 8px 22px -10px var(--sg-halo); }
+.signature__nom:hover::before, .signature__nom:focus-visible::before { opacity: 1; }
+.signature__nom:hover .signature__fleche, .signature__nom:focus-visible .signature__fleche { transform: translate(2px, -2px); }
+.signature__nom:active { transform: scale(.97); }
+.signature__nom:focus-visible { outline: 3px solid #2F5BEA; outline-offset: 2px; }
+
+/* Reflet qui traverse le cadre à l'arrivée, puis toutes les 9 secondes. */
+@media (prefers-reduced-motion: no-preference) {
+  .signature { animation: sg-entree 600ms cubic-bezier(.16, 1, .3, 1) both 200ms; }
+  .signature::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, .55) 50%, transparent 65%) no-repeat;
+    background-size: 250% 100%; background-position: 150% 0; mix-blend-mode: soft-light;
+    animation: sg-reflet 9s ease-in-out 900ms infinite;
+  }
+}
+@keyframes sg-entree { from { opacity: 0; transform: translateY(6px) scale(.98); } }
+@keyframes sg-reflet { 0%, 14% { background-position: 150% 0; } 30%, 100% { background-position: -60% 0; } }
+
+/* Variante pleine largeur (barre mobile de l'application) */
+.signature--bandeau { display: flex; justify-content: center; border-radius: 16px; }
+
+/* Placement sous le logo */
+.logo-bloc { display: grid; justify-items: start; gap: 8px; min-width: 0; }
+.rail__signature { margin: -8px 4px 10px; }
+.barre-signature { margin: 4px 16px 0; }
+@media (min-width: 1024px) { .barre-signature { display: none; } }
+.ecran__signature { align-self: flex-start; margin-top: -20px; }
+.doc-barre { height: auto; min-height: var(--barre, 64px); padding-block: 10px; }
+.entete__ligne { padding-block: 10px; }
+@media (max-width: 480px) { .entete__ligne .signature__pre { display: none; } }

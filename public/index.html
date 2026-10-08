@@ -15,6 +15,7 @@
   <link rel="preload" href="/orbite/polices/mona-sans-latin-standard-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/orbite/orbite.css">
   <link rel="stylesheet" href="/commun/accueil.css">
+  <link rel="stylesheet" href="/orbite/signature.css">
   <script src="/commun/config.js"></script>
   <script src="/commun/theme-init.js"></script>
 </head>
@@ -23,6 +24,7 @@
 
   <header class="entete">
     <div class="conteneur entete__ligne">
+      <div class="logo-bloc">
       <a class="logo logo--vivant" href="/" aria-label="Orbite, accueil">
         <svg class="logo__signe" viewBox="0 0 64 64" aria-hidden="true">
           <defs><linearGradient id="lg-a" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#12B76A"/><stop offset=".55" stop-color="#2F5BEA"/><stop offset="1" stop-color="#7A5AF8"/></linearGradient></defs>
@@ -33,6 +35,8 @@
         </svg>
         <span translate="no">Orbite</span>
       </a>
+      <p class="signature"><span class="signature__pre">Powered by</span><a class="signature__nom" href="https://www.linkedin.com/in/mohamed-aziz-jaouadi-%D9%85%D8%AD%D9%85%D8%AF-%D8%B9%D8%B2%D9%8A%D8%B2-%D8%A7%D9%84%D8%AC%D9%88%D8%A7%D8%AF%D9%8A-%C2%AEpsm-i-%C2%AEpspo-l-%C2%AEistqb-851009115/?isSelfProfile=true" target="_blank" rel="noopener noreferrer" aria-label="Mohamed Aziz Jaouadi, profil LinkedIn (nouvel onglet)"><span class="signature__in" aria-hidden="true">in</span><span translate="no">Mohamed Aziz Jaouadi</span><span class="signature__fleche" aria-hidden="true">↗</span></a></p>
+      </div>
       <nav class="entete__actions" aria-label="Compte">
         <a class="bouton bouton--fantome bouton--petit" href="/connexion.html" data-si-deconnecte>Se connecter</a>
         <a class="bouton bouton--plein bouton--petit" href="/connexion.html?mode=inscription" data-si-deconnecte>Créer mon orbite</a>
