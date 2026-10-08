@@ -12,6 +12,15 @@ const Faux = require("./faux-supabase.js");
 
 const SUPABASE = "https://txrwgqgnqdkipwtwpevl.supabase.co";
 const CAPTURES = process.env.CAPTURES || path.join(__dirname, "..", "test-results");
+/* Faux service Pwned Passwords : seul MDP_DIVULGUE figure dans « les fuites ». */
+const MDP_DIVULGUE = "Fuite-Connue-2026!";
+const EMPREINTE_DIVULGUEE = require("node:crypto").createHash("sha1").update(MDP_DIVULGUE).digest("hex").toUpperCase();
+async function fuites(route) {
+  const prefixe = route.request().url().split("/range/")[1] || "";
+  const lignes = ["0000000000000000000000000000000000A:0"];
+  if (prefixe === EMPREINTE_DIVULGUEE.slice(0, 5)) lignes.push(EMPREINTE_DIVULGUEE.slice(5) + ":4242");
+  await route.fulfill({ status: 200, headers: { "Content-Type": "text/plain", "Access-Control-Allow-Origin": "*" }, body: lignes.join("\r\n") });
+}
 let reussis = 0, echecs = 0;
 
 async function etape(nom, fn) {
@@ -29,6 +38,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   const navigateur = await chromium.launch({ executablePath: process.env.CHROMIUM || "/opt/pw-browsers/chromium/chrome-linux/chrome" }).catch(() => chromium.launch());
   const contexte = await navigateur.newContext({ viewport: { width: 1360, height: 900 }, locale: "fr-FR", acceptDownloads: true });
   await contexte.route(SUPABASE + "/**", (r) => faux.gerer(r));
+  await contexte.route("https://api.pwnedpasswords.com/**", fuites);
   const problemes = [];
   function suivre(p) {
     p.on("pageerror", (e) => problemes.push("Erreur JS " + p.url() + " : " + e.message));
@@ -70,6 +80,13 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(await page.isVisible("#mdp-erreur"), "erreur mot de passe visible");
     await page.fill("#nom", "Aziz Test");
     await page.fill("#email", "aziz@exemple.tn");
+    /* Mot de passe présent dans une fuite connue : refusé avant tout envoi au serveur. */
+    await page.fill("#mdp", MDP_DIVULGUE);
+    await page.fill("#mdp2", MDP_DIVULGUE);
+    await page.check("#cgu");
+    await page.click("#envoyer");
+    await page.waitForFunction(() => /fuites de données/.test(document.getElementById("mdp-erreur").textContent));
+    assert(!faux.comptes.has("aziz@exemple.tn"), "aucun compte créé avec un mot de passe divulgué");
     await page.fill("#mdp", "Tunis-2026-solide");
     await page.fill("#mdp2", "Tunis-2026-solide");
     await page.check("#cgu");
@@ -234,6 +251,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     faux.ajouterCompte("autre@exemple.tn", "Autre-compte-2026!", { full_name: "Autre" });
     const ctx2 = await navigateur.newContext();
     await ctx2.route(SUPABASE + "/**", (r) => faux.gerer(r));
+    await ctx2.route("https://api.pwnedpasswords.com/**", fuites);
     const p2 = await ctx2.newPage();
     suivre(p2);
     await p2.goto(base + "/connexion.html");
@@ -282,7 +300,17 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.goto(base + "/espace/#profil");
     await page.waitForSelector("#vue-profil:not([hidden])");
 
+    /* Compte non testeur en mode test : le paiement est refusé avec un message clair. */
     await page.goto(base + "/espace/#abonnement");
+    await page.waitForSelector('#ab-offres input[value="annuel"]');
+    await page.click("#ab-payer");
+    await page.waitForSelector("#ab-erreur:not([hidden])");
+    assert(/ouvre très bientôt/.test(await page.textContent("#ab-erreur")), "message « bientôt » pour un non-testeur");
+    assert(faux.paiements().length === 0, "aucune commande créée");
+    faux.marquerTesteur("aziz@exemple.tn");
+
+    await page.goto(base + "/espace/#abonnement");
+    await page.reload();
     await page.waitForSelector('#ab-offres input[value="semestriel"]');
     await page.locator('#ab-offres input[value="semestriel"]').dispatchEvent("click");
     await Promise.all([page.waitForURL(/paiement-test\.html\?ref=ORB-/), page.click("#ab-payer")]);
@@ -299,6 +327,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   await etape("mobile : onglets du bas, orbite et modules sans défilement horizontal", async () => {
     const m = await navigateur.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, locale: "fr-FR" });
     await m.route(SUPABASE + "/**", (r) => faux.gerer(r));
+    await m.route("https://api.pwnedpasswords.com/**", fuites);
     const pm = await m.newPage();
     suivre(pm);
     await pm.goto(base + "/connexion.html");

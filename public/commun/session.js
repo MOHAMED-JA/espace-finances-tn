@@ -142,6 +142,7 @@
    * fonction serveur « paiement », qui vérifie chaque paiement auprès de la passerelle. */
   function appelPaiement(corps) {
     return client.functions.invoke("paiement", { body: corps }).then(function (r) {
+      if (!r.error && r.data && r.data.erreur) { var b = new Error(r.data.erreur); b.code = r.data.code; throw b; }
       if (!r.error) return r.data;
       var ctx = r.error.context;
       if (ctx && typeof ctx.json === "function") {

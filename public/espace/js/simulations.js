@@ -274,10 +274,17 @@
     if (probleme) { champ.focus(); return; }
     var b = this.querySelector("button[type=submit]");
     b.disabled = true;
-    E.compte.changerMotDePasse(mdp).then(function () {
+    /* Refus des mots de passe présents dans des fuites connues (seuls 5 caractères de l'empreinte sont envoyés). */
+    (window.EFFuites ? window.EFFuites.verifier(mdp) : Promise.resolve(0)).then(function (fuites) {
+      if (fuites > 0) {
+        err.textContent = window.EFFuites.MESSAGE; err.hidden = false; champ.setAttribute("aria-invalid", "true"); champ.focus();
+        throw { dejaAffiche: true };
+      }
+      return E.compte.changerMotDePasse(mdp);
+    }).then(function () {
       champ.value = ""; $("jauge-compte").setAttribute("data-niveau", "0");
       E.toast("Mot de passe modifié.");
-    }).catch(function (er) { E.toast(M.messageErreur(er), { erreur: true }); })
+    }).catch(function (er) { if (!(er && er.dejaAffiche)) E.toast(M.messageErreur(er), { erreur: true }); })
       .finally(function () { b.disabled = false; });
   });
 

@@ -146,6 +146,20 @@
     if (!v) return;
     message("");
     occupe(envoyer, true);
+    /* Nouveau mot de passe : refusé s'il figure dans une fuite de données connue (k-anonymat). */
+    var controle = (mode === "inscription" || mode === "reinitialiser") && window.EFFuites ? window.EFFuites.verifier(v.mdp) : Promise.resolve(0);
+    controle.then(function (fuites) {
+      if (fuites > 0) {
+        occupe(envoyer, false);
+        erreurChamp("mdp", window.EFFuites.MESSAGE);
+        $("mdp").focus();
+        return;
+      }
+      envoyerFormulaire(v);
+    });
+  });
+
+  function envoyerFormulaire(v) {
     var action;
     if (mode === "connexion") {
       action = client.auth.signInWithPassword({ email: v.email, password: v.mdp }).then(function (r) {
@@ -177,7 +191,7 @@
     }
     action.catch(function (err) { message(M.messageErreur(err), "erreur"); })
       .finally(function () { occupe(envoyer, false); });
-  });
+  }
 
   $("google").addEventListener("click", function () {
     var b = this;
