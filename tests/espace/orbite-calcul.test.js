@@ -212,7 +212,9 @@ test("banque sur le brut : conseils et calendrier de la marge à chaque fin de c
   assert.deepEqual(pal.map((x) => x.mois), [65, 68, 148]);
   assert.deepEqual(pal[0].credits, ["Crédit automobile"]);
   proche(pal[1].mensualiteMax, 1600 - 875.894);
-  assert.ok(pal[1].capitalImmo > 70000 && pal[1].capitalImmo < 80000);
+  /* Taux repris du crédit immobilier en cours (4,5 %) au lieu des 10 % du marché : le capital est plus élevé. */
+  assert.equal(pal[1].tauxPct, 4.5);
+  assert.ok(pal[1].capitalImmo > 110000 && pal[1].capitalImmo < 120000, String(pal[1].capitalImmo));
   const textes = sy.conseils.map((c) => c.titre + " " + c.texte).join(" | ");
   assert.match(textes, /Endettement au-dessus de 40 % du brut/);
   assert.match(textes, /BH Bank prête jusqu'à 40 % du brut/);
@@ -250,4 +252,23 @@ test("capacité sur les salaires et primes de l'année ÷ 12 (règle par défaut
   const mensuel = O.synthese(Object.assign({}, PROFIL_ENDETTE, { baseBanque: "brut", revenuBanque: "mensuel" }), {}, MAINTENANT);
   proche(mensuel.capacite.brut.revenu, 4000);
   assert.equal(mensuel.capacite.brut.mensualiteMax, 0);
+});
+
+test("taux du futur crédit immobilier : choisi, sinon crédit immobilier en cours, sinon marché", () => {
+  assert.deepEqual(O.tauxImmo(O.normaliser({})), { tauxPct: O.TMM + 2.5, source: "marche" });
+  const p = O.normaliser(PROFIL_ENDETTE);
+  assert.equal(O.tauxImmo(p).source, "credit");
+  assert.equal(O.tauxImmo(p).tauxPct, 4.5);
+  const choisi = O.normaliser(Object.assign({}, PROFIL_ENDETTE, { tauxImmoPct: 6 }));
+  assert.deepEqual(O.tauxImmo(choisi), { tauxPct: 6, source: "choisi" });
+  assert.equal(O.normaliser({ tauxImmoPct: "" }).tauxImmoPct, null);
+  assert.equal(O.normaliser({ tauxImmoPct: 99 }).tauxImmoPct, 30, "borné à 30 %");
+  /* Plus le taux baisse, plus le capital de chaque étape augmente ; la capacité immobilière suit le même taux. */
+  const base = Object.assign({}, PROFIL_ENDETTE, { baseBanque: "brut", revenuBanque: "mensuel" });
+  const a = O.synthese(Object.assign({}, base, { tauxImmoPct: 4.5 }), {}, MAINTENANT);
+  const b = O.synthese(Object.assign({}, base, { tauxImmoPct: 10 }), {}, MAINTENANT);
+  assert.ok(a.capacite.brut.paliers[1].capitalImmo > b.capacite.brut.paliers[1].capitalImmo);
+  assert.equal(a.capacite.brut.paliers[1].mensualiteMax, b.capacite.brut.paliers[1].mensualiteMax);
+  assert.equal(a.capacite.net.credits.filter((c) => c.cle === "immo")[0].tauxPct, 4.5);
+  assert.equal(a.capacite.net.credits.filter((c) => c.cle === "auto")[0].tauxPct, O.TMM + 3);
 });

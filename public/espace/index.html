@@ -201,6 +201,11 @@
             <div class="paliers panneau" id="cap-paliers" hidden>
               <h3 class="paliers__titre">Le calendrier de votre marge</h3>
               <p class="paliers__sous" id="cap-paliers-sous">Chaque crédit qui se termine libère une partie de votre capacité d'emprunt.</p>
+              <div class="paliers__taux">
+                <div class="champ paliers__champ"><label for="cap-taux-immo">Taux de votre futur crédit immobilier</label><div class="saisie"><input id="cap-taux-immo" type="text" inputmode="decimal" autocomplete="off" aria-describedby="cap-taux-aide"><span class="saisie__unite">%</span></div></div>
+                <p class="paliers__aide" id="cap-taux-aide"></p>
+                <button type="button" class="bouton bouton--petit bouton--fantome" id="cap-taux-auto" hidden>Revenir au taux automatique</button>
+              </div>
               <ol class="paliers__liste" id="cap-paliers-liste"></ol>
             </div>
           </section>

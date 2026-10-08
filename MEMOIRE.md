@@ -302,6 +302,18 @@ Dans l'e2e, le choix du thème se fait par `dispatchEvent("click")` : la barre f
 - **Tests** : le faux Supabase gère le stockage (envoi en multipart, signature, lecture, suppression). L'e2e importe un PNG valide, puis vérifie le surnom, la page d'ouverture et le retrait de la photo. Résultats : 20/20, `npm test` 282/282, aucun débordement de 320 à 1920 px.
 - **Reste à faire pour l'utilisateur** : dans Mon profil, choisir « BH Bank / Le brut » et indiquer décembre comme mois du contrat d'assurance vie.
 
+## 3 quaterdecies. Taux du futur crédit immobilier et échéance cible (8 oct.)
+
+- **Avant** : le calendrier de la marge calculait toujours à 10 % (TMM 7,5 + 2,5). Le lien « Simuler » ne transmettait que le capital. Dans le module Crédit, baisser le taux faisait donc baisser l'échéance, alors que le capital restait le même.
+- **Moteur** : le profil reçoit un champ `tauxImmoPct` (null = automatique). La fonction `tauxImmo(p)` renvoie dans l'ordre :
+  - le taux choisi par l'utilisateur (`source: "choisi"`) ;
+  - sinon le taux du crédit immobilier en cours (`"credit"`, souvent un taux préférentiel, 4,5 % pour l'utilisateur) ;
+  - sinon TMM + 2,5 (`"marche"`).
+  Ce taux sert au calendrier (`paliersMarge`, qui renvoie `tauxPct`) et aux cartes immo et immo25 de la capacité (5e paramètre de `capacite`). `sy.tauxImmo` est exposé.
+- **Calendrier** : un champ « Taux de votre futur crédit immobilier » (`#cap-taux-immo`) est enregistré dans le profil. Un texte d'aide indique la source du taux. Le bouton « Revenir au taux automatique » remet la valeur à null.
+- **Module Crédit** : nouveau paramètre de route `mensualite=`. Il crée `S.cible = {mensualite, scenario}`. `suivreCible()` est appelé au début de `calculer()` et recalcule le capital pour garder la même échéance quand le taux, la durée ou la périodicité changent. Saisir un capital, un prix ou un apport annule la cible. L'aide sous le montant explique ce fonctionnement. Les liens transmettent l'échéance avec 2 décimales (sinon le capital était un peu inférieur à celui du calendrier).
+- **Vérification** : à 4,5 %, l'étape de mars 2032 donne 17 348 DT ; à 3,75 %, 18 512 DT ; à 2,5 % dans le module Crédit, 20 569 DT. Tests : 283/283, e2e 20/20.
+
 ## 4. Prochaines actions (améliorations possibles, rien de bloquant)
 
 1. Vérifier le site en ligne après chaque déploiement (Cloudflare se déploie depuis `main`).

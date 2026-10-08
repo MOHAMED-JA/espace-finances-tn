@@ -153,8 +153,19 @@
       baseBanque: p.baseBanque === "brut" ? "brut" : "net",
       /* Revenu retenu par la banque : salaires et primes de l'année ÷ 12 (par défaut), ou le seul salaire mensuel. */
       revenuBanque: p.revenuBanque === "mensuel" ? "mensuel" : "annuel",
-      banque: texte(p.banque, 40)
+      banque: texte(p.banque, 40),
+      /* Taux d'un nouveau crédit immobilier choisi par l'utilisateur (null : déduit automatiquement, voir tauxImmo). */
+      tauxImmoPct: p.tauxImmoPct === null || p.tauxImmoPct === undefined || p.tauxImmoPct === "" ? null : nombre(p.tauxImmoPct, null, 0, 30)
     };
+  }
+
+  /* Taux retenu pour un nouveau crédit immobilier : celui choisi par l'utilisateur, sinon celui de son crédit
+     immobilier en cours (souvent un taux préférentiel, par exemple pour le personnel de banque), sinon le marché. */
+  function tauxImmo(p) {
+    if (p.tauxImmoPct !== null && p.tauxImmoPct !== undefined && isFinite(p.tauxImmoPct)) return { tauxPct: p.tauxImmoPct, source: "choisi" };
+    var c = (p.credits || []).filter(function (x) { return x.type === "immo" && x.tauxPct > 0; })[0];
+    if (c) return { tauxPct: c.tauxPct, source: "credit", libelle: c.libelle };
+    return { tauxPct: TMM + 2.5, source: "marche" };
   }
 
   function age(p, maintenant) { return Math.max(16, anneeCourante(maintenant) - p.anneeNaissance); }
@@ -313,7 +324,7 @@
     var actifs = p.credits.filter(function (c) { return c.mensualite > 0 && c.moisRestants > 0; })
       .sort(function (a, b) { return a.moisRestants - b.moisRestants; });
     var charges = p.credits.reduce(function (t, c) { return t + (c.mensualite > 0 ? c.mensualite : 0); }, 0);
-    var res = [], i = 0, avant = Math.max(0, revenu * quotite - charges), finis = [];
+    var res = [], i = 0, avant = Math.max(0, revenu * quotite - charges), finis = [], t = tauxImmo(p).tauxPct;
     while (i < actifs.length) {
       var mois = actifs[i].moisRestants;
       while (i < actifs.length && actifs[i].moisRestants === mois) { charges -= actifs[i].mensualite; finis.push(actifs[i].libelle); i++; }
@@ -322,7 +333,7 @@
         var d = new Date(m.getFullYear(), m.getMonth() + mois, 1);
         var n = Math.min(240, Math.max(0, (AGE_MAX - ageActuel - Math.ceil(mois / 12)) * 12));
         res.push({ mois: mois, date: MOIS[d.getMonth()] + " " + d.getFullYear(), credits: finis, charges: Math.max(0, charges),
-          mensualiteMax: marge, capitalImmo: capitalPourMensualite(marge, TMM + 2.5, n), dureeImmoMois: n });
+          mensualiteMax: marge, capitalImmo: capitalPourMensualite(marge, t, n), dureeImmoMois: n, tauxPct: t });
         finis = [];
       }
       avant = marge;
@@ -335,13 +346,14 @@
   }
 
   /* Capacité d'emprunt sur une base de revenu mensuel (net ou brut). */
-  function capacite(revenuMensuel, quotite, charges, ageActuel) {
+  function capacite(revenuMensuel, quotite, charges, ageActuel, tauxImmoPct) {
     var mensualiteMax = Math.max(0, revenuMensuel * quotite - charges);
     var moisMaxAge = Math.max(0, (AGE_MAX - ageActuel) * 12);
     return {
       revenu: revenuMensuel, quotite: quotite, charges: charges, mensualiteMax: mensualiteMax,
       tauxEndettementActuel: revenuMensuel > 0 ? charges / revenuMensuel : 0,
-      credits: CREDITS_TYPES.map(function (t) {
+      credits: CREDITS_TYPES.map(function (t0) {
+        var t = t0.cle.indexOf("immo") === 0 && tauxImmoPct >= 0 ? { cle: t0.cle, libelle: t0.libelle, court: t0.court, dureeMois: t0.dureeMois, tauxPct: tauxImmoPct } : t0;
         var n = Math.min(t.dureeMois, moisMaxAge);
         return {
           cle: t.cle, libelle: t.libelle, court: t.court, tauxPct: t.tauxPct, dureeMois: n, dureeLimitee: n < t.dureeMois,
@@ -596,7 +608,7 @@
       [/^Endettement/, "#profil?section=credits", "Voir mes crédits"],
       [/^Votre marge revient/, "#orbite?section=marge", "Voir le calendrier de ma marge"],
       [/^Des taux à garder/, "#profil?section=credits", "Voir mes crédits"],
-      [/^Votre capacité d'emprunt/, immoAuj ? "#credit?type=immo&capital=" + Math.floor(immoAuj.capital) + "&mois=" + immoAuj.dureeMois + "&taux=" + immoAuj.tauxPct : "#credit", "Simuler ce crédit"],
+      [/^Votre capacité d'emprunt/, immoAuj ? "#credit?type=immo&capital=" + Math.floor(immoAuj.capital) + "&mois=" + immoAuj.dureeMois + "&taux=" + immoAuj.tauxPct + "&mensualite=" + Math.floor(immoAuj.mensualite * 100) / 100 : "#credit", "Simuler ce crédit"],
       [/^Comparez les banques/, "#profil?section=banque", "Régler la règle de ma banque"],
       [/^Réduisez votre impôt/, "#epargne" + (versementConseil ? "?versement=" + versementConseil : ""), versementConseil ? "Simuler " + versementConseil + " DT par mois" : "Simuler"],
       [/^Avantage fiscal/, "#epargne", "Voir mon épargne"],
@@ -622,8 +634,8 @@
     var charges = chargesCredits(p);
     /* Capacité : revenu de l'année (tous les salaires et primes) ÷ 12, remboursé en 12 échéances par an. */
     var annuel = p.revenuBanque === "annuel";
-    var capNet = capacite((annuel ? s.netAnnuel / 12 : s.netMensuel) + p.autresRevenus, p.quotiteNet, charges, ageActuel);
-    var capBrut = capacite((annuel ? s.brutAnnuel / 12 : s.brutMensuel) + p.autresRevenus, p.quotiteBrut, charges, ageActuel);
+    var capNet = capacite((annuel ? s.netAnnuel / 12 : s.netMensuel) + p.autresRevenus, p.quotiteNet, charges, ageActuel, tauxImmo(p).tauxPct);
+    var capBrut = capacite((annuel ? s.brutAnnuel / 12 : s.brutMensuel) + p.autresRevenus, p.quotiteBrut, charges, ageActuel, tauxImmo(p).tauxPct);
     var ep = suggestionsEpargne(s, p);
     var epChoisie = ep.propositions.filter(function (x) { return x.cle === (ch.epargne || "equilibree"); })[0] || ep.propositions[0];
     var epargneActuelle = p.contrats.reduce(function (t, c) { return t + c.versementMensuel; }, 0);
@@ -641,6 +653,7 @@
     };
     sy.projets = p.projets.map(function (pr) { return projet(pr, capNet, p, s.netMensuel + p.autresRevenus); });
     sy.maintenant = maintenant || new Date();
+    sy.tauxImmo = tauxImmo(p);
     sy.contrats = p.contrats.map(function (c) { return estimationContrat(c, sy.maintenant); });
     sy.credits = p.credits.map(function (c) {
       var e = echeancier(c, sy.maintenant), mois = e ? e.restantes : c.moisRestants;
@@ -659,7 +672,7 @@
       var so = sortieEndettement(p, c.revenu, q);
       if (!so) return;
       var d = new Date(sy.maintenant.getFullYear(), sy.maintenant.getMonth() + so.mois, 1);
-      c.futur = { mois: so.mois, date: MOIS[d.getMonth()] + " " + d.getFullYear(), capacite: capacite(c.revenu, q, so.charges, ageActuel + Math.ceil(so.mois / 12)) };
+      c.futur = { mois: so.mois, date: MOIS[d.getMonth()] + " " + d.getFullYear(), capacite: capacite(c.revenu, q, so.charges, ageActuel + Math.ceil(so.mois / 12), tauxImmo(p).tauxPct) };
     });
     sy.conseils = conseils(sy);
     return sy;
@@ -670,7 +683,7 @@
     profilParDefaut: profilParDefaut, normaliser: normaliser, age: age, etatSalaire: etatSalaire, entreeBrut: entreeBrut,
     tranche: tranche, salaire: salaire, augmentation: augmentation,
     capitalPourMensualite: capitalPourMensualite, mensualitePourCapital: mensualitePourCapital, capacite: capacite,
-    epargnePour: epargnePour, suggestionsEpargne: suggestionsEpargne, budget: budget, estimationContrat: estimationContrat, paliersMarge: paliersMarge, echeancier: echeancier, analyseTaux: analyseTaux, sortieEndettement: sortieEndettement,
+    epargnePour: epargnePour, suggestionsEpargne: suggestionsEpargne, budget: budget, estimationContrat: estimationContrat, paliersMarge: paliersMarge, tauxImmo: tauxImmo, echeancier: echeancier, analyseTaux: analyseTaux, sortieEndettement: sortieEndettement,
     versementPourCapital: versementPourCapital, projet: projet, conseils: conseils, synthese: synthese
   };
 });
