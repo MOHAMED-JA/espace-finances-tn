@@ -20,13 +20,13 @@ from pathlib import Path
 
 RACINE = Path(__file__).resolve().parent.parent
 CIBLE = RACINE / "public" / "outils" / "salaire"
-A_COPIER = ["index.html", "css/billet.css", "js/billet.js", "js/theme-init.js", "js/calcul.js", "js/etat.js",
+A_COPIER = ["index.html", "css/salaire.css", "js/salaire.js", "js/theme-init.js", "js/calcul.js", "js/etat.js",
             "config/parametres.js", "assets/icone.svg", "assets/fonts", "assets/icones"]
 
 
 def main(source: Path) -> None:
-    if not (source / "js" / "billet.js").exists():
-        sys.exit("Source invalide : js/billet.js introuvable dans " + str(source))
+    if not (source / "js" / "salaire.js").exists():
+        sys.exit("Source invalide : js/salaire.js introuvable dans " + str(source))
     if CIBLE.exists():
         shutil.rmtree(CIBLE)
     for chemin in A_COPIER:
