@@ -83,7 +83,10 @@
       type: choix(c.type, ["av", "cea"], "av"),
       versementMensuel: nombre(c.versementMensuel, 0, 0, 1e6),
       capitalActuel: nombre(c.capitalActuel, 0, 0, 1e8),
-      anneeDebut: entier(c.anneeDebut, anneeCourante(), 1970, 2100)
+      anneeDebut: entier(c.anneeDebut, anneeCourante(), 1970, 2100),
+      moisDebut: entier(c.moisDebut, 1, 1, 12),
+      versementsLibres: nombre(c.versementsLibres, 0, 0, 1e8),
+      versementsLibresAn: nombre(c.versementsLibresAn, 0, 0, 1e7)
     };
   }
   function normaliserProjet(c) {
@@ -304,10 +307,36 @@
     };
   }
 
+  /* Versements de l'année (mensuels et libres) : ce sont eux qui ouvrent la déduction fiscale. */
   function versementsExistants(p) {
     var av = 0, cea = 0;
-    p.contrats.forEach(function (c) { if (c.type === "cea") cea += c.versementMensuel * 12; else av += c.versementMensuel * 12; });
+    p.contrats.forEach(function (c) { var an = c.versementMensuel * 12 + c.versementsLibresAn; if (c.type === "cea") cea += an; else av += an; });
     return { av: av, cea: cea };
+  }
+
+  /* Rendement net de frais retenu pour estimer le capital d'un contrat dont le relevé n'est pas saisi. */
+  var RENDEMENT_ESTIME = 5;
+  var DUREE_FISCALE = { av: 8, cea: 5 };
+
+  /* Contrat en cours : mois écoulés, total versé, capital (saisi ou estimé) et date des 8 ans. */
+  function estimationContrat(c, maintenant) {
+    var m = maintenant || new Date();
+    var mois = Math.max(0, (m.getFullYear() - c.anneeDebut) * 12 + (m.getMonth() + 1 - c.moisDebut) + 1);
+    var i = RENDEMENT_ESTIME / 100 / 12;
+    var programme = c.versementMensuel * (i === 0 ? mois : (Math.pow(1 + i, mois) - 1) / i);
+    /* Versements libres : supposés faits, en moyenne, au milieu de la période. */
+    var libres = c.versementsLibres * Math.pow(1 + i, mois / 2);
+    var verse = c.versementMensuel * mois + c.versementsLibres;
+    var estime = programme + libres;
+    var duree = DUREE_FISCALE[c.type] || 8;
+    var finMois = c.moisDebut - 1 + duree * 12;
+    return {
+      libelle: c.libelle, type: c.type, mois: mois, verse: verse, capitalEstime: estime,
+      capital: c.capitalActuel > 0 ? c.capitalActuel : estime, estime: !(c.capitalActuel > 0),
+      gainsEstimes: Math.max(0, estime - verse),
+      dureeFiscale: duree, dureeAtteinte: mois >= duree * 12,
+      dateDureeFiscale: MOIS[finMois % 12] + " " + (c.anneeDebut + Math.floor(finMois / 12))
+    };
   }
 
   function simFiscale(s, p, av, cea) {
@@ -478,7 +507,14 @@
     if ((p.situation === "marie" || p.enfants > 0) && !p.chefDeFamille) ajouter(2, "salaire", "Chef de famille ?", "Si vous êtes le chef de famille au sens fiscal, cochez-le : 300 DT de déduction par an, plus les enfants à charge.");
     if (p.statut === "cdd" || p.statut === "contractuel") ajouter(1, "credit", "Contrat à durée déterminée", "Beaucoup de banques exigent un CDI ou une titularisation pour un crédit long ; préparez une attestation de l'employeur.");
     var precaution = s.netMoyen * 3;
-    if (p.contrats.some(function (c) { return c.versementMensuel > 0 && !(c.capitalActuel > 0) && c.anneeDebut < anneeCourante(sy.maintenant); })) ajouter(1, "epargne", "Capital de vos contrats", "Indiquez le capital actuel de vos contrats vie dans votre profil : il compte dans votre épargne et dans vos projets.");
+    sy.contrats.forEach(function (e) {
+      if (!(e.mois > 0) || !(e.verse > 0)) return;
+      var nom = e.type === "cea" ? "Votre CEA" : "Votre contrat vie" + (e.libelle && e.libelle !== "Contrat" && e.libelle.length > 2 ? " « " + e.libelle + " »" : "");
+      var texteC = nom + " : " + ent(e.verse) + " DT versés en " + (e.mois >= 12 ? Math.floor(e.mois / 12) + " an" + (e.mois >= 24 ? "s" : "") + (e.mois % 12 ? " et " + (e.mois % 12) + " mois" : "") : e.mois + " mois") + ", ";
+      texteC += e.estime ? "capital estimé à environ " + ent(e.capitalEstime) + " DT (à " + RENDEMENT_ESTIME + " % net par an). Saisissez le montant de votre dernier relevé pour un chiffre exact." : "capital de " + ent(e.capital) + " DT.";
+      texteC += e.dureeAtteinte ? " Il a passé " + e.dureeFiscale + " ans : l'avantage fiscal vous est acquis." : " Gardez-le au moins jusqu'en " + e.dateDureeFiscale + " (" + e.dureeFiscale + " ans) pour conserver l'avantage fiscal ; vos versements libres comptent aussi dans la déduction de l'année.";
+      ajouter(1, "epargne", e.estime ? "Capital estimé de votre épargne" : "Votre épargne en cours", texteC);
+    });
     if (p.epargneDisponible < precaution) ajouter(1, "epargne", "Épargne de précaution", "Visez environ trois mois de net de côté (" + ent(precaution) + " DT) avant d'investir à long terme.");
     sy.projets.forEach(function (pr) {
       if (pr.statut === "hors_portee") ajouter(2, pr.credit ? "credit" : "epargne", pr.libelle, "Ce projet dépasse aujourd'hui votre capacité" + (pr.epargneMensuelle > 0 ? " : il faudrait épargner " + ent(pr.epargneMensuelle) + " DT par mois" : "") + ". Allongez l'horizon, réduisez le montant ou augmentez l'apport.");
@@ -513,6 +549,7 @@
     };
     sy.projets = p.projets.map(function (pr) { return projet(pr, capNet, p, s.netMensuel + p.autresRevenus); });
     sy.maintenant = maintenant || new Date();
+    sy.contrats = p.contrats.map(function (c) { return estimationContrat(c, sy.maintenant); });
     /* Capacité retrouvée à la fin des crédits qui dépassent la quotité (affichée quand elle est nulle aujourd'hui). */
     ["net", "brut"].forEach(function (b) {
       var c = sy.capacite[b], q = b === "net" ? p.quotiteNet : p.quotiteBrut;
@@ -531,7 +568,7 @@
     profilParDefaut: profilParDefaut, normaliser: normaliser, age: age, etatSalaire: etatSalaire, entreeBrut: entreeBrut,
     tranche: tranche, salaire: salaire, augmentation: augmentation,
     capitalPourMensualite: capitalPourMensualite, mensualitePourCapital: mensualitePourCapital, capacite: capacite,
-    epargnePour: epargnePour, suggestionsEpargne: suggestionsEpargne, budget: budget, analyseTaux: analyseTaux, sortieEndettement: sortieEndettement,
+    epargnePour: epargnePour, suggestionsEpargne: suggestionsEpargne, budget: budget, estimationContrat: estimationContrat, analyseTaux: analyseTaux, sortieEndettement: sortieEndettement,
     versementPourCapital: versementPourCapital, projet: projet, conseils: conseils, synthese: synthese
   };
 });

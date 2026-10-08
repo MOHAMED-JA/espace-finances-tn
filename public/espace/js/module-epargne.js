@@ -775,20 +775,22 @@
      Contrats déjà détenus (profil)
      =================================================================== */
   function rendreContrats() {
-    var x = ui.existant, box = $("ep-contrats"), annee = new Date().getFullYear();
+    var x = ui.existant, box = $("ep-contrats");
     if (!x.liste.length) {
       box.innerHTML = '<p class="ep-contrats__vide">' + ico("info") + '<span>Aucun contrat d\'assurance vie ou CEA dans votre profil. <a href="#profil">Les déclarer</a> pour calculer l\'économie supplémentaire.</span></p>';
       return;
     }
     box.innerHTML = '<h3 class="ep-sous-titre">Vos contrats actuels</h3><ul class="ep-contrats__liste">' + x.liste.map(function (c) {
-      var age = annee - c.anneeDebut, lim = c.type === "cea" ? 5 : 8;
-      return '<li><span class="puce ' + (c.type === "cea" ? "" : "puce--epargne") + '">' + (c.type === "cea" ? "CEA" : "Vie") + "</span><span class=\"ep-contrats__nom\"><strong>" + esc(c.libelle) + "</strong><small>" + esc(dt(c.versementMensuel)) + " par mois" + (c.capitalActuel > 0 ? " · " + esc(dt0(c.capitalActuel)) + " acquis" : "") + " · depuis " + c.anneeDebut + (c.type === "av" ? (age >= lim ? " · 8 ans atteints" : " · 8 ans en " + (c.anneeDebut + lim)) : "") + "</small></span></li>";
+      var e = OC.estimationContrat(OC.normaliser({ contrats: [c] }).contrats[0]);
+      return '<li><span class="puce ' + (c.type === "cea" ? "" : "puce--epargne") + '">' + (c.type === "cea" ? "CEA" : "Vie") + "</span><span class=\"ep-contrats__nom\"><strong>" + esc(c.libelle) + "</strong><small>" + esc(dt(c.versementMensuel)) + " par mois" +
+        (e.verse > 0 ? " · " + esc(dt0(e.verse)) + " versés · " + (e.estime ? "≈ " + esc(dt0(e.capitalEstime)) + " estimés" : esc(dt0(e.capital)) + " acquis") : "") +
+        " · " + (e.dureeAtteinte ? e.dureeFiscale + " ans atteints" : e.dureeFiscale + " ans en " + e.dateDureeFiscale) + "</small></span></li>";
     }).join("") + "</ul>" + interrupteur("ep-inclure", "Tenir compte de mes contrats", "L'économie affichée est alors celle qui s'ajoute à vos contrats.");
     $("ep-inclure").checked = ui.inclure;
   }
   function lireContrats(profil) {
     var p = OC.normaliser(profil || {}), av = 0, cea = 0;
-    p.contrats.forEach(function (c) { if (c.type === "cea") cea += c.versementMensuel * 12; else av += c.versementMensuel * 12; });
+    p.contrats.forEach(function (c) { var an = c.versementMensuel * 12 + c.versementsLibresAn; if (c.type === "cea") cea += an; else av += an; });
     ui.existant = { av: av, cea: cea, liste: p.contrats };
   }
 

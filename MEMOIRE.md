@@ -126,6 +126,24 @@ Ce qui était absurde, et ce qui a été corrigé dans `orbite-calcul.js` :
 - **Prénom saisi en majuscules.** Il s'affiche en casse normale (`casse()` dans `app.js`).
 - **Lecture du profil pour déboguer.** Le connecteur Supabase permet de le lire (`auth.users.raw_user_meta_data->'orbite'`, projet `txrwgqgnqdkipwtwpevl`), en lecture seule.
 
+## 3 quinquies. Contrats vie : versements libres et capital estimé (8 oct.)
+
+L'utilisateur verse 100 DT par mois depuis décembre 2021, plus des versements libres ; son salaire de 4 000 DT est bien un brut.
+Nouveaux champs d'un contrat :
+- `moisDebut` ;
+- `versementsLibres` : total des versements libres depuis l'ouverture ;
+- `versementsLibresAn` : versements libres de l'année, comptés dans la déduction fiscale par `versementsExistants` et par le module Épargne.
+
+`estimationContrat` donne, pour chaque contrat :
+- les mois écoulés et le total versé ;
+- le capital estimé à 5 % net par an (`RENDEMENT_ESTIME`) quand le relevé n'est pas saisi ;
+- la date des 8 ans (5 pour un CEA).
+
+Où c'est affiché :
+- dans le conseil « Capital estimé de votre épargne » ;
+- dans un encadré sous chaque contrat du profil (sa place est réservée dès le départ pour éviter un saut de mise en page) ;
+- dans la liste des contrats du module Épargne.
+
 ## 4. Prochaines actions (améliorations possibles, rien de bloquant)
 
 1. Vérifier le site en ligne après chaque déploiement (Cloudflare se déploie depuis `main`).

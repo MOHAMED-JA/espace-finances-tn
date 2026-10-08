@@ -156,7 +156,7 @@
       var k = aj.getAttribute("data-ajouter");
       vider("l:" + k);
       var courant = O.profil()[k].slice();
-      var neuf = k === "credits" ? { libelle: "", type: "conso", mensualite: 0 } : k === "contrats" ? { libelle: "", type: "av", versementMensuel: 0, anneeDebut: new Date().getFullYear() } : { type: "logement", montant: 0, horizonAns: 3 };
+      var neuf = k === "credits" ? { libelle: "", type: "conso", mensualite: 0 } : k === "contrats" ? { libelle: "", type: "av", versementMensuel: 0, anneeDebut: new Date().getFullYear(), moisDebut: new Date().getMonth() + 1 } : { type: "logement", montant: 0, horizonAns: 3 };
       courant.push(neuf);
       var o2 = {}; o2[k] = courant;
       O.majProfil(o2);
@@ -209,6 +209,15 @@
     $("sec-credits-sous").textContent = nc ? nc + " crédit" + (nc > 1 ? "s" : "") + " · " + F.dt0(sy.chargesCredits) + " DT par mois" : "Aucun crédit déclaré";
     $("sec-contrats-sous").textContent = nk ? nk + " contrat" + (nk > 1 ? "s" : "") + " · " + F.dt0(sy.epargne.economieContrats) + " DT d'impôt économisé par an" : "Aucun contrat déclaré";
     $("sec-projets-sous").textContent = np ? np + " projet" + (np > 1 ? "s" : "") : "Aucun projet";
+    /* Sous chaque contrat : total versé et capital estimé (ou saisi). */
+    var lis = $("liste-contrats").children;
+    (sy.contrats || []).forEach(function (e, i) {
+      var info = lis[i] && lis[i].querySelector("[data-estimation]");
+      if (!info) return;
+      if (!(e.verse > 0)) { info.textContent = "Indiquez vos versements : Orbite estimera le capital accumulé."; return; }
+      info.textContent = F.dt0(e.verse) + " DT versés depuis l'ouverture · " + (e.estime ? "capital estimé ≈ " + F.dt0(e.capitalEstime) + " DT (5 % net par an)" : "capital " + F.dt0(e.capital) + " DT") +
+        " · " + (e.dureeAtteinte ? e.dureeFiscale + " ans atteints" : e.dureeFiscale + " ans en " + e.dateDureeFiscale);
+    });
     var pr = progression(p);
     $("profil-jauge").style.setProperty("--p", String(pr));
     $("profil-progression-texte").textContent = "Profil complété à " + Math.round(pr * 100) + " %" + (pr < 1 ? " : chaque information affine vos conseils." : ". Merci, vos conseils sont aussi précis que possible.");

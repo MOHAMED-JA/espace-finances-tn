@@ -242,6 +242,7 @@ body.attente .app { visibility: hidden; }
 .ligne-liste { padding: 16px; border-radius: var(--r-int); border: 1px solid var(--filet); background: var(--surface); display: grid; gap: 12px; }
 @media (prefers-reduced-motion: no-preference) { .ligne-liste { animation: monte 320ms var(--sortie); } }
 .ligne-liste__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.ligne-liste__info { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--epargne-doux); color: var(--epargne-t); font-size: 13.5px; font-weight: 600; }
 .ligne-liste .champ > label { font-size: 13px; }
 
 /* ---------- Simulations ---------- */
