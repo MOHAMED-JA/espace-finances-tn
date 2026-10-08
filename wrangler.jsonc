@@ -1,0 +1,11 @@
+// Déploiement Cloudflare Workers (fichiers statiques uniquement, aucun code serveur).
+// Seul le dossier public/ est publié ; _headers (sécurité) y est appliqué.
+{
+  "name": "espace-finances-tn",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./public",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}
