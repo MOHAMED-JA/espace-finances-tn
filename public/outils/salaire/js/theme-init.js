@@ -1,5 +1,7 @@
-/* Thème mémorisé, appliqué avant l'affichage pour éviter un flash */
-try {
-  var t = localStorage.getItem("calc-theme");
-  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
-} catch (e) {}
+/* Thème mémorisé (ou thème du système), appliqué avant l'affichage pour éviter un flash. */
+(function () {
+  var t = null;
+  try { t = localStorage.getItem("calc-theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") t = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", t);
+})();
