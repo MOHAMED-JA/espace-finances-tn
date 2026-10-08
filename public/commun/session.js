@@ -137,6 +137,33 @@
     }
   };
 
+  /* ---------- Abonnement ----------
+   * Lecture seule côté navigateur (RLS) ; les commandes et l'activation passent par la
+   * fonction serveur « paiement », qui vérifie chaque paiement auprès de la passerelle. */
+  function appelPaiement(corps) {
+    return client.functions.invoke("paiement", { body: corps }).then(function (r) {
+      if (!r.error) return r.data;
+      var ctx = r.error.context;
+      if (ctx && typeof ctx.json === "function") {
+        return ctx.json().then(function (d) { var e = new Error((d && d.erreur) || "Le service de paiement ne répond pas."); e.statut = ctx.status; throw e; },
+          function () { throw new Error("Le service de paiement ne répond pas."); });
+      }
+      throw new Error("Le service de paiement ne répond pas.");
+    });
+  }
+  var abonnement = {
+    acces: function () { return client.rpc("mon_acces").then(verifier); },
+    formules: function () { return client.from("formules").select("cle, libelle, mois, prix_millimes, ordre").order("ordre").then(verifier); },
+    paiements: function () {
+      return client.from("paiements").select("reference, formule, montant_millimes, statut, cree_le, paye_le")
+        .order("cree_le", { ascending: false }).limit(20).then(verifier);
+    },
+    commander: function (formule) { return appelPaiement({ action: "creer", formule: formule }); },
+    verifier: function (reference) { return appelPaiement({ action: "verifier", reference: reference }); },
+    detail: function (reference) { return appelPaiement({ action: "detail", reference: reference }); },
+    simuler: function (reference, resultat) { return appelPaiement({ action: "simuler", reference: reference, resultat: resultat }); }
+  };
+
   /* ---------- Interface ---------- */
   function zoneToasts() {
     var z = document.querySelector(".toasts");
@@ -224,6 +251,7 @@
     exigerConnexion: exigerConnexion,
     deconnexion: deconnexion,
     simulations: simulations,
+    abonnement: abonnement,
     compte: compte,
     toast: toast,
     themeActuel: themeActuel,

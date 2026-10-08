@@ -9,6 +9,8 @@
   <symbol id="credit" viewBox="0 0 24 24"><g class="t"><path d="M3 10 12 4l9 6"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/><path d="M3 20h18"/></g></symbol>
   <symbol id="liste" viewBox="0 0 24 24"><g class="t"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r=".9" fill="currentColor"/><circle cx="4.5" cy="12" r=".9" fill="currentColor"/><circle cx="4.5" cy="18" r=".9" fill="currentColor"/></g></symbol>
   <symbol id="compte" viewBox="0 0 24 24"><g class="t"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></g></symbol>
+  <symbol id="couronne" viewBox="0 0 24 24"><path class="t" d="M3.5 8.5 7.5 12 12 5.5 16.5 12l4-3.5L18.6 18H5.4L3.5 8.5ZM6 21h12"/></symbol>
+  <symbol id="cadenas" viewBox="0 0 24 24"><g class="t"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></g></symbol>
   <symbol id="plus" viewBox="0 0 24 24"><path class="t" d="M12 5v14M5 12h14"/></symbol>
   <symbol id="moins" viewBox="0 0 24 24"><path class="t" d="M5 12h14"/></symbol>
   <symbol id="fermer" viewBox="0 0 24 24"><path class="t" d="M6 6l12 12M18 6 6 18"/></symbol>

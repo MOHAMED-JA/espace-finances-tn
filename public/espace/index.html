@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="/espace/salaire.css">
   <link rel="stylesheet" href="/espace/credit.css">
   <link rel="stylesheet" href="/espace/epargne.css">
+  <link rel="stylesheet" href="/espace/abonnement.css">
   <link rel="stylesheet" href="/orbite/signature.css">
   <script src="/commun/config.js"></script>
   <script src="/commun/garde.js"></script>
@@ -53,6 +54,7 @@
       <p class="rail__titre" id="rail-perso">Mon espace</p>
       <ul class="rail__liens" role="list" aria-labelledby="rail-perso">
         <li><a href="#simulations" data-vue="simulations"><svg aria-hidden="true"><use href="/orbite/icones.svg#liste"/></svg><span>Simulations</span><span class="rail__compte" id="compte-total"></span></a></li>
+        <li><a href="#abonnement" data-vue="abonnement"><svg aria-hidden="true"><use href="/orbite/icones.svg#couronne"/></svg><span>Abonnement</span><span class="rail__badge rail__badge--acces" id="badge-abonnement" hidden></span></a></li>
         <li><a href="#compte" data-vue="compte"><svg aria-hidden="true"><use href="/orbite/icones.svg#compte"/></svg><span>Compte</span></a></li>
       </ul>
       <div class="rail__pied">
@@ -75,6 +77,7 @@
         </a>
         <p class="barre__titre" id="barre-titre" aria-hidden="true">Mon orbite</p>
         <span class="barre__etat" id="etat-enregistrement" role="status" aria-live="polite"></span>
+        <a class="pastille-acces" id="pastille-acces" href="#abonnement" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#couronne"/></svg><span id="pastille-acces-lib"></span></a>
         <div class="barre__actions" id="barre-actions" hidden>
           <button type="button" class="bouton bouton--petit" id="reprendre-profil"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span class="bouton__lib">Reprendre mon profil</span></button>
           <button type="button" class="bouton bouton--plein bouton--petit" id="enregistrer"><svg aria-hidden="true"><use href="/orbite/icones.svg#enregistrer"/></svg><span class="bouton__lib" id="enregistrer-lib">Enregistrer</span></button>
@@ -511,6 +514,48 @@
           <ul class="cartes" id="toutes" role="list" aria-busy="true"></ul>
         </section>
 
+        <!-- ======== Abonnement ======== -->
+        <section class="vue" id="vue-abonnement" data-vue="abonnement" aria-labelledby="titre-abonnement" hidden>
+          <header class="vue__tete">
+            <h1 id="titre-abonnement">Abonnement</h1>
+            <p class="vue__sous">Toutes les fonctions d'Orbite, sans limite, sur tous vos appareils.</p>
+          </header>
+          <div class="ab-statut panneau" id="ab-statut" data-etat="inconnu" aria-live="polite">
+            <span class="ab-statut__icone" aria-hidden="true"><svg><use href="/orbite/icones.svg#couronne"/></svg></span>
+            <div class="ab-statut__texte"><strong id="ab-statut-titre">Chargement…</strong><p id="ab-statut-sous"></p></div>
+          </div>
+          <form class="ab-choix" id="ab-form" novalidate>
+            <fieldset class="ab-offres-cadre">
+              <legend class="ab-legende">Choisissez votre formule</legend>
+              <div class="ab-offres" id="ab-offres" aria-busy="true"></div>
+            </fieldset>
+            <div class="ab-action">
+              <button type="submit" class="bouton bouton--plein ab-payer" id="ab-payer" disabled><svg aria-hidden="true"><use href="/orbite/icones.svg#cadenas"/></svg><span id="ab-payer-lib">Choisir une formule</span></button>
+              <p class="ab-action__note" id="ab-erreur" role="alert" hidden></p>
+            </div>
+          </form>
+          <ul class="ab-garanties" role="list">
+            <li><svg aria-hidden="true"><use href="/orbite/icones.svg#bouclier"/></svg><span><strong>Paiement sécurisé</strong>Par carte bancaire, sur la page de la passerelle agréée : Orbite ne voit jamais votre carte.</span></li>
+            <li><svg aria-hidden="true"><use href="/orbite/icones.svg#horloge"/></svg><span><strong>Sans engagement</strong>Prépayé, sans renouvellement automatique : vous êtes prévenu avant la fin.</span></li>
+            <li><svg aria-hidden="true"><use href="/orbite/icones.svg#valide"/></svg><span><strong>Durée cumulable</strong>Un nouvel achat s'ajoute à la fin de votre abonnement en cours.</span></li>
+          </ul>
+          <section class="panneau ab-inclus" aria-labelledby="ab-inclus-titre">
+            <h2 id="ab-inclus-titre">Ce qui est inclus</h2>
+            <ul role="list">
+              <li>Salaire brut ⇄ net, tranches d'impôt et augmentation</li>
+              <li>Capacité d'emprunt selon la règle de votre banque, calendrier de votre marge</li>
+              <li>Module Crédit complet : TEG, tableau d'amortissement, scénarios, éligibilité</li>
+              <li>Épargne vie & CEA : économie d'impôt, projections, stratégie</li>
+              <li>Conseils personnalisés et simulations enregistrées (jusqu'à 200)</li>
+            </ul>
+          </section>
+          <section class="panneau ab-historique" aria-labelledby="ab-hist-titre">
+            <h2 id="ab-hist-titre">Historique des paiements</h2>
+            <ul class="ab-historique__liste" id="ab-historique" role="list"></ul>
+          </section>
+          <p class="ab-legal">En payant, vous acceptez les <a href="/cgv.html">conditions générales de vente</a>. Prix en dinars tunisiens, toutes taxes comprises.</p>
+        </section>
+
         <!-- ======== Compte ======== -->
         <section class="vue" id="vue-compte" data-vue="compte" aria-labelledby="titre-compte" hidden>
           <header class="vue__tete">
@@ -535,6 +580,10 @@
                   <p class="erreur-champ" id="nouveau-mdp-erreur" hidden></p></div>
                 <div><button type="submit" class="bouton bouton--plein bouton--petit">Changer le mot de passe</button></div>
               </form>
+            </section>
+            <section class="panneau reglage" aria-labelledby="r-abonnement">
+              <div class="reglage__texte"><h2 id="r-abonnement">Abonnement</h2><p id="compte-abonnement">—</p></div>
+              <div class="reglage__controle reglage__boutons"><a class="bouton bouton--petit" href="#abonnement"><svg aria-hidden="true"><use href="/orbite/icones.svg#couronne"/></svg>Gérer mon abonnement</a></div>
             </section>
             <section class="panneau reglage" aria-labelledby="r-theme">
               <div class="reglage__texte"><h2 id="r-theme">Apparence</h2><p>Clair, sombre, ou comme votre appareil.</p></div>
@@ -566,7 +615,7 @@
       <a href="#salaire" data-vue="salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#salaire"/></svg><span>Salaire</span></a>
       <a href="#epargne" data-vue="epargne"><svg aria-hidden="true"><use href="/orbite/icones.svg#epargne"/></svg><span>Épargne</span></a>
       <a href="#credit" data-vue="credit"><svg aria-hidden="true"><use href="/orbite/icones.svg#credit"/></svg><span>Crédit</span></a>
-      <a href="#profil" data-vue="profil" data-vues="profil simulations compte"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span>Moi</span></a>
+      <a href="#profil" data-vue="profil" data-vues="profil simulations compte abonnement"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span>Moi</span></a>
     </nav>
   </div>
 
@@ -719,5 +768,7 @@
   <script src="/espace/js/module-epargne.js"></script>
   <script src="/moteurs/credit/credit.js"></script><script src="/espace/js/module-credit.js"></script>
   <script src="/espace/js/simulations.js"></script>
+  <script src="/espace/js/abonnement-calcul.js"></script>
+  <script src="/espace/js/abonnement.js"></script>
 </body>
 </html>

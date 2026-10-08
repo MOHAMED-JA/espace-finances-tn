@@ -1,0 +1,98 @@
+/* Orbite — abonnement : pastille d'essai, statut, offres, garanties, historique. */
+
+/* ---------- Pastille dans la barre du haut ---------- */
+.pastille-acces {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border-radius: 999px;
+  background: color-mix(in srgb, var(--epargne) 12%, var(--surface)); border: 1.5px solid color-mix(in srgb, var(--epargne) 45%, transparent);
+  color: var(--epargne-t); font-weight: 700; font-size: 13px; text-decoration: none; white-space: nowrap;
+  transition: background-color 160ms ease, transform 140ms var(--sortie), box-shadow 200ms ease; touch-action: manipulation;
+}
+.pastille-acces svg { width: 16px; height: 16px; }
+.pastille-acces:hover { background: color-mix(in srgb, var(--epargne) 20%, var(--surface)); box-shadow: var(--ombre-2); }
+.pastille-acces:active { transform: scale(.97); }
+.pastille-acces--urgent { background: var(--alerte-doux); border-color: color-mix(in srgb, var(--alerte) 50%, transparent); color: var(--alerte); }
+@media (max-width: 640px) { .pastille-acces { margin-left: auto; } }
+.rail__badge--acces { background: color-mix(in srgb, var(--epargne) 14%, var(--surface)); color: var(--epargne-t); }
+
+/* ---------- Statut ---------- */
+.ab-statut { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; border: 1.5px solid var(--filet); }
+.ab-statut__icone { display: grid; place-items: center; flex: none; width: 52px; height: 52px; border-radius: 16px; background: color-mix(in srgb, var(--epargne) 14%, var(--surface)); color: var(--epargne-t); }
+.ab-statut__icone svg { width: 26px; height: 26px; }
+.ab-statut__texte { display: grid; gap: 4px; min-width: 0; }
+.ab-statut__texte strong { font-family: var(--affiche); font-size: 20px; letter-spacing: -.02em; }
+.ab-statut__texte p { color: var(--encre-2); font-size: 14.5px; }
+.ab-statut[data-etat="actif"], .ab-statut[data-etat="offert"] { border-color: color-mix(in srgb, var(--salaire) 50%, transparent); }
+.ab-statut[data-etat="actif"] .ab-statut__icone, .ab-statut[data-etat="offert"] .ab-statut__icone { background: color-mix(in srgb, var(--salaire) 14%, var(--surface)); color: var(--salaire-t); }
+.ab-statut[data-etat="expire"] { border-color: color-mix(in srgb, var(--alerte) 55%, transparent); background: linear-gradient(160deg, var(--alerte-doux), var(--surface)); }
+.ab-statut[data-etat="expire"] .ab-statut__icone { background: var(--alerte-doux); color: var(--alerte); }
+.ab-statut--fete { animation: ab-fete 900ms var(--ressort); }
+@keyframes ab-fete { 30% { transform: scale(1.02); box-shadow: 0 0 0 8px color-mix(in srgb, var(--salaire) 22%, transparent), var(--ombre-3); } }
+@media (prefers-reduced-motion: reduce) { .ab-statut--fete { animation: none; } }
+
+/* ---------- Offres ---------- */
+.ab-choix { display: grid; gap: 16px; }
+.ab-offres-cadre { border: 0; margin: 0; padding: 0; min-width: 0; container-type: inline-size; }
+.ab-legende { padding: 0; margin-bottom: 12px; font-family: var(--affiche); font-weight: 700; font-size: 18px; }
+.ab-offres { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+/* Sur une seule colonne (téléphone), l'offre la plus avantageuse passe en premier. */
+.ab-offre--vedette { order: -1; }
+@container (min-width: 720px) { .ab-offres { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; } .ab-offre--vedette { order: 0; } }
+.ab-offre { position: relative; display: grid; min-width: 0; cursor: pointer; }
+.ab-offre input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.ab-offre__carte {
+  display: grid; align-content: start; gap: 8px; height: 100%; padding: 20px; border-radius: var(--r-panneau);
+  background: var(--surface); border: 2px solid var(--filet); box-shadow: var(--ombre-1);
+  transition: border-color 180ms ease, box-shadow 220ms var(--sortie), transform 160ms var(--sortie), background-color 180ms ease;
+}
+.ab-offre:hover .ab-offre__carte { border-color: var(--filet-fort); box-shadow: var(--ombre-2); }
+.ab-offre input:checked + .ab-offre__carte {
+  border-color: var(--epargne);
+  background: linear-gradient(165deg, color-mix(in srgb, var(--epargne) 12%, var(--surface)), var(--surface) 70%);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--epargne) 20%, transparent), 0 18px 36px -20px color-mix(in srgb, var(--epargne) 70%, transparent);
+}
+.ab-offre input:focus-visible + .ab-offre__carte { outline: 3px solid var(--focus); outline-offset: 3px; }
+.ab-offre input:active + .ab-offre__carte { transform: scale(.985); }
+.ab-offre--vedette .ab-offre__carte { border-color: color-mix(in srgb, var(--epargne) 45%, var(--filet)); }
+.ab-offre__tete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }
+.ab-offre__nom { font-family: var(--affiche); font-weight: 720; font-size: 18px; }
+.ab-offre__badge { padding: 4px 10px; border-radius: 999px; background: var(--epargne); color: #fff; font-size: 12px; font-weight: 750; }
+.ab-offre__remise { padding: 3px 9px; border-radius: 999px; background: color-mix(in srgb, var(--salaire) 16%, var(--surface)); color: var(--salaire-t); font-size: 12.5px; font-weight: 750; }
+.ab-offre__prix { display: flex; align-items: baseline; gap: 6px; }
+.ab-offre__prix strong { font-family: var(--affiche); font-size: clamp(30px, 4vw, 38px); font-weight: 780; letter-spacing: -.035em; }
+.ab-offre__prix span { font-weight: 650; color: var(--encre-3); }
+.ab-offre__mois { color: var(--encre-2); font-size: 14px; }
+.ab-offre__gain { display: flex; align-items: flex-start; gap: 6px; margin-top: 4px; color: var(--salaire-t); font-weight: 650; font-size: 13.5px; }
+.ab-offre__gain svg { width: 16px; height: 16px; flex: none; margin-top: 1px; }
+@media (prefers-reduced-motion: no-preference) {
+  .vue--entree .ab-offre { animation: ab-monte 460ms var(--sortie) both; animation-delay: calc(var(--i, 0) * 70ms + 80ms); }
+}
+@keyframes ab-monte { from { opacity: 0; transform: translateY(12px); } }
+.ab-action { display: grid; gap: 8px; justify-items: start; }
+.ab-payer { min-height: 54px; padding: 0 26px; font-size: 16px; }
+.ab-payer svg { width: 18px; height: 18px; }
+.ab-action__note { color: var(--erreur); font-weight: 600; font-size: 14px; }
+.ab-vide { color: var(--encre-3); font-size: 14px; }
+
+/* ---------- Garanties, inclus, historique ---------- */
+.ab-garanties { list-style: none; margin: 26px 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.ab-garanties li { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border-radius: var(--r-int); background: var(--surface-2); font-size: 13.5px; color: var(--encre-2); }
+.ab-garanties svg { width: 22px; height: 22px; flex: none; color: var(--epargne-t); }
+.ab-garanties strong { display: block; color: var(--encre); font-size: 14.5px; margin-bottom: 2px; }
+.ab-inclus, .ab-historique { margin-bottom: 16px; }
+.ab-inclus h2, .ab-historique h2 { font-size: 18px; margin-bottom: 12px; }
+.ab-inclus ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ab-inclus li { position: relative; padding-left: 26px; color: var(--encre-2); }
+.ab-inclus li::before { content: "✓"; position: absolute; left: 0; top: 0; width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--salaire) 16%, var(--surface)); color: var(--salaire-t); font-size: 11px; font-weight: 800; }
+.ab-historique__liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.ab-ligne { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 14px; padding: 12px 0; border-top: 1px solid var(--filet); }
+.ab-ligne:first-child { border-top: 0; }
+.ab-ligne__g { display: grid; gap: 2px; min-width: 0; }
+.ab-ligne__g small { color: var(--encre-3); font-size: 12.5px; overflow-wrap: anywhere; }
+.ab-ligne__d { display: flex; align-items: center; gap: 10px; }
+.ab-ligne[data-statut="paye"] .ab-ligne__statut { background: color-mix(in srgb, var(--salaire) 16%, var(--surface)); color: var(--salaire-t); }
+.ab-ligne[data-statut="echec"] .ab-ligne__statut, .ab-ligne[data-statut="annule"] .ab-ligne__statut { background: var(--alerte-doux); color: var(--alerte); }
+.ab-legal { color: var(--encre-3); font-size: 13px; }
+
+/* Très petits écrans : le titre de la barre se raccourcit, la pastille se réduit à son icône. */
+.barre__titre { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 380px) { .pastille-acces { padding: 0 9px; } .pastille-acces span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }

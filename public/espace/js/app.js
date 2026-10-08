@@ -214,12 +214,15 @@
   }
 
   /* ---------- Navigation ---------- */
-  var VUES = ["orbite", "profil", "salaire", "epargne", "credit", "simulations", "compte"];
-  var TITRES = { orbite: "Mon orbite", profil: "Mon profil", salaire: "Salaire", epargne: "Épargne vie & CEA", credit: "Crédit", simulations: "Simulations", compte: "Compte" };
+  var VUES = ["orbite", "profil", "salaire", "epargne", "credit", "simulations", "abonnement", "compte"];
+  var TITRES = { orbite: "Mon orbite", profil: "Mon profil", salaire: "Salaire", epargne: "Épargne vie & CEA", credit: "Crédit", simulations: "Simulations", abonnement: "Abonnement", compte: "Compte" };
+  /* Garde d'accès (abonnement) : une vue refusée mène à la page d'abonnement. */
+  var garde = null;
   function lireRoute() {
     var h = location.hash.replace(/^#/, ""), i = h.indexOf("?");
     var vue = (i === -1 ? h : h.slice(0, i)) || "orbite";
     if (VUES.indexOf(vue) === -1) vue = "orbite";
+    if (garde && !garde(vue)) { vue = "abonnement"; i = -1; }
     return { vue: vue, params: new URLSearchParams(i === -1 ? "" : h.slice(i + 1)) };
   }
   var vueAffichee = null;
@@ -322,7 +325,8 @@
     ouvrirSimulation: ouvrirSimulation,
     lireRoute: lireRoute,
     remplirUtilisateur: remplirUtilisateur,
-    enregistrerModule: function (vue) { if (lireRoute().vue === vue) afficher(false); }
+    enregistrerModule: function (vue) { if (lireRoute().vue === vue) afficher(false); },
+    definirGarde: function (fn) { garde = fn; afficher(false); }
   };
 
   /* ---------- Démarrage ---------- */
