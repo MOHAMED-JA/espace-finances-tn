@@ -103,27 +103,39 @@
     O.majProfil(partiel);
   }
 
-  var minuterie = null;
+  /* Un délai par champ ou par liste : une saisie rapide dans un autre champ n'annule jamais la précédente. */
+  var attentes = {};
+  function planifier(cle, fn, delai) {
+    if (attentes[cle]) clearTimeout(attentes[cle].t);
+    attentes[cle] = { fn: fn, t: setTimeout(function () { delete attentes[cle]; fn(); }, delai) };
+  }
+  function vider(cle) {
+    var a = attentes[cle];
+    if (!a) return;
+    clearTimeout(a.t); delete attentes[cle]; a.fn();
+  }
+  function majListe(cle) { var o = {}; o[cle] = lireListe(cle); O.majProfil(o); }
+
   form.addEventListener("input", function (e) {
     var el = e.target;
     enEdition = true;
     if (el.hasAttribute("data-p")) {
       if (el.type === "radio" || el.type === "checkbox" || el.tagName === "SELECT") return;
-      clearTimeout(minuterie);
-      minuterie = setTimeout(function () { majDepuis(el); }, 250);
+      planifier("p:" + el.getAttribute("data-p"), function () { majDepuis(el); }, 250);
     } else if (el.hasAttribute("data-c")) {
       var cle = el.closest("[data-liste]").getAttribute("data-liste");
-      clearTimeout(minuterie);
-      minuterie = setTimeout(function () { var o = {}; o[cle] = lireListe(cle); O.majProfil(o); }, 300);
+      planifier("l:" + cle, function () { majListe(cle); }, 300);
     }
   });
   form.addEventListener("change", function (e) {
     var el = e.target;
     if (el.hasAttribute("data-p") && (el.type === "radio" || el.type === "checkbox" || el.tagName === "SELECT")) majDepuis(el);
-    else if (el.hasAttribute("data-c") && el.tagName === "SELECT") { var cle = el.closest("[data-liste]").getAttribute("data-liste"); var o = {}; o[cle] = lireListe(cle); O.majProfil(o); }
+    else if (el.hasAttribute("data-c") && el.tagName === "SELECT") majListe(el.closest("[data-liste]").getAttribute("data-liste"));
   });
   form.addEventListener("focusout", function (e) {
     var el = e.target;
+    if (el.hasAttribute && el.hasAttribute("data-p")) vider("p:" + el.getAttribute("data-p"));
+    else if (el.hasAttribute && el.hasAttribute("data-c")) vider("l:" + el.closest("[data-liste]").getAttribute("data-liste"));
     if (el.getAttribute && el.getAttribute("data-type") === "montant") { var lu = F.lire(el.value); if (lu.valide && !lu.vide) el.value = F.saisie(lu.valeur); }
     enEdition = false;
   });
@@ -141,7 +153,9 @@
     }
     var aj = e.target.closest("[data-ajouter]");
     if (aj) {
-      var k = aj.getAttribute("data-ajouter"), courant = O.profil()[k].slice();
+      var k = aj.getAttribute("data-ajouter");
+      vider("l:" + k);
+      var courant = O.profil()[k].slice();
       var neuf = k === "credits" ? { libelle: "", type: "conso", mensualite: 0 } : k === "contrats" ? { libelle: "", type: "av", versementMensuel: 0, anneeDebut: new Date().getFullYear() } : { type: "logement", montant: 0, horizonAns: 3 };
       courant.push(neuf);
       var o2 = {}; o2[k] = courant;
@@ -155,6 +169,7 @@
     var rt = e.target.closest("[data-retirer]");
     if (rt) {
       var li = rt.closest("[data-liste]"), k2 = li.getAttribute("data-liste"), idx = Number(li.getAttribute("data-index"));
+      vider("l:" + k2);
       var avant = O.profil()[k2].slice(), retire = avant.splice(idx, 1)[0];
       var o3 = {}; o3[k2] = avant;
       O.majProfil(o3);
