@@ -173,6 +173,15 @@ Précision de l'utilisateur : la **capacité** se calcule sur les salaires et le
 - Ceci remplace ce qui était noté en 3 septies : la mention « les banques ne comptent que 12 salaires » a été retirée.
 - Exemple de l'utilisateur, chez BH Bank sur le brut : 68 000 ÷ 12 = 5 667 DT, 40 % = 2 267 DT, soit **198 DT par mois de marge dès aujourd'hui** (environ 20 500 DT en immobilier sur 20 ans). Puis mars 2032 : 893 DT ; juin 2032 : 1 391 DT (environ 144 000 DT) ; février 2039 : 2 267 DT.
 
+## 3 nonies. Module Crédit aligné sur la règle de la banque (8 oct.)
+
+- `empDepuis` reprend, comme « Mon orbite », le revenu retenu par la banque (`sy.capacite.net.revenu` / `brut.revenu`), la base (`baseBanque`) et le nom de la banque.
+- Nouvel encadré `#cr-accord` « [Banque] peut vous accorder » (`majAccord`) :
+  - l'échéance maximale et le montant maximal sur la durée et au taux choisis (`capaciteBanque`) ;
+  - le rappel de la règle ;
+  - le verdict sur la demande : « dans la limite », ou dépassement de X DT par mois avec le montant à viser.
+- Critères d'éligibilité : l'endettement sur l'autre base est marqué « (autres banques) » et ne compte plus dans le verdict.
+
 ## 4. Prochaines actions (améliorations possibles, rien de bloquant)
 
 1. Vérifier le site en ligne après chaque déploiement (Cloudflare se déploie depuis `main`).

@@ -127,7 +127,7 @@
   var S = {
     scenarios: [scenarioVierge("immo", 150000)],
     actif: 0,
-    emp: { age: 35, net: 0, brut: 0, charges: 0, quotiteNet: 0.4, quotiteBrut: 0.4, touche: false },
+    emp: { age: 35, net: 0, brut: 0, charges: 0, quotiteNet: 0.4, quotiteBrut: 0.4, base: "net", banque: "", annuel: true, touche: false },
     profilCharge: false,
     vueTableau: "mensuel",
     vueGraphe: "crd",
@@ -355,12 +355,12 @@
   function htmlEligibilite() {
     return '<section class="panneau cr-elig" aria-labelledby="cr-elig-titre">' +
       '<div class="cr-elig__tete"><div><h2 class="panneau__titre" id="cr-elig-titre">Éligibilité</h2><p class="panneau__sous" id="cr-elig-sous">Ce que la banque regardera, d\'après votre profil.</p></div><span class="puce" id="cr-elig-verdict"></span></div>' +
-      '<ul class="cr-criteres" id="cr-criteres"></ul>' +
+      '<div class="cr-accord" id="cr-accord" aria-live="polite"></div><ul class="cr-criteres" id="cr-criteres"></ul>' +
       '<details class="cr-option cr-emprunteur" id="cr-emprunteur"><summary><span class="cr-option__icone">' + ico("profil") + '</span><span class="cr-option__texte">Emprunteur<small id="cr-emp-etat"></small></span>' + ico("chevron", "chevron") + '</summary>' +
         '<div class="cr-option__corps"><p class="cr-texte cr-texte--doux">Repris de votre profil. Vous pouvez ajuster ces valeurs pour cette simulation seulement.</p><div class="cr-grille-champs" id="cr-emp-champs">' +
           champ({ id: "cr-emp-age", c: "age", t: "entier", lib: "Âge", unite: "ans", min: 18, max: 80 }) +
-          champ({ id: "cr-emp-net", c: "net", lib: "Revenu net mensuel", unite: "DT", min: 0, max: 1e7 }) +
-          champ({ id: "cr-emp-brut", c: "brut", lib: "Revenu brut mensuel", unite: "DT", min: 0, max: 1e7 }) +
+          champ({ id: "cr-emp-net", c: "net", lib: "Revenu net mensuel retenu", unite: "DT", min: 0, max: 1e7 }) +
+          champ({ id: "cr-emp-brut", c: "brut", lib: "Revenu brut mensuel retenu", unite: "DT", min: 0, max: 1e7 }) +
           champ({ id: "cr-emp-charges", c: "charges", lib: "Mensualités en cours", unite: "DT", min: 0, max: 1e7 }) +
           champ({ id: "cr-emp-qn", c: "quotiteNet", t: "taux", lib: "Quotité sur le net", unite: "%", min: 10, max: 80 }) +
           champ({ id: "cr-emp-qb", c: "quotiteBrut", t: "taux", lib: "Quotité sur le brut", unite: "%", min: 10, max: 80 }) +
@@ -709,25 +709,51 @@
     /* Capacité affichée sous le capital */
     var aide = $("cr-capital-aide-txt");
     if (S.emp.net > 0) {
-      var cap = MC.capaciteEmprunt({ base: "net", revenuNet: S.emp.net, quotite: S.emp.quotiteNet, charges: S.emp.charges, dureeMois: e.mois, tauxAnnuelPct: e.taux, ageActuel: S.emp.age, ageMax: AGE_MAX });
-      aide.textContent = cap.capital > 0 ? "Votre capacité sur cette durée et à ce taux : " + dt0(cap.capital) + "." : "Vos charges actuelles ne laissent pas de capacité d'emprunt sur votre net.";
+      var cap = capaciteBanque(e);
+      aide.textContent = cap.capital > 0 ? "Votre capacité sur cette durée et à ce taux : " + dt0(cap.capital) + " (échéance maximale " + dt0(cap.mensualiteMax) + ")." : "Vos crédits en cours ne laissent pas de capacité d'emprunt sur votre " + S.emp.base + ".";
     } else aide.textContent = "Renseignez votre salaire dans le profil pour voir votre capacité.";
     S.precedentM = m;
+  }
+
+  /* Capacité selon la règle de la banque de l'utilisateur (net ou brut, revenu retenu du profil). */
+  function capaciteBanque(e) {
+    var emp = S.emp, brut = emp.base === "brut";
+    return MC.capaciteEmprunt({ base: emp.base, revenuNet: emp.net, revenuBrut: emp.brut, quotite: brut ? emp.quotiteBrut : emp.quotiteNet, charges: emp.charges, dureeMois: e.mois, tauxAnnuelPct: e.taux, ageActuel: emp.age, ageMax: AGE_MAX });
+  }
+
+  /* Encadré « Ce que la banque peut vous accorder » : échéance et montant maximum, comparés à la demande. */
+  function majAccord(e, mensuel) {
+    var box = $("cr-accord"), emp = S.emp;
+    if (!(emp.net > 0 || emp.brut > 0)) { box.innerHTML = ""; return; }
+    var cap = capaciteBanque(e), qui = emp.banque ? esc(emp.banque) : "La banque";
+    var rev = emp.base === "brut" ? emp.brut : emp.net, q = emp.base === "brut" ? emp.quotiteBrut : emp.quotiteNet;
+    var ok = cap.mensualiteMax > 0 && mensuel <= cap.mensualiteMax + 0.5;
+    var demande = ok
+      ? "Votre demande (" + dt0(e.capital) + ", échéance " + dt0(mensuel) + ") est dans la limite."
+      : cap.mensualiteMax > 0 ? "Votre demande (échéance " + dt0(mensuel) + ") dépasse la limite de " + dt0(mensuel - cap.mensualiteMax) + " par mois : visez au plus " + dt0(cap.capital) + " sur cette durée."
+      : "Vos crédits en cours atteignent déjà la limite : aucun nouveau crédit pour l'instant.";
+    box.className = "cr-accord " + (ok ? "cr-accord--ok" : "cr-accord--alerte");
+    box.innerHTML = '<p class="cr-accord__titre">' + qui + ' peut vous accorder</p>' +
+      '<div class="cr-accord__chiffres"><div><span>Échéance maximale</span><strong class="chiffre">' + dt0(Math.max(0, cap.mensualiteMax)) + '</strong><small>par mois</small></div>' +
+      '<div><span>Montant maximal</span><strong class="chiffre">' + dt0(Math.max(0, cap.capital)) + '</strong><small>sur ' + dureeLib(cap.dureeMois || e.mois) + ' à ' + pc(e.taux, 2) + '</small></div></div>' +
+      '<p class="cr-accord__regle">' + pc(q * 100, 0) + ' de ' + dt0(rev) + ' ' + emp.base + ' par mois' + (emp.annuel ? ' (salaires et primes de l\'année ÷ 12)' : '') + ', moins ' + dt0(emp.charges) + ' de crédits en cours.</p>' +
+      '<p class="cr-accord__demande">' + demande + '</p>';
   }
 
   function majEligibilite(e, r) {
     var emp = S.emp, el = MC.eligibilite(e, r, { endettementMax: emp.quotiteNet * 100, ageMax: AGE_MAX, apportMin: MC.DEFAUTS.apportMin });
     var mensuel = arr(premiereEcheance(r) / r.p), items = [];
+    majAccord(e, mensuel);
     function jauge(v, seuil, max) { return { p: Math.min(100, v / max * 100), s: Math.min(100, seuil / max * 100) }; }
     if (el.endettement) {
-      items.push({ cle: "net", titre: "Endettement sur le net", etat: el.endettement.ok ? "ok" : "alerte",
+      items.push({ cle: "net", autre: emp.base !== "net", titre: "Endettement sur le net" + (emp.base !== "net" ? " (autres banques)" : ""), etat: el.endettement.ok ? "ok" : "alerte",
         valeur: pc(el.endettement.taux, 1), note: "Limite " + pc(el.endettement.max, 0) + " · " + dt0(mensuel + emp.charges) + " de crédits sur " + dt0(emp.net),
         jauge: jauge(el.endettement.taux, el.endettement.max, Math.max(80, el.endettement.taux)) });
     } else items.push({ cle: "net", titre: "Endettement sur le net", etat: "neutre", valeur: "—", note: "Ajoutez votre salaire dans le profil." });
     if (emp.brut > 0) {
       var tb = (mensuel + emp.charges) / emp.brut * 100, mb = emp.quotiteBrut * 100;
-      items.push({ cle: "brut", titre: "Endettement sur le brut", etat: tb <= mb ? "ok" : "alerte", valeur: pc(tb, 1),
-        note: "Limite " + pc(mb, 0) + " du brut (" + dt0(emp.brut) + "), règle de certaines banques", jauge: jauge(tb, mb, Math.max(80, tb)) });
+      items.push({ cle: "brut", autre: emp.base !== "brut", titre: "Endettement sur le brut" + (emp.base === "brut" && emp.banque ? " (" + esc(emp.banque) + ")" : emp.base !== "brut" ? " (autres banques)" : ""), etat: tb <= mb ? "ok" : "alerte", valeur: pc(tb, 1),
+        note: "Limite " + pc(mb, 0) + " du brut (" + dt0(emp.brut) + ")" + (emp.base === "brut" ? ", règle de votre banque" : ", règle de certaines banques"), jauge: jauge(tb, mb, Math.max(80, tb)) });
     }
     if (el.resteAVivre) {
       var rav = el.resteAVivre.montant;
@@ -749,7 +775,7 @@
     }).join("");
     $$("#cr-criteres .cr-jauge__rempli").forEach(function (i) { i.style.setProperty("--p", i.getAttribute("data-p") + "%"); });
     $$("#cr-criteres .cr-jauge__seuil").forEach(function (i) { i.style.setProperty("--s", i.getAttribute("data-s") + "%"); });
-    var alertes = items.filter(function (x) { return x.etat === "alerte"; }).length, connus = items.filter(function (x) { return x.etat !== "neutre"; }).length;
+    var alertes = items.filter(function (x) { return x.etat === "alerte" && !x.autre; }).length, connus = items.filter(function (x) { return x.etat !== "neutre"; }).length;
     var v = $("cr-elig-verdict");
     v.className = "puce " + (!connus ? "" : alertes ? "puce--alerte" : "puce--succes");
     v.textContent = !connus ? "À compléter" : alertes ? pluriel(alertes, "point à revoir", "points à revoir") : "Dossier solide";
@@ -1910,8 +1936,12 @@
   function empDepuis(sy) {
     if (!sy) return;
     S.emp.age = sy.age || S.emp.age;
-    S.emp.net = arr(sy.salaire ? sy.salaire.netMensuel : 0);
-    S.emp.brut = arr(sy.salaire ? sy.salaire.brutMensuel : 0);
+    /* Revenu retenu par la banque (salaires et primes ÷ 12, ou salaire mensuel), comme dans « Mon orbite ». */
+    S.emp.net = arr(sy.capacite ? sy.capacite.net.revenu : sy.salaire ? sy.salaire.netMensuel : 0);
+    S.emp.brut = arr(sy.capacite ? sy.capacite.brut.revenu : sy.salaire ? sy.salaire.brutMensuel : 0);
+    S.emp.base = sy.profil && sy.profil.baseBanque === "brut" ? "brut" : "net";
+    S.emp.banque = sy.profil ? sy.profil.banque || "" : "";
+    S.emp.annuel = !sy.profil || sy.profil.revenuBanque !== "mensuel";
     S.emp.charges = arr(sy.chargesCredits || 0);
     S.emp.quotiteNet = sy.profil ? sy.profil.quotiteNet : 0.4;
     S.emp.quotiteBrut = sy.profil ? sy.profil.quotiteBrut : 0.4;
