@@ -2,7 +2,12 @@
 
 Le code est prêt et le projet Supabase **espace-finances-tn** (Francfort) est créé avec ses tables protégées. Il reste des réglages que seul le propriétaire des comptes peut faire.
 
-## 1. Publier le site sur Cloudflare Pages (gratuit) — 5 min
+## 1. Publication (fait)
+
+Le site est publié par Cloudflare Workers (fichiers statiques, `wrangler.jsonc`) à l'adresse
+**https://espace-finances-tn.jaouadimohamedaziz.workers.dev** ; chaque push sur `main` redéploie automatiquement.
+
+### Ancienne procédure Cloudflare Pages (pour mémoire)
 
 1. Ouvrez <https://dash.cloudflare.com> (créez un compte gratuit si besoin).
 2. **Workers & Pages → Create → Pages → Connect to Git**.
@@ -13,7 +18,7 @@ Le code est prêt et le projet Supabase **espace-finances-tn** (Francfort) est c
    - Framework preset : `None`
    - Build command : *(laisser vide)*
    - **Build output directory : `public`**
-5. **Save and Deploy**. L'adresse sera `https://espace-finances-tn.pages.dev`.
+5. **Save and Deploy**. L'adresse sera `https://espace-finances-tn.jaouadimohamedaziz.workers.dev`.
 
 > Le dépôt reste privé : Cloudflare ne publie que le dossier `public/`. Ni le code SQL, ni les tests, ni la documentation ne sont servis.
 
@@ -22,8 +27,8 @@ Le code est prêt et le projet Supabase **espace-finances-tn** (Francfort) est c
 Tableau de bord Supabase → projet **espace-finances-tn** :
 
 1. **Authentication → URL Configuration**
-   - Site URL : `https://espace-finances-tn.pages.dev`
-   - Redirect URLs : ajoutez `https://espace-finances-tn.pages.dev/**`
+   - Site URL : `https://espace-finances-tn.jaouadimohamedaziz.workers.dev`
+   - Redirect URLs : ajoutez `https://espace-finances-tn.jaouadimohamedaziz.workers.dev/**`
 2. **Authentication → Providers → Email** : laissez *Confirm email* activé.
 3. **Authentication → Policies / Passwords** : longueur minimale **10**, exigez lettres + chiffres + symboles ; activez *Leaked password protection* si votre offre le permet.
 4. **SQL Editor** : exécutez le fichier `supabase/migrations/0002_compte_export_suppression.sql` (export des données et suppression du compte ; la migration 0001 est déjà appliquée).
@@ -33,7 +38,7 @@ Tableau de bord Supabase → projet **espace-finances-tn** :
 1. <https://console.cloud.google.com> → créez un projet « Espace Finances TN ».
 2. **APIs & Services → OAuth consent screen** : type *External*, nom de l'application, e-mail de contact, domaine autorisé `supabase.co` et `pages.dev` ; portées : `email`, `profile`, `openid`. Publiez l'écran (*In production*).
 3. **Credentials → Create credentials → OAuth client ID** → *Web application* :
-   - Authorized JavaScript origins : `https://espace-finances-tn.pages.dev`
+   - Authorized JavaScript origins : `https://espace-finances-tn.jaouadimohamedaziz.workers.dev`
    - Authorized redirect URIs : `https://txrwgqgnqdkipwtwpevl.supabase.co/auth/v1/callback`
 4. Copiez le **Client ID** et le **Client secret**.
 5. Supabase → **Authentication → Providers → Google** : activez, collez les deux valeurs, enregistrez.
@@ -57,7 +62,7 @@ Supabase → **Authentication → Attack Protection** : activez **Cloudflare Tur
 
 ## 6. Vérification finale
 
-1. Ouvrez `https://espace-finances-tn.pages.dev`, créez un compte, enregistrez une simulation dans chaque outil.
+1. Ouvrez `https://espace-finances-tn.jaouadimohamedaziz.workers.dev`, créez un compte, enregistrez une simulation dans chaque outil.
 2. Vérifiez les en-têtes sur <https://securityheaders.com> (attendu : note A).
 3. Dans Supabase → **Advisors → Security**, aucune alerte ne doit apparaître.
 
