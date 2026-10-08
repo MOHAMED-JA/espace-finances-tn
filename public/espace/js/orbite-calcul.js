@@ -151,6 +151,8 @@
       quotiteNet: nombre(p.quotiteNet, QUOTITE, 0.1, 0.8),
       quotiteBrut: nombre(p.quotiteBrut, QUOTITE, 0.1, 0.8),
       baseBanque: p.baseBanque === "brut" ? "brut" : "net",
+      /* Revenu retenu par la banque : salaires et primes de l'année ÷ 12 (par défaut), ou le seul salaire mensuel. */
+      revenuBanque: p.revenuBanque === "mensuel" ? "mensuel" : "annuel",
       banque: texte(p.banque, 40)
     };
   }
@@ -526,10 +528,10 @@
     if (endet > q) {
       var txt;
       if (b === "brut") {
-        txt = "Vos crédits en cours (" + ent(sy.chargesCredits) + " DT par mois) représentent " + ent(endet * 100) + " % de votre salaire brut. " + nomBanque.charAt(0).toUpperCase() + nomBanque.slice(1) + " prête jusqu'à " + ent(q * 100) + " % du brut, soit " + ent(cap.revenu * q) + " DT par mois : un nouveau crédit n'est pas possible pour l'instant.";
+        txt = "Vos crédits en cours (" + ent(sy.chargesCredits) + " DT par mois) représentent " + ent(endet * 100) + " % de votre " + (p.revenuBanque === "annuel" && p.nombreSalaires > 12 ? "revenu brut mensuel (vos " + p.nombreSalaires + " salaires et primes de l'année ÷ 12 = " + ent(cap.revenu) + " DT)" : "salaire brut") + ". " + nomBanque.charAt(0).toUpperCase() + nomBanque.slice(1) + " prête jusqu'à " + ent(q * 100) + " % du brut, soit " + ent(cap.revenu * q) + " DT par mois : un nouveau crédit n'est pas possible pour l'instant.";
       } else {
         txt = "Vos crédits en cours (" + ent(sy.chargesCredits) + " DT par mois) absorbent " + ent(endet * 100) + " % de votre salaire net mensuel" +
-          (p.nombreSalaires > 12 ? " (les banques ne comptent que 12 salaires par an : vos " + (p.nombreSalaires - 12) + " salaires en plus n'entrent pas dans le calcul)" : "");
+          (p.revenuBanque === "annuel" && p.nombreSalaires > 12 ? " (vos " + p.nombreSalaires + " salaires et primes de l'année ÷ 12)" : "");
         txt += " : " + (p.banque ? p.banque + " refusera" : "la plupart des banques refuseront") + " un nouveau crédit pour l'instant.";
       }
       if (taux.hauts.length) txt += " Renégocier " + liste_(taux.hauts.map(function (c) { return "le " + c.libelle.toLowerCase(); })) + " peut libérer de la marge.";
@@ -548,7 +550,16 @@
       ajouter(2, "credit", "Votre marge revient dans " + duree, t2 + " Calcul sur le " + b + ", comme " + nomBanque + ".");
     }
     if (taux.bas.length) ajouter(2, "credit", "Des taux à garder", "Vos taux (" + liste_(taux.bas.map(function (c) { return pct(c.tauxPct) + " %"; }).filter(function (x, i, a) { return a.indexOf(x) === i; })) + ") sont bien inférieurs à ceux du marché (environ " + pct(taux.bas[0].marchePct) + " %) : inutile de renégocier, et ne remboursez pas ces crédits par anticipation. Votre épargne rapporte davantage ailleurs.");
-    else if (p.credits.length && endet > 0 && endet <= q) ajouter(1, "credit", "Marge d'endettement", "Vos crédits représentent " + ent(endet * 100) + " % de votre " + b + " ; il reste " + ent((q - endet) * 100) + " points avant la limite de " + nomBanque + ".");
+    /* Marge disponible dès aujourd'hui, puis ses étapes à chaque fin de crédit. */
+    if (endet <= q && cap.mensualiteMax >= 1) {
+      var immo = cap.credits.filter(function (c) { return c.cle === "immo"; })[0];
+      var t3 = (p.credits.length ? "Vos crédits représentent " + ent(endet * 100) + " % de votre revenu " + b + " retenu par " + nomBanque + " (" + ent(cap.revenu) + " DT par mois" + (p.revenuBanque === "annuel" && p.nombreSalaires > 12 ? ", salaires et primes de l'année ÷ 12" : "") + "). " : "") +
+        "Vous pouvez emprunter dès aujourd'hui avec une mensualité d'environ " + ent(cap.mensualiteMax) + " DT" + (immo ? ", soit jusqu'à " + ent(immo.capital) + " DT en immobilier sur 20 ans" : "") + ".";
+      paliers.slice(0, 2).forEach(function (x) {
+        t3 += " En " + x.date + ", après " + (x.credits.length > 1 ? "les crédits " : "le crédit ") + liste_(x.credits.map(court)) + " : " + ent(x.mensualiteMax) + " DT par mois, soit environ " + ent(x.capitalImmo) + " DT.";
+      });
+      ajouter(2, "credit", "Votre capacité d'emprunt aujourd'hui", t3);
+    }
     /* Autre base de calcul : une banque concurrente prêterait-elle davantage ? */
     var autreB = b === "net" ? "brut" : "net", capA = sy.capacite[autreB];
     if (capA.mensualiteMax - cap.mensualiteMax > 1) ajouter(2, "credit", "Comparez les banques", "Une banque qui calcule sur le " + autreB + " vous prêterait davantage : la mensualité possible passe de " + ent(cap.mensualiteMax) + " à " + ent(capA.mensualiteMax) + " DT.");
@@ -587,8 +598,10 @@
     var ageActuel = age(p, maintenant);
     var s = salaire(p);
     var charges = chargesCredits(p);
-    var capNet = capacite(s.netMensuel + p.autresRevenus, p.quotiteNet, charges, ageActuel);
-    var capBrut = capacite(s.brutMensuel + p.autresRevenus, p.quotiteBrut, charges, ageActuel);
+    /* Capacité : revenu de l'année (tous les salaires et primes) ÷ 12, remboursé en 12 échéances par an. */
+    var annuel = p.revenuBanque === "annuel";
+    var capNet = capacite((annuel ? s.netAnnuel / 12 : s.netMensuel) + p.autresRevenus, p.quotiteNet, charges, ageActuel);
+    var capBrut = capacite((annuel ? s.brutAnnuel / 12 : s.brutMensuel) + p.autresRevenus, p.quotiteBrut, charges, ageActuel);
     var ep = suggestionsEpargne(s, p);
     var epChoisie = ep.propositions.filter(function (x) { return x.cle === (ch.epargne || "equilibree"); })[0] || ep.propositions[0];
     var epargneActuelle = p.contrats.reduce(function (t, c) { return t + c.versementMensuel; }, 0);

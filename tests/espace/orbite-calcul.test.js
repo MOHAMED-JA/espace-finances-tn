@@ -177,15 +177,14 @@ test("conseils : pas de renégociation proposée pour des taux inférieurs au ma
   assert.match(cher.conseils.map((c) => c.texte).join(" "), /Renégocier le prêt perso/);
 });
 
-test("conseils : date de retour sous 40 % d'endettement, banques sur 12 salaires", () => {
-  const sy = O.synthese(PROFIL_ENDETTE, {}, MAINTENANT);
+test("conseils (salaire mensuel seul) : date de retour sous 40 % d'endettement", () => {
+  const sy = O.synthese(Object.assign({}, PROFIL_ENDETTE, { revenuBanque: "mensuel" }), {}, MAINTENANT);
   const s = O.sortieEndettement(sy.profil, sy.capacite.net.revenu, 0.4);
   assert.equal(s.mois, 68);
   assert.deepEqual(s.credits, ["Crédit automobile", "Crédit mariage"]);
   assert.ok(s.taux < 0.4);
   const titres = sy.conseils.map((c) => c.titre).join(" | ");
   assert.match(titres, /Votre marge revient dans 5 ans et 8 mois/);
-  assert.match(sy.conseils[0].texte, /ne comptent que 12 salaires par an/);
   assert.doesNotMatch(sy.conseils.map((c) => c.texte).join(' '), /en comptant vos 17 salaires/);
   proche(sy.budget.net, sy.salaire.netMoyen);
 });
@@ -208,7 +207,7 @@ test("contrat vie : mois écoulés, total versé, capital estimé, versements li
 });
 
 test("banque sur le brut : conseils et calendrier de la marge à chaque fin de crédit", () => {
-  const sy = O.synthese(Object.assign({}, PROFIL_ENDETTE, { baseBanque: "brut", banque: "BH Bank" }), {}, MAINTENANT);
+  const sy = O.synthese(Object.assign({}, PROFIL_ENDETTE, { baseBanque: "brut", banque: "BH Bank", revenuBanque: "mensuel" }), {}, MAINTENANT);
   const pal = sy.capacite.brut.paliers;
   assert.deepEqual(pal.map((x) => x.mois), [65, 68, 148]);
   assert.deepEqual(pal[0].credits, ["Crédit automobile"]);
@@ -219,7 +218,7 @@ test("banque sur le brut : conseils et calendrier de la marge à chaque fin de c
   assert.match(textes, /BH Bank prête jusqu'à 40 % du brut/);
   assert.match(textes, /Votre marge revient dans 5 ans et 5 mois/);
   /* Sur le net, la première étape cite tous les crédits terminés depuis la précédente. */
-  const net = O.synthese(PROFIL_ENDETTE, {}, MAINTENANT).capacite.net.paliers;
+  const net = O.synthese(Object.assign({}, PROFIL_ENDETTE, { revenuBanque: "mensuel" }), {}, MAINTENANT).capacite.net.paliers;
   assert.deepEqual(net[0].credits, ["Crédit automobile", "Crédit mariage"]);
   assert.equal(O.normaliser({}).baseBanque, "net");
 });
@@ -235,4 +234,20 @@ test("crédit : échéances restantes et date de fin déduites du début et de l
   const sans = O.synthese({ montant: 4000, credits: [{ mensualite: 695, moisRestants: 65 }] }, {}, MAINTENANT);
   assert.equal(sans.credits[0].calcule, false);
   assert.equal(sans.credits[0].fin, "mars 2032");
+});
+
+test("capacité sur les salaires et primes de l'année ÷ 12 (règle par défaut), 12 échéances par an", () => {
+  const sy = O.synthese(Object.assign({}, PROFIL_ENDETTE, { baseBanque: "brut", banque: "BH Bank" }), {}, MAINTENANT);
+  assert.equal(sy.profil.revenuBanque, "annuel");
+  proche(sy.capacite.brut.revenu, 68000 / 12);
+  proche(sy.capacite.brut.mensualiteMax, 68000 / 12 * 0.4 - 2068.832);
+  proche(sy.capacite.net.revenu, sy.salaire.netAnnuel / 12);
+  assert.deepEqual(sy.capacite.brut.paliers.map((x) => x.mois), [65, 68, 148]);
+  const textes = sy.conseils.map((c) => c.titre + " " + c.texte).join(" | ");
+  assert.match(textes, /Votre capacité d'emprunt aujourd'hui/);
+  assert.match(textes, /salaires et primes de l'année ÷ 12/);
+  assert.doesNotMatch(textes, /Endettement au-dessus/);
+  const mensuel = O.synthese(Object.assign({}, PROFIL_ENDETTE, { baseBanque: "brut", revenuBanque: "mensuel" }), {}, MAINTENANT);
+  proche(mensuel.capacite.brut.revenu, 4000);
+  assert.equal(mensuel.capacite.brut.mensualiteMax, 0);
 });

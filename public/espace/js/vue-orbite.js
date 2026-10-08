@@ -146,7 +146,7 @@
     var al = $("budget-alerte");
     al.hidden = !b.alerte;
     al.textContent = b.alerte === "deficit" ? "Vos dépenses déclarées dépassent votre net de " + F.dt0(-b.reste) + " DT par mois." :
-      b.alerte === "endettement" ? "Vos crédits représentent " + F.pct(b.endettementBanque, 0) + " de votre salaire " + sy.profil.baseBanque + " mensuel, au-delà des " + F.pct(sy.profil.baseBanque === "brut" ? sy.profil.quotiteBrut : sy.profil.quotiteNet, 0) + " admis par " + (sy.profil.banque || "les banques") + " (calcul sur 12 salaires)." : "";
+      b.alerte === "endettement" ? "Vos crédits représentent " + F.pct(b.endettementBanque, 0) + " de votre revenu " + sy.profil.baseBanque + " mensuel retenu par la banque, au-delà des " + F.pct(sy.profil.baseBanque === "brut" ? sy.profil.quotiteBrut : sy.profil.quotiteNet, 0) + " admis par " + (sy.profil.banque || "les banques") + "." : "";
   }
 
   var ICONES_MODULE = { salaire: "salaire", credit: "credit", epargne: "epargne", budget: "maison" };
@@ -195,11 +195,13 @@
     $("cap-revenu").textContent = futur
       ? "Aujourd'hui, vos crédits en cours (" + F.dt0(cap.charges) + " DT par mois) dépassent déjà " + F.pct(cap.quotite, 0) + " de " + F.dt0(cap.revenu) + " DT : aucun nouveau crédit n'est possible avant " + futur.date + "."
       : F.pct(cap.quotite, 0) + " de " + F.dt0(cap.revenu) + " DT " + (base === "net" ? "net" : "brut") + (cap.charges > 0 ? ", moins " + F.dt0(cap.charges) + " DT de crédits en cours" : "") + ".";
-    $("capacite-sous").textContent = autre.mensualiteMax < 1 && cap.mensualiteMax < 1
+    var pr = sy.profil, annuel = pr.revenuBanque === "annuel";
+    var revenuTxt = "Revenu retenu : " + (annuel ? "vos " + pr.nombreSalaires + " salaires et primes de l'année ÷ 12" : "votre salaire mensuel") + " = " + F.dt0(cap.revenu) + " DT " + base + " par mois, remboursé en 12 échéances par an. ";
+    $("capacite-sous").textContent = revenuTxt + (autre.mensualiteMax < 1 && cap.mensualiteMax < 1
       ? "Calculé à " + F.pct(cap.quotite, 0) + " du salaire " + (base === "net" ? "net" : "brut") + ", crédits en cours déduits. Ni sur le net ni sur le brut, il n'y a de marge aujourd'hui."
       : base === "net"
       ? "Règle la plus courante : 40 % du salaire net. Sur le brut, la mensualité possible serait de " + F.dt0(autre.mensualiteMax) + " DT."
-      : "Certaines banques calculent sur le brut. Sur le net, la mensualité possible serait de " + F.dt0(autre.mensualiteMax) + " DT.";
+      : "Certaines banques calculent sur le brut. Sur le net, la mensualité possible serait de " + F.dt0(autre.mensualiteMax) + " DT.");
     var ul = $("cap-liste");
     if (ul.children.length !== cap.credits.length) {
       ul.textContent = "";
@@ -235,7 +237,7 @@
     bloc.hidden = !paliers.length;
     if (!paliers.length) return;
     var p = sy.profil;
-    $("cap-paliers-sous").textContent = "Calcul à " + F.pct(cap.quotite, 0) + " du salaire " + base + (p.banque && base === p.baseBanque ? ", comme " + p.banque : "") +
+    $("cap-paliers-sous").textContent = "Calcul à " + F.pct(cap.quotite, 0) + " de " + F.dt0(cap.revenu) + " DT " + base + " par mois (" + (p.revenuBanque === "annuel" ? "salaires et primes de l'année ÷ 12" : "salaire mensuel") + ")" + (p.banque && base === p.baseBanque ? ", comme " + p.banque : "") +
       ". Chaque crédit qui se termine libère une partie de votre capacité d'emprunt. Les montants d'une même étape ne s'additionnent pas : c'est l'un ou l'autre.";
     ol.textContent = "";
     paliers.forEach(function (x) {
