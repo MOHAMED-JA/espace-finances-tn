@@ -1,5 +1,6 @@
 /*
- * Méridien — système de design de l'Espace Finances TN
+ * Méridien, accordé aux couleurs d'Orbite (pages connexion, confidentialité, 404).
+ * Ancien système de design de l'Espace Finances TN
  * Un instrument de précision : surfaces graphite, filets de 1 px,
  * un seul signal menthe, chiffres tabulaires en vedette.
  * Aucun dégradé, aucun verre dépoli, aucun halo.
@@ -24,6 +25,13 @@
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 @font-face {
+  font-family: "Bricolage Grotesque";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url("/orbite/polices/bricolage-latin.woff2") format("woff2-variations");
+}
+@font-face {
   font-family: "JetBrains Mono";
   font-style: normal;
   font-display: swap;
@@ -34,27 +42,27 @@
 /* ---------- Tokens ---------- */
 :root {
   color-scheme: light;
-  --canvas: #F4F5F2;
+  --canvas: #F3F4F8;
   --surface-1: #FFFFFF;
-  --surface-2: #ECEEEA;
-  --surface-3: #E2E5E0;
-  --hairline: #DDE1DC;
-  --control-border: #7D857F;
-  --ink: #0C1014;
-  --ink-2: #3F4851;
-  --ink-3: #535C65;
-  --signal: #006A54;
+  --surface-2: #F0F2F6;
+  --surface-3: #E7EAF0;
+  --hairline: #E2E5EC;
+  --control-border: #7A8194;
+  --ink: #0A0D14;
+  --ink-2: #3F4555;
+  --ink-3: #5E6577;
+  --signal: #1F45C7;
   --on-signal: #FFFFFF;
-  --signal-soft: #DDF3EA;
-  --cta: #0C1014;
+  --signal-soft: #E3EAFE;
+  --cta: #0A0D14;
   --on-cta: #FFFFFF;
-  --tool-salaire: #006A54;
-  --tool-vie: #5B45D6;
-  --tool-credit: #8C5000;
+  --tool-salaire: #067647;
+  --tool-vie: #5925DC;
+  --tool-credit: #1F45C7;
   --warning: #8A5D00;
   --danger: #B4232F;
   --danger-soft: #FBE7E8;
-  --focus: #006A54;
+  --focus: #2F5BEA;
   --e1: 0 1px 2px rgba(12, 16, 20, .06), 0 1px 1px rgba(12, 16, 20, .04);
   --e2: 0 4px 12px -2px rgba(12, 16, 20, .10), 0 2px 4px rgba(12, 16, 20, .05);
   --e3: 0 16px 40px -12px rgba(12, 16, 20, .22), 0 4px 10px rgba(12, 16, 20, .06);
@@ -85,27 +93,27 @@
 :root[data-theme="dark"],
 .bande-sombre {
   color-scheme: dark;
-  --canvas: #0A0C0F;
-  --surface-1: #111419;
-  --surface-2: #171B21;
-  --surface-3: #1F242C;
-  --hairline: #262C35;
+  --canvas: #07090F;
+  --surface-1: #10131C;
+  --surface-2: #171B26;
+  --surface-3: #1F2432;
+  --hairline: #232836;
   --control-border: #646E7B;
-  --ink: #EDF0F4;
-  --ink-2: #B3BBC6;
-  --ink-3: #8C95A2;
-  --signal: #5BEBC0;
-  --on-signal: #04140F;
-  --signal-soft: #11302A;
-  --cta: #EDF0F4;
-  --on-cta: #0A0C0F;
-  --tool-salaire: #5BEBC0;
-  --tool-vie: #B1A5FF;
-  --tool-credit: #FFB95C;
+  --ink: #F2F4F8;
+  --ink-2: #C1C7D3;
+  --ink-3: #959CAD;
+  --signal: #8FAEFF;
+  --on-signal: #0A0D14;
+  --signal-soft: #121C3A;
+  --cta: #F2F4F8;
+  --on-cta: #0A0D14;
+  --tool-salaire: #4ADE80;
+  --tool-vie: #B9A6FF;
+  --tool-credit: #8FAEFF;
   --warning: #F2C14E;
   --danger: #FF8A8A;
   --danger-soft: #3A1418;
-  --focus: #8FF5D6;
+  --focus: #7EA2FF;
   --e1: none;
   --e2: 0 8px 24px -8px rgba(0, 0, 0, .6);
   --e3: 0 24px 60px -16px rgba(0, 0, 0, .75);
@@ -115,27 +123,27 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --canvas: #0A0C0F;
-    --surface-1: #111419;
-    --surface-2: #171B21;
-    --surface-3: #1F242C;
-    --hairline: #262C35;
+    --canvas: #07090F;
+    --surface-1: #10131C;
+    --surface-2: #171B26;
+    --surface-3: #1F2432;
+    --hairline: #232836;
     --control-border: #646E7B;
-    --ink: #EDF0F4;
-    --ink-2: #B3BBC6;
-    --ink-3: #8C95A2;
-    --signal: #5BEBC0;
-    --on-signal: #04140F;
-    --signal-soft: #11302A;
-    --cta: #EDF0F4;
-    --on-cta: #0A0C0F;
-    --tool-salaire: #5BEBC0;
-    --tool-vie: #B1A5FF;
-    --tool-credit: #FFB95C;
+    --ink: #F2F4F8;
+    --ink-2: #C1C7D3;
+    --ink-3: #959CAD;
+    --signal: #8FAEFF;
+    --on-signal: #0A0D14;
+    --signal-soft: #121C3A;
+    --cta: #F2F4F8;
+    --on-cta: #0A0D14;
+    --tool-salaire: #4ADE80;
+    --tool-vie: #B9A6FF;
+    --tool-credit: #8FAEFF;
     --warning: #F2C14E;
     --danger: #FF8A8A;
     --danger-soft: #3A1418;
-    --focus: #8FF5D6;
+    --focus: #7EA2FF;
     --e1: none;
     --e2: 0 8px 24px -8px rgba(0, 0, 0, .6);
     --e3: 0 24px 60px -16px rgba(0, 0, 0, .75);
@@ -314,3 +322,7 @@ dialog.dialogue::backdrop { background: rgba(0, 0, 0, .56); transition: opacity 
   dialog.dialogue[open] { transition-timing-function: var(--ease-drawer); transition-duration: 280ms; }
   dialog.dialogue:not([open]) { transform: translateY(100%); opacity: 1; }
 }
+
+/* Orbite : voix d'affichage */
+h1, h2, .ecran__titre { font-family: "Bricolage Grotesque", var(--font); font-stretch: 100% !important; }
+.bande-sombre { background-color: #0A0D16; }

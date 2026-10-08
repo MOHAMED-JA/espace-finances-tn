@@ -201,8 +201,8 @@
   }
   function appliquerTheme(t) {
     var r = document.documentElement;
-    if (t) r.setAttribute("data-theme", t); else r.removeAttribute("data-theme");
     try { if (t) localStorage.setItem(CLE_THEME, t); else localStorage.removeItem(CLE_THEME); } catch (e) {}
+    if (window.EFTheme) window.EFTheme.appliquer(); else if (t) r.setAttribute("data-theme", t); else r.removeAttribute("data-theme");
   }
   function themeEffectif() {
     var t = themeActuel();

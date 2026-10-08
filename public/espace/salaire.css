@@ -1,0 +1,215 @@
+/* Orbite — module Salaire (reprend le calculateur « Lumineux et vivant », dans le système Orbite). */
+
+.module--salaire {
+  --net: #19C37D;  --net-t: var(--salaire-t); --net-doux: var(--salaire-doux);
+  --cnss: #3B82F6; --cnss-t: #1D5FD0; --cnss-doux: #E1ECFE;
+  --irpp: #7C3AED; --irpp-t: #6D28D9; --irpp-doux: #EEE6FD;
+  --css: #F5B70A;  --css-t: #8A6100;  --css-doux: #FDF2CF;
+  --sur-net: #0A0D14; --sur-cnss: #0A0D14; --sur-irpp: #FFFFFF; --sur-css: #0A0D14;
+  --distance: 14px;
+}
+:root[data-theme="dark"] .module--salaire {
+  --cnss-t: #7AA9FF; --cnss-doux: #13213A;
+  --irpp-t: #B49CFF; --irpp-doux: #221839;
+  --css-t: #FACC4B;  --css-doux: #2D250D;
+}
+@media (prefers-reduced-motion: reduce) { .module--salaire { --distance: 0px; } }
+
+/* Scène : saisie et résultat */
+.module--salaire .scene-salaire { display: grid; gap: 18px; align-items: start; }
+@media (min-width: 1100px) { .module--salaire .scene-salaire { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 22px; } .module--salaire .saisie-salaire { position: sticky; top: 80px; } }
+.module--salaire .saisie-salaire { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.module--salaire .saisie-salaire > * { min-width: 0; }
+.module--salaire .choix { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 440px) { .module--salaire .choix { grid-template-columns: minmax(0, 1fr); } }
+.module--salaire .bascule--petite span { min-height: 36px; font-size: 14px; }
+
+.module--salaire .lignes { display: grid; border-top: 1px solid var(--filet); }
+.module--salaire .ligne { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--filet); min-height: 60px; }
+.module--salaire .ligne__txt { display: grid; gap: 2px; }
+.module--salaire .ligne__txt strong { font-weight: 650; font-size: 15px; }
+.module--salaire .ligne__txt small { font-size: 13px; color: var(--encre-3); }
+.module--salaire .interrupteur input:checked + .interrupteur__piste { background: var(--salaire); }
+
+.module--salaire .plus summary { display: flex; align-items: center; justify-content: space-between; min-height: 48px; cursor: pointer; list-style: none; font-weight: 650; user-select: none; }
+.module--salaire .plus summary::-webkit-details-marker { display: none; }
+.module--salaire .plus summary svg { width: 20px; height: 20px; color: var(--encre-3); transition: transform 240ms var(--ressort); }
+.module--salaire .plus[open] summary svg { transform: rotate(180deg); }
+.module--salaire .petit-montant { display: inline-flex; align-items: center; gap: 6px; padding: 2px 12px; border-radius: 12px; background: var(--surface-2); border: 1.5px solid transparent; flex: none; }
+.module--salaire .petit-montant:focus-within { border-color: var(--focus); }
+.module--salaire .petit-montant input { width: 8ch; height: 40px; border: 0; background: transparent; outline: none; text-align: right; font-weight: 650; font-size: 16px; }
+.module--salaire .petit-montant span { color: var(--encre-3); font-weight: 600; font-size: 14px; }
+
+/* Résultat */
+.module--salaire .resultat { display: grid; gap: 16px; outline: none; padding: clamp(22px, 3vw, 32px); }
+.module--salaire .resultat__lib { font-size: 15px; font-weight: 700; color: var(--encre-2); }
+.module--salaire .grand { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 10px; line-height: .95; font-family: var(--affiche); font-size: clamp(54px, 7.4vw, 104px); font-weight: 800; letter-spacing: -.045em; color: var(--encre); }
+.module--salaire .chiffres { display: inline-flex; }
+.module--salaire .grand .chiffre { display: inline-block; height: 1em; overflow: hidden; }
+.module--salaire .chiffre__rouleau { display: block; will-change: transform; }
+.module--salaire .chiffre__rouleau span { display: block; height: 1em; line-height: 1em; }
+.module--salaire .chiffre--fixe { width: .22em; }
+.module--salaire .grand__dec { font-size: .38em; font-weight: 740; letter-spacing: -.02em; color: var(--encre-2); }
+.module--salaire .grand__unite { font-family: var(--texte); font-size: .22em; font-weight: 700; letter-spacing: 0; color: var(--encre-3); }
+.module--salaire .resultat__sous { color: var(--encre-2); }
+.module--salaire .resultat[data-etat="invalide"] .grand { opacity: .3; }
+
+.module--salaire .blocs { display: flex; gap: 4px; height: 72px; }
+.module--salaire .bloc { position: relative; display: flex; align-items: flex-end; min-width: 0; overflow: hidden; border-radius: 14px; flex: var(--g, 0) 1 0; padding: 10px 12px; transition: flex-grow 560ms var(--ressort); }
+.module--salaire .bloc b { font-size: 14px; font-weight: 750; white-space: nowrap; transition: opacity 200ms ease; }
+.module--salaire .bloc.etroit b { opacity: 0; }
+.module--salaire .b-net { background: var(--net); color: var(--sur-net); }
+.module--salaire .b-cnss { background: var(--cnss); color: var(--sur-cnss); }
+.module--salaire .b-irpp { background: var(--irpp); color: var(--sur-irpp); }
+.module--salaire .b-css { background: var(--css); color: var(--sur-css); }
+.module--salaire .blocs--fin { height: 44px; }
+.module--salaire .blocs--fin .bloc { border-radius: 10px; }
+@media (prefers-reduced-motion: no-preference) {
+  .module--salaire .bloc.flash::after { content: ""; position: absolute; inset: 0; background: rgba(255, 255, 255, .45); animation: s-flash 520ms var(--sortie) forwards; }
+}
+@keyframes s-flash { to { opacity: 0; } }
+
+.module--salaire .legende { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.module--salaire .legende li { display: grid; grid-template-columns: 12px 1fr; gap: 2px 10px; align-items: center; padding: 12px 14px; border-radius: 14px; background: var(--doux); }
+.module--salaire .legende i { width: 12px; height: 12px; border-radius: 4px; background: var(--c); grid-row: 1; }
+.module--salaire .legende span { font-size: 14px; font-weight: 600; color: var(--encre-2); }
+.module--salaire .legende strong { grid-column: 2; font-size: 21px; font-weight: 760; letter-spacing: -.02em; color: var(--encre); }
+.module--salaire .legende em { grid-column: 2; font-style: normal; font-size: 13px; font-weight: 650; color: var(--t); }
+.module--salaire .l-net { --c: var(--net); --t: var(--net-t); --doux: var(--net-doux); }
+.module--salaire .l-cnss { --c: var(--cnss); --t: var(--cnss-t); --doux: var(--cnss-doux); }
+.module--salaire .l-irpp { --c: var(--irpp); --t: var(--irpp-t); --doux: var(--irpp-doux); }
+.module--salaire .l-css { --c: var(--css); --t: var(--css-t); --doux: var(--css-doux); }
+.module--salaire .legende--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 560px) { .module--salaire .legende--3 { grid-template-columns: 1fr; } .module--salaire .legende strong { font-size: 18px; } }
+.module--salaire .encart { display: block; background: var(--css-doux); }
+.module--salaire .encart strong { font-weight: 760; }
+.module--salaire .note { font-size: 14px; color: var(--encre-3); }
+.module--salaire .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* Sections */
+.module--salaire .section { padding: 56px 0 4px; display: grid; gap: 22px; }
+@media (min-width: 1100px) { .module--salaire .section { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 22px 44px; } }
+.module--salaire .section--large { grid-template-columns: 1fr !important; }
+.module--salaire .section__tete h2 { font-size: clamp(26px, 3vw, 36px); font-weight: 760; letter-spacing: -.035em; }
+.module--salaire .section__tete p { margin-top: 10px; font-size: 16.5px; color: var(--encre-2); max-width: 60ch; }
+.module--salaire .section__tete p b { font-weight: 780; }
+.module--salaire .section__corps { display: grid; gap: 18px; align-content: start; }
+@media (prefers-reduced-motion: no-preference) {
+  .module--salaire .section.a-reveler { opacity: 0; transform: translateY(var(--distance)); }
+  .module--salaire .section.revelee { opacity: 1; transform: none; transition: opacity 500ms var(--sortie), transform 600ms var(--sortie); }
+}
+.module--salaire .t-net { color: var(--net-t); } .module--salaire .t-cnss { color: var(--cnss-t); } .module--salaire .t-irpp { color: var(--irpp-t); } .module--salaire .t-css { color: var(--css-t); }
+
+.module--salaire .grille-cent { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; align-self: center; padding: 18px; border-radius: var(--r-panneau); background: var(--surface); box-shadow: var(--ombre-2); }
+.module--salaire .grille-cent span { aspect-ratio: 1; border-radius: 30%; background: var(--filet); transition: background-color 240ms ease, transform 300ms var(--ressort); }
+.module--salaire .grille-cent span[data-p="net"] { background: var(--net); }
+.module--salaire .grille-cent span[data-p="cnss"] { background: var(--cnss); }
+.module--salaire .grille-cent span[data-p="irpp"] { background: var(--irpp); }
+.module--salaire .grille-cent span[data-p="css"] { background: var(--css); }
+@media (prefers-reduced-motion: no-preference) { .module--salaire .grille-cent.attente span { transform: scale(.4); background: var(--filet); } }
+
+/* Augmentation et tranche d'impôt */
+.module--salaire .hausse-grille { display: grid; gap: 18px; }
+@media (min-width: 1000px) { .module--salaire .hausse-grille { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; } }
+.module--salaire .hausse-reglage { display: grid; gap: 16px; }
+.module--salaire .curseur-bloc { display: grid; gap: 6px; }
+.module--salaire .curseur-bloc__haut { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-weight: 650; }
+.module--salaire .curseur-bloc__val { font-family: var(--affiche); font-size: 30px; font-weight: 780; letter-spacing: -.02em; color: var(--net-t); }
+.module--salaire input[type="range"] { --c: var(--net); }
+.module--salaire .avant-apres { display: grid; gap: 10px; }
+.module--salaire .aa { display: grid; grid-template-columns: 90px 1fr auto; align-items: center; gap: 12px; font-size: 14px; font-weight: 650; color: var(--encre-2); }
+.module--salaire .aa__barre { height: 22px; border-radius: 8px; background: var(--surface-2); overflow: hidden; }
+.module--salaire .aa__barre b { display: block; height: 100%; border-radius: 8px; background: var(--filet-fort); transform-origin: left; transform: scaleX(var(--s, 0)); transition: transform 520ms var(--ressort); }
+.module--salaire .aa--apres .aa__barre b { background: var(--net); }
+.module--salaire .aa strong { font-size: 16px; font-weight: 760; color: var(--encre); min-width: 10ch; text-align: right; }
+.module--salaire .phrase-resultat { font-size: clamp(17px, 1.7vw, 20px); line-height: 1.5; }
+.module--salaire .phrase-resultat b { font-weight: 780; }
+.module--salaire .phrase-resultat .hausse { color: var(--net-t); }
+.module--salaire .phrase-resultat .baisse, .module--salaire .phrase-resultat .alerte { color: var(--alerte); }
+.module--salaire .tranches-bloc { display: grid; gap: 16px; }
+.module--salaire .tranches-bloc h3 { font-size: 18px; }
+.module--salaire .tranches { position: relative; padding: 30px 0 34px; }
+.module--salaire .tranches__piste { display: flex; gap: 3px; height: 40px; }
+.module--salaire .tranche { flex: var(--g, 1) 1 0; min-width: 0; display: grid; place-items: center; border-radius: 10px; background: var(--surface-2); color: var(--encre-3); font-size: 12.5px; font-weight: 700; transition: background-color 300ms ease, color 300ms ease, flex-grow 500ms var(--ressort); overflow: hidden; }
+.module--salaire .tranche b { white-space: nowrap; }
+.module--salaire .tranche--avant { background: var(--irpp-doux); color: var(--irpp-t); }
+.module--salaire .tranche--apres { background: var(--irpp); color: #fff; }
+.module--salaire .repere { position: absolute; left: calc(var(--x, 0) * 100%); display: grid; justify-items: center; transform: translateX(-50%); transition: left 520ms var(--ressort); font-size: 12px; font-weight: 700; white-space: nowrap; }
+.module--salaire .repere i { width: 2px; height: 16px; background: currentColor; border-radius: 2px; }
+.module--salaire .repere--avant { top: 4px; color: var(--encre-2); grid-template-rows: auto auto; }
+.module--salaire .repere--avant b { order: -1; }
+.module--salaire .repere--apres { bottom: 6px; color: var(--irpp-t); }
+
+/* Employeur, offres, détail, courbe */
+.module--salaire .total { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.module--salaire .total b { font-family: var(--affiche); font-size: clamp(36px, 4.4vw, 54px); font-weight: 780; letter-spacing: -.04em; }
+.module--salaire .total span { color: var(--encre-2); font-weight: 600; }
+.module--salaire .offre-saisie { display: flex; flex-wrap: wrap; align-items: end; gap: 14px 20px; }
+.module--salaire .mini-champ { display: grid; gap: 6px; font-size: 14px; font-weight: 650; color: var(--encre-2); }
+.module--salaire .section .bascule { background: var(--surface-3); }
+.module--salaire .section .petit-montant { background: var(--surface); border-color: var(--filet); }
+.module--salaire .section .compteur button { background: var(--surface); box-shadow: inset 0 0 0 1px var(--filet); }
+.module--salaire .offres { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 640px) { .module--salaire .offres { grid-template-columns: 1fr; } }
+.module--salaire .offre { display: grid; gap: 12px; align-content: start; }
+.module--salaire .offre h3 { font-size: 15px; font-weight: 700; color: var(--encre-2); font-family: var(--texte); letter-spacing: 0; }
+.module--salaire .offre__net { font-family: var(--affiche); font-size: clamp(30px, 3.4vw, 44px); font-weight: 780; letter-spacing: -.04em; line-height: 1; }
+.module--salaire .offre__net small { font-family: var(--texte); font-size: 14px; font-weight: 650; color: var(--encre-3); letter-spacing: 0; }
+.module--salaire .offre__barre { display: block; height: 14px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.module--salaire .offre__barre b { display: block; height: 100%; border-radius: 999px; background: var(--net); transform-origin: left; transform: scaleX(var(--s, 0)); transition: transform 560ms var(--ressort); }
+.module--salaire .offre dl { margin: 0; display: grid; gap: 8px; font-size: 15px; }
+.module--salaire .offre dl div { display: flex; justify-content: space-between; gap: 10px; padding-top: 8px; border-top: 1px solid var(--filet); }
+.module--salaire .offre dt { color: var(--encre-3); }
+.module--salaire .offre dd { margin: 0; font-weight: 700; }
+
+.module--salaire .detail { padding: 0; overflow: hidden; }
+.module--salaire .detail table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.module--salaire .detail caption { text-align: left; padding: 16px 20px 4px; font-size: 13px; color: var(--encre-3); }
+.module--salaire .detail th, .module--salaire .detail td { padding: 11px 20px; text-align: left; border-top: 1px solid var(--filet); }
+.module--salaire .detail thead th { font-size: 13px; color: var(--encre-3); font-weight: 650; border-top: 0; }
+.module--salaire .detail .v { text-align: right; white-space: nowrap; font-family: var(--mono); font-size: 14px; font-weight: 500; }
+.module--salaire .detail tr.sous td { color: var(--encre-3); font-size: 14px; border-top: 0; padding-top: 4px; padding-bottom: 4px; }
+.module--salaire .detail tr.sous td:first-child { padding-left: 36px; }
+.module--salaire .detail tr.cle td { font-weight: 760; background: var(--net-doux); }
+@media (min-width: 640px) { .module--salaire .detail tr.moins td.v::before { content: "− "; } }
+@media (max-width: 639px) {
+  .module--salaire .detail table, .module--salaire .detail tbody, .module--salaire .detail tr, .module--salaire .detail td, .module--salaire .detail caption { display: block; }
+  .module--salaire .detail thead { display: none; }
+  .module--salaire .detail tr { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; padding: 10px 16px; border-top: 1px solid var(--filet); }
+  .module--salaire .detail td { padding: 0; border: 0; }
+  .module--salaire .detail td:first-child { grid-column: 1 / -1; }
+  .module--salaire .detail td.v { text-align: left; font-size: 14px; }
+  .module--salaire .detail td.v::before { content: attr(data-lib) " "; color: var(--encre-3); font-size: 12px; font-weight: 500; font-family: var(--texte); }
+  .module--salaire .detail tr.moins td.v::before { content: attr(data-lib) " −"; }
+  .module--salaire .detail tr.sous { border-top: 0; padding-top: 2px; }
+  .module--salaire .detail tr.sous td:first-child, .module--salaire .detail tr.sous td.v { padding-left: 14px; }
+  .module--salaire .detail tr.cle { background: var(--net-doux); }
+  .module--salaire .detail tr.cle td { background: transparent !important; }
+}
+
+.module--salaire .courbe { padding: 16px 16px 8px; }
+.module--salaire .courbe svg { width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
+.module--salaire .courbe .axe { stroke: var(--filet); }
+.module--salaire .courbe .grad { fill: var(--encre-3); font-size: 12px; font-family: var(--texte); font-variant-numeric: tabular-nums; }
+.module--salaire .courbe svg.etroit .grad { font-size: 13px; }
+.module--salaire .courbe .zone-net { fill: var(--net); opacity: .12; }
+.module--salaire .courbe .ligne-net { fill: none; stroke: var(--net); stroke-width: 3.2; stroke-linejoin: round; stroke-linecap: round; }
+.module--salaire .courbe .ligne-brut { fill: none; stroke: var(--filet-fort); stroke-width: 1.5; stroke-dasharray: 5 6; }
+.module--salaire .courbe .point { fill: var(--surface); stroke: var(--net-t); stroke-width: 3; transition: cx 160ms var(--sortie), cy 160ms var(--sortie); }
+.module--salaire .courbe .repere { stroke: var(--encre-3); stroke-dasharray: 3 4; position: static; transform: none; }
+.module--salaire .courbe__info { min-height: 48px; padding: 8px 4px; font-size: 15px; color: var(--encre-2); }
+.module--salaire .courbe__info b { font-weight: 760; color: var(--encre); }
+@media (prefers-reduced-motion: no-preference) {
+  .module--salaire .courbe .ligne-net.trace { stroke-dasharray: var(--long); stroke-dashoffset: var(--long); animation: s-tracer 900ms var(--sortie) forwards; }
+}
+@keyframes s-tracer { to { stroke-dashoffset: 0; } }
+
+.module--salaire .methode { margin-top: 48px; }
+.module--salaire .methode__etapes { margin: 0 0 16px; padding-left: 20px; display: grid; gap: 6px; color: var(--encre-2); }
+.module--salaire .sources { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; color: var(--encre-2); }
+.module--salaire .sources b { color: var(--encre); }
+
+@media print {
+  .module--salaire .actions, #section-courbe, #section-hausse, .module--salaire .plus summary svg { display: none !important; }
+  .module--salaire .section.a-reveler { opacity: 1 !important; transform: none !important; }
+}

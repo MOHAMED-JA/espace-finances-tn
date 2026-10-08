@@ -3,169 +3,181 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-  <title>Espace Finances TN — salaire, épargne et crédit au millime</title>
-  <meta name="description" content="Votre espace personnel pour calculer votre salaire net, optimiser l'assurance vie et le CEA, et simuler un crédit en Tunisie. Barèmes 2026, simulations enregistrées et protégées.">
-  <meta name="theme-color" content="#F4F5F2" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0A0C0F" media="(prefers-color-scheme: dark)">
+  <title>Orbite — votre salaire au centre, tout le reste en orbite</title>
+  <meta name="description" content="Orbite, l'application des salariés tunisiens : salaire net, tranche d'impôt, capacité de crédit sur le net et sur le brut, épargne assurance vie et CEA. Un seul profil, barèmes 2026, données protégées.">
+  <meta name="theme-color" content="#F3F4F8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07090F" media="(prefers-color-scheme: dark)">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <link rel="icon" href="/commun/icone.svg" type="image/svg+xml">
+  <link rel="icon" href="/orbite/icone.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/orbite/apple-touch-icon.png">
   <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="preload" href="/commun/polices/mona-sans-latin-standard-normal.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/commun/meridien.css">
+  <link rel="preload" href="/orbite/polices/bricolage-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/orbite/polices/mona-sans-latin-standard-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/orbite/orbite.css">
   <link rel="stylesheet" href="/commun/accueil.css">
+  <script src="/commun/config.js"></script>
   <script src="/commun/theme-init.js"></script>
 </head>
 <body>
-  <a class="evitement" href="#contenu">Aller au contenu</a>
+  <a class="lien-evitement" href="#contenu">Aller au contenu</a>
 
-  <header class="barre-accueil bande-sombre">
-    <div class="conteneur barre-accueil__ligne">
-      <a class="marque" href="/" aria-label="Espace Finances TN, accueil">
-        <span class="marque__signe" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 12.5 6 8l3 3 5-6.5"/><path d="M10.5 4.5H14v3.5"/></svg></span>
-        <span class="marque__espace">Espace </span>Finances <span class="marque__tn">TN</span>
+  <header class="entete">
+    <div class="conteneur entete__ligne">
+      <a class="logo logo--vivant" href="/" aria-label="Orbite, accueil">
+        <svg class="logo__signe" viewBox="0 0 64 64" aria-hidden="true">
+          <defs><linearGradient id="lg-a" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#12B76A"/><stop offset=".55" stop-color="#2F5BEA"/><stop offset="1" stop-color="#7A5AF8"/></linearGradient></defs>
+          <rect width="64" height="64" rx="19" fill="#0A0D16"/>
+          <g class="orb-b"><ellipse cx="32" cy="32" rx="21.5" ry="9" fill="none" stroke="#fff" stroke-opacity=".2" stroke-width="1.6" transform="rotate(34 32 32)"/><circle cx="44.3" cy="45" r="2.9" fill="#2F5BEA"/></g>
+          <g class="orb-a"><ellipse cx="32" cy="32" rx="21.5" ry="9" fill="none" stroke="url(#lg-a)" stroke-width="2.6" transform="rotate(-30 32 32)"/><circle cx="13.6" cy="42.6" r="3.6" fill="#12B76A"/><circle cx="50.4" cy="21.4" r="3.6" fill="#7A5AF8"/></g>
+          <circle cx="32" cy="32" r="6.6" fill="#fff"/>
+        </svg>
+        <span>Orbite</span>
       </a>
-      <nav class="barre-accueil__actions" aria-label="Compte">
-        <a class="lien-connexion" href="/connexion.html" data-si-deconnecte><span class="long">Se connecter</span><span class="court">Connexion</span></a>
-        <a class="bouton bouton--principal bouton--petit" href="/connexion.html?mode=inscription" data-si-deconnecte><span class="long">Créer un compte</span><span class="court">S’inscrire</span></a>
-        <a class="bouton bouton--principal bouton--petit" href="/espace/" data-si-connecte hidden>Mon espace</a>
+      <nav class="entete__actions" aria-label="Compte">
+        <a class="bouton bouton--fantome bouton--petit" href="/connexion.html" data-si-deconnecte>Se connecter</a>
+        <a class="bouton bouton--plein bouton--petit" href="/connexion.html?mode=inscription" data-si-deconnecte>Créer mon orbite</a>
+        <a class="bouton bouton--plein bouton--petit" href="/espace/" data-si-connecte hidden>Ouvrir mon orbite</a>
       </nav>
     </div>
   </header>
 
-  <p class="bandeau bande-sombre" id="bandeau" role="status" hidden></p>
+  <p class="bandeau" id="bandeau" role="status" hidden></p>
 
   <main id="contenu">
-    <section class="heros bande-sombre" aria-labelledby="titre-heros">
+    <!-- Héros -->
+    <section class="heros" aria-labelledby="titre-heros">
+      <div class="heros__grille-points" aria-hidden="true"></div>
       <div class="conteneur heros__grille">
         <div class="heros__texte">
-          <h1 id="titre-heros" class="titre-affiche">Vos finances tunisiennes, calculées au millime.</h1>
-          <p class="heros__accroche">Salaire net, coût employeur, assurance vie et CEA, crédit bancaire&nbsp;: trois instruments de précision, un seul espace personnel où vos simulations restent enregistrées et protégées.</p>
+          <h1 id="titre-heros" class="heros__titre">
+            <span class="ligne-titre"><span>Votre salaire au centre.</span></span>
+            <span class="ligne-titre"><span class="heros__accent">Tout le reste en orbite.</span></span>
+          </h1>
+          <p class="heros__sous">Indiquez votre salaire une seule fois. Orbite vous montre votre vrai net, votre tranche d'impôt, ce que la banque peut vous prêter — sur le net <em>et</em> sur le brut — et l'épargne qui fait baisser vos impôts.</p>
           <div class="heros__actions">
-            <a class="bouton bouton--signal" href="/connexion.html?mode=inscription" data-si-deconnecte>Créer mon espace gratuit</a>
-            <a class="bouton bouton--contour" href="#outils" data-si-deconnecte>Voir les outils</a>
-            <a class="bouton bouton--signal" href="/espace/" data-si-connecte hidden>Ouvrir mon espace</a>
+            <a class="bouton bouton--plein bouton--grand" href="/connexion.html?mode=inscription" data-si-deconnecte>Créer mon orbite gratuite<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
+            <a class="bouton bouton--plein bouton--grand" href="/espace/" data-si-connecte hidden>Ouvrir mon orbite<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
+            <a class="bouton bouton--grand" href="#fonctionnement">Comment ça marche</a>
           </div>
           <ul class="heros__garanties" role="list">
-            <li>Barèmes IRPP et CSS 2026</li>
-            <li>Connexion Google ou e-mail</li>
-            <li>Vos données ne sont visibles que par vous</li>
+            <li><svg aria-hidden="true"><use href="/orbite/icones.svg#valide"/></svg>Barèmes IRPP et CSS <span data-annee>2026</span></li>
+            <li><svg aria-hidden="true"><use href="/orbite/icones.svg#bouclier"/></svg>Vos données ne sont visibles que par vous</li>
+            <li><svg aria-hidden="true"><use href="/orbite/icones.svg#valide"/></svg>Connexion Google ou e-mail</li>
           </ul>
         </div>
 
-        <form class="instrument" id="instrument" aria-labelledby="titre-instrument" novalidate>
-          <div class="instrument__tete">
-            <h2 id="titre-instrument">Brut → net, en direct</h2>
-            <div class="segments" role="radiogroup" aria-label="Secteur">
-              <label><input type="radio" name="secteur" value="prive" checked><span>Privé · CNSS</span></label>
-              <label><input type="radio" name="secteur" value="public"><span>Public · CNRPS</span></label>
+        <!-- Aperçu vivant -->
+        <div class="apercu-cadre">
+          <form class="apercu cosmos" id="apercu" novalidate aria-labelledby="apercu-titre">
+            <span class="apercu__reflet" aria-hidden="true"></span>
+            <div class="apercu__tete">
+              <h2 id="apercu-titre">Essayez avec votre salaire</h2>
+              <span class="apercu__direct"><i aria-hidden="true"></i>En direct</span>
             </div>
-          </div>
-          <div class="champ champ--montant">
-            <label for="brut">Salaire brut mensuel</label>
-            <div class="saisie-montant">
-              <input id="brut" name="brut" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="2 500" aria-describedby="brut-aide">
-              <span aria-hidden="true">DT</span>
+            <div class="champ">
+              <label for="brut">Salaire brut par mois</label>
+              <div class="saisie saisie--grande"><input id="brut" type="text" inputmode="decimal" autocomplete="off" value="2 500"><span class="saisie__unite">DT</span></div>
             </div>
-            <p class="aide" id="brut-aide">Montant brut d'un mois, 12 salaires par an.</p>
-          </div>
-          <div class="instrument__famille">
-            <label class="interrupteur"><input type="checkbox" name="chef" checked><span class="interrupteur__piste" aria-hidden="true"></span>Chef de famille</label>
-            <div class="compteur" role="group" aria-labelledby="enfants-lib">
-              <span id="enfants-lib">Enfants</span>
-              <button type="button" class="compteur__pas" data-pas="-1" aria-label="Retirer un enfant">−</button>
-              <output id="enfants" class="num" aria-live="polite">2</output>
-              <button type="button" class="compteur__pas" data-pas="1" aria-label="Ajouter un enfant">+</button>
+            <div class="apercu__options">
+              <div class="bascule bascule--compacte" role="radiogroup" aria-label="Secteur">
+                <label><input type="radio" name="secteur" value="prive" checked><span>Privé</span></label>
+                <label><input type="radio" name="secteur" value="public"><span>Public</span></label>
+                <i class="bascule__pastille" aria-hidden="true"></i>
+              </div>
+              <label class="interrupteur apercu__chef"><span>Chef de famille</span><input type="checkbox" id="chef" role="switch" checked><span class="interrupteur__piste" aria-hidden="true"></span></label>
             </div>
-          </div>
-          <div class="instrument__resultat" aria-live="polite">
-            <p class="instrument__libelle">Net à payer par mois</p>
-            <p class="instrument__montant num"><span id="net">1 862,018</span><span class="instrument__unite">DT</span></p>
-            <div class="repartition" aria-hidden="true">
-              <span class="repartition__part repartition__part--net" id="part-net"></span>
-              <span class="repartition__part repartition__part--coti" id="part-coti"></span>
-              <span class="repartition__part repartition__part--impot" id="part-impot"></span>
+            <div class="apercu__orbite" aria-live="polite">
+              <div class="apercu__noyau"><span>Net par mois</span><strong id="net">—</strong></div>
+              <ul class="apercu__satellites" role="list">
+                <li class="sat sat--salaire"><span>Tranche d'impôt</span><strong id="tranche">—</strong></li>
+                <li class="sat sat--credit"><span>Crédit immobilier possible</span><strong id="credit">—</strong></li>
+                <li class="sat sat--epargne"><span>Impôt économisable</span><strong id="epargne">—</strong></li>
+              </ul>
             </div>
-            <dl class="instrument__reperes">
-              <div><dt><span class="puce puce--coti"></span><span id="lib-caisse">CNSS</span></dt><dd class="num" id="coti">242,000</dd></div>
-              <div><dt><span class="puce puce--impot"></span>IRPP + CSS</dt><dd class="num" id="impot">395,982</dd></div>
-              <div><dt>Coût employeur</dt><dd class="num" id="cout">3 014,250</dd></div>
-            </dl>
-          </div>
-          <a class="instrument__suite" href="/connexion.html?mode=inscription&amp;suite=%2Foutils%2Fsalaire%2F">Détail complet, 13ᵉ mois, primes, comparaison A/B<span aria-hidden="true"> →</span></a>
-        </form>
+            <p class="apercu__note"><span id="lib-caisse">CNSS</span> · 12 salaires · 40 % d'endettement sur 20 ans à 10 %.</p>
+          </form>
+        </div>
       </div>
     </section>
 
-    <section class="outils" id="outils" aria-labelledby="titre-outils">
+    <!-- Un profil, trois réponses -->
+    <section class="section-accueil" aria-labelledby="titre-trois">
       <div class="conteneur">
-        <h2 id="titre-outils" class="titre-section">Trois instruments. Un seul espace.</h2>
-        <ol class="liste-outils" role="list">
-          <li class="ligne-outil" data-outil="salaire">
-            <span class="ligne-outil__index num" aria-hidden="true">01</span>
-            <div class="ligne-outil__corps">
-              <h3><span class="pastille"></span>Salaire brut ⇄ net</h3>
-              <p>Privé ou public, CNSS ou CNRPS, 12 à 18 salaires par an, primes, avantages, coût employeur, net → brut exact et comparateur de scénarios.</p>
-            </div>
-            <p class="ligne-outil__exemple num"><span>2 500 DT brut</span><span class="fleche" aria-hidden="true">→</span><strong id="exemple-salaire">1 862 DT net</strong></p>
-          </li>
-          <li class="ligne-outil" data-outil="assurance_vie">
-            <span class="ligne-outil__index num" aria-hidden="true">02</span>
-            <div class="ligne-outil__corps">
-              <h3><span class="pastille"></span>Assurance vie &amp; CEA</h3>
-              <p>Économie d'impôt de l'article 39, montant optimal, projection du capital sur 3 scénarios, Monte-Carlo, rachat anticipé et stratégie année par année.</p>
-            </div>
-            <p class="ligne-outil__exemple num"><span>500 + 200 DT / mois</span><span class="fleche" aria-hidden="true">→</span><strong>3 174 DT d'impôt en moins par an</strong></p>
-          </li>
-          <li class="ligne-outil" data-outil="credit">
-            <span class="ligne-outil__index num" aria-hidden="true">03</span>
-            <div class="ligne-outil__corps">
-              <h3><span class="pastille"></span>Crédit bancaire</h3>
-              <p>Mensualité, TMM + marge, TEG, différé, assurance, remboursements anticipés, capacité d'emprunt, renégociation et comparaison d'offres.</p>
-            </div>
-            <p class="ligne-outil__exemple num"><span>150 000 DT · 20 ans · 9,5 %</span><span class="fleche" aria-hidden="true">→</span><strong>1 398,197 DT / mois</strong></p>
-          </li>
+        <h2 class="section-accueil__titre" id="titre-trois">Un profil. Trois réponses qui se parlent.</h2>
+        <p class="section-accueil__sous">Ailleurs, chaque simulateur vous redemande tout. Ici, votre salaire alimente tout le reste — et chaque réponse tient compte des autres.</p>
+        <div class="trois">
+          <article class="module-carte module-carte--salaire">
+            <span class="module-carte__icone" aria-hidden="true"><svg><use href="/orbite/icones.svg#salaire"/></svg></span>
+            <h3>Salaire</h3>
+            <p>Brut ⇄ net au millime, 12 à 18 salaires, primes, coût employeur. Et avant un entretien : ce qu'une augmentation vous rapporte vraiment, et si elle change votre tranche d'impôt.</p>
+          </article>
+          <article class="module-carte module-carte--credit">
+            <span class="module-carte__icone" aria-hidden="true"><svg><use href="/orbite/icones.svg#credit"/></svg></span>
+            <h3>Crédit</h3>
+            <p>Votre capacité d'emprunt sur le net et sur le brut, crédits en cours déduits. Mensualité, TMM + marge, TEG, tableau d'amortissement, renégociation et règle de réduction du taux.</p>
+          </article>
+          <article class="module-carte module-carte--epargne">
+            <span class="module-carte__icone" aria-hidden="true"><svg><use href="/orbite/icones.svg#epargne"/></svg></span>
+            <h3>Épargne vie &amp; CEA</h3>
+            <p>Trois propositions adaptées à votre net, l'économie d'impôt de l'article 39, le capital projeté, le rachat, la retraite. Vos contrats actuels sont pris en compte.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Fonctionnement -->
+    <section class="section-accueil section-accueil--cosmos" id="fonctionnement" aria-labelledby="titre-fonctionnement">
+      <div class="conteneur">
+        <h2 class="section-accueil__titre" id="titre-fonctionnement">Trois minutes pour y voir clair</h2>
+        <ol class="etapes" id="etapes">
+          <li><span class="etapes__num" aria-hidden="true">1</span><h3>Votre salaire</h3><p>Brut ou net, privé ou public, et votre famille. C'est tout pour commencer.</p></li>
+          <li><span class="etapes__num" aria-hidden="true">2</span><h3>Votre situation</h3><p>Crédits en cours, contrats vie, loyer, projets : chaque détail affine les conseils.</p></li>
+          <li><span class="etapes__num" aria-hidden="true">3</span><h3>Vos réponses</h3><p>Ce que vous touchez, ce que vous pouvez emprunter, ce que vous pouvez épargner — et ce qu'il faut faire en premier.</p></li>
         </ol>
       </div>
     </section>
 
-    <section class="espace-perso bande-sombre" aria-labelledby="titre-espace">
-      <div class="conteneur espace-perso__grille">
+    <!-- Confiance -->
+    <section class="section-accueil" aria-labelledby="titre-confiance">
+      <div class="conteneur confiance">
         <div>
-          <h2 id="titre-espace" class="titre-section">Votre espace garde la trace de chaque calcul.</h2>
-          <p class="espace-perso__texte">Enregistrez une simulation d'un clic depuis n'importe quel outil, renommez-la, rouvrez-la des mois plus tard exactement comme vous l'aviez laissée, et comparez vos scénarios d'épargne, de crédit et de salaire au même endroit.</p>
+          <h2 class="section-accueil__titre" id="titre-confiance">Vos chiffres restent les vôtres</h2>
+          <p class="section-accueil__sous">Votre profil et vos simulations sont chiffrés en transit, isolés par compte et visibles par vous seul. Vous pouvez tout exporter ou tout effacer, à tout moment.</p>
+          <a class="lien-action" href="/confidentialite.html">Lire la politique de confidentialité<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
         </div>
-        <ul class="etapes" role="list">
-          <li><span class="etapes__n num">1</span><div><h3>Créez votre compte</h3><p>Avec Google en un clic, ou par e-mail et mot de passe.</p></div></li>
-          <li><span class="etapes__n num">2</span><div><h3>Simulez</h3><p>Les trois outils complets, sans limite de calcul.</p></div></li>
-          <li><span class="etapes__n num">3</span><div><h3>Enregistrez</h3><p>Jusqu'à 200 simulations, retrouvées sur tous vos appareils.</p></div></li>
+        <ul class="confiance__liste" role="list">
+          <li><svg aria-hidden="true"><use href="/orbite/icones.svg#bouclier"/></svg><span><strong>Isolé par compte</strong>Personne d'autre ne peut lire vos données.</span></li>
+          <li><svg aria-hidden="true"><use href="/orbite/icones.svg#valide"/></svg><span><strong>Calculs vérifiés</strong>Plus de 240 tests automatiques, au millime près.</span></li>
+          <li><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg><span><strong>Export et suppression</strong>Vos données vous appartiennent.</span></li>
         </ul>
       </div>
     </section>
 
-    <section class="securite" aria-labelledby="titre-securite">
-      <div class="conteneur">
-        <h2 id="titre-securite" class="titre-section">Sécurité de niveau bancaire, sans compromis.</h2>
-        <dl class="grille-securite">
-          <div><dt>Isolation stricte</dt><dd>Chaque ligne de la base est verrouillée sur son propriétaire (Row Level Security)&nbsp;: personne d'autre, aucun visiteur anonyme ne peut la lire.</dd></div>
-          <div><dt>Chiffré de bout en bout du trajet</dt><dd>HTTPS obligatoire (HSTS), connexion OAuth Google avec PKCE, jetons de session à durée limitée et renouvelés automatiquement.</dd></div>
-          <div><dt>Page verrouillée</dt><dd>Politique de sécurité du contenu stricte&nbsp;: aucun script tiers inconnu, aucune incrustation dans un autre site, aucun traceur publicitaire.</dd></div>
-          <div><dt>Vos droits, en un clic</dt><dd>Exportez toutes vos données au format JSON ou supprimez définitivement votre compte depuis votre espace, conformément à la loi organique n°&nbsp;2004-63.</dd></div>
-        </dl>
+    <section class="appel" aria-labelledby="titre-appel">
+      <div class="conteneur appel__boite cosmos">
+        <h2 id="titre-appel">Mettez votre salaire en orbite.</h2>
+        <p>Gratuit, sans publicité, en français.</p>
+        <a class="bouton bouton--plein bouton--grand" href="/connexion.html?mode=inscription" data-si-deconnecte>Créer mon orbite<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
+        <a class="bouton bouton--plein bouton--grand" href="/espace/" data-si-connecte hidden>Ouvrir mon orbite<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
       </div>
     </section>
   </main>
 
-  <footer class="pied bande-sombre">
-    <div class="conteneur pied__grille">
-      <p class="pied__avertissement">Estimations indicatives fondées sur les textes en vigueur (LF 2026). Elles ne remplacent ni un bulletin de paie, ni une offre bancaire, ni un conseil fiscal personnalisé.</p>
-      <p class="pied__signature">Conçu par <a href="https://www.linkedin.com/in/mohamed-aziz-jaouadi-%D9%85%D8%AD%D9%85%D8%AF-%D8%B9%D8%B2%D9%8A%D8%B2-%D8%A7%D9%84%D8%AC%D9%88%D8%A7%D8%AF%D9%8A-%C2%AEpsm-i-%C2%AEpspo-l-%C2%AEistqb-851009115/" rel="noopener" target="_blank"><strong>Mohamed Aziz Jaouadi</strong><span class="visuellement-cache"> (profil LinkedIn, nouvel onglet)</span></a> · <a href="/confidentialite.html">Confidentialité</a></p>
+  <footer class="pied">
+    <div class="conteneur pied__ligne">
+      <p>Estimations indicatives fondées sur les textes en vigueur (barèmes <span data-annee>2026</span>). Elles ne remplacent ni votre bulletin de paie ni l'offre de votre banque.</p>
+      <nav aria-label="Liens"><a href="/confidentialite.html">Confidentialité</a></nav>
     </div>
   </footer>
 
-  <script src="/outils/salaire/config/parametres.js"></script>
-  <script src="/outils/salaire/js/calcul.js"></script>
-  <script src="/commun/config.js"></script>
-  <script src="/commun/modele.js"></script>
+  <script src="/moteurs/salaire/parametres.js"></script>
+  <script src="/moteurs/salaire/calcul.js"></script>
+  <script src="/moteurs/salaire/etat.js"></script>
+  <script src="/moteurs/vie/baremes.js"></script>
+  <script src="/moteurs/vie/moteur-fiscal.js"></script>
+  <script src="/moteurs/vie/projection.js"></script>
+  <script src="/moteurs/vie/scenario.js"></script>
+  <script src="/espace/js/orbite-calcul.js"></script>
   <script src="/commun/accueil.js"></script>
 </body>
 </html>

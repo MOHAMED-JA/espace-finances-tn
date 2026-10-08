@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>.t{fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}</style>
+  </defs>
+  <symbol id="orbite" viewBox="0 0 24 24"><g class="t"><circle cx="12" cy="12" r="2.6"/><ellipse cx="12" cy="12" rx="9.5" ry="4" transform="rotate(-30 12 12)"/><circle cx="20" cy="6.6" r="1.1" fill="currentColor"/></g></symbol>
+  <symbol id="profil" viewBox="0 0 24 24"><g class="t"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20c.9-3.7 3.7-5.6 7.2-5.6s6.3 1.9 7.2 5.6"/></g></symbol>
+  <symbol id="salaire" viewBox="0 0 24 24"><g class="t"><rect x="3" y="6" width="18" height="12" rx="3"/><circle cx="12" cy="12" r="2.6"/><path d="M6.5 9.5v5M17.5 9.5v5"/></g></symbol>
+  <symbol id="epargne" viewBox="0 0 24 24"><g class="t"><path d="M12 20V11"/><path d="M12 13c-4 0-6.5-2.5-7-6.5 4 0 6.5 2.5 7 6.5Z"/><path d="M12 11c0-4 2.5-6.5 7-7-.3 4.5-2.8 7-7 7Z"/></g></symbol>
+  <symbol id="credit" viewBox="0 0 24 24"><g class="t"><path d="M3 10 12 4l9 6"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/><path d="M3 20h18"/></g></symbol>
+  <symbol id="liste" viewBox="0 0 24 24"><g class="t"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r=".9" fill="currentColor"/><circle cx="4.5" cy="12" r=".9" fill="currentColor"/><circle cx="4.5" cy="18" r=".9" fill="currentColor"/></g></symbol>
+  <symbol id="compte" viewBox="0 0 24 24"><g class="t"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></g></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path class="t" d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="moins" viewBox="0 0 24 24"><path class="t" d="M5 12h14"/></symbol>
+  <symbol id="fermer" viewBox="0 0 24 24"><path class="t" d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="chevron" viewBox="0 0 24 24"><path class="t" d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="fleche" viewBox="0 0 24 24"><path class="t" d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="retour" viewBox="0 0 24 24"><path class="t" d="M19 12H5M11 18l-6-6 6-6"/></symbol>
+  <symbol id="soleil" viewBox="0 0 24 24"><g class="t"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></symbol>
+  <symbol id="lune" viewBox="0 0 24 24"><path class="t" d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"/></symbol>
+  <symbol id="sortie" viewBox="0 0 24 24"><g class="t"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></g></symbol>
+  <symbol id="enregistrer" viewBox="0 0 24 24"><g class="t"><path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2Z"/><path d="M8 3v5h7V3M8 21v-6h8v6"/></g></symbol>
+  <symbol id="etoile" viewBox="0 0 24 24"><path class="t" d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9Z"/></symbol>
+  <symbol id="points" viewBox="0 0 24 24"><g fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></g></symbol>
+  <symbol id="info" viewBox="0 0 24 24"><g class="t"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></g></symbol>
+  <symbol id="alerte" viewBox="0 0 24 24"><g class="t"><path d="M10.3 4.2 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></g></symbol>
+  <symbol id="valide" viewBox="0 0 24 24"><g class="t"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></g></symbol>
+  <symbol id="cible" viewBox="0 0 24 24"><g class="t"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></g></symbol>
+  <symbol id="hausse" viewBox="0 0 24 24"><g class="t"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></g></symbol>
+  <symbol id="partager" viewBox="0 0 24 24"><g class="t"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></g></symbol>
+  <symbol id="imprimer" viewBox="0 0 24 24"><g class="t"><path d="M7 8V3h10v5"/><rect x="3" y="8" width="18" height="9" rx="2"/><path d="M7 14h10v7H7Z"/></g></symbol>
+  <symbol id="telecharger" viewBox="0 0 24 24"><g class="t"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></g></symbol>
+  <symbol id="comparer" viewBox="0 0 24 24"><g class="t"><path d="M7 4v16M7 20l-3-3M7 4l3 3M17 20V4M17 4l3 3M17 20l-3-3"/></g></symbol>
+  <symbol id="outils" viewBox="0 0 24 24"><g class="t"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4Z"/></g></symbol>
+  <symbol id="maison" viewBox="0 0 24 24"><g class="t"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></g></symbol>
+  <symbol id="voiture" viewBox="0 0 24 24"><g class="t"><path d="M5 16V11l2-5h10l2 5v5"/><path d="M3 16h18v3H3Z"/><circle cx="7.5" cy="13" r=".8" fill="currentColor"/><circle cx="16.5" cy="13" r=".8" fill="currentColor"/></g></symbol>
+  <symbol id="poubelle" viewBox="0 0 24 24"><g class="t"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></g></symbol>
+  <symbol id="crayon" viewBox="0 0 24 24"><g class="t"><path d="M4 20h4L19 9l-4-4L4 16Z"/><path d="m14 6 4 4"/></g></symbol>
+  <symbol id="copier" viewBox="0 0 24 24"><g class="t"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></g></symbol>
+  <symbol id="recherche" viewBox="0 0 24 24"><g class="t"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></g></symbol>
+  <symbol id="horloge" viewBox="0 0 24 24"><g class="t"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></g></symbol>
+  <symbol id="bouclier" viewBox="0 0 24 24"><g class="t"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6Z"/><path d="m9 12 2 2 4-4"/></g></symbol>
+</svg>

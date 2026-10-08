@@ -67,3 +67,25 @@
 
 .panneau-auth.bascule > * { animation: bascule 200ms var(--ease-out); }
 @keyframes bascule { from { opacity: .4; transform: translateY(calc(var(--motion-distance) / 2)); } }
+
+/* Orbite */
+.marque--orbite { display: inline-flex; align-items: center; gap: 10px; font-family: "Bricolage Grotesque", var(--font); font-weight: 760; font-size: 21px; letter-spacing: -.03em; color: var(--ink); text-decoration: none; }
+.marque--orbite img { width: 34px; height: 34px; }
+.pastille[data-outil="salaire"] { background: #4ADE80; }
+.pastille[data-outil="credit"] { background: #7EA2FF; }
+.pastille[data-outil="assurance_vie"] { background: #A78BFA; }
+.mini-orbite { position: relative; width: 180px; height: 180px; margin-bottom: 36px; }
+.mini-orbite__noyau { position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px; border-radius: 50%; background: #fff; box-shadow: 0 0 40px rgba(255, 255, 255, .35); }
+.mini-orbite__anneau { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .14); }
+.mini-orbite__anneau--a { inset: 22px; }
+.mini-orbite__anneau--b { inset: 4px; transform: rotate(60deg) scaleY(.55); }
+.mini-orbite__anneau--c { inset: 40px; }
+.mini-orbite__anneau b { position: absolute; top: -5px; left: 50%; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; }
+.mini-orbite__anneau--a b { background: #4ADE80; }
+.mini-orbite__anneau--b b { background: #7EA2FF; }
+.mini-orbite__anneau--c b { background: #A78BFA; }
+@media (prefers-reduced-motion: no-preference) {
+  .mini-orbite__anneau--a { animation: mo-tour 22s linear infinite; }
+  .mini-orbite__anneau--c { animation: mo-tour 14s linear infinite reverse; }
+}
+@keyframes mo-tour { to { transform: rotate(360deg); } }

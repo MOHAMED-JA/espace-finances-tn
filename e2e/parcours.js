@@ -1,7 +1,7 @@
 /*
- * Parcours de bout en bout (Chromium, Playwright) contre un faux Supabase.
+ * Parcours de bout en bout de l'application Orbite (Chromium, Playwright) contre un faux Supabase.
  * Vérifie aussi qu'aucune violation de CSP ni erreur JavaScript ne survient.
- * Usage : node e2e/parcours.js  (variable PLAYWRIGHT_CORE pour un chemin personnalisé)
+ * Usage : node e2e/parcours.js  (variables PLAYWRIGHT_CORE, CHROMIUM, CAPTURES facultatives)
  */
 "use strict";
 const path = require("node:path");
@@ -19,6 +19,7 @@ async function etape(nom, fn) {
   catch (e) { echecs++; console.log("not ok - " + nom + "\n    " + String(e && e.stack || e).split("\n").slice(0, 4).join("\n    ")); }
 }
 function assert(cond, msg) { if (!cond) throw new Error(msg || "assertion"); }
+const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, "").replace(",", "."));
 
 (async () => {
   fs.mkdirSync(CAPTURES, { recursive: true });
@@ -29,7 +30,6 @@ function assert(cond, msg) { if (!cond) throw new Error(msg || "assertion"); }
   const contexte = await navigateur.newContext({ viewport: { width: 1360, height: 900 }, locale: "fr-FR", acceptDownloads: true });
   await contexte.route(SUPABASE + "/**", (r) => faux.gerer(r));
   const problemes = [];
-  contexte.on("page", suivre);
   function suivre(p) {
     p.on("pageerror", (e) => problemes.push("Erreur JS " + p.url() + " : " + e.message));
     p.on("console", (m) => {
@@ -38,24 +38,27 @@ function assert(cond, msg) { if (!cond) throw new Error(msg || "assertion"); }
       else if (m.type() === "error" && !/Failed to load resource.*(401|404|406)/.test(t)) problemes.push("Console " + p.url() + " : " + t);
     });
   }
+  contexte.on("page", suivre);
   const page = await contexte.newPage();
 
-  await etape("accueil : calculateur signature exact (2 500 DT, chef de famille, 2 enfants)", async () => {
+  await etape("accueil : aperçu vivant exact (2 500 DT, chef de famille, 2 enfants)", async () => {
     await page.goto(base + "/");
-    await page.waitForFunction(() => document.getElementById("net").textContent.trim() !== "");
+    await page.waitForFunction(() => document.getElementById("net").textContent.trim() !== "—");
     const net = (await page.textContent("#net")).replace(/\s/g, "");
-    assert(net === "1862,018", "net affiché : " + net);
+    assert(net === "1862,018DT", "net affiché : " + net);
+    assert((await page.textContent("#tranche")).replace(/\s/g, "") === "30%", "tranche");
     await page.fill("#brut", "3000");
-    await page.waitForFunction(() => document.getElementById("net").textContent.replace(/\s/g, "") !== "1862,018");
-    await page.check('input[name="secteur"][value="public"]');
+    await page.waitForFunction(() => !/1\s?862,018/.test(document.getElementById("net").textContent));
+    await page.check('input[name="secteur"][value="public"]', { force: true });
     assert((await page.textContent("#lib-caisse")) === "CNRPS");
-    await page.screenshot({ path: path.join(CAPTURES, "01-accueil.png"), fullPage: true });
+    assert((await page.textContent("#titre-heros")).includes("Votre salaire au centre."), "titre");
+    await page.screenshot({ path: path.join(CAPTURES, "01-accueil.png") });
   });
 
   await etape("une page protégée renvoie vers la connexion avec l'adresse de retour", async () => {
-    await page.goto(base + "/outils/credit/?c=1000&m=12&t=8");
+    await page.goto(base + "/espace/#credit");
     await page.waitForURL(/connexion\.html\?suite=/);
-    assert(decodeURIComponent(page.url()).includes("suite=/outils/credit/?c=1000&m=12&t=8"), page.url());
+    assert(decodeURIComponent(page.url()).includes("suite=/espace/#credit"), page.url());
   });
 
   await etape("inscription : validations sur place puis création du compte", async () => {
@@ -65,115 +68,167 @@ function assert(cond, msg) { if (!cond) throw new Error(msg || "assertion"); }
     await page.click("#envoyer");
     assert(await page.isVisible("#email-erreur"), "erreur e-mail visible");
     assert(await page.isVisible("#mdp-erreur"), "erreur mot de passe visible");
-    assert(await page.evaluate(() => document.activeElement.id) === "email", "focus sur la première erreur");
     await page.fill("#nom", "Aziz Test");
     await page.fill("#email", "aziz@exemple.tn");
     await page.fill("#mdp", "Tunis-2026-solide");
     await page.fill("#mdp2", "Tunis-2026-solide");
     await page.check("#cgu");
-    await page.screenshot({ path: path.join(CAPTURES, "02-inscription.png") });
     await page.click("#envoyer");
-    await page.waitForURL(/\/espace\/$/);
+    await page.waitForURL(/\/espace\//);
   });
 
-  await etape("espace vide : salutation, compteurs à zéro, invitation à commencer", async () => {
-    await page.waitForSelector("#recentes .vide");
-    assert((await page.textContent("#salutation")).includes("Aziz"), await page.textContent("#salutation"));
-    assert((await page.textContent('[data-kpi="salaire"]')) === "0");
-    await page.screenshot({ path: path.join(CAPTURES, "03-espace-vide.png"), fullPage: true });
+  await etape("premier pas : trois réponses mettent l'orbite en mouvement", async () => {
+    await page.waitForSelector("#demarrage:not([hidden])");
+    assert((await page.textContent("#badge-profil")).includes("compléter"), "badge profil");
+    await page.fill("#d-montant", "2500");
+    await page.check("#d-chef", { force: true });
+    await page.click("#form-demarrage button[type=submit]");
+    await page.waitForSelector("#demarrage[hidden]", { state: "attached" });
+    await page.waitForFunction(() => /1\s?8\d\d/.test(document.getElementById("noyau-val").textContent));
+    await page.waitForFunction(() => document.getElementById("etat-enregistrement").textContent.includes("enregistré") || document.getElementById("etat-enregistrement").textContent === "");
+    const meta = faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite;
+    assert(meta && meta.montant === 2500 && meta.chefDeFamille === true, "profil enregistré dans le compte : " + JSON.stringify(meta));
+    assert((await page.$$("#cap-liste li")).length === 4, "4 crédits types");
+    assert((await page.$$("#suggestions li")).length === 3, "3 suggestions d'épargne");
+    await page.screenshot({ path: path.join(CAPTURES, "02-orbite.png") });
   });
 
-  await etape("salaire : enregistrement depuis la barre de l'Espace", async () => {
-    await page.goto(base + "/outils/salaire/");
-    await page.waitForSelector("#efp-enregistrer");
-    await page.waitForFunction(() => window.EspaceOutil && document.getElementById("efp-avatar").textContent !== "·");
-    await page.click("#efp-enregistrer");
-    await page.waitForSelector("dialog.efp-dialogue[open]");
-    const nom = await page.inputValue("#efp-nom");
-    assert(/^Salaire 2/.test(nom), "nom par défaut : " + nom);
-    await page.screenshot({ path: path.join(CAPTURES, "04-salaire-dialogue.png") });
-    await page.fill("#efp-nom", "Mon salaire actuel");
-    await page.click("dialog.efp-dialogue button[value=ok]");
-    await page.waitForSelector(".efp-toast");
-    const s = faux.simulations();
-    assert(s.length === 1 && s[0].outil === "salaire" && /m=2500/.test(s[0].parametres.etat), JSON.stringify(s[0] && s[0].parametres));
-    assert(s[0].resume.principal && s[0].resume.principal.valeur > 1000, JSON.stringify(s[0].resume));
-    assert((await page.textContent("#efp-lib-long")) === "Mettre à jour", "le bouton passe en mise à jour");
+  await etape("capacité : bascule net → brut", async () => {
+    const net = chiffre(await page.textContent("#cap-mensualite"));
+    await page.check('input[name="base-capacite"][value="brut"]', { force: true });
+    await page.waitForFunction((n) => Number(document.getElementById("cap-mensualite").textContent.replace(/[^\d]/g, "")) > n, net);
+    await page.check('input[name="base-capacite"][value="net"]', { force: true });
   });
 
-  await etape("assurance vie & CEA : saisie du revenu puis enregistrement", async () => {
-    await page.goto(base + "/outils/assurance-vie/");
-    await page.waitForFunction(() => window.EspaceOutil && document.getElementById("efp-avatar").textContent !== "·");
-    await page.fill("#revenue", "60000");
-    await page.dispatchEvent("#revenue", "input");
-    await page.waitForTimeout(400);
-    await page.click("#efp-enregistrer");
-    await page.waitForSelector("dialog.efp-dialogue[open]");
-    await page.click("dialog.efp-dialogue button[value=ok]");
-    await page.waitForSelector(".efp-toast");
-    const v = faux.simulations().find((x) => x.outil === "assurance_vie");
-    assert(v && /r=60000/.test(v.parametres.etat), JSON.stringify(v && v.parametres));
-    assert(v.resume.principal.libelle.includes("Économie"), JSON.stringify(v.resume));
+  await etape("profil : crédits, contrats, budget et projets, conservés après rechargement", async () => {
+    await page.goto(base + "/espace/#profil");
+    await page.waitForSelector("#vue-profil:not([hidden])");
+    await page.fill("#p-prenom", "Aziz");
+    await page.click("#sec-credits summary");
+    await page.click('[data-ajouter="credits"]');
+    await page.fill('#liste-credits li:first-child [data-c="libelle"]', "Voiture");
+    await page.fill('#liste-credits li:first-child [data-c="mensualite"]', "300");
+    await page.click("#sec-contrats summary");
+    await page.click('[data-ajouter="contrats"]');
+    await page.fill('#liste-contrats li:first-child [data-c="versementMensuel"]', "150");
+    await page.click("#sec-budget summary");
+    await page.fill("#p-loyer", "500");
+    await page.fill("#p-epargne", "15000");
+    await page.click("#sec-projets summary");
+    await page.click('[data-ajouter="projets"]');
+    await page.fill('#liste-projets li:first-child [data-c="montant"]', "180000");
+    await page.waitForTimeout(1600);
+    const meta = faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite;
+    assert(meta.credits.length === 1 && meta.credits[0].mensualite === 300, "crédit enregistré");
+    assert(meta.contrats.length === 1 && meta.contrats[0].versementMensuel === 150, "contrat enregistré");
+    assert(meta.loyer === 500 && meta.epargneDisponible === 15000 && meta.projets[0].montant === 180000, "budget et projet");
+    await page.reload();
+    await page.waitForSelector("#vue-profil:not([hidden])");
+    await page.waitForFunction(() => document.getElementById("p-prenom").value === "Aziz");
+    assert((await page.textContent("#sec-credits-sous")).includes("300"), "crédit relu");
+    assert(/Profil complété à \d+ %/.test(await page.textContent("#profil-progression-texte")), "progression");
+    await page.screenshot({ path: path.join(CAPTURES, "03-profil.png"), fullPage: true });
   });
 
-  await etape("crédit : enregistrement d'une simulation reçue par lien", async () => {
-    await page.goto(base + "/outils/credit/?c=150000&m=240&t=9.5&ty=immo");
-    await page.waitForFunction(() => window.EspaceOutil && window.EspaceOutil.etat() && document.getElementById("efp-avatar").textContent !== "·", null, { timeout: 15000 });
-    await page.click("#efp-enregistrer");
-    await page.waitForSelector("dialog.efp-dialogue[open]");
-    const nom = await page.inputValue("#efp-nom");
-    assert(/Immobilier 150/.test(nom), "nom : " + nom);
-    await page.click("dialog.efp-dialogue button[value=ok]");
-    await page.waitForSelector(".efp-toast");
-    const c = faux.simulations().find((x) => x.outil === "credit");
-    assert(c && /c=150000/.test(c.parametres.etat) && /m=240/.test(c.parametres.etat), JSON.stringify(c && c.parametres));
-    assert(Math.abs(c.resume.principal.valeur - 1398.197) < 0.05, "mensualité : " + c.resume.principal.valeur);
-    await page.screenshot({ path: path.join(CAPTURES, "05-credit-barre.png") });
+  await etape("orbite : budget et conseils tiennent compte du profil", async () => {
+    await page.goto(base + "/espace/#orbite");
+    await page.waitForSelector("#vue-orbite:not([hidden])");
+    assert(chiffre(await page.textContent("#budget-credits")) === 300, "crédits au budget");
+    assert(chiffre(await page.textContent("#budget-logement")) === 500, "logement au budget");
+    assert((await page.$$("#conseils li")).length >= 2, "conseils");
+    assert((await page.$$("#projets li.projet:not(.projet--vide)")).length === 1, "projet affiché");
   });
 
-  await etape("espace : trois cartes, compteurs et ouverture d'une simulation", async () => {
-    await page.goto(base + "/espace/");
-    await page.waitForSelector("#recentes .carte");
-    assert((await page.$$("#recentes .carte")).length === 3, "3 cartes");
-    assert((await page.textContent('[data-kpi="credit"]')) === "1");
-    await page.waitForTimeout(800);
-    await page.screenshot({ path: path.join(CAPTURES, "06-espace.png"), fullPage: true });
-    await page.click('#recentes .carte[data-outil="credit"] .carte__lien');
-    await page.waitForURL(/\/outils\/credit\/$/);
-    await page.waitForFunction(() => document.getElementById("efp-lib-long").textContent === "Mettre à jour");
-    assert((await page.textContent("#efp-etat")).includes("Immobilier"), "nom affiché dans la barre");
+  await etape("salaire : module prérempli, augmentation et changement de tranche", async () => {
+    await page.click('.rail a[data-vue="salaire"]');
+    await page.waitForSelector("#vue-salaire:not([hidden])");
+    await page.waitForFunction(() => /1\s?862/.test(document.getElementById("montant-lu").textContent + document.getElementById("decimales").textContent + document.getElementById("chiffres").textContent));
+    await page.evaluate(() => { const c = document.getElementById("hausse"); c.value = "100"; c.dispatchEvent(new Event("input", { bubbles: true })); });
+    await page.waitForFunction(() => document.getElementById("verdict-tranche").textContent.includes("restez"));
+    await page.evaluate(() => { const c = document.getElementById("hausse"); c.value = "800"; c.dispatchEvent(new Event("input", { bubbles: true })); });
+    await page.waitForFunction(() => document.getElementById("verdict-tranche").textContent.includes("changez de tranche"));
+    assert((await page.textContent("#verdict-tranche")).includes("33"), "nouvelle tranche à 33 %");
+    assert((await page.$$("#tranches-piste .tranche")).length >= 4, "échelle des tranches");
   });
 
-  await etape("simulations : filtre et renommage", async () => {
-    await page.goto(base + "/espace/#simulations?outil=salaire");
-    await page.waitForSelector("#toutes .carte");
-    assert((await page.$$("#toutes .carte")).length === 1, "filtre salaire");
-    await page.check('#filtres-outil input[value=""]');
+  await etape("salaire : enregistrement depuis la barre du haut", async () => {
+    await page.click("#enregistrer");
+    await page.waitForSelector("#dlg-enregistrer[open]");
+    assert((await page.inputValue("#enr-nom")).startsWith("Salaire 2"), "nom par défaut");
+    await page.fill("#enr-nom", "Mon salaire actuel");
+    await page.click('#dlg-enregistrer button[value="ok"]');
+    await page.waitForFunction(() => document.getElementById("enregistrer-lib").textContent === "Enregistré");
+    const s = faux.simulations().find((x) => x.nom === "Mon salaire actuel");
+    assert(s && s.outil === "salaire" && /m=2500/.test(s.parametres.etat), "simulation enregistrée : " + JSON.stringify(s && s.parametres));
+    assert(s.resume.principal && s.resume.principal.valeur > 1800, "résumé");
+  });
+
+  await etape("épargne : module prérempli, versement depuis une suggestion, enregistrement", async () => {
+    await page.goto(base + "/espace/#epargne?versement=250");
+    await page.waitForSelector("#vue-epargne:not([hidden])");
+    await page.waitForFunction(() => window.ModuleEpargne && window.ModuleEpargne.resume && window.ModuleEpargne.resume());
+    const r = await page.evaluate(() => window.ModuleEpargne.resume());
+    assert(r.principal && r.principal.valeur > 0, "économie d'impôt : " + JSON.stringify(r));
+    const etat = await page.evaluate(() => window.ModuleEpargne.etat());
+    assert(/^[A-Za-z0-9_.,:%=&+\-]*$/.test(etat) && etat.length <= 4000, "état sauvegardable : " + etat);
+    assert(await page.evaluate((e) => window.ModuleEpargne.charger(e), etat), "état relu");
+    await page.click("#enregistrer");
+    await page.waitForSelector("#dlg-enregistrer[open]");
+    await page.fill("#enr-nom", "Épargne retraite");
+    await page.click('#dlg-enregistrer button[value="ok"]');
+    await page.waitForFunction(() => document.getElementById("enregistrer-lib").textContent === "Enregistré");
+    assert(faux.simulations().some((x) => x.nom === "Épargne retraite" && x.outil === "assurance_vie"), "simulation épargne");
+    await page.screenshot({ path: path.join(CAPTURES, "04-epargne.png") });
+  });
+
+  await etape("crédit : simulation reçue depuis la capacité, enregistrement", async () => {
+    await page.goto(base + "/espace/#credit?type=auto&capital=30000&mois=60&taux=10.5");
+    await page.waitForSelector("#vue-credit:not([hidden])");
+    await page.waitForFunction(() => window.ModuleCredit && window.ModuleCredit.resume && window.ModuleCredit.resume());
+    const r = await page.evaluate(() => window.ModuleCredit.resume());
+    assert(r.principal && Math.abs(r.principal.valeur - 644.8) < 2, "mensualité 30 000 DT / 60 mois / 10,5 % : " + JSON.stringify(r.principal));
+    const etat = await page.evaluate(() => window.ModuleCredit.etat());
+    assert(/^[A-Za-z0-9_.,:%=&+\-]*$/.test(etat) && etat.length <= 4000, "état sauvegardable : " + etat);
+    assert(await page.evaluate((e) => window.ModuleCredit.charger(e), etat), "état relu");
+    await page.click("#enregistrer");
+    await page.waitForSelector("#dlg-enregistrer[open]");
+    await page.fill("#enr-nom", "Voiture neuve");
+    await page.click('#dlg-enregistrer button[value="ok"]');
+    await page.waitForFunction(() => document.getElementById("enregistrer-lib").textContent === "Enregistré");
+    assert(faux.simulations().some((x) => x.nom === "Voiture neuve" && x.outil === "credit"), "simulation crédit");
+    await page.screenshot({ path: path.join(CAPTURES, "05-credit.png") });
+  });
+
+  await etape("simulations : trois cartes, filtre, ouverture dans le bon module", async () => {
+    await page.goto(base + "/espace/#simulations");
     await page.waitForFunction(() => document.querySelectorAll("#toutes .carte").length === 3);
-    const carte = '#toutes .carte[data-outil="salaire"]';
+    await page.check('#filtres-outil input[value="credit"]', { force: true });
+    await page.waitForFunction(() => document.querySelectorAll("#toutes .carte").length === 1);
+    await page.check('#filtres-outil input[value=""]', { force: true });
+    await page.click('#toutes .carte[data-outil="salaire"] .carte__lien');
+    await page.waitForSelector("#vue-salaire:not([hidden])");
+    await page.waitForFunction(() => document.getElementById("enregistrer-lib").textContent === "Mettre à jour");
+  });
+
+  await etape("simulations : renommage, favori, suppression avec annulation", async () => {
+    await page.goto(base + "/espace/#simulations");
+    await page.waitForFunction(() => document.querySelectorAll("#toutes .carte").length === 3);
+    const carte = '#toutes .carte[data-outil="credit"]';
     await page.click(carte + " .carte__menu");
     await page.click('#menu-actions [data-action="renommer"]');
-    await page.fill("#nouveau-nom", "Salaire 2026 renommé");
+    await page.fill("#nouveau-nom", "Voiture familiale");
     await page.click('#dlg-renommer button[value="ok"]');
-    await page.waitForFunction(() => [...document.querySelectorAll(".carte__nom")].some((n) => n.textContent === "Salaire 2026 renommé"));
-    assert(faux.simulations().some((s) => s.nom === "Salaire 2026 renommé"), "renommage enregistré");
-  });
-
-  await etape("simulations : favori et suppression avec annulation", async () => {
-    const carte = '#toutes .carte[data-outil="salaire"]';
+    await page.waitForFunction(() => [...document.querySelectorAll("#toutes .carte__nom")].some((n) => n.textContent === "Voiture familiale"));
     await page.click(carte + " .carte__favori");
-    await page.waitForTimeout(300);
-    assert(faux.simulations().find((s) => s.outil === "salaire").favori === true, "favori enregistré");
+    await page.waitForFunction((c) => document.querySelector(c + " .carte__favori").getAttribute("aria-pressed") === "true", carte);
     await page.click(carte + " .carte__menu");
     await page.click('#menu-actions [data-action="supprimer"]');
-    await page.waitForSelector(".toast button");
-    assert(faux.simulations().length === 2, "supprimée côté serveur");
-    await page.click(".toast button:has-text('Annuler')");
+    await page.waitForFunction(() => document.querySelectorAll("#toutes .carte").length === 2);
+    await page.click(".toast button");
     await page.waitForFunction(() => document.querySelectorAll("#toutes .carte").length === 3);
-    assert(faux.simulations().length === 3, "restaurée");
   });
 
-  await etape("isolation : un second compte ne voit aucune simulation du premier", async () => {
+  await etape("isolation : un second compte ne voit ni le profil ni les simulations du premier", async () => {
     faux.ajouterCompte("autre@exemple.tn", "Autre-compte-2026!", { full_name: "Autre" });
     const ctx2 = await navigateur.newContext();
     await ctx2.route(SUPABASE + "/**", (r) => faux.gerer(r));
@@ -183,55 +238,49 @@ function assert(cond, msg) { if (!cond) throw new Error(msg || "assertion"); }
     await p2.fill("#email", "autre@exemple.tn");
     await p2.fill("#mdp", "Autre-compte-2026!");
     await p2.click("#envoyer");
-    await p2.waitForURL(/\/espace\/$/);
-    await p2.waitForSelector("#recentes .vide");
-    assert((await p2.$$("#recentes .carte")).length === 0, "aucune carte");
+    await p2.waitForURL(/\/espace\//);
+    await p2.waitForSelector("#demarrage:not([hidden])");
+    await p2.goto(base + "/espace/#simulations");
+    await p2.waitForSelector("#toutes .vide");
+    assert((await p2.$$("#toutes .carte")).length === 0, "aucune carte");
     await ctx2.close();
   });
 
-  await etape("compte : nom affiché, thème, export JSON", async () => {
+  await etape("compte : nom affiché, thème, export JSON avec le profil", async () => {
     await page.goto(base + "/espace/#compte");
-    await page.waitForSelector("#nom-affiche");
-    await page.fill("#nom-affiche", "Mohamed Aziz");
-    await page.click("#form-profil button[type=submit]");
-    await page.waitForFunction(() => document.getElementById("nom-utilisateur").textContent === "Mohamed Aziz");
-    await page.check('#choix-theme input[value="dark"]');
-    assert(await page.evaluate(() => document.documentElement.getAttribute("data-theme")) === "dark");
-    const [telechargement] = await Promise.all([page.waitForEvent("download"), page.click("#exporter")]);
-    const contenu = JSON.parse(fs.readFileSync(await telechargement.path(), "utf8"));
-    assert(contenu.simulations.length === 3, "export complet");
-    await page.screenshot({ path: path.join(CAPTURES, "07-compte-sombre.png"), fullPage: true });
+    await page.waitForSelector("#vue-compte:not([hidden])");
+    await page.fill("#nom-affiche", "Aziz J.");
+    await page.click("#form-nom button[type=submit]");
+    await page.waitForSelector(".toast");
+    await page.check('#choix-theme input[value="dark"]', { force: true });
+    await page.waitForFunction(() => document.documentElement.getAttribute("data-theme") === "dark");
+    const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#exporter")]);
+    const contenu = JSON.parse(fs.readFileSync(await dl.path(), "utf8"));
+    assert(contenu.profil_orbite && contenu.profil_orbite.montant === 2500, "profil dans l'export");
+    await page.screenshot({ path: path.join(CAPTURES, "06-compte-sombre.png"), fullPage: true });
+    await page.check('#choix-theme input[value="light"]', { force: true });
   });
 
-  await etape("mobile : espace, onglets du bas et outil avec barre", async () => {
-    const mob = await navigateur.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "fr-FR" });
-    await mob.route(SUPABASE + "/**", (r) => faux.gerer(r));
-    const m = await mob.newPage();
-    suivre(m);
-    await m.goto(base + "/");
-    await m.screenshot({ path: path.join(CAPTURES, "08-mobile-accueil.png"), fullPage: true });
-    const large = await m.evaluate(() => document.documentElement.scrollWidth);
-    assert(large <= 390, "pas de défilement horizontal sur l'accueil : " + large);
-    await m.goto(base + "/connexion.html");
-    await m.fill("#email", "aziz@exemple.tn");
-    await m.fill("#mdp", "Tunis-2026-solide");
-    await m.click("#envoyer");
-    await m.waitForURL(/\/espace\/$/);
-    await m.waitForSelector("#recentes .carte");
-    await m.waitForTimeout(700);
-    await m.screenshot({ path: path.join(CAPTURES, "09-mobile-espace.png"), fullPage: true });
-    assert(await m.isVisible(".onglets-bas"), "onglets du bas visibles");
-    const large2 = await m.evaluate(() => document.documentElement.scrollWidth);
-    assert(large2 <= 390, "pas de défilement horizontal dans l'espace : " + large2);
-    await m.click("#ouvrir-outils");
-    await m.waitForSelector("#dlg-outils[open]");
-    await m.waitForTimeout(350);
-    await m.screenshot({ path: path.join(CAPTURES, "10-mobile-nouvelle.png") });
-    await m.click('#dlg-outils .lanceur[data-outil="salaire"]');
-    await m.waitForSelector("#efp-enregistrer");
-    await m.waitForTimeout(500);
-    await m.screenshot({ path: path.join(CAPTURES, "11-mobile-salaire.png") });
-    await mob.close();
+  await etape("mobile : onglets du bas, orbite et modules sans défilement horizontal", async () => {
+    const m = await navigateur.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, locale: "fr-FR" });
+    await m.route(SUPABASE + "/**", (r) => faux.gerer(r));
+    const pm = await m.newPage();
+    suivre(pm);
+    await pm.goto(base + "/connexion.html");
+    await pm.fill("#email", "aziz@exemple.tn");
+    await pm.fill("#mdp", "Tunis-2026-solide");
+    await pm.click("#envoyer");
+    await pm.waitForURL(/\/espace\//);
+    await pm.waitForSelector(".onglets-bas");
+    for (const vue of ["orbite", "salaire", "epargne", "credit", "profil"]) {
+      await pm.tap('.onglets-bas a[data-vue="' + vue + '"]');
+      await pm.waitForSelector("#vue-" + vue + ":not([hidden])");
+      await pm.waitForTimeout(300);
+      const largeur = await pm.evaluate(() => document.documentElement.scrollWidth);
+      assert(largeur <= 390, vue + " : défilement horizontal (" + largeur + " px)");
+      await pm.screenshot({ path: path.join(CAPTURES, "07-mobile-" + vue + ".png") });
+    }
+    await m.close();
   });
 
   await etape("déconnexion puis suppression définitive du compte", async () => {

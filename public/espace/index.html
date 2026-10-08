@@ -3,51 +3,53 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-  <title>Mon espace — Espace Finances TN</title>
+  <title>Mon orbite — Orbite</title>
   <meta name="robots" content="noindex">
-  <meta name="theme-color" content="#F4F5F2" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0A0C0F" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#F3F4F8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07090F" media="(prefers-color-scheme: dark)">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <link rel="icon" href="/commun/icone.svg" type="image/svg+xml">
+  <link rel="icon" href="/orbite/icone.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/orbite/apple-touch-icon.png">
   <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="preload" href="/commun/polices/mona-sans-latin-standard-normal.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/commun/meridien.css">
-  <link rel="stylesheet" href="/commun/espace.css">
+  <link rel="preload" href="/orbite/polices/mona-sans-latin-standard-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/orbite/polices/bricolage-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/orbite/orbite.css">
+  <link rel="stylesheet" href="/espace/app.css">
+  <link rel="stylesheet" href="/espace/salaire.css">
   <script src="/commun/config.js"></script>
   <script src="/commun/garde.js"></script>
   <script src="/commun/theme-init.js"></script>
 </head>
 <body class="attente">
-  <a class="evitement" href="#principal">Aller au contenu</a>
-  <svg class="visuellement-cache" aria-hidden="true">
-    <symbol id="i-apercu" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></symbol>
-    <symbol id="i-liste" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7 5h10M7 10h10M7 15h10"/><circle cx="3.5" cy="5" r=".9" fill="currentColor"/><circle cx="3.5" cy="10" r=".9" fill="currentColor"/><circle cx="3.5" cy="15" r=".9" fill="currentColor"/></symbol>
-    <symbol id="i-compte" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="7" r="3.2"/><path d="M3.5 17c1.2-3 3.6-4.5 6.5-4.5s5.3 1.5 6.5 4.5"/></symbol>
-    <symbol id="i-plus" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></symbol>
-    <symbol id="i-sortie" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M13 6.5 16.5 10 13 13.5M16 10H8"/></symbol>
-    <symbol id="i-soleil" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="3.2"/><path d="M10 2.5v1.8M10 15.7v1.8M2.5 10h1.8M15.7 10h1.8M4.7 4.7l1.3 1.3M14 14l1.3 1.3M4.7 15.3 6 14M14 6l1.3-1.3"/></symbol>
-    <symbol id="i-lune" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M16 12.5A6.5 6.5 0 0 1 7.5 4a6.5 6.5 0 1 0 8.5 8.5z"/></symbol>
-    <symbol id="i-etoile" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="m10 2.8 2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L2.8 8.1l5-.7z"/></symbol>
-    <symbol id="i-plus-actions" viewBox="0 0 20 20" fill="currentColor"><circle cx="4.5" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="15.5" cy="10" r="1.5"/></symbol>
-    <symbol id="i-fleche" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10h10M11 6l4 4-4 4"/></symbol>
-  </svg>
+  <a class="lien-evitement" href="#principal">Aller au contenu</a>
 
   <div class="app">
+    <!-- ============ Barre latérale ============ -->
     <nav class="rail" aria-label="Navigation principale">
-      <a class="marque rail__marque" href="/" aria-label="Espace Finances TN, accueil public">
-        <span class="marque__signe" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 12.5 6 8l3 3 5-6.5"/><path d="M10.5 4.5H14v3.5"/></svg></span>
-        <span class="rail__nom">Espace Finances <span class="marque__tn">TN</span></span>
+      <a class="logo logo--vivant rail__logo" href="#orbite" aria-label="Orbite, mon orbite">
+        <svg class="logo__signe" viewBox="0 0 64 64" aria-hidden="true">
+          <defs><linearGradient id="lg-rail" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#12B76A"/><stop offset=".55" stop-color="#2F5BEA"/><stop offset="1" stop-color="#7A5AF8"/></linearGradient></defs>
+          <rect width="64" height="64" rx="19" fill="#0A0D16"/>
+          <g class="orb-b"><ellipse cx="32" cy="32" rx="21.5" ry="9" fill="none" stroke="#fff" stroke-opacity=".2" stroke-width="1.6" transform="rotate(34 32 32)"/><circle cx="44.3" cy="45" r="2.9" fill="#2F5BEA"/></g>
+          <g class="orb-a"><ellipse cx="32" cy="32" rx="21.5" ry="9" fill="none" stroke="url(#lg-rail)" stroke-width="2.6" transform="rotate(-30 32 32)"/><circle cx="13.6" cy="42.6" r="3.6" fill="#12B76A"/><circle cx="50.4" cy="21.4" r="3.6" fill="#7A5AF8"/></g>
+          <circle cx="32" cy="32" r="6.6" fill="#fff"/>
+        </svg>
+        <span>Orbite</span>
       </a>
       <ul class="rail__liens" role="list">
-        <li><a href="#apercu" data-vue="apercu"><svg aria-hidden="true"><use href="#i-apercu"/></svg><span>Aperçu</span></a></li>
-        <li><a href="#simulations" data-vue="simulations"><svg aria-hidden="true"><use href="#i-liste"/></svg><span>Simulations</span><span class="rail__compte num" id="compte-total" aria-label="simulations enregistrées"></span></a></li>
-        <li><a href="#compte" data-vue="compte"><svg aria-hidden="true"><use href="#i-compte"/></svg><span>Compte</span></a></li>
+        <li><a href="#orbite" data-vue="orbite"><svg aria-hidden="true"><use href="/orbite/icones.svg#orbite"/></svg><span>Mon orbite</span></a></li>
+        <li><a href="#profil" data-vue="profil"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span>Mon profil</span><span class="rail__badge" id="badge-profil" hidden>À compléter</span></a></li>
       </ul>
-      <p class="rail__titre" id="rail-outils">Outils</p>
-      <ul class="rail__outils" role="list" aria-labelledby="rail-outils">
-        <li><a href="/outils/salaire/" data-outil="salaire"><span class="trait" aria-hidden="true"></span>Salaire brut ⇄ net</a></li>
-        <li><a href="/outils/assurance-vie/" data-outil="assurance_vie"><span class="trait" aria-hidden="true"></span>Assurance vie &amp; CEA</a></li>
-        <li><a href="/outils/credit/" data-outil="credit"><span class="trait" aria-hidden="true"></span>Crédit bancaire</a></li>
+      <p class="rail__titre" id="rail-modules">Modules</p>
+      <ul class="rail__liens" role="list" aria-labelledby="rail-modules">
+        <li><a href="#salaire" data-vue="salaire" data-module="salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#salaire"/></svg><span>Salaire</span></a></li>
+        <li><a href="#epargne" data-vue="epargne" data-module="epargne"><svg aria-hidden="true"><use href="/orbite/icones.svg#epargne"/></svg><span>Épargne vie &amp; CEA</span></a></li>
+        <li><a href="#credit" data-vue="credit" data-module="credit"><svg aria-hidden="true"><use href="/orbite/icones.svg#credit"/></svg><span>Crédit</span></a></li>
+      </ul>
+      <p class="rail__titre" id="rail-perso">Mon espace</p>
+      <ul class="rail__liens" role="list" aria-labelledby="rail-perso">
+        <li><a href="#simulations" data-vue="simulations"><svg aria-hidden="true"><use href="/orbite/icones.svg#liste"/></svg><span>Simulations</span><span class="rail__compte" id="compte-total"></span></a></li>
+        <li><a href="#compte" data-vue="compte"><svg aria-hidden="true"><use href="/orbite/icones.svg#compte"/></svg><span>Compte</span></a></li>
       </ul>
       <div class="rail__pied">
         <div class="utilisateur">
@@ -55,176 +57,564 @@
           <span class="utilisateur__texte"><span class="utilisateur__nom" id="nom-utilisateur"></span><span class="utilisateur__email" id="email-utilisateur"></span></span>
         </div>
         <div class="rail__actions">
-          <button type="button" class="bouton-icone" id="bascule-theme" aria-label="Changer de thème"><svg aria-hidden="true"><use href="#i-lune"/></svg></button>
-          <button type="button" class="bouton-icone" id="deconnexion" aria-label="Se déconnecter"><svg aria-hidden="true"><use href="#i-sortie"/></svg></button>
+          <button type="button" class="bouton bouton--fantome bouton--icone bouton--petit" id="bascule-theme" aria-label="Changer de thème"><svg aria-hidden="true"><use href="/orbite/icones.svg#lune"/></svg></button>
+          <button type="button" class="bouton bouton--fantome bouton--icone bouton--petit" id="deconnexion" aria-label="Se déconnecter"><svg aria-hidden="true"><use href="/orbite/icones.svg#sortie"/></svg></button>
         </div>
       </div>
     </nav>
 
-    <main class="principal" id="principal" tabindex="-1">
-      <!-- Aperçu -->
-      <section class="vue" id="vue-apercu" data-vue="apercu" aria-labelledby="titre-apercu">
-        <header class="vue__entete">
-          <div>
-            <h1 id="titre-apercu"><span id="salutation">Bonjour</span></h1>
-            <p class="vue__sous-titre" id="resume-espace">Chargement de votre espace…</p>
-          </div>
-        </header>
-
-        <div class="kpis" id="kpis" aria-label="Vos simulations par outil">
-          <a class="kpi" href="#simulations?outil=salaire" data-outil="salaire"><span class="kpi__lib"><span class="pastille"></span>Salaire</span><span class="kpi__val num" data-kpi="salaire">–</span></a>
-          <a class="kpi" href="#simulations?outil=assurance_vie" data-outil="assurance_vie"><span class="kpi__lib"><span class="pastille"></span>Assurance vie &amp; CEA</span><span class="kpi__val num" data-kpi="assurance_vie">–</span></a>
-          <a class="kpi" href="#simulations?outil=credit" data-outil="credit"><span class="kpi__lib"><span class="pastille"></span>Crédit</span><span class="kpi__val num" data-kpi="credit">–</span></a>
+    <!-- ============ Contenu ============ -->
+    <div class="colonne">
+      <header class="barre" id="barre">
+        <a class="logo barre__logo" href="#orbite" aria-label="Orbite, mon orbite">
+          <img class="logo__signe" src="/orbite/icone.svg" alt="" width="32" height="32">
+        </a>
+        <p class="barre__titre" id="barre-titre" aria-hidden="true">Mon orbite</p>
+        <span class="barre__etat" id="etat-enregistrement" role="status" aria-live="polite"></span>
+        <div class="barre__actions" id="barre-actions" hidden>
+          <button type="button" class="bouton bouton--petit" id="reprendre-profil"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span class="bouton__lib">Reprendre mon profil</span></button>
+          <button type="button" class="bouton bouton--plein bouton--petit" id="enregistrer"><svg aria-hidden="true"><use href="/orbite/icones.svg#enregistrer"/></svg><span class="bouton__lib" id="enregistrer-lib">Enregistrer</span></button>
         </div>
+      </header>
 
-        <h2 class="titre-bloc">Nouvelle simulation</h2>
-        <ul class="lanceurs" role="list">
-          <li><a class="lanceur" href="/outils/salaire/" data-outil="salaire">
-            <span class="lanceur__trait" aria-hidden="true"></span>
-            <span class="lanceur__texte"><strong>Salaire brut ⇄ net</strong><span>Net à payer, coût employeur, 12 à 18 salaires.</span></span>
-            <svg class="lanceur__fleche" aria-hidden="true"><use href="#i-fleche"/></svg></a></li>
-          <li><a class="lanceur" href="/outils/assurance-vie/" data-outil="assurance_vie">
-            <span class="lanceur__trait" aria-hidden="true"></span>
-            <span class="lanceur__texte"><strong>Assurance vie &amp; CEA</strong><span>Économie d'impôt, capital projeté, rachat.</span></span>
-            <svg class="lanceur__fleche" aria-hidden="true"><use href="#i-fleche"/></svg></a></li>
-          <li><a class="lanceur" href="/outils/credit/" data-outil="credit">
-            <span class="lanceur__trait" aria-hidden="true"></span>
-            <span class="lanceur__texte"><strong>Crédit bancaire</strong><span>Mensualité, TEG, amortissement, renégociation.</span></span>
-            <svg class="lanceur__fleche" aria-hidden="true"><use href="#i-fleche"/></svg></a></li>
-        </ul>
+      <main class="principal" id="principal" tabindex="-1">
 
-        <div class="titre-bloc titre-bloc--action">
-          <h2>Dernières simulations</h2>
-          <a class="lien-fleche" href="#simulations">Tout voir<svg aria-hidden="true"><use href="#i-fleche"/></svg></a>
-        </div>
-        <ul class="cartes" id="recentes" role="list" aria-busy="true"></ul>
-      </section>
+        <!-- ======== Mon orbite ======== -->
+        <section class="vue" id="vue-orbite" data-vue="orbite" aria-labelledby="titre-orbite">
+          <header class="vue__tete">
+            <h1 id="titre-orbite"><span id="salutation">Bonjour</span></h1>
+            <p class="vue__sous" id="phrase-orbite">Votre salaire au centre, et tout le reste en orbite.</p>
+          </header>
 
-      <!-- Simulations -->
-      <section class="vue" id="vue-simulations" data-vue="simulations" aria-labelledby="titre-simulations" hidden>
-        <header class="vue__entete">
-          <div>
-            <h1 id="titre-simulations">Simulations</h1>
-            <p class="vue__sous-titre" id="quota">0 sur 200 enregistrées</p>
-          </div>
-        </header>
-        <div class="filtres">
-          <div class="puces" role="radiogroup" aria-label="Filtrer par outil" id="filtres-outil">
-            <label><input type="radio" name="outil" value="" checked><span>Toutes</span></label>
-            <label data-outil="salaire"><input type="radio" name="outil" value="salaire"><span><span class="pastille"></span>Salaire</span></label>
-            <label data-outil="assurance_vie"><input type="radio" name="outil" value="assurance_vie"><span><span class="pastille"></span>Assurance vie &amp; CEA</span></label>
-            <label data-outil="credit"><input type="radio" name="outil" value="credit"><span><span class="pastille"></span>Crédit</span></label>
-          </div>
-          <div class="recherche">
-            <label for="recherche" class="visuellement-cache">Rechercher une simulation</label>
-            <input id="recherche" type="search" placeholder="Rechercher par nom…" autocomplete="off" spellcheck="false" enterkeyhint="search">
-          </div>
-          <label class="tri">
-            <span class="visuellement-cache">Trier</span>
-            <select id="tri">
-              <option value="recent">Plus récentes</option>
-              <option value="ancien">Plus anciennes</option>
-              <option value="nom">Nom (A → Z)</option>
-              <option value="favori">Favoris d'abord</option>
-            </select>
-          </label>
-        </div>
-        <ul class="cartes" id="toutes" role="list" aria-busy="true"></ul>
-      </section>
-
-      <!-- Compte -->
-      <section class="vue" id="vue-compte" data-vue="compte" aria-labelledby="titre-compte" hidden>
-        <header class="vue__entete">
-          <div>
-            <h1 id="titre-compte">Compte</h1>
-            <p class="vue__sous-titre">Profil, sécurité et données personnelles.</p>
-          </div>
-        </header>
-
-        <div class="reglages">
-          <section class="reglage" aria-labelledby="r-profil">
-            <div class="reglage__texte"><h2 id="r-profil">Profil</h2><p>Le nom affiché dans votre espace.</p></div>
-            <form class="reglage__controle" id="form-profil" novalidate>
+          <!-- Premier pas : profil minimal -->
+          <section class="panneau demarrage" id="demarrage" aria-labelledby="titre-demarrage" hidden>
+            <div class="demarrage__texte">
+              <h2 id="titre-demarrage">Commençons par votre salaire</h2>
+              <p>Trois réponses suffisent pour mettre votre orbite en mouvement. Vous pourrez tout préciser ensuite dans « Mon profil ».</p>
+            </div>
+            <form class="demarrage__forme" id="form-demarrage" novalidate>
               <div class="champ">
-                <label for="nom-affiche">Nom affiché</label>
-                <input id="nom-affiche" type="text" maxlength="80" autocomplete="name" spellcheck="false">
+                <label for="d-montant" id="d-montant-lib">Salaire brut par mois</label>
+                <div class="saisie saisie--grande"><input id="d-montant" type="text" inputmode="decimal" autocomplete="off" placeholder="2 500"><span class="saisie__unite">DT</span></div>
               </div>
-              <div class="champ">
-                <span class="etiquette">Adresse e-mail</span>
-                <p class="valeur" id="email-compte"></p>
-              </div>
-              <div class="champ">
-                <span class="etiquette">Méthode de connexion</span>
-                <p class="valeur" id="methode-compte"></p>
-              </div>
-              <div><button type="submit" class="bouton bouton--principal bouton--petit">Enregistrer</button></div>
-            </form>
-          </section>
-
-          <section class="reglage" aria-labelledby="r-mdp" id="bloc-mdp">
-            <div class="reglage__texte"><h2 id="r-mdp">Mot de passe</h2><p>10 caractères au moins. Toutes vos autres sessions resteront ouvertes.</p></div>
-            <form class="reglage__controle" id="form-mdp" novalidate>
-              <div class="champ">
-                <label for="nouveau-mdp">Nouveau mot de passe</label>
-                <div class="champ-mdp">
-                  <input id="nouveau-mdp" type="password" autocomplete="new-password" minlength="10" aria-describedby="nouveau-mdp-erreur">
-                  <button type="button" class="afficher" aria-controls="nouveau-mdp" aria-pressed="false">Afficher</button>
+              <div class="demarrage__choix">
+                <div class="bascule" role="radiogroup" aria-label="Montant saisi">
+                  <label><input type="radio" name="d-sens" value="brut" checked><span>Brut</span></label>
+                  <label><input type="radio" name="d-sens" value="net"><span>Net</span></label>
+                  <i class="bascule__pastille" aria-hidden="true"></i>
                 </div>
-                <div class="jauge" id="jauge-compte" data-niveau="0" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
-                <p class="erreur" id="nouveau-mdp-erreur" hidden></p>
+                <div class="bascule" role="radiogroup" aria-label="Secteur">
+                  <label><input type="radio" name="d-secteur" value="prive" checked><span>Privé · CNSS</span></label>
+                  <label><input type="radio" name="d-secteur" value="public"><span>Public · CNRPS</span></label>
+                  <i class="bascule__pastille" aria-hidden="true"></i>
+                </div>
               </div>
-              <div><button type="submit" class="bouton bouton--principal bouton--petit">Changer le mot de passe</button></div>
+              <label class="interrupteur"><span>Je suis chef de famille</span><input type="checkbox" id="d-chef" role="switch"><span class="interrupteur__piste" aria-hidden="true"></span></label>
+              <button type="submit" class="bouton bouton--plein">Mettre mon orbite en mouvement<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></button>
             </form>
           </section>
 
-          <section class="reglage" aria-labelledby="r-theme">
-            <div class="reglage__texte"><h2 id="r-theme">Apparence</h2><p>Le thème de votre espace.</p></div>
-            <div class="reglage__controle">
-              <div class="puces" role="radiogroup" aria-label="Thème" id="choix-theme">
-                <label><input type="radio" name="theme" value=""><span>Système</span></label>
-                <label><input type="radio" name="theme" value="light"><span>Clair</span></label>
-                <label><input type="radio" name="theme" value="dark"><span>Sombre</span></label>
+          <div class="orbite-grille" id="orbite-contenu">
+            <!-- Scène orbitale -->
+            <section class="cosmos scene" aria-labelledby="titre-scene">
+              <h2 class="cache" id="titre-scene">Votre orbite</h2>
+              <div class="scene__visuel" aria-hidden="true">
+                <svg class="scene__svg" id="scene-svg" viewBox="-200 -200 400 400">
+                  <defs>
+                    <radialGradient id="noyau-lum" r="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".35" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+                  </defs>
+                  <circle class="scene__halo" r="120" fill="url(#noyau-lum)"/>
+                  <g id="orbites"></g>
+                  <g class="noyau" id="noyau"><circle class="noyau__pulse" r="54"/><circle class="noyau__disque" r="54"/></g>
+                </svg>
+                <div class="noyau__texte"><span id="noyau-lib">Net par mois</span><strong id="noyau-val">—</strong><span id="noyau-sous"></span></div>
+                <a class="satellite satellite--salaire" id="sat-salaire" href="#salaire" tabindex="-1"><span class="satellite__lib">Tranche d'impôt</span><strong id="sat-salaire-val">—</strong></a>
+                <a class="satellite satellite--credit" id="sat-credit" href="#credit" tabindex="-1"><span class="satellite__lib">Mensualité possible</span><strong id="sat-credit-val">—</strong></a>
+                <a class="satellite satellite--epargne" id="sat-epargne" href="#epargne" tabindex="-1"><span class="satellite__lib">Impôt économisable</span><strong id="sat-epargne-val">—</strong></a>
+              </div>
+              <ul class="scene__liste" aria-label="Vos trois repères">
+                <li><a href="#salaire"><span class="point point--salaire"></span><span>Salaire</span><strong id="liste-salaire">—</strong></a></li>
+                <li><a href="#credit"><span class="point point--credit"></span><span>Crédit</span><strong id="liste-credit">—</strong></a></li>
+                <li><a href="#epargne"><span class="point point--epargne"></span><span>Épargne</span><strong id="liste-epargne">—</strong></a></li>
+              </ul>
+            </section>
+
+            <!-- Budget orbital -->
+            <section class="panneau budget" aria-labelledby="titre-budget">
+              <div class="panneau__tete">
+                <div><h2 class="panneau__titre" id="titre-budget">Votre net, partagé</h2><p class="panneau__sous" id="budget-sous">Chaque mois, où va votre salaire.</p></div>
+              </div>
+              <div class="budget__corps">
+                <svg class="anneau" id="anneau" viewBox="0 0 120 120" aria-hidden="true">
+                  <circle class="anneau__fond" cx="60" cy="60" r="48"/>
+                  <circle class="anneau__arc arc--credits" id="arc-credits" cx="60" cy="60" r="48" pathLength="100"/>
+                  <circle class="anneau__arc arc--logement" id="arc-logement" cx="60" cy="60" r="48" pathLength="100"/>
+                  <circle class="anneau__arc arc--epargne" id="arc-epargne" cx="60" cy="60" r="48" pathLength="100"/>
+                  <circle class="anneau__arc arc--reste" id="arc-reste" cx="60" cy="60" r="48" pathLength="100"/>
+                </svg>
+                <div class="anneau__centre"><span>Reste à vivre</span><strong id="budget-reste">—</strong></div>
+                <ul class="budget__legende">
+                  <li><i class="arc--credits"></i><span>Crédits en cours</span><strong id="budget-credits">—</strong></li>
+                  <li><i class="arc--logement"></i><span>Logement et charges</span><strong id="budget-logement">—</strong></li>
+                  <li><i class="arc--epargne"></i><span>Épargne</span><strong id="budget-epargne">—</strong></li>
+                  <li><i class="arc--reste"></i><span>Reste à vivre</span><strong id="budget-reste-2">—</strong></li>
+                </ul>
+              </div>
+              <p class="encart encart--alerte" id="budget-alerte" hidden></p>
+              <a class="lien-action" href="#profil?section=budget">Compléter mon budget<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
+            </section>
+          </div>
+
+          <!-- Conseils -->
+          <section class="bloc-orbite" aria-labelledby="titre-conseils">
+            <div class="bloc-orbite__tete"><h2 id="titre-conseils">Ce que nous vous conseillons</h2></div>
+            <ol class="conseils" id="conseils"></ol>
+          </section>
+
+          <!-- Capacité de crédit -->
+          <section class="bloc-orbite" aria-labelledby="titre-capacite">
+            <div class="bloc-orbite__tete">
+              <div><h2 id="titre-capacite">Ce que la banque peut vous prêter</h2>
+              <p id="capacite-sous">Calculé à 40 % de votre revenu, crédits en cours déduits.</p></div>
+              <div class="bascule bascule--compacte" role="radiogroup" aria-label="Base de calcul de la banque">
+                <label><input type="radio" name="base-capacite" value="net" checked><span>Sur le net</span></label>
+                <label><input type="radio" name="base-capacite" value="brut"><span>Sur le brut</span></label>
+                <i class="bascule__pastille" aria-hidden="true"></i>
+              </div>
+            </div>
+            <div class="capacite">
+              <div class="capacite__tete panneau">
+                <span>Mensualité maximale</span>
+                <strong id="cap-mensualite">—</strong>
+                <span id="cap-revenu" class="capacite__note"></span>
+              </div>
+              <ul class="capacite__liste" id="cap-liste"></ul>
+            </div>
+          </section>
+
+          <!-- Suggestions d'épargne -->
+          <section class="bloc-orbite" aria-labelledby="titre-suggestions">
+            <div class="bloc-orbite__tete">
+              <div><h2 id="titre-suggestions">Trois façons d'épargner, adaptées à votre net</h2>
+              <p id="suggestions-sous">Assurance vie : vos versements réduisent votre impôt (art. 39) et se capitalisent.</p></div>
+            </div>
+            <ul class="suggestions" id="suggestions"></ul>
+          </section>
+
+          <!-- Projets -->
+          <section class="bloc-orbite" aria-labelledby="titre-projets">
+            <div class="bloc-orbite__tete">
+              <div><h2 id="titre-projets">Vos projets</h2><p>Logement, voiture, études, retraite : voyez s'ils sont à votre portée.</p></div>
+              <a class="bouton bouton--petit" href="#profil?section=projets"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg>Ajouter un projet</a>
+            </div>
+            <ul class="projets" id="projets"></ul>
+          </section>
+        </section>
+
+        <!-- ======== Mon profil ======== -->
+        <section class="vue" id="vue-profil" data-vue="profil" aria-labelledby="titre-profil" hidden>
+          <header class="vue__tete">
+            <h1 id="titre-profil">Mon profil</h1>
+            <p class="vue__sous">Plus votre profil est précis, plus vos conseils le sont. Tout est enregistré automatiquement, et visible par vous seul.</p>
+            <nav class="sous-nav" aria-label="Mon espace">
+              <a class="bouton bouton--petit" href="#simulations"><svg aria-hidden="true"><use href="/orbite/icones.svg#liste"/></svg>Mes simulations</a>
+              <a class="bouton bouton--petit" href="#compte"><svg aria-hidden="true"><use href="/orbite/icones.svg#compte"/></svg>Compte</a>
+            </nav>
+          </header>
+          <div class="profil-progression panneau panneau--plat">
+            <div class="profil-progression__barre" aria-hidden="true"><i id="profil-jauge"></i></div>
+            <p id="profil-progression-texte">Profil complété à 0 %</p>
+          </div>
+
+          <form id="form-profil-complet" class="profil" novalidate>
+            <details class="depliant" id="sec-identite" open>
+              <summary><span class="depliant__icone"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg></span><span>Vous<small>Prénom, âge, situation de famille</small></span><svg class="chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
+              <div class="depliant__corps grille-champs">
+                <div class="champ"><label for="p-prenom">Prénom</label><div class="saisie"><input id="p-prenom" data-p="prenom" type="text" maxlength="40" autocomplete="given-name"></div></div>
+                <div class="champ"><label for="p-naissance">Année de naissance</label><div class="saisie"><input id="p-naissance" data-p="anneeNaissance" type="text" inputmode="numeric" maxlength="4" autocomplete="bday-year"></div><span class="champ__aide" id="p-age"></span></div>
+                <div class="champ"><label for="p-situation">Situation de famille</label><div class="saisie"><select id="p-situation" data-p="situation"><option value="celibataire">Célibataire</option><option value="marie">Marié·e</option><option value="divorce">Divorcé·e</option><option value="veuf">Veuf·ve</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
+                <label class="interrupteur champ--large"><span><strong>Chef de famille</strong><small>Déduction de 300 DT par an, et enfants à charge</small></span><input type="checkbox" data-p="chefDeFamille" role="switch"><span class="interrupteur__piste" aria-hidden="true"></span></label>
+                <div class="compteurs champ--large">
+                  <div class="compteur-ligne"><span id="lp-enfants">Enfants à charge</span><span class="compteur" role="group" aria-labelledby="lp-enfants"><button type="button" data-pp="enfants" data-pas="-1" aria-label="Un enfant de moins"><svg aria-hidden="true"><use href="/orbite/icones.svg#moins"/></svg></button><output data-po="enfants">0</output><button type="button" data-pp="enfants" data-pas="1" aria-label="Un enfant de plus"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg></button></span></div>
+                  <div class="compteur-ligne"><span id="lp-etudiants">Dont étudiants (sans bourse)</span><span class="compteur" role="group" aria-labelledby="lp-etudiants"><button type="button" data-pp="etudiants" data-pas="-1" aria-label="Un étudiant de moins"><svg aria-hidden="true"><use href="/orbite/icones.svg#moins"/></svg></button><output data-po="etudiants">0</output><button type="button" data-pp="etudiants" data-pas="1" aria-label="Un étudiant de plus"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg></button></span></div>
+                  <div class="compteur-ligne"><span id="lp-handicapes">Enfants handicapés</span><span class="compteur" role="group" aria-labelledby="lp-handicapes"><button type="button" data-pp="handicapes" data-pas="-1" aria-label="Un enfant de moins"><svg aria-hidden="true"><use href="/orbite/icones.svg#moins"/></svg></button><output data-po="handicapes">0</output><button type="button" data-pp="handicapes" data-pas="1" aria-label="Un enfant de plus"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg></button></span></div>
+                  <div class="compteur-ligne"><span id="lp-parents">Parents à charge</span><span class="compteur" role="group" aria-labelledby="lp-parents"><button type="button" data-pp="parents" data-pas="-1" aria-label="Un parent de moins"><svg aria-hidden="true"><use href="/orbite/icones.svg#moins"/></svg></button><output data-po="parents">0</output><button type="button" data-pp="parents" data-pas="1" aria-label="Un parent de plus"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg></button></span></div>
+                </div>
+              </div>
+            </details>
+
+            <details class="depliant" id="sec-salaire" open>
+              <summary><span class="depliant__icone icone--salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#salaire"/></svg></span><span>Votre emploi et votre salaire<small>Montant, nombre de salaires, primes, contrat</small></span><svg class="chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
+              <div class="depliant__corps grille-champs">
+                <div class="champ champ--large"><label for="p-montant" id="p-montant-lib">Salaire brut par mois</label><div class="saisie saisie--grande"><input id="p-montant" data-p="montant" data-type="montant" type="text" inputmode="decimal" autocomplete="off"><span class="saisie__unite">DT</span></div></div>
+                <div class="bascule" role="radiogroup" aria-label="Montant saisi"><label><input type="radio" name="p-sens" data-p="sens" value="brut"><span>Brut</span></label><label><input type="radio" name="p-sens" data-p="sens" value="net"><span>Net</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
+                <div class="bascule" role="radiogroup" aria-label="Période"><label><input type="radio" name="p-periode" data-p="periode" value="mensuel"><span>Par mois</span></label><label><input type="radio" name="p-periode" data-p="periode" value="annuel"><span>Par an</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
+                <div class="bascule champ--large" role="radiogroup" aria-label="Secteur"><label><input type="radio" name="p-secteur" data-p="secteur" value="prive"><span>Privé · CNSS</span></label><label><input type="radio" name="p-secteur" data-p="secteur" value="public"><span>Public · CNRPS</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
+                <div class="compteur-ligne champ--large"><span id="lp-salaires">Nombre de salaires par an<small id="p-aide-salaires">12 = sans 13ᵉ mois</small></span><span class="compteur" role="group" aria-labelledby="lp-salaires"><button type="button" data-pp="nombreSalaires" data-pas="-1" aria-label="Un salaire de moins"><svg aria-hidden="true"><use href="/orbite/icones.svg#moins"/></svg></button><output data-po="nombreSalaires">12</output><button type="button" data-pp="nombreSalaires" data-pas="1" aria-label="Un salaire de plus"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg></button></span></div>
+                <div class="champ"><label for="p-primes">Primes imposables (par mois)</label><div class="saisie"><input id="p-primes" data-p="primesImposables" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
+                <div class="champ"><label for="p-nco">Primes non cotisables (par mois)</label><div class="saisie"><input id="p-nco" data-p="primesNonCotisables" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
+                <div class="champ"><label for="p-ava">Avantages en nature (par mois)</label><div class="saisie"><input id="p-ava" data-p="avantagesNature" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
+                <div class="champ"><label for="p-ind">Indemnités non imposables (par mois)</label><div class="saisie"><input id="p-ind" data-p="indemnitesNonImposables" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div><span class="champ__aide">Transport, panier… exonérés</span></div>
+                <div class="champ"><label for="p-statut">Type de contrat</label><div class="saisie"><select id="p-statut" data-p="statut"><option value="cdi">CDI</option><option value="fonctionnaire">Fonctionnaire titulaire</option><option value="cdd">CDD</option><option value="contractuel">Contractuel</option><option value="autre">Autre</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
+                <div class="champ"><label for="p-anciennete">Ancienneté chez l'employeur</label><div class="saisie"><input id="p-anciennete" data-p="anciennete" data-type="entier" type="text" inputmode="numeric" maxlength="2"><span class="saisie__unite">ans</span></div></div>
+                <div class="champ"><label for="p-autres">Autres revenus réguliers (par mois)</label><div class="saisie"><input id="p-autres" data-p="autresRevenus" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div><span class="champ__aide">Loyer perçu, pension… pris en compte par la banque</span></div>
+                <p class="profil-resume champ--large" id="p-resume-salaire" aria-live="polite"></p>
+              </div>
+            </details>
+
+            <details class="depliant" id="sec-credits">
+              <summary><span class="depliant__icone icone--credit"><svg aria-hidden="true"><use href="/orbite/icones.svg#credit"/></svg></span><span>Vos crédits en cours<small id="sec-credits-sous">Aucun crédit déclaré</small></span><svg class="chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
+              <div class="depliant__corps">
+                <ul class="lignes-liste" id="liste-credits"></ul>
+                <button type="button" class="bouton bouton--petit" data-ajouter="credits"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg>Ajouter un crédit</button>
+              </div>
+            </details>
+
+            <details class="depliant" id="sec-contrats">
+              <summary><span class="depliant__icone icone--epargne"><svg aria-hidden="true"><use href="/orbite/icones.svg#epargne"/></svg></span><span>Vos contrats d'assurance vie et CEA<small id="sec-contrats-sous">Aucun contrat déclaré</small></span><svg class="chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
+              <div class="depliant__corps">
+                <ul class="lignes-liste" id="liste-contrats"></ul>
+                <button type="button" class="bouton bouton--petit" data-ajouter="contrats"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg>Ajouter un contrat</button>
+              </div>
+            </details>
+
+            <details class="depliant" id="sec-budget">
+              <summary><span class="depliant__icone"><svg aria-hidden="true"><use href="/orbite/icones.svg#maison"/></svg></span><span>Votre budget<small>Logement, charges fixes, épargne disponible</small></span><svg class="chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
+              <div class="depliant__corps grille-champs">
+                <div class="champ"><label for="p-loyer">Loyer (par mois)</label><div class="saisie"><input id="p-loyer" data-p="loyer" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
+                <div class="champ"><label for="p-charges">Autres charges fixes (par mois)</label><div class="saisie"><input id="p-charges" data-p="chargesFixes" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div><span class="champ__aide">Électricité, eau, Internet, scolarité, assurances…</span></div>
+                <div class="champ"><label for="p-epargne">Épargne disponible aujourd'hui</label><div class="saisie"><input id="p-epargne" data-p="epargneDisponible" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div><span class="champ__aide">Sert d'apport pour vos projets</span></div>
+              </div>
+            </details>
+
+            <details class="depliant" id="sec-projets">
+              <summary><span class="depliant__icone"><svg aria-hidden="true"><use href="/orbite/icones.svg#cible"/></svg></span><span>Vos projets<small id="sec-projets-sous">Aucun projet</small></span><svg class="chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
+              <div class="depliant__corps">
+                <ul class="lignes-liste" id="liste-projets"></ul>
+                <button type="button" class="bouton bouton--petit" data-ajouter="projets"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg>Ajouter un projet</button>
+              </div>
+            </details>
+
+            <details class="depliant" id="sec-banque">
+              <summary><span class="depliant__icone"><svg aria-hidden="true"><use href="/orbite/icones.svg#outils"/></svg></span><span>Règles de votre banque<small>Taux d'endettement maximal sur le net et sur le brut</small></span><svg class="chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
+              <div class="depliant__corps grille-champs">
+                <div class="champ"><label for="p-qnet">Sur le salaire net</label><div class="saisie"><input id="p-qnet" data-p="quotiteNet" data-type="pourcent" type="text" inputmode="decimal"><span class="saisie__unite">%</span></div></div>
+                <div class="champ"><label for="p-qbrut">Sur le salaire brut</label><div class="saisie"><input id="p-qbrut" data-p="quotiteBrut" data-type="pourcent" type="text" inputmode="decimal"><span class="saisie__unite">%</span></div></div>
+                <p class="champ__aide champ--large">40 % est la règle la plus courante en Tunisie. Certaines banques calculent sur le salaire brut, ce qui augmente la mensualité possible.</p>
+              </div>
+            </details>
+          </form>
+        </section>
+
+        <!-- ======== Module Salaire ======== -->
+        <section class="vue module module--salaire" id="vue-salaire" data-vue="salaire" aria-labelledby="titre-salaire" hidden>
+          <header class="vue__tete module__tete">
+            <span class="module__pastille" aria-hidden="true"><svg><use href="/orbite/icones.svg#salaire"/></svg></span>
+            <div><h1 id="titre-salaire">Salaire</h1><p class="vue__sous">Brut ⇄ net, tranche d'impôt, augmentation, coût employeur et offres. Barèmes <span data-annee>2026</span>.</p></div>
+          </header>
+          <div class="scene-salaire">
+            <form class="panneau saisie-salaire" id="formulaire" novalidate>
+              <div class="champ">
+                <label for="montant" id="lib-montant">Salaire brut par mois</label>
+                <div class="saisie saisie--grande"><input id="montant" name="montant" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="2 500" aria-describedby="erreur-montant"><span class="saisie__unite" aria-hidden="true">DT</span></div>
+                <p class="erreur-champ" id="erreur-montant" role="alert" hidden></p>
+              </div>
+              <div class="choix">
+                <div class="bascule" role="radiogroup" aria-label="Je saisis un montant"><label><input type="radio" name="sens" value="brut" checked><span>Brut</span></label><label><input type="radio" name="sens" value="net"><span>Net</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
+                <div class="bascule" role="radiogroup" aria-label="Période"><label><input type="radio" name="periode" value="mensuel" checked><span>Par mois</span></label><label><input type="radio" name="periode" value="annuel"><span>Par an</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
+              </div>
+              <div class="bascule" role="radiogroup" aria-label="Secteur"><label><input type="radio" name="secteur" value="prive" checked><span>Privé · CNSS</span></label><label><input type="radio" name="secteur" value="public"><span>Public · CNRPS</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
+              <div class="lignes">
+                <label class="ligne interrupteur"><span class="ligne__txt"><strong>Chef de famille</strong><small>Déduction de 300 DT par an</small></span><input type="checkbox" id="chef" role="switch"><span class="interrupteur__piste" aria-hidden="true"></span></label>
+                <div class="ligne" id="ligne-enfants" hidden><span class="ligne__txt" id="lib-enfants"><strong>Enfants à charge</strong><small>4 au plus ouvrent la déduction</small></span><span class="compteur" role="group" aria-labelledby="lib-enfants"><button type="button" data-pas="-1" data-cible="enfants" aria-label="Un enfant de moins"><svg aria-hidden="true"><use href="/orbite/icones.svg#moins"/></svg></button><output id="enfants" aria-live="polite">0</output><button type="button" data-pas="1" data-cible="enfants" aria-label="Un enfant de plus"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg></button></span></div>
+                <div class="ligne"><span class="ligne__txt" id="lib-salaires"><strong>Salaires par an</strong><small id="aide-salaires">12 = sans 13ᵉ mois</small></span><span class="compteur" role="group" aria-labelledby="lib-salaires"><button type="button" data-pas="-1" data-cible="salaires" aria-label="Un salaire de moins par an"><svg aria-hidden="true"><use href="/orbite/icones.svg#moins"/></svg></button><output id="salaires" aria-live="polite">12</output><button type="button" data-pas="1" data-cible="salaires" aria-label="Un salaire de plus par an"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg></button></span></div>
+              </div>
+              <details class="plus" id="plus">
+                <summary><span>Plus d'options</span><svg aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
+                <div class="plus__corps">
+                  <div class="ligne"><span class="ligne__txt" id="lib-etu"><strong>Enfants étudiants</strong><small>sans bourse, moins de 25 ans</small></span><span class="compteur" role="group" aria-labelledby="lib-etu"><button type="button" data-pas="-1" data-cible="etudiants" aria-label="Un étudiant de moins"><svg aria-hidden="true"><use href="/orbite/icones.svg#moins"/></svg></button><output id="etudiants" aria-live="polite">0</output><button type="button" data-pas="1" data-cible="etudiants" aria-label="Un étudiant de plus"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg></button></span></div>
+                  <div class="ligne"><span class="ligne__txt" id="lib-han"><strong>Enfants handicapés</strong><small>2 000 DT de déduction chacun</small></span><span class="compteur" role="group" aria-labelledby="lib-han"><button type="button" data-pas="-1" data-cible="handicapes" aria-label="Un enfant de moins"><svg aria-hidden="true"><use href="/orbite/icones.svg#moins"/></svg></button><output id="handicapes" aria-live="polite">0</output><button type="button" data-pas="1" data-cible="handicapes" aria-label="Un enfant de plus"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg></button></span></div>
+                  <div class="ligne"><span class="ligne__txt" id="lib-par"><strong>Parents à charge</strong><small>2 au plus</small></span><span class="compteur" role="group" aria-labelledby="lib-par"><button type="button" data-pas="-1" data-cible="parents" aria-label="Un parent de moins"><svg aria-hidden="true"><use href="/orbite/icones.svg#moins"/></svg></button><output id="parents" aria-live="polite">0</output><button type="button" data-pas="1" data-cible="parents" aria-label="Un parent de plus"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg></button></span></div>
+                  <label class="ligne"><span class="ligne__txt"><strong>Primes imposables</strong><small>par mois</small></span><span class="petit-montant"><input id="primes" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><span>DT</span></span></label>
+                  <label class="ligne"><span class="ligne__txt"><strong>Primes non cotisables</strong><small>par mois</small></span><span class="petit-montant"><input id="non-cotisables" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><span>DT</span></span></label>
+                  <label class="ligne"><span class="ligne__txt"><strong>Avantages en nature</strong><small>par mois</small></span><span class="petit-montant"><input id="avantages" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><span>DT</span></span></label>
+                  <label class="ligne"><span class="ligne__txt"><strong>Indemnités non imposables</strong><small>par mois</small></span><span class="petit-montant"><input id="indemnites" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><span>DT</span></span></label>
+                  <label class="ligne"><span class="ligne__txt"><strong>Taux accidents du travail</strong><small>selon l'activité</small></span><span class="petit-montant"><input id="taux-at" type="text" inputmode="decimal" autocomplete="off"><span>%</span></span></label>
+                  <label class="ligne interrupteur"><span class="ligne__txt"><strong>Industrie manufacturière</strong><small>TFP réduite à 1 %</small></span><input type="checkbox" id="industrie" role="switch"><span class="interrupteur__piste" aria-hidden="true"></span></label>
+                </div>
+              </details>
+            </form>
+
+            <div class="panneau resultat" id="resultat" tabindex="-1" aria-labelledby="resultat-lib">
+              <p class="resultat__lib" id="resultat-lib">Net à payer par mois</p>
+              <p class="grand" aria-live="polite" aria-atomic="true"><span class="cache" id="montant-lu"></span><span class="chiffres" id="chiffres" aria-hidden="true"></span><span class="grand__dec" id="decimales" aria-hidden="true"></span><span class="grand__unite" aria-hidden="true">DT</span></p>
+              <p class="resultat__sous" id="resultat-sous"></p>
+              <div class="blocs" aria-hidden="true">
+                <span class="bloc b-net" id="bloc-net"><b>Net</b></span>
+                <span class="bloc b-cnss" id="bloc-cnss"><b id="bloc-cnss-lib">CNSS</b></span>
+                <span class="bloc b-irpp" id="bloc-irpp"><b>Impôt</b></span>
+                <span class="bloc b-css" id="bloc-css"><b>CSS</b></span>
+              </div>
+              <ul class="legende" aria-label="Où va votre brut">
+                <li class="l-net"><i></i><span>Pour vous</span><strong id="leg-net"></strong><em id="leg-net-pct"></em></li>
+                <li class="l-cnss"><i></i><span id="leg-cnss-lib">Retraite et santé (CNSS)</span><strong id="leg-cnss"></strong><em id="leg-cnss-pct"></em></li>
+                <li class="l-irpp"><i></i><span>Impôt sur le revenu</span><strong id="leg-irpp"></strong><em id="leg-irpp-pct"></em></li>
+                <li class="l-css"><i></i><span>Contribution de solidarité</span><strong id="leg-css"></strong><em id="leg-css-pct"></em></li>
+              </ul>
+              <p class="encart" id="supplement" hidden></p>
+              <p class="note" id="alerte" hidden></p>
+              <div class="actions">
+                <button type="button" class="bouton" id="partager"><svg aria-hidden="true"><use href="/orbite/icones.svg#partager"/></svg><span class="bouton__lib" id="partager-lib">Partager</span></button>
+                <a class="bouton" href="#section-offres" data-defiler="section-offres"><svg aria-hidden="true"><use href="/orbite/icones.svg#comparer"/></svg>Comparer une offre</a>
+                <button type="button" class="bouton" id="imprimer"><svg aria-hidden="true"><use href="/orbite/icones.svg#imprimer"/></svg>Imprimer</button>
+                <button type="button" class="bouton" id="vers-profil"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg>Mettre à jour mon profil</button>
+              </div>
+            </div>
+          </div>
+
+          <section class="section section--large" id="section-hausse" aria-labelledby="titre-hausse">
+            <div class="section__tete">
+              <h2 id="titre-hausse">Et si vous étiez augmenté&nbsp;?</h2>
+              <p>Ce qu'une hausse change vraiment sur votre net, ce qu'elle coûte à votre employeur, et si elle vous fait changer de tranche d'impôt.</p>
+            </div>
+            <div class="section__corps hausse-grille">
+              <div class="hausse-reglage">
+                <div class="bascule bascule--petite" role="radiogroup" aria-label="Exprimer la hausse en"><label><input type="radio" name="mode-hausse" value="brut" checked><span>DT brut</span></label><label><input type="radio" name="mode-hausse" value="pourcent"><span>%</span></label><label><input type="radio" name="mode-hausse" value="net"><span>DT net</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
+                <div class="curseur-bloc"><div class="curseur-bloc__haut"><label for="hausse">Hausse</label><output class="curseur-bloc__val" id="hausse-val" for="hausse">+200 DT brut</output></div><input type="range" class="curseur" id="hausse" min="0" max="1000" step="10" value="200"></div>
+                <div class="avant-apres" aria-hidden="true">
+                  <div class="aa"><span>Aujourd'hui</span><i class="aa__barre"><b id="aa-avant"></b></i><strong id="aa-avant-val"></strong></div>
+                  <div class="aa aa--apres"><span>Après</span><i class="aa__barre"><b id="aa-apres"></b></i><strong id="aa-apres-val"></strong></div>
+                </div>
+                <p class="phrase-resultat" id="verdict-hausse" aria-live="polite"></p>
+                <p class="note" id="hausse-annee"></p>
+                <div><button type="button" class="bouton" id="hausse-vers-offre">Comparer avec ma situation actuelle</button></div>
+              </div>
+              <div class="panneau tranches-bloc" aria-labelledby="titre-tranches">
+                <h3 id="titre-tranches">Votre tranche d'impôt</h3>
+                <div class="tranches" aria-hidden="true">
+                  <div class="tranches__piste" id="tranches-piste"></div>
+                  <span class="repere repere--avant" id="repere-avant"><i></i><b>Aujourd'hui</b></span>
+                  <span class="repere repere--apres" id="repere-apres"><i></i><b>Après</b></span>
+                </div>
+                <p class="phrase-resultat" id="verdict-tranche" aria-live="polite"></p>
+                <p class="note">En Tunisie, l'impôt est progressif : un nouveau taux ne s'applique qu'à la part de revenu qui dépasse le seuil de la tranche.</p>
               </div>
             </div>
           </section>
 
-          <section class="reglage" aria-labelledby="r-donnees">
-            <div class="reglage__texte"><h2 id="r-donnees">Vos données</h2><p>Téléchargez une copie complète de votre profil et de vos simulations (JSON).</p></div>
-            <div class="reglage__controle"><div><button type="button" class="bouton bouton--contour bouton--petit" id="exporter">Exporter mes données</button></div></div>
+          <section class="section" id="section-cent" aria-labelledby="titre-cent">
+            <div class="section__tete"><h2 id="titre-cent">Sur 100 dinars de brut</h2><p id="cent"></p></div>
+            <div class="grille-cent" id="grille-cent" aria-hidden="true"></div>
           </section>
 
-          <section class="reglage" aria-labelledby="r-sessions">
-            <div class="reglage__texte"><h2 id="r-sessions">Sessions</h2><p>Déconnecte cet appareil et tous les autres.</p></div>
-            <div class="reglage__controle"><div><button type="button" class="bouton bouton--contour bouton--petit" id="deconnexion-partout">Se déconnecter partout</button></div></div>
+          <section class="section" id="section-employeur" aria-labelledby="titre-employeur">
+            <div class="section__tete"><h2 id="titre-employeur">Ce que vous coûtez à l'employeur</h2><p>Au-delà du brut, l'employeur paie ses propres cotisations et taxes. Voici le coût réel, et à qui va chaque dinar.</p></div>
+            <div class="section__corps">
+              <p class="total"><b id="cout-total"></b> <span id="cout-lib">DT par mois, charges comprises</span></p>
+              <div class="blocs blocs--fin" aria-hidden="true"><span class="bloc b-net" id="emp-salarie"></span><span class="bloc b-cnss" id="emp-caisse"></span><span class="bloc b-irpp" id="emp-etat"></span></div>
+              <ul class="legende legende--3">
+                <li class="l-net"><i></i><span>Pour vous</span><strong id="emp-salarie-val"></strong><em id="emp-salarie-pct"></em></li>
+                <li class="l-cnss"><i></i><span id="emp-caisse-lib">Pour la CNSS</span><strong id="emp-caisse-val"></strong><em id="emp-caisse-pct"></em></li>
+                <li class="l-irpp"><i></i><span>Pour l'État</span><strong id="emp-etat-val"></strong><em id="emp-etat-pct"></em></li>
+              </ul>
+            </div>
           </section>
 
-          <section class="reglage reglage--danger" aria-labelledby="r-suppression">
-            <div class="reglage__texte"><h2 id="r-suppression">Supprimer le compte</h2><p>Efface définitivement votre compte et toutes vos simulations. Cette action est irréversible.</p></div>
-            <div class="reglage__controle"><div><button type="button" class="bouton bouton--danger bouton--petit" id="supprimer-compte">Supprimer mon compte</button></div></div>
+          <section class="section section--large" id="section-offres" aria-labelledby="titre-offres">
+            <div class="section__tete"><h2 id="titre-offres">Comparer deux offres</h2><p>Votre situation d'aujourd'hui face à une autre offre, avec la même situation de famille.</p></div>
+            <div class="section__corps">
+              <div class="offre-saisie">
+                <label class="mini-champ"><span>Brut mensuel de l'autre offre</span><span class="petit-montant"><input id="b-montant" type="text" inputmode="decimal" autocomplete="off" value="2 800"><span>DT</span></span></label>
+                <div class="bascule bascule--petite" role="radiogroup" aria-label="Secteur de l'autre offre"><label><input type="radio" name="b-secteur" value="prive" checked><span>Privé</span></label><label><input type="radio" name="b-secteur" value="public"><span>Public</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
+                <div class="mini-champ"><span id="lib-b-salaires">Salaires par an</span><span class="compteur" role="group" aria-labelledby="lib-b-salaires"><button type="button" data-pas="-1" data-cible="bSalaires" aria-label="Un salaire de moins"><svg aria-hidden="true"><use href="/orbite/icones.svg#moins"/></svg></button><output id="bSalaires" aria-live="polite">12</output><button type="button" data-pas="1" data-cible="bSalaires" aria-label="Un salaire de plus"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg></button></span></div>
+              </div>
+              <div class="offres">
+                <article class="panneau offre" aria-labelledby="offre-a-titre"><h3 id="offre-a-titre">Aujourd'hui</h3><p class="offre__net" id="offre-a-net"></p><i class="offre__barre" aria-hidden="true"><b id="offre-a-barre"></b></i><dl id="offre-a-dl"></dl></article>
+                <article class="panneau offre" aria-labelledby="offre-b-titre"><h3 id="offre-b-titre">L'autre offre</h3><p class="offre__net" id="offre-b-net"></p><i class="offre__barre" aria-hidden="true"><b id="offre-b-barre"></b></i><dl id="offre-b-dl"></dl></article>
+              </div>
+              <p class="phrase-resultat" id="ecart" aria-live="polite"></p>
+            </div>
           </section>
-        </div>
-      </section>
-    </main>
 
+          <section class="section" id="section-detail" aria-labelledby="titre-detail">
+            <div class="section__tete"><h2 id="titre-detail">Le calcul ligne par ligne</h2><p>Comme sur une fiche de paie : cotisations, frais professionnels, déductions de famille, barème de l'impôt et CSS.</p></div>
+            <div class="section__corps"><div class="panneau detail"><div class="detail-defile" tabindex="0" role="region" aria-label="Tableau du calcul"><table id="tableau-detail"><caption id="detail-legende"></caption><thead><tr><th scope="col">Élément</th><th scope="col" class="v" id="col-periode">Par mois</th><th scope="col" class="v">Par an</th></tr></thead><tbody></tbody></table></div></div></div>
+          </section>
+
+          <section class="section" id="section-courbe" aria-labelledby="titre-courbe">
+            <div class="section__tete"><h2 id="titre-courbe">Votre net selon le brut</h2><p>Glissez le doigt ou la souris sur la courbe, ou utilisez les flèches du clavier : chaque point est un calcul complet.</p></div>
+            <div class="section__corps"><div class="panneau courbe"><svg id="courbe" viewBox="0 0 640 320" role="img" aria-labelledby="titre-courbe courbe-info" tabindex="0"></svg><p class="courbe__info" id="courbe-info" aria-live="polite"></p></div></div>
+          </section>
+
+          <details class="depliant methode">
+            <summary><span class="depliant__icone"><svg aria-hidden="true"><use href="/orbite/icones.svg#info"/></svg></span><span>Méthode et textes de référence<small>Barèmes <span data-annee>2026</span>, cotisations, déductions</small></span><svg class="chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
+            <div class="depliant__corps">
+              <ul class="methode__etapes">
+                <li>Cotisations sociales salariales (CNSS ou CNRPS) sur le brut.</li>
+                <li>Frais professionnels : 10 % du revenu après cotisations, plafonnés à 2 000 DT par an.</li>
+                <li>Déductions de famille : chef de famille, enfants, étudiants, enfants handicapés, parents à charge.</li>
+                <li>IRPP au barème progressif annuel, puis CSS (0,5 % du revenu imposable, sauf petits revenus).</li>
+              </ul>
+              <ul class="sources" id="sources"></ul>
+            </div>
+          </details>
+        </section>
+
+        <!-- ======== Module Épargne ======== -->
+        <section class="vue module module--epargne" id="vue-epargne" data-vue="epargne" aria-labelledby="titre-epargne" hidden>
+          <header class="vue__tete module__tete">
+            <span class="module__pastille" aria-hidden="true"><svg><use href="/orbite/icones.svg#epargne"/></svg></span>
+            <div><h1 id="titre-epargne">Épargne vie &amp; CEA</h1><p class="vue__sous">Économie d'impôt (art. 39), capital projeté, rachat, retraite et protection.</p></div>
+          </header>
+          <div id="epargne-racine" class="module__racine"><div class="squelette module__attente"></div></div>
+        </section>
+
+        <!-- ======== Module Crédit ======== -->
+        <section class="vue module module--credit" id="vue-credit" data-vue="credit" aria-labelledby="titre-credit" hidden>
+          <header class="vue__tete module__tete">
+            <span class="module__pastille" aria-hidden="true"><svg><use href="/orbite/icones.svg#credit"/></svg></span>
+            <div><h1 id="titre-credit">Crédit</h1><p class="vue__sous">Mensualité, TMM + marge, TEG, tableau d'amortissement, capacité et renégociation.</p></div>
+          </header>
+          <div id="credit-racine" class="module__racine"><div class="squelette module__attente"></div></div>
+        </section>
+
+        <!-- ======== Simulations ======== -->
+        <section class="vue" id="vue-simulations" data-vue="simulations" aria-labelledby="titre-simulations" hidden>
+          <header class="vue__tete">
+            <h1 id="titre-simulations">Simulations</h1>
+            <p class="vue__sous" id="quota">Vos calculs enregistrés, sur tous vos appareils.</p>
+          </header>
+          <div class="outils-liste">
+            <div class="bascule bascule--compacte filtres" id="filtres-outil" role="radiogroup" aria-label="Filtrer par module">
+              <label><input type="radio" name="filtre" value="" checked><span>Toutes</span></label>
+              <label><input type="radio" name="filtre" value="salaire"><span>Salaire</span></label>
+              <label><input type="radio" name="filtre" value="assurance_vie"><span>Épargne</span></label>
+              <label><input type="radio" name="filtre" value="credit"><span>Crédit</span></label>
+              <i class="bascule__pastille" aria-hidden="true"></i>
+            </div>
+            <div class="saisie recherche"><svg aria-hidden="true"><use href="/orbite/icones.svg#recherche"/></svg><input id="recherche" type="search" placeholder="Rechercher par nom" aria-label="Rechercher une simulation"></div>
+            <div class="saisie tri"><select id="tri" aria-label="Trier"><option value="recent">Plus récentes</option><option value="ancien">Plus anciennes</option><option value="nom">Par nom</option><option value="favori">Favoris d'abord</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div>
+          </div>
+          <ul class="cartes" id="toutes" role="list" aria-busy="true"></ul>
+        </section>
+
+        <!-- ======== Compte ======== -->
+        <section class="vue" id="vue-compte" data-vue="compte" aria-labelledby="titre-compte" hidden>
+          <header class="vue__tete">
+            <h1 id="titre-compte">Compte</h1>
+            <p class="vue__sous">Identité, sécurité, thème et données personnelles.</p>
+          </header>
+          <div class="reglages">
+            <section class="panneau reglage" aria-labelledby="r-profil">
+              <div class="reglage__texte"><h2 id="r-profil">Identité</h2><p>Le nom affiché dans votre espace.</p></div>
+              <form class="reglage__controle" id="form-nom" novalidate>
+                <div class="champ"><label for="nom-affiche">Nom affiché</label><div class="saisie"><input id="nom-affiche" type="text" maxlength="80" autocomplete="name" spellcheck="false"></div></div>
+                <div class="champ"><span class="champ__lib">Adresse e-mail</span><p class="valeur" id="email-compte"></p></div>
+                <div class="champ"><span class="champ__lib">Méthode de connexion</span><p class="valeur" id="methode-compte"></p></div>
+                <div><button type="submit" class="bouton bouton--plein bouton--petit">Enregistrer</button></div>
+              </form>
+            </section>
+            <section class="panneau reglage" id="bloc-mdp" aria-labelledby="r-mdp">
+              <div class="reglage__texte"><h2 id="r-mdp">Mot de passe</h2><p>10 caractères au moins, avec lettres, chiffres et symbole.</p></div>
+              <form class="reglage__controle" id="form-mdp" novalidate>
+                <div class="champ"><label for="nouveau-mdp">Nouveau mot de passe</label><div class="saisie"><input id="nouveau-mdp" type="password" autocomplete="new-password" aria-describedby="nouveau-mdp-erreur"><button type="button" class="bouton bouton--fantome bouton--petit afficher" aria-controls="nouveau-mdp" aria-pressed="false">Afficher</button></div>
+                  <div class="jauge" id="jauge-compte" data-niveau="0" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+                  <p class="erreur-champ" id="nouveau-mdp-erreur" hidden></p></div>
+                <div><button type="submit" class="bouton bouton--plein bouton--petit">Changer le mot de passe</button></div>
+              </form>
+            </section>
+            <section class="panneau reglage" aria-labelledby="r-theme">
+              <div class="reglage__texte"><h2 id="r-theme">Apparence</h2><p>Clair, sombre, ou comme votre appareil.</p></div>
+              <div class="reglage__controle">
+                <div class="bascule" id="choix-theme" role="radiogroup" aria-label="Thème">
+                  <label><input type="radio" name="theme" value=""><span>Automatique</span></label>
+                  <label><input type="radio" name="theme" value="light"><span>Clair</span></label>
+                  <label><input type="radio" name="theme" value="dark"><span>Sombre</span></label>
+                  <i class="bascule__pastille" aria-hidden="true"></i>
+                </div>
+              </div>
+            </section>
+            <section class="panneau reglage" aria-labelledby="r-donnees">
+              <div class="reglage__texte"><h2 id="r-donnees">Vos données</h2><p>Votre profil et vos simulations ne sont visibles que par vous. Vous pouvez tout télécharger, ou tout effacer.</p></div>
+              <div class="reglage__controle reglage__boutons">
+                <button type="button" class="bouton bouton--petit" id="exporter"><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg>Exporter mes données</button>
+                <button type="button" class="bouton bouton--petit" id="deconnexion-partout"><svg aria-hidden="true"><use href="/orbite/icones.svg#sortie"/></svg>Me déconnecter partout</button>
+                <button type="button" class="bouton bouton--petit bouton--danger" id="supprimer-compte"><svg aria-hidden="true"><use href="/orbite/icones.svg#poubelle"/></svg>Supprimer mon compte</button>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- ============ Onglets du bas (téléphone) ============ -->
     <nav class="onglets-bas" aria-label="Navigation">
-      <a href="#apercu" data-vue="apercu"><svg aria-hidden="true"><use href="#i-apercu"/></svg><span>Aperçu</span></a>
-      <a href="#simulations" data-vue="simulations"><svg aria-hidden="true"><use href="#i-liste"/></svg><span>Simulations</span></a>
-      <button type="button" id="ouvrir-outils" aria-haspopup="dialog"><svg aria-hidden="true"><use href="#i-plus"/></svg><span>Nouvelle</span></button>
-      <a href="#compte" data-vue="compte"><svg aria-hidden="true"><use href="#i-compte"/></svg><span>Compte</span></a>
+      <a href="#orbite" data-vue="orbite"><svg aria-hidden="true"><use href="/orbite/icones.svg#orbite"/></svg><span>Orbite</span></a>
+      <a href="#salaire" data-vue="salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#salaire"/></svg><span>Salaire</span></a>
+      <a href="#epargne" data-vue="epargne"><svg aria-hidden="true"><use href="/orbite/icones.svg#epargne"/></svg><span>Épargne</span></a>
+      <a href="#credit" data-vue="credit"><svg aria-hidden="true"><use href="/orbite/icones.svg#credit"/></svg><span>Crédit</span></a>
+      <a href="#profil" data-vue="profil" data-vues="profil simulations compte"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span>Moi</span></a>
     </nav>
   </div>
 
+  <!-- ============ Modèles et dialogues ============ -->
   <template id="modele-carte">
     <li class="carte">
       <a class="carte__lien" href="#">
-        <span class="carte__entete"><span class="pastille"></span><span class="carte__outil"></span><span class="carte__date"></span></span>
+        <span class="carte__entete"><span class="point"></span><span class="carte__outil"></span><span class="carte__date"></span></span>
         <span class="carte__nom"></span>
-        <span class="carte__principal"><span class="carte__principal-lib"></span><span class="carte__principal-val num"></span></span>
+        <span class="carte__principal"><span class="carte__principal-lib"></span><span class="carte__principal-val chiffre"></span></span>
         <span class="carte__secondaires"></span>
       </a>
       <div class="carte__actions">
-        <button type="button" class="bouton-icone carte__favori" aria-pressed="false"><svg aria-hidden="true"><use href="#i-etoile"/></svg></button>
-        <button type="button" class="bouton-icone carte__menu" aria-haspopup="menu" aria-expanded="false"><svg aria-hidden="true"><use href="#i-plus-actions"/></svg></button>
+        <button type="button" class="bouton bouton--fantome bouton--icone bouton--petit carte__favori" aria-pressed="false"><svg aria-hidden="true"><use href="/orbite/icones.svg#etoile"/></svg></button>
+        <button type="button" class="bouton bouton--fantome bouton--icone bouton--petit carte__menu" aria-haspopup="menu" aria-expanded="false"><svg aria-hidden="true"><use href="/orbite/icones.svg#points"/></svg></button>
+      </div>
+    </li>
+  </template>
+
+  <template id="modele-credit">
+    <li class="ligne-liste" data-liste="credits">
+      <div class="grille-champs grille-champs--4">
+        <div class="champ champ--large"><label>Nom du crédit</label><div class="saisie"><input data-c="libelle" type="text" maxlength="60" placeholder="Crédit voiture"></div></div>
+        <div class="champ"><label>Type</label><div class="saisie"><select data-c="type"><option value="immo">Immobilier</option><option value="auto">Auto</option><option value="conso">Consommation</option><option value="autre">Autre</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
+        <div class="champ"><label>Mensualité</label><div class="saisie"><input data-c="mensualite" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
+        <div class="champ"><label>Capital restant dû</label><div class="saisie"><input data-c="capitalRestant" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
+        <div class="champ"><label>Taux</label><div class="saisie"><input data-c="tauxPct" data-type="decimal" type="text" inputmode="decimal" placeholder="10"><span class="saisie__unite">%</span></div></div>
+        <div class="champ"><label>Mois restants</label><div class="saisie"><input data-c="moisRestants" data-type="entier" type="text" inputmode="numeric" placeholder="60"><span class="saisie__unite">mois</span></div></div>
+      </div>
+      <div class="ligne-liste__actions">
+        <a class="bouton bouton--petit" data-analyser href="#credit">Analyser ce crédit</a>
+        <button type="button" class="bouton bouton--fantome bouton--petit" data-retirer><svg aria-hidden="true"><use href="/orbite/icones.svg#poubelle"/></svg>Retirer</button>
+      </div>
+    </li>
+  </template>
+
+  <template id="modele-contrat">
+    <li class="ligne-liste" data-liste="contrats">
+      <div class="grille-champs grille-champs--4">
+        <div class="champ champ--large"><label>Nom du contrat</label><div class="saisie"><input data-c="libelle" type="text" maxlength="60" placeholder="Contrat retraite"></div></div>
+        <div class="champ"><label>Produit</label><div class="saisie"><select data-c="type"><option value="av">Assurance vie</option><option value="cea">Compte épargne en actions (CEA)</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
+        <div class="champ"><label>Versement par mois</label><div class="saisie"><input data-c="versementMensuel" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
+        <div class="champ"><label>Capital actuel</label><div class="saisie"><input data-c="capitalActuel" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
+        <div class="champ"><label>Année d'ouverture</label><div class="saisie"><input data-c="anneeDebut" data-type="entier" type="text" inputmode="numeric" maxlength="4"></div></div>
+      </div>
+      <div class="ligne-liste__actions">
+        <button type="button" class="bouton bouton--fantome bouton--petit" data-retirer><svg aria-hidden="true"><use href="/orbite/icones.svg#poubelle"/></svg>Retirer</button>
+      </div>
+    </li>
+  </template>
+
+  <template id="modele-projet">
+    <li class="ligne-liste" data-liste="projets">
+      <div class="grille-champs grille-champs--4">
+        <div class="champ"><label>Projet</label><div class="saisie"><select data-c="type"><option value="logement">Acheter un logement</option><option value="terrain">Acheter un terrain</option><option value="voiture">Acheter une voiture</option><option value="travaux">Faire des travaux</option><option value="etudes">Financer des études</option><option value="retraite">Préparer la retraite</option><option value="precaution">Épargne de précaution</option><option value="autre">Autre</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
+        <div class="champ"><label>Nom (facultatif)</label><div class="saisie"><input data-c="libelle" type="text" maxlength="60"></div></div>
+        <div class="champ"><label>Montant</label><div class="saisie"><input data-c="montant" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
+        <div class="champ"><label>Dans combien de temps</label><div class="saisie"><input data-c="horizonAns" data-type="entier" type="text" inputmode="numeric" placeholder="3"><span class="saisie__unite">ans</span></div></div>
+      </div>
+      <div class="ligne-liste__actions">
+        <button type="button" class="bouton bouton--fantome bouton--petit" data-retirer><svg aria-hidden="true"><use href="/orbite/icones.svg#poubelle"/></svg>Retirer</button>
       </div>
     </li>
   </template>
@@ -236,48 +626,60 @@
     <button type="button" role="menuitem" data-action="supprimer" class="danger">Supprimer</button>
   </div>
 
-  <dialog class="dialogue" id="dlg-renommer" aria-labelledby="dlg-renommer-titre">
-    <form method="dialog" class="dialogue__forme">
+  <dialog class="dialogue" id="dlg-enregistrer" aria-labelledby="dlg-enr-titre">
+    <form method="dialog">
+      <div class="dialogue__tete"><h2 id="dlg-enr-titre">Enregistrer la simulation</h2></div>
       <div class="dialogue__corps">
-        <h2 id="dlg-renommer-titre">Renommer la simulation</h2>
-        <div class="champ"><label for="nouveau-nom">Nom</label><input id="nouveau-nom" type="text" maxlength="120" required spellcheck="false"></div>
+        <div class="apercu-sim" id="enr-apercu"></div>
+        <div class="champ"><label for="enr-nom">Nom</label><div class="saisie"><input id="enr-nom" type="text" maxlength="120" required spellcheck="false"></div></div>
       </div>
       <div class="dialogue__pied">
-        <button type="submit" class="bouton bouton--discret" value="annuler" formnovalidate>Annuler</button>
-        <button type="submit" class="bouton bouton--principal" value="ok">Renommer</button>
+        <button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Annuler</button>
+        <button type="submit" class="bouton bouton--plein" value="ok">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialogue" id="dlg-renommer" aria-labelledby="dlg-renommer-titre">
+    <form method="dialog">
+      <div class="dialogue__tete"><h2 id="dlg-renommer-titre">Renommer la simulation</h2></div>
+      <div class="dialogue__corps"><div class="champ"><label for="nouveau-nom">Nom</label><div class="saisie"><input id="nouveau-nom" type="text" maxlength="120" required spellcheck="false"></div></div></div>
+      <div class="dialogue__pied">
+        <button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Annuler</button>
+        <button type="submit" class="bouton bouton--plein" value="ok">Renommer</button>
       </div>
     </form>
   </dialog>
 
   <dialog class="dialogue" id="dlg-supprimer-compte" aria-labelledby="dlg-sc-titre">
-    <form method="dialog" class="dialogue__forme">
+    <form method="dialog">
+      <div class="dialogue__tete"><h2 id="dlg-sc-titre">Supprimer définitivement votre compte&nbsp;?</h2></div>
       <div class="dialogue__corps">
-        <h2 id="dlg-sc-titre">Supprimer définitivement votre compte&nbsp;?</h2>
-        <p>Votre profil et vos <strong id="sc-nombre">0</strong> simulations seront effacés immédiatement. Vous pouvez d'abord exporter vos données.</p>
-        <div class="champ"><label for="sc-confirmation">Tapez <strong>SUPPRIMER</strong> pour confirmer</label><input id="sc-confirmation" type="text" autocomplete="off" spellcheck="false" autocapitalize="characters"></div>
+        <p>Votre profil et vos <strong id="sc-nombre">0</strong> simulations seront effacés immédiatement, sans retour possible. Pensez à exporter vos données avant.</p>
+        <div class="champ"><label for="sc-confirmation">Tapez SUPPRIMER pour confirmer</label><div class="saisie"><input id="sc-confirmation" type="text" autocomplete="off" spellcheck="false"></div></div>
       </div>
       <div class="dialogue__pied">
-        <button type="submit" class="bouton bouton--discret" value="annuler" formnovalidate>Annuler</button>
-        <button type="submit" class="bouton bouton--danger" value="ok" id="sc-valider" disabled>Supprimer mon compte</button>
+        <button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Annuler</button>
+        <button type="submit" class="bouton bouton--danger-plein" id="sc-valider" value="ok" disabled>Supprimer mon compte</button>
       </div>
     </form>
-  </dialog>
-
-  <dialog class="dialogue" id="dlg-outils" aria-labelledby="dlg-outils-titre">
-    <div class="dialogue__corps">
-      <h2 id="dlg-outils-titre">Nouvelle simulation</h2>
-      <ul class="lanceurs lanceurs--compact" role="list">
-        <li><a class="lanceur" href="/outils/salaire/" data-outil="salaire"><span class="lanceur__trait" aria-hidden="true"></span><span class="lanceur__texte"><strong>Salaire brut ⇄ net</strong></span><svg class="lanceur__fleche" aria-hidden="true"><use href="#i-fleche"/></svg></a></li>
-        <li><a class="lanceur" href="/outils/assurance-vie/" data-outil="assurance_vie"><span class="lanceur__trait" aria-hidden="true"></span><span class="lanceur__texte"><strong>Assurance vie &amp; CEA</strong></span><svg class="lanceur__fleche" aria-hidden="true"><use href="#i-fleche"/></svg></a></li>
-        <li><a class="lanceur" href="/outils/credit/" data-outil="credit"><span class="lanceur__trait" aria-hidden="true"></span><span class="lanceur__texte"><strong>Crédit bancaire</strong></span><svg class="lanceur__fleche" aria-hidden="true"><use href="#i-fleche"/></svg></a></li>
-      </ul>
-    </div>
-    <div class="dialogue__pied"><form method="dialog"><button class="bouton bouton--discret">Fermer</button></form></div>
   </dialog>
 
   <script src="/commun/vendor/supabase.js"></script>
   <script src="/commun/modele.js"></script>
   <script src="/commun/session.js"></script>
-  <script src="/commun/espace.js"></script>
+  <script src="/moteurs/salaire/parametres.js"></script>
+  <script src="/moteurs/salaire/calcul.js"></script>
+  <script src="/moteurs/salaire/etat.js"></script>
+  <script src="/moteurs/vie/baremes.js"></script>
+  <script src="/moteurs/vie/moteur-fiscal.js"></script>
+  <script src="/moteurs/vie/projection.js"></script>
+  <script src="/moteurs/vie/scenario.js"></script>
+  <script src="/espace/js/orbite-calcul.js"></script>
+  <script src="/espace/js/app.js"></script>
+  <script src="/espace/js/vue-orbite.js"></script>
+  <script src="/espace/js/vue-profil.js"></script>
+  <script src="/espace/js/module-salaire.js"></script>
+  <script src="/espace/js/simulations.js"></script>
 </body>
 </html>

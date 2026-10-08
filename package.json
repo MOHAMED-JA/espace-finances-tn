@@ -3,7 +3,7 @@
   "private": true,
   "description": "Espace Finances TN : salaire brut ⇄ net, assurance vie & CEA et crédit, avec comptes et simulations enregistrées (Supabase).",
   "scripts": {
-    "test": "node --test tests/espace/*.test.js tests/salaire/*.test.js tests/assurance-vie/*.test.js",
+    "test": "node --test tests/espace/*.test.js tests/salaire/*.test.js tests/assurance-vie/*.test.js tests/credit/*.test.js",
     "serve": "node e2e/serveur.js",
     "e2e": "node e2e/parcours.js"
   },
