@@ -35,6 +35,7 @@
       if (el.type === "radio") el.checked = el.value === v;
       else if (el.type === "checkbox") el.checked = !!v;
       else if (el.tagName === "SELECT") el.value = v;
+      else if (el.getAttribute("data-type") === "date") el.value = v || "";
       else el.value = cle === "anneeNaissance" ? String(v) : versTexte(el.getAttribute("data-type"), v);
     });
     form.querySelectorAll("[data-po]").forEach(function (o) {
@@ -123,7 +124,13 @@
     if (el.type === "radio") { if (!el.checked) return; partiel[cle] = el.value; }
     else if (el.type === "checkbox") partiel[cle] = el.checked;
     else if (el.tagName === "SELECT") partiel[cle] = el.value;
-    else if (cle === "prenom" || cle === "banque" || cle === "conjointPrenom") partiel[cle] = el.value;
+    else if (cle === "prenom" || cle === "nom" || cle === "banque" || cle === "conjointPrenom") partiel[cle] = el.value;
+    else if (el.getAttribute("data-type") === "date") {
+      var ok = el.value === "" || /^\d{4}-\d{2}-\d{2}$/.test(el.value);
+      el.setAttribute("aria-invalid", ok && !(el.required && !el.value) ? "false" : "true");
+      if (!ok) return;
+      partiel[cle] = el.value;
+    }
     else if (cle === "anneeNaissance") { var a = parseInt(el.value, 10); if (!(a > 1900)) return; partiel[cle] = a; }
     else {
       var v = depuisTexte(el.getAttribute("data-type"), el.value);
@@ -231,7 +238,9 @@
     if (!enEdition) remplirChamps(p);
     rendreFoyer(p);
     var s = sy.salaire;
-    $("p-age").textContent = sy.age + " ans";
+    $("p-age").textContent = p.dateNaissance ? sy.age + " ans" : "Obligatoire : la banque en tient compte pour la durée du crédit.";
+    $("p-naissance").setAttribute("aria-invalid", p.dateNaissance ? "false" : "true");
+    $("p-anciennete-aide").textContent = p.dateEmbauche ? p.anciennete + " an" + (p.anciennete > 1 ? "s" : "") + " d'ancienneté" : "Facultatif : sert au calcul de votre ancienneté.";
     $("p-montant-lib").textContent = "Salaire " + (p.sens === "net" ? "net" : "brut") + (p.periode === "annuel" ? " par an" : " par mois");
     var n = p.nombreSalaires;
     $("p-aide-salaires").textContent = n === 12 ? "12 = sans 13ᵉ mois" : n === 13 ? "13 = avec un 13ᵉ mois" : "dont " + (n - 12) + " versements en plus";

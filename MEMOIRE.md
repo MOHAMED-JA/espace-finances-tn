@@ -453,6 +453,18 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 septvicies. Profil : nom et prénom, date de naissance obligatoire, date d'embauche (10 oct.)
+
+- **Demande de l'utilisateur** : date de naissance complète au lieu de l'année, date d'embauche au lieu du nombre d'années d'ancienneté, nom et prénom séparés. Choix (question cliquable) : « Date de naissance obligatoire ».
+- **Profil** (`orbite-calcul.js`) : champs `nom`, `dateNaissance`, `dateEmbauche` (AAAA-MM-JJ, contrôlés par `dateIso` : naissance entre 1930 et il y a 16 ans, embauche entre 1960 et aujourd'hui).
+  - `anneeNaissance` et `anciennete` sont **déduites** des dates quand elles existent (les anciens profils gardent leurs valeurs).
+  - `O.age(p, date)` est exact au jour près avec `dateNaissance`.
+- **Obligatoire** : `app.js/recalculer()` pose la classe `sans-naissance` sur `body` tant que la date manque.
+  - CSS : `[data-requiert-naissance]` (capacité `#capacite`, `#cap-paliers`) masqué ; `.requiert-naissance` (encart avec lien `#profil?section=identite`) affiché, dans Mon orbite et dans l'éligibilité du Crédit.
+  - Le badge « À compléter » reste visible tant que la date manque.
+- **Nom affiché** : `nomAffiche()` = prénom + nom du profil (sinon nom Google) dans la barre latérale ; la salutation garde le prénom.
+- Tests : 2 tests unitaires (âge, ancienneté, dates invalides) ; e2e : l'encart s'affiche sans date, puis nom, dates et « Aziz Jaouadi » vérifiés. 319 tests, e2e 27/27.
+
 ## 3 sexvicies. Valeurs d'ouverture, hausse de salaire (10 oct.)
 
 - **Crédit** : à l'ouverture, le montant est la capacité réelle sur `baseBanque` (brut ou net), arrondie au millier (31 000 DT pour l'utilisateur).

@@ -237,7 +237,8 @@
                 <i class="bascule__pastille" aria-hidden="true"></i>
               </div>
             </div>
-            <div class="capacite" id="capacite">
+            <p class="encart encart--alerte requiert-naissance">La banque tient compte de votre âge (durée maximale du crédit). Indiquez votre <a href="#profil?section=identite">date de naissance</a> pour voir ce qu'elle peut vous prêter.</p>
+            <div class="capacite" id="capacite" data-requiert-naissance>
               <div class="capacite__tete panneau">
                 <span id="cap-tete-lib">Mensualité maximale</span>
                 <strong id="cap-mensualite">—</strong>
@@ -245,7 +246,7 @@
               </div>
               <ul class="capacite__liste" id="cap-liste"></ul>
             </div>
-            <div class="paliers panneau" id="cap-paliers" hidden>
+            <div class="paliers panneau" id="cap-paliers" data-requiert-naissance hidden>
               <h3 class="paliers__titre">Le calendrier de votre marge</h3>
               <p class="paliers__sous" id="cap-paliers-sous">Chaque crédit qui se termine libère une partie de votre capacité d'emprunt.</p>
               <div class="paliers__taux">
@@ -293,10 +294,11 @@
 
           <form id="form-profil-complet" class="profil" novalidate>
             <details class="depliant" id="sec-identite" open>
-              <summary><span class="depliant__icone"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg></span><span>Vous<small>Prénom, âge, situation de famille</small></span><svg class="chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
+              <summary><span class="depliant__icone"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg></span><span>Vous<small>Nom, prénom, date de naissance, situation de famille</small></span><svg class="chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
               <div class="depliant__corps grille-champs">
+                <div class="champ"><label for="p-nom">Nom</label><div class="saisie"><input id="p-nom" data-p="nom" type="text" maxlength="60" autocomplete="family-name"></div></div>
                 <div class="champ"><label for="p-prenom">Prénom</label><div class="saisie"><input id="p-prenom" data-p="prenom" type="text" maxlength="40" autocomplete="given-name"></div></div>
-                <div class="champ"><label for="p-naissance">Année de naissance</label><div class="saisie"><input id="p-naissance" data-p="anneeNaissance" type="text" inputmode="numeric" maxlength="4" autocomplete="bday-year"></div><span class="champ__aide" id="p-age"></span></div>
+                <div class="champ"><label for="p-naissance">Date de naissance <span class="champ__requis">obligatoire</span></label><div class="saisie"><input id="p-naissance" data-p="dateNaissance" data-type="date" type="date" min="1930-01-01" required aria-required="true" aria-describedby="p-age" autocomplete="bday"></div><span class="champ__aide" id="p-age"></span></div>
                 <div class="champ"><label for="p-situation">Situation de famille</label><div class="saisie"><select id="p-situation" data-p="situation"><option value="celibataire">Célibataire</option><option value="marie">Marié·e</option><option value="divorce">Divorcé·e</option><option value="veuf">Veuf·ve</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
                 <label class="interrupteur champ--large"><span><strong>Chef de famille</strong><small>Déduction de 300 DT par an, et enfants à charge</small></span><input type="checkbox" data-p="chefDeFamille" role="switch"><span class="interrupteur__piste" aria-hidden="true"></span></label>
                 <div class="compteurs champ--large">
@@ -322,7 +324,7 @@
                 <div class="champ"><label for="p-ava">Avantages en nature (par mois)</label><div class="saisie"><input id="p-ava" data-p="avantagesNature" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
                 <div class="champ"><label for="p-ind">Indemnités non imposables (par mois)</label><div class="saisie"><input id="p-ind" data-p="indemnitesNonImposables" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div><span class="champ__aide">Transport, panier… exonérés</span></div>
                 <div class="champ"><label for="p-statut">Type de contrat</label><div class="saisie"><select id="p-statut" data-p="statut"><option value="cdi">CDI</option><option value="fonctionnaire">Fonctionnaire titulaire</option><option value="cdd">CDD</option><option value="contractuel">Contractuel</option><option value="autre">Autre</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
-                <div class="champ"><label for="p-anciennete">Ancienneté chez l'employeur</label><div class="saisie"><input id="p-anciennete" data-p="anciennete" data-type="entier" type="text" inputmode="numeric" maxlength="2"><span class="saisie__unite">ans</span></div></div>
+                <div class="champ"><label for="p-embauche">Date d'embauche</label><div class="saisie"><input id="p-embauche" data-p="dateEmbauche" data-type="date" type="date" min="1960-01-01" aria-describedby="p-anciennete-aide"></div><span class="champ__aide" id="p-anciennete-aide"></span></div>
                 <div class="champ"><label for="p-autres">Autres revenus réguliers (par mois)</label><div class="saisie"><input id="p-autres" data-p="autresRevenus" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div><span class="champ__aide">Loyer perçu, pension… pris en compte par la banque</span></div>
                 <p class="profil-resume champ--large" id="p-resume-salaire" aria-live="polite"></p>
               </div>
