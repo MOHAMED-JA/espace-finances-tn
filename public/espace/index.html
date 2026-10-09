@@ -90,6 +90,14 @@
 
       <p class="signature signature--bandeau barre-signature"><span class="signature__pre">Powered by</span><a class="signature__nom" href="https://www.linkedin.com/in/mohamed-aziz-jaouadi-%D9%85%D8%AD%D9%85%D8%AF-%D8%B9%D8%B2%D9%8A%D8%B2-%D8%A7%D9%84%D8%AC%D9%88%D8%A7%D8%AF%D9%8A-%C2%AEpsm-i-%C2%AEpspo-l-%C2%AEistqb-851009115/?isSelfProfile=true" target="_blank" rel="noopener noreferrer" aria-label="Mohamed Aziz Jaouadi, profil LinkedIn (nouvel onglet)"><span class="signature__in" aria-hidden="true">in</span><span translate="no">Mohamed Aziz Jaouadi</span><span class="signature__fleche" aria-hidden="true">↗</span></a></p>
       <main class="principal" id="principal" tabindex="-1">
+        <div class="maj-bandeau" id="maj-bandeau" role="status" hidden>
+          <svg aria-hidden="true"><use href="/orbite/icones.svg#hausse"/></svg>
+          <p><strong>Une nouvelle version d'Orbite est disponible.</strong> <span>La mise à jour prend quelques secondes ; vos données restent enregistrées.</span></p>
+          <div class="maj-bandeau__actions">
+            <button type="button" class="bouton bouton--petit bouton--fantome" id="maj-plus-tard">Plus tard</button>
+            <button type="button" class="bouton bouton--petit bouton--plein" id="maj-appliquer">Mettre à jour</button>
+          </div>
+        </div>
         <p class="hors-ligne" id="hors-ligne" role="status" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#info"/></svg><span><strong>Hors connexion.</strong> Vous consultez les données de votre dernière visite ; vos modifications seront enregistrées au retour du réseau.</span></p>
 
         <!-- ======== Mon orbite ======== -->
@@ -1125,6 +1133,14 @@
     </form>
   </dialog>
 
+  <dialog class="dialogue" id="dlg-nouveautes" aria-labelledby="dlg-nouveautes-titre">
+    <form method="dialog">
+      <div class="dialogue__tete"><h2 id="dlg-nouveautes-titre">Quoi de neuf dans Orbite</h2><span class="dialogue__date" id="nouveautes-date"></span></div>
+      <div class="dialogue__corps"><ul class="nouveautes" id="nouveautes-liste"></ul></div>
+      <div class="dialogue__pied"><button type="submit" class="bouton bouton--plein" value="ok">C'est noté</button></div>
+    </form>
+  </dialog>
+
   <dialog class="dialogue" id="dlg-renommer" aria-labelledby="dlg-renommer-titre">
     <form method="dialog">
       <div class="dialogue__tete"><h2 id="dlg-renommer-titre">Renommer la simulation</h2></div>
@@ -1192,6 +1208,7 @@
   <script src="/espace/js/admin.js"></script>
   <script src="/espace/js/vue-vie.js"></script>
   <script src="/espace/js/rappels-calcul.js"></script>
+  <script src="/espace/js/nouveautes.js"></script>
   <script src="/espace/js/appli.js"></script>
   <script src="/espace/js/vue-assistant.js"></script>
   <script src="/espace/js/visite.js"></script>

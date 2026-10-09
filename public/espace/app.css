@@ -639,3 +639,19 @@ body.attente .app { visibility: hidden; }
   .visite__bulle--entre { animation: none; }
 }
 :root[data-mouvement="reduit"] .visite__halo, :root[data-mouvement="reduit"] .visite__bulle { transition: none; }
+
+/* ---------- Nouvelle version disponible ---------- */
+.maj-bandeau { position: sticky; top: 64px; z-index: 15; display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; margin: 0 0 16px; padding: 12px 14px 12px 16px;
+  border-radius: var(--r-int); background: var(--credit-doux); color: var(--encre); border: 1px solid color-mix(in srgb, var(--credit) 30%, transparent);
+  animation: maj-entre 260ms var(--sortie); }
+.maj-bandeau > svg { width: 20px; height: 20px; flex: none; color: var(--credit-t); }
+.maj-bandeau p { flex: 1 1 260px; margin: 0; font-size: 14px; line-height: 1.45; }
+.maj-bandeau p span { color: var(--encre-2); }
+.maj-bandeau__actions { display: flex; gap: 8px; margin-left: auto; }
+@keyframes maj-entre { from { opacity: 0; transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) { .maj-bandeau { animation: none; } }
+.dialogue__date { font-size: 13px; color: var(--encre-3); }
+.nouveautes { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.nouveautes li { position: relative; padding-left: 18px; font-size: 14.5px; line-height: 1.5; color: var(--encre-2); }
+.nouveautes li::before { content: ""; position: absolute; left: 0; top: .6em; width: 7px; height: 7px; border-radius: 999px; background: var(--credit); }
+.nouveautes strong { color: var(--encre); }

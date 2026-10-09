@@ -453,6 +453,17 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 tertricies. Mise à jour proposée à l'utilisateur + « Quoi de neuf » (10 oct.)
+
+- **Choix (questions cliquables)** : bandeau + bouton ; court résumé des nouveautés ; vérification à l'ouverture + toutes les 30 min.
+- `sw.js` : **plus de `skipWaiting` automatique**. La nouvelle version s'installe puis attend ; message `{type: "activer"}` → `skipWaiting()`. Première installation : active tout de suite (pas d'ancienne version).
+- `appli.js` : `surveillerVersion(r)` (si une page est déjà contrôlée) : `r.waiting` ou `updatefound` → `proposerMaj(sw)` ; `r.update()` toutes les 30 min et au retour de visibilité ; `controllerchange` → rechargement (seulement après clic) ; filet de rechargement à 4 s.
+  - Bandeau `#maj-bandeau` (« Plus tard » le masque jusqu'au prochain chargement ; la version s'applique d'elle-même quand Orbite est fermée partout).
+  - `window.OrbiteMaj = { proposer, nouveautes }` (sert aussi aux tests).
+- **Quoi de neuf** : `public/espace/js/nouveautes.js` (`window.ORBITE_NOUVEAUTES = { version, date, points }`), dialogue `#dlg-nouveautes`. Clé `localStorage` « orbite-nouveautes ». Montré une fois par version de notes ; jamais à un nouveau venu (profil vierge) ; après « Mettre à jour » sans nouvelles notes : toast « Orbite est à jour ».
+  - **À chaque mise en ligne importante** : réécrire `nouveautes.js` et changer sa `version` (2 à 4 points, du point de vue de l'utilisateur).
+- e2e (étape mobile) : nouveautés pour un utilisateur existant sur un nouvel appareil, bandeau, Plus tard, Mettre à jour (activation + rechargement). 30/30.
+
 ## 3 duotricies. Cache : réseau d'abord pour scripts et styles (10 oct.)
 
 - **Bug signalé (capture téléphone)** : la visite guidée s'affichait en texte brut en bas de page. Cause : le service worker servait js/css **depuis le cache d'abord** ; la nouvelle page (réseau) et `visite.js` (absent du cache, donc réseau) étaient chargés avec l'**ancien** `app.css` en cache.
