@@ -521,6 +521,28 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => /1 mois gagné/.test(document.getElementById("ab-parr-bilan").textContent));
   });
 
+  await etape("application : service worker, consultation hors connexion, rappels", async () => {
+    await page.goto(base + "/espace/#orbite");
+    await page.waitForFunction(() => navigator.serviceWorker && navigator.serviceWorker.controller, null, { timeout: 20000 }).catch(() => {});
+    if (!(await page.evaluate(() => !!(navigator.serviceWorker && navigator.serviceWorker.controller)))) { await page.reload(); await page.waitForFunction(() => navigator.serviceWorker.controller, null, { timeout: 20000 }); }
+    await contexte.setOffline(true);
+    await page.reload();
+    await page.waitForFunction(() => window.Orbite && window.Orbite.pret, null, { timeout: 20000 });
+    assert(/\/espace\//.test(page.url()), "pas de renvoi vers la connexion hors réseau");
+    assert(await page.isVisible("#hors-ligne"), "bandeau hors connexion");
+    await contexte.setOffline(false);
+    await page.reload();
+    await page.waitForFunction(() => window.Orbite && window.Orbite.pret);
+    assert(await page.isHidden("#hors-ligne"), "bandeau masqué en ligne");
+    await contexte.grantPermissions(["notifications"]);
+    await page.goto(base + "/espace/#compte?onglet=preferences");
+    await page.click("#rappels-activer");
+    await page.waitForFunction(() => /Rappels activés/.test(document.getElementById("rappels-etat").textContent));
+    assert((await page.$$("#rappels-liste li")).length >= 1, "liste des rappels prévus");
+    await page.click("#rappels-couper");
+    await page.waitForFunction(() => /désactivés/.test(document.getElementById("rappels-etat").textContent));
+  });
+
   await etape("déconnexion puis suppression définitive du compte", async () => {
     await page.goto(base + "/espace/#compte?onglet=donnees");
     await page.waitForSelector("#supprimer-compte");

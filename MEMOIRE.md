@@ -412,6 +412,25 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Exemple** : avec le profil de l'utilisateur et un conjoint à 2 000 DT brut × 13, la mensualité commune est de 1 065 DT (+867 DT), soit 168 261 DT en immobilier sur 20 ans à 4,5 %.
 - **Tests** : unitaires 297, e2e 24/24 (activation, vérification, désactivation), aucun débordement.
 
+## 3 novodecies. Application installable, hors connexion, rappels (9 oct., lot 5 sur 6)
+
+- **Service worker `public/sw.js`** (portée `/`, enregistré par `public/espace/js/appli.js`) :
+  - À l'installation, il met en cache `/espace/`, tous les scripts, styles et icônes cités par la page, ainsi que les polices citées par les CSS (62 fichiers).
+  - Navigation : réseau d'abord, puis cache si le réseau manque. Fichiers statiques : cache tout de suite, mise à jour en arrière-plan.
+  - Jamais en cache : les autres domaines (Supabase), les requêtes autres que GET, le retour de paiement et `paiement-test.html`.
+  - Le cache `orbite-<date>-site` est versionné par la constante `VERSION` (à changer pour forcer un nouveau cache). En-tête `/sw.js` : `Cache-Control: no-cache`.
+- **Session hors connexion** (`session.js`, `exigerConnexion`) : une erreur réseau de `getUser` ne déconnecte plus. On utilise alors l'utilisateur de la session enregistrée sur l'appareil (`E.horsLigne()`, `E.estErreurReseau`).
+  - Bandeau `#hors-ligne`.
+  - Un profil modifié hors connexion est enregistré à l'événement `online` (`profilEnAttente`), et la session est revérifiée au retour du réseau.
+- **Rappels** :
+  - `rappels-calcul.js` (pur, 5 tests) : veille de la fin d'essai, 3 jours avant la fin d'abonnement, mois de la dernière échéance d'un crédit (dans les 13 mois), 1er et 15 décembre s'il reste une économie d'impôt à saisir. Les identifiants sont stables, pour n'afficher chaque rappel qu'une fois.
+  - `appli.js` : préférence propre à l'appareil `ef-rappels` (Paramètres → Préférences → Rappels). Après autorisation, la liste est envoyée au service worker (`postMessage`), qui l'enregistre dans le cache `orbite-rappels` (`/__orbite/rappels.json`).
+  - Les rappels s'affichent au bon moment et une seule fois (`rappels-vus.json`) : tout de suite quand Orbite est ouverte, et via `periodicSync` (12 h) pour l'application installée sous Chrome / Edge. Un clic sur la notification ouvre la bonne page.
+  - Limite : sans application installée ni navigateur compatible, les rappels n'apparaissent qu'à l'ouverture d'Orbite. Un vrai « push » serveur demanderait des clés VAPID et une fonction planifiée (prochaine étape possible).
+- **Installation** : invitation `beforeinstallprompt` (bouton « Installer Orbite »), instructions pour iPhone, et état affiché. Le manifeste et les icônes existaient déjà.
+- **Confidentialité** : nouvelle rubrique « Application et hors connexion » (cache des fichiers du site seulement ; rappels calculés et affichés sur l'appareil).
+- **Tests** : unitaires 302, e2e 25/25. L'étape service worker vérifie la coupure réseau, le rechargement depuis le cache, le bandeau et les rappels. Pièges : avec `setOffline`, Playwright continue de répondre aux routes simulées (le cas « enregistrement hors ligne » n'est donc vérifié qu'à la main) ; le premier chargement n'est pas contrôlé par le service worker (il faut recharger une fois).
+
 ## 4. Prochaines actions (améliorations possibles, rien de bloquant)
 
 1. Vérifier le site en ligne après chaque déploiement (Cloudflare se déploie depuis `main`).

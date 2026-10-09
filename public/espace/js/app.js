@@ -129,11 +129,34 @@
       etatEnr.className = "barre__etat barre__etat--ok";
       setTimeout(function () { if (etatEnr.textContent === "Profil enregistré") etatEnr.textContent = ""; }, 2400);
     }).catch(function (err) {
+      /* Hors connexion : le profil reste sur l'appareil et part dès le retour du réseau. */
+      if (E.estErreurReseau(err)) {
+        profilEnAttente = true;
+        etatEnr.textContent = "Enregistré au retour du réseau";
+        etatEnr.className = "barre__etat";
+        return;
+      }
       etatEnr.textContent = "Non enregistré";
       etatEnr.className = "barre__etat barre__etat--erreur";
       E.toast(M.messageErreur(err), { erreur: true });
     });
   }
+  var profilEnAttente = false;
+  /* Bandeau « hors connexion » et reprise automatique au retour du réseau. */
+  function majReseau() {
+    var b = $("hors-ligne");
+    if (b) b.hidden = navigator.onLine;
+    doc.documentElement.toggleAttribute("data-hors-ligne", !navigator.onLine);
+  }
+  window.addEventListener("offline", majReseau);
+  window.addEventListener("online", function () {
+    majReseau();
+    if (profilEnAttente) { profilEnAttente = false; sauverProfil(); }
+    /* Session ouverte hors connexion : vérification auprès du serveur maintenant que le réseau est revenu. */
+    if (E.horsLigne()) E.client.auth.getUser().then(function (r) {
+      if (r.data && r.data.user) { utilisateur = r.data.user; remplirUtilisateur(); majReseau(); }
+    }).catch(function () {});
+  });
   function choisir(cle, valeur) { choix[cle] = valeur; recalculer(); }
 
   /* ---------- Modules et enregistrement des simulations ---------- */
@@ -389,6 +412,7 @@
     doc.body.classList.remove("attente");
     afficher(false);
     window.Orbite.pret = true;
+    majReseau();
     doc.dispatchEvent(new CustomEvent("orbite:pret"));
   });
 })();
