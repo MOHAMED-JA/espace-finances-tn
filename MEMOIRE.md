@@ -453,6 +453,16 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 quatertricies. Assistant : IA gratuite Cloudflare Workers AI + ton plus humain (10 oct.)
+
+- **Demande de l'utilisateur** : un Assistant intelligent « comme Claude ». Constat : la fonction appelait déjà Claude, mais `ANTHROPIC_API_KEY` n'est pas configurée, d'où l'assistant intégré. L'utilisateur veut **du gratuit** → choix (question cliquable) : **Cloudflare Workers AI**. Ton plus humain : oui.
+- Liste à jour des paliers gratuits (cheahjs) inaccessible depuis l'environnement : aucun quota cité. Rappel donné : Gemini gratuit / Mistral gratuit entraînent sur les données → contraire à la confidentialité.
+- `supabase/functions/assistant/index.ts` (déployée v3) : ordre **Claude** (si `ANTHROPIC_API_KEY`) → **Cloudflare** (si `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN`) → `bientot`.
+  - Cloudflare : modèle `CF_MODELE` imposé, sinon catalogue du compte (`/ai/models/search?task=Text Generation`) + `choisirModeleCF`, sinon `MODELES_CF_SECOURS` ; appel `/ai/v1/chat/completions`, repli `/ai/run/<modèle>` ; 429 → `quota_gratuit` ; échec → 503 et question rendue (`assistant_rendre`) → le navigateur répond avec l'assistant intégré.
+- `regles.js` : `SYSTEME` réécrit (ami qui s'y connaît, réponse directe, longueur adaptée, une question si info manquante, vouvoiement sauf tutoiement, darija), `messagesChat`, `choisirModeleCF`, `texteCloudflare` (retire `<think>`). 4 tests ajoutés (325).
+- Confidentialité : fournisseur d'IA « Cloudflare (Workers AI) ou Anthropic ».
+- **À faire par l'utilisateur** : créer un jeton API Cloudflare (Workers AI lecture + modification) et ajouter dans Supabase → Edge Functions → Secrets : `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`. Ne jamais coller ces valeurs dans la conversation ni dans le dépôt.
+
 ## 3 tertricies. Mise à jour proposée à l'utilisateur + « Quoi de neuf » (10 oct.)
 
 - **Choix (questions cliquables)** : bandeau + bouton ; court résumé des nouveautés ; vérification à l'ouverture + toutes les 30 min.
