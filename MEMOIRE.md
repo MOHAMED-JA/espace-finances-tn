@@ -458,6 +458,7 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - Balises Open Graph et Twitter dans `public/index.html` (canonical, og:title, og:description, og:image et ses dimensions, og:image:alt, twitter:card summary_large_image).
 - Image de partage : `public/orbite/og-orbite.jpg` (1200×627, JPEG). Elle est générée par `poster()` dans `promo/video/scene.html` (`node og.js`), avec les mêmes captures que la vidéo.
 - `robots.txt` autorise explicitement `/orbite/`.
+- **Le Post Inspector ne joint pas l'adresse workers.dev** (« Unable to connect to server. Bad DNS, bad gateway », 9 oct.). Lien à partager sur LinkedIn : **https://mohamed-ja.github.io/portail-rh/orbite/**. C'est une page de partage (dépôt portail-rh, `orbite/index.html` + `og-orbite.jpg`, PR portail-rh#10) avec toutes les balises d'aperçu ; elle redirige le visiteur vers l'application en JavaScript. og:url pointe sur elle-même, pour que LinkedIn ne retourne pas sur workers.dev. À plus long terme, un nom de domaine personnalisé sur le Worker réglerait le problème à la racine.
 - Vérification : LinkedIn Post Inspector (https://www.linkedin.com/post-inspector/) sur l'adresse du site ; il force aussi LinkedIn à rafraîchir son cache.
 - Vidéo LinkedIn/YouTube (16:9) régénérée :
   - darija adressée à l'utilisateur (« Ey, etnajjem ! », « ki yekmel ») ;
