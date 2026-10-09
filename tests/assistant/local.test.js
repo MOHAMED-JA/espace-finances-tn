@@ -51,3 +51,24 @@ test('profil vide ou question inconnue', () => {
   assert.equal(A.repondre('bonjour', null).lien.href, '#profil');
   assert.match(A.repondre('bonjour', sy).texte, /Voici l'essentiel/);
 });
+
+test('calcul pour l\'IA : voiture en 2030, capacité actuelle puis l\'étape suivante (mars 2032)', () => {
+  const r = A.calculPourIA('Est-ce que je peux acheter une voiture en 2030 ?', sy);
+  assert.match(r.texte, /en 2030/);
+  assert.match(r.texte, /14\s233\sDT/);
+  assert.match(r.texte, /mars 2032\*\*, à la fin de votre crédit auto, ce plafond passe à \*\*64\s233\sDT/);
+});
+
+test('calcul pour l\'IA : relance « et si j\'attends un an de plus ? » reprend la question précédente un an plus tard', () => {
+  const r = A.calculPourIA('Et si j\'attends un an de plus ?', sy, 'Est-ce que je peux acheter une voiture en 2030 ?');
+  assert.match(r.texte, /en 2031/);
+  const d = A.calculPourIA('w ken nostanna 3am ?', sy, 'Najjem nechri karhba fi 2030 ?');
+  assert.match(d.texte, /Fi 2031/);
+  assert.match(A.calculPourIA('Et si j\'attends deux ans ?', sy, 'Puis-je acheter une voiture ?').texte, /en 2028/);
+});
+
+test('calcul pour l\'IA : rien pour une salutation ou sans profil', () => {
+  assert.equal(A.calculPourIA('Bonjour', sy), null);
+  assert.equal(A.calculPourIA('Et si j\'attends un an ?', sy, 'Bonjour'), null);
+  assert.equal(A.calculPourIA('Puis-je acheter une voiture ?', null), null);
+});

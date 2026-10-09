@@ -89,3 +89,15 @@ test('Cloudflare : texte des deux formats de réponse, raisonnement <think> reti
   assert.equal(R.texteCloudflare({ choices: [{ message: { content: '<think>calcul</think>\nBonjour !' } }] }), 'Bonjour !');
   assert.equal(R.texteCloudflare({ result: {} }), null);
 });
+
+test('calcul d\'Orbite : transmis à l\'IA dans un bloc dédié, borné, avec la consigne de ne rien changer', async () => {
+  const R = await charger();
+  const e = R.nettoyer({ question: 'Voiture en 2030 ?', contexte: 'net', calcul: 'Oui, en 2030 : 14 233 DT.' + 'x'.repeat(5000) });
+  assert.equal(e.calcul.length, R.LIMITES.calcul);
+  const m = R.messages(e);
+  assert.match(m[m.length - 1].content, /<calcul_orbite>\nOui, en 2030 : 14 233 DT\./);
+  assert.ok(m[m.length - 1].content.indexOf('<calcul_orbite>') < m[m.length - 1].content.indexOf('Question :'));
+  assert.equal(R.nettoyer({ question: 'Bonjour' }).calcul, '');
+  assert.match(R.SYSTEME, /ne change aucun chiffre ni aucune date/);
+  assert.match(R.SYSTEME, /sans aucun chiffre du profil/);
+});

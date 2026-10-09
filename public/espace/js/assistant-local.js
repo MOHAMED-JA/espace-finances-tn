@@ -56,7 +56,7 @@
     var etapes = (cap.paliers || []).filter(function (x) { return !annee || dateEtape(sy, x.mois).getFullYear() <= annee; });
     var x = etape || (annee ? etapes[etapes.length - 1] : null);
     if (!x) return actuel;
-    return { mensualite: x.mensualiteMax, date: x.date, credits: x.credits, base: p.baseBanque, quotite: q, offres: x.offres };
+    return { mensualite: x.mensualiteMax, date: x.date, mois: x.mois, credits: x.credits, base: p.baseBanque, quotite: q, offres: x.offres };
   }
   function offre(c, cle) { return c.offres.filter(function (o) { return o.cle === cle; })[0]; }
   function finDe(credits, D) {
@@ -94,10 +94,13 @@
       L.push((D ? "- mensualité possible : **" : "- mensualité possible : **") + dt(c.mensualite) + "** par mois");
       L.push((D ? "- " + (cle === "auto" ? "karhba" : o.libelle.toLowerCase()) + " jusqu'à **" : "- " + o.libelle.toLowerCase() + " : jusqu'à **") + dt(o.capital) + "** " + (D ? "3la " + (o.dureeMois / 12 === Math.round(o.dureeMois / 12) ? nb(o.dureeMois / 12) + " snin" : o.dureeMois + " chhar") : "sur " + ans(o.dureeMois)) + " à " + nb(o.tauxPct) + " %");
       L.push(D ? "- endettement taht " + pc(c.quotite) + " mel " + c.base : "- endettement : sous " + pc(c.quotite) + " de votre " + c.base);
-      if (!annee || !c.date) {
-        var m2 = meilleurMoment(sy), o2 = m2 ? m2.offres.filter(function (x) { return x.cle === cle; })[0] : null;
-        if (o2 && o2.capital > o.capital * 1.05) L.push(D ? "Ken testanna **" + m2.date + "**, twalli tnajjem tousel **" + dt(o2.capital) + "**." : "Si vous attendez **" + m2.date + "**, ce plafond monte à **" + dt(o2.capital) + "**.");
-      }
+      /* Étape suivante du calendrier (prochaine fin de crédit), puis le meilleur moment s'il est plus loin. */
+      var pal2 = sy.capacite[p.baseBanque].paliers || [];
+      var suivant = pal2.filter(function (x) { return c.mois != null ? x.mois > c.mois : !annee || dateEtape(sy, x.mois).getFullYear() > annee; })[0];
+      var o3 = suivant ? offre(suivant, cle) : null;
+      if (o3 && o3.capital > o.capital * 1.05) L.push(D ? "Men **" + suivant.date + "**, " + finDe(suivant.credits, true) + ", twalli tnajjem tousel **" + dt(o3.capital) + "**." : "À partir de **" + suivant.date + "**, " + finDe(suivant.credits, false) + ", ce plafond passe à **" + dt(o3.capital) + "**.");
+      var m2 = meilleurMoment(sy), o2 = m2 && m2 !== suivant ? offre(m2, cle) : null;
+      if (o2 && o2.capital > Math.max(o.capital, o3 ? o3.capital : 0) * 1.05) L.push(D ? "Ken testanna **" + m2.date + "**, twalli tnajjem tousel **" + dt(o2.capital) + "**." : "Si vous attendez **" + m2.date + "**, il monte jusqu'à **" + dt(o2.capital) + "**.");
       if (p.epargneDisponible > 0) L.push(D ? "W 3andek " + dt(p.epargneDisponible) + " tawfir tnajjem t7otthom avance." : "Vous disposez aussi de " + dt(p.epargneDisponible) + " d'épargne pour l'apport.");
       /* Le simulateur reçoit tout le crédit proposé : type, montant, durée, taux (fixe) et mensualité. */
       return { texte: L.join("\n"), lien: { libelle: "Simuler ce crédit", href: "#credit?type=" + cle + "&capital=" + Math.floor(o.capital) + "&mois=" + o.dureeMois +
@@ -200,6 +203,11 @@
     if (!annee && /\b(ba3d ma|apres|quand|wa9tech|waqtech|waktech|meilleur moment)\b/.test(qn)) { var mm = meilleurMoment(sy); if (mm) annee = dateEtape(sy, mm.mois).getFullYear(); }
     var it = intention(qn);
     if (it === "vie" && /\b(voiture|karhba|appart|maison|dar|immobilier)\b/.test(qn)) it = intention(qn.replace(INTENTIONS[0][1], " "));
+    var r = reponse(sy, it, annee, D, qn);
+    r.intention = it || "defaut";
+    return r;
+  }
+  function reponse(sy, it, annee, D, qn) {
     switch (it) {
       case "auto": case "immo": case "conso": return repCredit(sy, it, annee, D, etapeApres(sy, qn, it));
       case "credit": return repCredit(sy, null, annee, D);
@@ -214,5 +222,23 @@
     }
   }
 
-  return { repondre: repondre, capaciteEn: capaciteEn, langueDarija: function (q) { return DARIJA.test(normaliser(q)); }, MOIS: MOIS };
+  /* Calcul exact transmis à l'IA en ligne, qui ne fait que le reformuler (les modèles gratuits se trompent sur les dates).
+     Relance « et si j'attends un an (de plus) ? » : la question précédente est reprise, avec l'année décalée.
+     Renvoie null quand Orbite n'a pas de calcul propre à la question (salutation, question générale…). */
+  function calculPourIA(question, sy, precedente) {
+    if (!sy) return null;
+    var r = repondre(question, sy);
+    if (r.intention !== "defaut") return r;
+    var qn = normaliser(question), m = qn.match(/\b(?:attends?|attendre|patiente|n?stann?a|nostanna|testanna)\b(.*)$/);
+    if (!m || !precedente || !/\b(an|ans|annee|annees|3am|3amin|snin|sna)\b/.test(m[1])) return null;
+    var k = (m[1].match(/\b(un|une|deux|trois|quatre|cinq|zouz|thletha|[1-9])\b/) || [])[1];
+    var n = { un: 1, une: 1, deux: 2, zouz: 2, trois: 3, thletha: 3, quatre: 4, cinq: 5 }[k] || Number(k) || (/\b3amin\b/.test(m[1]) ? 2 : 1);
+    var pn = normaliser(precedente), an = (pn.match(/\b(20[2-7]\d)\b/) || [])[1];
+    var base = an ? Number(an) : (sy.maintenant || new Date()).getFullYear();
+    var reprise = an ? precedente.replace(an, String(base + n)) : precedente + " en " + (base + n);
+    var r2 = repondre(reprise, sy);
+    return r2.intention !== "defaut" ? r2 : null;
+  }
+
+  return { repondre: repondre, calculPourIA: calculPourIA, capaciteEn: capaciteEn, langueDarija: function (q) { return DARIJA.test(normaliser(q)); }, MOIS: MOIS };
 });

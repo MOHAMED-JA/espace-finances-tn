@@ -641,11 +641,18 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(/voiture en 2027/.test(envoi.question), "question envoyée");
     assert(/Salaire :/.test(envoi.contexte) && /Banque :/.test(envoi.contexte), "résumé chiffré du profil");
     assert(!/aziz@exemple\.tn/.test(JSON.stringify(envoi)), "aucune adresse e-mail transmise");
+    assert(/en 2027/.test(envoi.calcul) && /voiture/.test(envoi.calcul), "calcul exact d'Orbite joint à la question : " + envoi.calcul);
+    assert(await page.isVisible(".assistant__msg--ia .lien-action"), "lien « Simuler ce crédit » sous la réponse de l'IA");
     await page.fill("#assistant-question", "Et pour un appartement ?");
     await page.press("#assistant-question", "Enter");
     await page.waitForFunction(() => document.querySelectorAll(".assistant__msg--moi").length === 2);
     await page.waitForFunction(() => !document.querySelector(".assistant__msg--attente"));
     assert(faux.dernierAssistant().historique.length === 2, "échanges précédents transmis");
+    await page.fill("#assistant-question", "Bonjour");
+    await page.press("#assistant-question", "Enter");
+    await page.waitForFunction(() => document.querySelectorAll(".assistant__msg--moi").length === 3);
+    await page.waitForFunction(() => !document.querySelector(".assistant__msg--attente"));
+    assert(faux.dernierAssistant().calcul === "", "pas de calcul pour une salutation");
   });
 
   await etape("assistant intégré : sans clé d'IA, réponse calculée sur l'appareil (français et darija)", async () => {

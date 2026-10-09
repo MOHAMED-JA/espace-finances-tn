@@ -170,8 +170,8 @@
   }
   /* Assistant (IA) : question, échanges précédents et résumé chiffré du profil, calculé sur l'appareil. */
   var assistant = {
-    demander: function (question, historique, contexte) {
-      return appelFonction("assistant", { question: question, historique: historique, contexte: contexte }, "L'Assistant ne répond pas pour le moment.");
+    demander: function (question, historique, contexte, calcul) {
+      return appelFonction("assistant", { question: question, historique: historique, contexte: contexte, calcul: calcul || "" }, "L'Assistant ne répond pas pour le moment.");
     }
   };
   /* ---------- Photo de profil ----------
