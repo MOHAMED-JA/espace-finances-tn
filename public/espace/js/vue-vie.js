@@ -247,15 +247,21 @@
   }
   function resultatBudget(sy, opt) {
     var b = lire($("fi-budget").value), res = $("fi-budget-res"), lien = $("fi-simuler");
-    if (!(b > 0)) { res.textContent = "Indiquez un montant."; return; }
+    /* Champ vide : le lien simule le versement « optimal paie » (sinon le complément maximal), en versement ponctuel. */
+    if (!(b > 0)) {
+      var d0 = opt.optimalPaie || (opt.statut === "a_optimiser" ? opt.complement : null);
+      res.textContent = d0 ? "Indiquez un montant, ou simulez directement " + (opt.optimalPaie ? "le versement optimal paie" : "le complément conseillé") + " (" + F.dt0(d0.total) + " DT)." : "Indiquez un montant.";
+      lien.href = d0 ? "#epargne?av=" + Math.round(d0.av) + "&cea=" + Math.round(d0.cea) : "#epargne";
+      return;
+    }
     var o = b >= opt.complement.total ? { av: opt.complement.av, cea: opt.complement.cea, gain: opt.gainPossible, economie: opt.economieMax } : OI.optimiseurFiscal(sy, { budgetAnnuel: b }).avecBudget;
     if (!o) { res.textContent = ""; return; }
     res.textContent = "Avec " + F.dt0(b) + " DT : " + (o.av ? F.dt0(o.av) + " DT en assurance vie" : "") + (o.av && o.cea ? " et " : "") + (o.cea ? F.dt0(o.cea) + " DT en CEA" : "") +
       " → " + F.dt0(o.gain) + " DT d'impôt en moins (" + Math.round(o.gain / b * 100) + " % de ce que vous versez)" +
       (opt.paie ? (function () { var pp = Math.min(o.gain, opt.paie.impotRestant), dd = Math.max(0, o.gain - pp);
         return " : " + F.dt0(pp) + " DT sur vos paies d'ici décembre" + (dd > 0.5 ? " et " + F.dt0(dd) + " DT via la déclaration annuelle." : "."); })() : ".");
-    var mois = Math.max(1, opt.moisRestants);
-    lien.href = "#epargne?versement=" + Math.max(10, Math.round(b / mois / 10) * 10);
+    /* Versement ponctuel de l'année, avec la répartition assurance vie / CEA calculée ci-dessus. */
+    lien.href = "#epargne?av=" + Math.round(o.av || 0) + "&cea=" + Math.round(o.cea || 0);
   }
   $("fi-budget").addEventListener("input", function () {
     budgetSaisi = this.value; compter("fiscal");
