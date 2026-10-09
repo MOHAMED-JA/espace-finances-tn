@@ -50,6 +50,7 @@
         <li><a href="#salaire" data-vue="salaire" data-module="salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#salaire"/></svg><span>Salaire</span></a></li>
         <li><a href="#epargne" data-vue="epargne" data-module="epargne"><svg aria-hidden="true"><use href="/orbite/icones.svg#epargne"/></svg><span>Épargne vie &amp; CEA</span></a></li>
         <li><a href="#credit" data-vue="credit" data-module="credit"><svg aria-hidden="true"><use href="/orbite/icones.svg#credit"/></svg><span>Crédit</span></a></li>
+        <li><a href="#vie" data-vue="vie"><svg aria-hidden="true"><use href="/orbite/icones.svg#cible"/></svg><span>Vie &amp; impôts</span></a></li>
       </ul>
       <p class="rail__titre" id="rail-perso">Mon espace</p>
       <ul class="rail__liens" role="list" aria-labelledby="rail-perso">
@@ -173,6 +174,29 @@
               <a class="lien-action" href="#profil?section=budget">Compléter mon budget<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
             </section>
           </div>
+
+          <!-- Santé financière -->
+          <section class="bloc-orbite sante" id="sante" aria-labelledby="titre-sante">
+            <div class="bloc-orbite__tete"><div><h2 id="titre-sante">Votre santé financière</h2>
+              <p>Un score de 0 à 100 calculé sur six critères, avec ce qui vous ferait gagner le plus de points.</p></div></div>
+            <a class="panneau sante__rappel" id="sante-rappel" href="#vie?onglet=fiscal" hidden>
+              <svg aria-hidden="true"><use href="/orbite/icones.svg#horloge"/></svg><span id="sante-rappel-txt"></span><svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg>
+            </a>
+            <div class="sante__grille">
+              <div class="panneau sante__score">
+                <div class="sante__jauge" id="sante-jauge" role="img" aria-label="Score">
+                  <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="sante__fond" cx="60" cy="60" r="50" pathLength="100"/><circle class="sante__arc" id="sante-arc" cx="60" cy="60" r="50" pathLength="100"/></svg>
+                  <div class="sante__centre"><strong class="chiffre" id="sante-score">—</strong><span>sur 100</span></div>
+                </div>
+                <p class="sante__niveau" id="sante-niveau"></p>
+              </div>
+              <ul class="panneau sante__criteres" id="sante-criteres" role="list"></ul>
+            </div>
+            <div class="panneau sante__objectifs" id="sante-objectifs-bloc">
+              <h3>Pour gagner des points</h3>
+              <ol class="sante__objectifs-liste" id="sante-objectifs"></ol>
+            </div>
+          </section>
 
           <!-- Conseils -->
           <section class="bloc-orbite" aria-labelledby="titre-conseils">
@@ -518,6 +542,67 @@
             <div class="saisie tri"><select id="tri" aria-label="Trier"><option value="recent">Plus récentes</option><option value="ancien">Plus anciennes</option><option value="nom">Par nom</option><option value="favori">Favoris d'abord</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div>
           </div>
           <ul class="cartes" id="toutes" role="list" aria-busy="true"></ul>
+        </section>
+
+        <!-- ======== Vie & impôts (route #vie, onglet par #vie?onglet=vie|fiscal) ======== -->
+        <section class="vue" id="vue-vie" data-vue="vie" aria-labelledby="titre-vie" hidden>
+          <header class="vue__tete">
+            <h1 id="titre-vie">Vie &amp; impôts</h1>
+            <p class="vue__sous">Testez un changement de vie avant de le vivre, et payez le moins d'impôt possible, légalement.</p>
+          </header>
+          <div class="onglets vie-onglets" role="tablist" aria-label="Outils">
+            <button type="button" role="tab" id="vie-tab-vie" aria-controls="vie-panneau-vie" aria-selected="true" data-onglet="vie">Simulateur de vie</button>
+            <button type="button" role="tab" id="vie-tab-fiscal" aria-controls="vie-panneau-fiscal" aria-selected="false" tabindex="-1" data-onglet="fiscal">Optimiseur fiscal</button>
+          </div>
+
+          <div class="vie-panneau" id="vie-panneau-vie" role="tabpanel" aria-labelledby="vie-tab-vie">
+            <section class="panneau vie-evts" aria-labelledby="vie-t-evts">
+              <h2 id="vie-t-evts">Que va-t-il se passer ?</h2>
+              <p class="panneau__sous">Ajoutez un ou plusieurs événements : tout votre profil est recalculé d'un coup, sans rien modifier tant que vous ne l'avez pas décidé.</p>
+              <div class="vie-ajout" role="group" aria-label="Ajouter un événement">
+                <button type="button" class="puce-choix" data-ajout="mariage">Mariage</button>
+                <button type="button" class="puce-choix" data-ajout="naissance">Naissance</button>
+                <button type="button" class="puce-choix" data-ajout="immobilier">Achat immobilier</button>
+                <button type="button" class="puce-choix" data-ajout="voiture">Voiture</button>
+                <button type="button" class="puce-choix" data-ajout="mutation">Mutation</button>
+                <button type="button" class="puce-choix" data-ajout="augmentation">Augmentation</button>
+              </div>
+              <ol class="vie-liste" id="vie-liste"></ol>
+            </section>
+            <section class="panneau vie-resultat" id="vie-resultat" aria-labelledby="vie-t-res" aria-live="polite">
+              <h2 id="vie-t-res">Avant / après</h2>
+              <p class="panneau__sous" id="vie-resume">Ajoutez un événement pour voir son effet.</p>
+              <ul class="vie-alertes" id="vie-alertes" role="list"></ul>
+              <div class="vie-table-zone"><table class="vie-table" id="vie-table" hidden>
+                <thead><tr><th scope="col">Indicateur</th><th scope="col">Aujourd'hui</th><th scope="col">Après</th><th scope="col">Écart</th></tr></thead>
+                <tbody id="vie-lignes"></tbody>
+              </table></div>
+              <button type="button" class="bouton bouton--petit" id="vie-appliquer" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#valide"/></svg>C'est fait : mettre mon profil à jour</button>
+            </section>
+          </div>
+
+          <div class="vie-panneau" id="vie-panneau-fiscal" role="tabpanel" aria-labelledby="vie-tab-fiscal" hidden>
+            <section class="panneau fiscal" aria-labelledby="fi-titre">
+              <h2 id="fi-titre">Votre impôt <span id="fi-annee"></span></h2>
+              <dl class="fiscal__kpi" id="fi-kpi"></dl>
+              <p class="encart" id="fi-etat"></p>
+            </section>
+            <section class="panneau fiscal" id="fi-optimum-bloc" aria-labelledby="fi-t-opt">
+              <h2 id="fi-t-opt">La meilleure répartition</h2>
+              <p class="panneau__sous" id="fi-opt-sous"></p>
+              <div class="fiscal__repart" id="fi-repart"></div>
+              <div class="fiscal__budget">
+                <div class="champ"><label for="fi-budget">Ce que je peux verser d'ici le 31 décembre</label><div class="saisie"><input id="fi-budget" type="text" inputmode="decimal" autocomplete="off"><span class="saisie__unite">DT</span></div></div>
+                <p class="fiscal__budget-res" id="fi-budget-res" aria-live="polite"></p>
+              </div>
+              <ul class="fiscal__notes" role="list">
+                <li><strong>Avant le 31 décembre</strong> : seuls les versements encaissés dans l'année réduisent l'impôt de cette année. Versez de préférence avant le 15 décembre pour laisser le temps à l'assureur ou à la banque.</li>
+                <li><strong>Assurance vie</strong> : <span id="fi-duree-av">8</span> ans minimum pour garder l'avantage. <strong>CEA</strong> : épargne bloquée <span id="fi-duree-cea">5</span> ans, placée en bourse (le capital peut baisser).</li>
+                <li>Calcul indicatif selon le barème en vigueur : faites-le confirmer par votre conseiller.</li>
+              </ul>
+              <a class="lien-action" id="fi-simuler" href="#epargne">Simuler ce versement dans Épargne vie &amp; CEA<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
+            </section>
+          </div>
         </section>
 
         <!-- ======== Abonnement ======== -->
@@ -946,6 +1031,7 @@
   <script src="/moteurs/vie/projection.js"></script>
   <script src="/moteurs/vie/scenario.js"></script>
   <script src="/espace/js/orbite-calcul.js"></script>
+  <script src="/espace/js/orbite-intelligence.js"></script>
   <script src="/espace/js/app.js"></script>
   <script src="/espace/js/vue-orbite.js"></script>
   <script src="/espace/js/vue-profil.js"></script>
@@ -973,5 +1059,6 @@
   <script src="/espace/js/abonnement.js"></script>
   <script src="/espace/js/parametres.js"></script>
   <script src="/espace/js/admin.js"></script>
+  <script src="/espace/js/vue-vie.js"></script>
 </body>
 </html>

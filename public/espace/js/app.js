@@ -216,8 +216,8 @@
   }
 
   /* ---------- Navigation ---------- */
-  var VUES = ["orbite", "profil", "salaire", "epargne", "credit", "simulations", "abonnement", "compte", "admin"];
-  var TITRES = { orbite: "Mon orbite", profil: "Mon profil", salaire: "Salaire", epargne: "Épargne vie & CEA", credit: "Crédit", simulations: "Simulations", abonnement: "Abonnement", compte: "Paramètres", admin: "Administration" };
+  var VUES = ["orbite", "profil", "salaire", "epargne", "credit", "simulations", "abonnement", "compte", "admin", "vie"];
+  var TITRES = { orbite: "Mon orbite", profil: "Mon profil", salaire: "Salaire", epargne: "Épargne vie & CEA", credit: "Crédit", simulations: "Simulations", abonnement: "Abonnement", compte: "Paramètres", admin: "Administration", vie: "Vie & impôts" };
   /* Garde d'accès (abonnement) : une vue refusée mène à la page d'abonnement. */
   var garde = null;
   function lireRoute() {

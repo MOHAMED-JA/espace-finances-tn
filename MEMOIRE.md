@@ -363,6 +363,39 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
   - L'administration permet de lister, créer, modifier et activer les codes, et affiche le bilan du parrainage. Les CGV ont une nouvelle section « Offres, codes promo et parrainage ».
 - **Tests** : nouvelle étape e2e. L'admin crée LANCEMENT et AMI30 ; on vérifie les prix barrés, un code faux, AMI30 sur l'annuel (55,900), puis le filleul inscrit par le lien qui paie l'annuel. Résultats : le parrain gagne environ 30 j, e2e 22/22, unitaires 286.
 
+## 3 septdecies. Score de santé, simulateur de vie, optimiseur fiscal (9 oct., lot 3 sur 6)
+
+- **Moteur `public/espace/js/orbite-intelligence.js`** (UMD, exposé en `window.OrbiteIntelligence`, testé par `tests/espace/orbite-intelligence.test.js`, 8 tests). Il s'appuie sur `OrbiteCalcul` et `MoteurFiscal` et ne duplique aucune règle.
+  - **`scoreSante(sy)`** : note sur 100 en six critères.
+    - endettement par rapport à la règle de la banque : 25 points ;
+    - reste à vivre : 20 ;
+    - épargne de précaution, en mois de dépenses (cible : 6 mois) : 20 ;
+    - épargne de long terme, versements annuels ÷ net, cible 10 % : 15 ;
+    - avantage fiscal utilisé : 10 ;
+    - taux des crédits par rapport au marché : 10.
+
+    Niveaux : Excellente (80 et plus), Bonne (60), Fragile (40), À redresser. Il renvoie aussi les trois objectifs qui rapportent le plus de points, chacun avec un lien.
+  - **`optimiseurFiscal(sy, {budgetAnnuel})`** :
+    - calcule l'économie actuelle (mensualités × 12 + versements libres de l'année) et l'économie maximale ;
+    - cherche par dichotomie le plus petit complément qui atteint l'économie maximale, avec le meilleur partage assurance vie / CEA ;
+    - propose la meilleure répartition d'un budget limité ;
+    - donne les jours avant le 31/12 et les mois restants, et `rappel` (3 derniers mois, s'il reste plus de 20 DT à gagner).
+    - Statuts : `sans_impot`, `optimise`, `a_optimiser`.
+  - **`simulateurVie(profil, evts)`** : événements mariage, naissance, augmentation, mutation (salaire et loyer), immobilier (prix, apport, durée jusqu'à 25 ans, taux, quitter la location) et voiture (7 ans au plus).
+    - Les taux par défaut viennent de `tauxNouveaux`. L'apport est pris sur l'épargne.
+    - Il compare 8 indicateurs avant / après, avec une alerte en cas de déficit ou si l'endettement dépasse la quotité.
+- **Profil de l'utilisateur (4 000 × 17, brut, 3 crédits, 5 000 DT d'épargne)** :
+  - score de 51 (Fragile), avec dans l'ordre : réserve de précaution, endettement (confortable dès mars 2032), épargne régulière ;
+  - optimiseur : économie actuelle de 456 DT, maximale de 9 138 DT, pour un complément de 5 650 DT en assurance vie et 18 560 DT en CEA.
+- **Interface** :
+  - Section « Votre santé financière » dans Mon orbite : jauge, critères, objectifs, et rappel fiscal de fin d'année. Le calcul est repoussé de 120 ms après chaque mise à jour du profil.
+  - Nouvelle vue `#vie` « Vie & impôts » (`vue-vie.js`) avec les onglets `vie` et `fiscal`.
+  - Simulateur de vie : bouton « C'est fait : mettre mon profil à jour », annulable par un toast « Annuler ».
+  - Optimiseur fiscal : budget proposé par défaut = plafond budget × mois restants. Lien vers `#epargne?versement=`.
+  - Lien « Vie & impôts » dans le menu (icône cible).
+  - Statistiques d'usage `simulation:vie` et `simulation:fiscal`.
+- **Tests** : unitaires 294, e2e 23/23 (étape santé, vie, application et annulation, fiscal), axe sans violation, `resp.js` sans débordement, vue `vie` comprise.
+
 ## 4. Prochaines actions (améliorations possibles, rien de bloquant)
 
 1. Vérifier le site en ligne après chaque déploiement (Cloudflare se déploie depuis `main`).

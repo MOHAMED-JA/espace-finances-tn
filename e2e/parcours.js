@@ -380,6 +380,33 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.selectOption("#param-accueil", "orbite");
   });
 
+  await etape("santé financière, simulateur de vie (appliquer puis annuler) et optimiseur fiscal", async () => {
+    await page.goto(base + "/espace/#orbite");
+    await page.waitForFunction(() => /^\d+$/.test(document.getElementById("sante-score").textContent.trim()));
+    const score = Number(await page.textContent("#sante-score"));
+    assert(score >= 0 && score <= 100, "score entre 0 et 100 : " + score);
+    assert((await page.$$("#sante-criteres li")).length === 6, "six critères");
+    await page.goto(base + "/espace/#vie");
+    await page.waitForSelector("#vie-panneau-vie:not([hidden])");
+    const enfantsAvant = await page.evaluate(() => window.Orbite.profil().enfants);
+    await page.click('[data-ajout="naissance"]');
+    await page.waitForSelector("#vie-table:not([hidden])");
+    assert(/Naissance/.test(await page.textContent("#vie-resume")), "résumé de l'événement");
+    const impot = await page.$eval("#vie-lignes tr:nth-child(2)", (tr) => tr.className);
+    assert(/mieux/.test(impot), "un enfant de plus réduit l'impôt");
+    await page.click('[data-ajout="augmentation"]');
+    await page.fill('#vie-liste [data-k="pct"]', "15");
+    await page.waitForFunction(() => /Salaire \+15/.test(document.getElementById("vie-resume").textContent));
+    await page.click("#vie-appliquer");
+    await page.waitForFunction((n) => window.Orbite.profil().enfants === n + 1, enfantsAvant);
+    await page.getByRole("button", { name: "Annuler" }).click();
+    await page.waitForFunction((n) => window.Orbite.profil().enfants === n, enfantsAvant);
+    await page.click("#vie-tab-fiscal");
+    await page.waitForSelector("#vie-panneau-fiscal:not([hidden])");
+    assert(/Impôt sur le revenu/.test(await page.textContent("#fi-kpi")), "indicateurs fiscaux");
+    assert(/#vie\?onglet=fiscal$/.test(page.url()), "onglet dans l'adresse");
+  });
+
   await etape("administration : réservée à l'admin, compteurs, inscriptions, usage anonyme", async () => {
     await page.goto(base + "/espace/#admin");
     await page.waitForSelector("#admin-refus:not([hidden])");

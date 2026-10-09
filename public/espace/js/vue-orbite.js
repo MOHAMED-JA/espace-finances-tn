@@ -357,6 +357,54 @@
     });
   }
 
+  /* ---------- Santé financière : score, critères, objectifs, rappel fiscal de fin d'année ---------- */
+  var OI = window.OrbiteIntelligence, minuterieSante = null;
+  function rendreSante(sy) {
+    var bloc = $("sante");
+    if (!OI || O.profilVierge()) { bloc.hidden = true; return; }
+    bloc.hidden = false;
+    var opt = OI.optimiseurFiscal(sy), r = OI.scoreSante(sy, { optimiseur: opt });
+    O.animerNombre($("sante-score"), r.score, function (v) { return String(Math.round(v)); });
+    $("sante-arc").style.setProperty("--p", String(r.score));
+    var jauge = $("sante-jauge");
+    jauge.setAttribute("data-niveau", r.score >= 80 ? "excellent" : r.score >= 60 ? "bon" : r.score >= 40 ? "fragile" : "faible");
+    jauge.setAttribute("aria-label", "Score de santé financière : " + r.score + " sur 100, " + r.niveau.toLowerCase());
+    $("sante-niveau").textContent = r.niveau;
+    var ul = $("sante-criteres");
+    ul.textContent = "";
+    r.composantes.forEach(function (c) {
+      var li = cree("li", "sante__critere");
+      var t = cree("div", "sante__critere-tete");
+      t.appendChild(cree("span", "sante__critere-lib", c.libelle));
+      t.appendChild(cree("strong", "chiffre", c.points + " / " + c.max));
+      li.appendChild(t);
+      var j = cree("i", "sante__barre"); j.style.setProperty("--p", (c.points / c.max * 100) + "%"); j.setAttribute("aria-hidden", "true");
+      li.appendChild(j);
+      li.appendChild(cree("small", null, c.detail));
+      ul.appendChild(li);
+    });
+    var ol = $("sante-objectifs");
+    ol.textContent = "";
+    $("sante-objectifs-bloc").hidden = !r.objectifs.length;
+    r.objectifs.forEach(function (o) {
+      var li = cree("li", "sante__objectif");
+      var g = cree("span", "sante__gain chiffre", "+" + o.gain);
+      g.setAttribute("aria-label", "jusqu'à " + o.gain + " points");
+      li.appendChild(g);
+      var txt = cree("div");
+      txt.appendChild(cree("strong", null, o.libelle));
+      txt.appendChild(cree("p", null, o.action));
+      li.appendChild(txt);
+      var a = cree("a", "lien-action", "Agir"); a.href = o.lien; a.appendChild(icone("fleche"));
+      a.setAttribute("aria-label", "Agir sur : " + o.libelle);
+      li.appendChild(a);
+      ol.appendChild(li);
+    });
+    var rappel = $("sante-rappel");
+    rappel.hidden = !opt.rappel;
+    if (opt.rappel) $("sante-rappel-txt").textContent = "Plus que " + opt.joursAvantFin + " jours pour réduire votre impôt " + opt.annee + " : jusqu'à " + F.dt0(opt.gainPossible) + " DT d'économie possible.";
+  }
+
   function rendre(sy) {
     if (sy) syncBase(sy);
     if (!sy) return;
@@ -368,6 +416,8 @@
     rendreCapacite(sy);
     rendreSuggestions(sy);
     rendreProjets(sy);
+    clearTimeout(minuterieSante);
+    minuterieSante = setTimeout(function () { try { rendreSante(O.synthese() || sy); } catch (e) { if (window.console) console.error(e); } }, 120);
     var badge = $("badge-profil");
     badge.hidden = !O.profilVierge();
     if (premierRendu) { premierRendu = false; doc.body.classList.add("orbite-entree"); setTimeout(function () { doc.body.classList.remove("orbite-entree"); }, 1200); }
