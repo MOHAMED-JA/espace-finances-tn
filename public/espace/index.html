@@ -51,6 +51,7 @@
         <li><a href="#epargne" data-vue="epargne" data-module="epargne"><svg aria-hidden="true"><use href="/orbite/icones.svg#epargne"/></svg><span>Épargne vie &amp; CEA</span></a></li>
         <li><a href="#credit" data-vue="credit" data-module="credit"><svg aria-hidden="true"><use href="/orbite/icones.svg#credit"/></svg><span>Crédit</span></a></li>
         <li><a href="#vie" data-vue="vie"><svg aria-hidden="true"><use href="/orbite/icones.svg#cible"/></svg><span>Vie &amp; impôts</span></a></li>
+        <li><a href="#assistant" data-vue="assistant"><svg aria-hidden="true"><use href="/orbite/icones.svg#etoile"/></svg><span>Assistant</span></a></li>
       </ul>
       <p class="rail__titre" id="rail-perso">Mon espace</p>
       <ul class="rail__liens" role="list" aria-labelledby="rail-perso">
@@ -641,6 +642,31 @@
           </div>
         </section>
 
+        <!-- ======== Assistant (IA) ======== -->
+        <section class="vue" id="vue-assistant" data-vue="assistant" aria-labelledby="titre-assistant" hidden>
+          <header class="vue__tete">
+            <h1 id="titre-assistant">Assistant Orbite</h1>
+            <p class="vue__sous">Posez votre question en français ou en darija : l'Assistant répond à partir de votre profil.</p>
+          </header>
+          <div class="assistant panneau">
+            <ol class="assistant__fil" id="assistant-fil" aria-live="polite" aria-label="Conversation">
+              <li class="assistant__msg assistant__msg--ia"><p>Ahla ! Je connais votre salaire, vos crédits, votre épargne et votre impôt tels qu'ils sont dans Orbite. Que voulez-vous savoir ?</p></li>
+            </ol>
+            <div class="assistant__suggestions" id="assistant-suggestions" role="group" aria-label="Exemples de questions">
+              <button type="button" class="puce-choix">Est-ce que je peux acheter une voiture en 2027 ?</button>
+              <button type="button" class="puce-choix">Combien puis-je emprunter pour un appartement, et quand ?</button>
+              <button type="button" class="puce-choix">Comment payer moins d'impôt cette année ?</button>
+              <button type="button" class="puce-choix">Najjem nechri dar ba3d ma nkammel crédit el karhba ?</button>
+            </div>
+            <form class="assistant__saisie" id="assistant-form" novalidate>
+              <label for="assistant-question" class="cache">Votre question</label>
+              <textarea id="assistant-question" rows="2" maxlength="1500" placeholder="Votre question…" autocomplete="off"></textarea>
+              <button type="submit" class="bouton bouton--plein" id="assistant-envoyer"><span>Envoyer</span><svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></button>
+            </form>
+            <p class="assistant__note" id="assistant-note">Réponses indicatives, à confirmer avec votre banque pour toute décision. Pour répondre, un résumé chiffré de votre profil (sans nom ni e-mail) est transmis au modèle d'IA ; Orbite ne conserve pas vos questions.</p>
+          </div>
+        </section>
+
         <!-- ======== Abonnement ======== -->
         <section class="vue" id="vue-abonnement" data-vue="abonnement" aria-labelledby="titre-abonnement" hidden>
           <header class="vue__tete">
@@ -1119,5 +1145,6 @@
   <script src="/espace/js/vue-vie.js"></script>
   <script src="/espace/js/rappels-calcul.js"></script>
   <script src="/espace/js/appli.js"></script>
+  <script src="/espace/js/vue-assistant.js"></script>
 </body>
 </html>

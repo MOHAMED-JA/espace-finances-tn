@@ -165,3 +165,15 @@ test('foyer : normalisation des champs du conjoint', () => {
   assert.equal(n.conjointSecteur, 'public');
   assert.equal(n.conjointPrenom, 'bSarra/b');
 });
+
+test("résumé pour l'Assistant : chiffres clés, calendrier, aucune donnée d'identité", () => {
+  const p = Object.assign({}, PROFIL, { prenom: 'Aziz', banque: 'BH Bank' });
+  const r = I.resumeAssistant(sy(p), { maintenant: MAINTENANT });
+  assert.ok(r.length > 300 && r.length <= 9000, String(r.length));
+  assert.match(r, /9 octobre 2026/);
+  assert.match(r, /BH Bank, prête jusqu'à 40/);
+  assert.match(r, /Crédit automobile/);
+  assert.match(r, /mars 2032/);
+  assert.match(r, /Score de santé financière : \d+\/100/);
+  assert.ok(!/Aziz/.test(r), 'pas de prénom');
+});

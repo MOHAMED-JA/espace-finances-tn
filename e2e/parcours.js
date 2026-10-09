@@ -521,6 +521,24 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => /1 mois gagné/.test(document.getElementById("ab-parr-bilan").textContent));
   });
 
+  await etape("assistant : question, résumé chiffré envoyé sans identité, réponse mise en forme", async () => {
+    await page.goto(base + "/espace/#assistant");
+    await page.waitForSelector("#vue-assistant:not([hidden])");
+    await page.click("#assistant-suggestions .puce-choix:first-child");
+    await page.waitForSelector(".assistant__msg--ia strong");
+    assert(/mars 2032/.test(await page.textContent("#assistant-fil")), "réponse affichée");
+    assert((await page.$$(".assistant__msg--ia ul li")).length === 2, "liste mise en forme sans HTML");
+    const envoi = faux.dernierAssistant();
+    assert(/voiture en 2027/.test(envoi.question), "question envoyée");
+    assert(/Salaire :/.test(envoi.contexte) && /Banque :/.test(envoi.contexte), "résumé chiffré du profil");
+    assert(!/aziz@exemple\.tn/.test(JSON.stringify(envoi)), "aucune adresse e-mail transmise");
+    await page.fill("#assistant-question", "Et pour un appartement ?");
+    await page.press("#assistant-question", "Enter");
+    await page.waitForFunction(() => document.querySelectorAll(".assistant__msg--moi").length === 2);
+    await page.waitForFunction(() => !document.querySelector(".assistant__msg--attente"));
+    assert(faux.dernierAssistant().historique.length === 2, "échanges précédents transmis");
+  });
+
   await etape("application : service worker, consultation hors connexion, rappels", async () => {
     await page.goto(base + "/espace/#orbite");
     await page.waitForFunction(() => navigator.serviceWorker && navigator.serviceWorker.controller, null, { timeout: 20000 }).catch(() => {});
