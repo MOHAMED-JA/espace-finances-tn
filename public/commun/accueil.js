@@ -42,6 +42,9 @@
     })(t0);
   }
 
+  /* Planète salaire en 3D : le cœur est le net, les anneaux les cotisations et l'impôt. */
+  var planete = window.OrbitePlanete && $("planete") ? window.OrbitePlanete.creer($("planete"), { reduit: reduit }) : null;
+
   function calculer(anime) {
     var brut = lire($("brut").value);
     $("brut").setAttribute("aria-invalid", brut === null ? "true" : "false");
@@ -55,6 +58,10 @@
     poser($("credit"), immo.capital, function (v) { return nbsp(f0.format(v)) + "\u00a0DT"; });
     poser($("epargne"), opt ? opt.economieAnnuelle : 0, function (v) { return nbsp(f0.format(v)) + "\u00a0DT / an"; });
     $("tranche").textContent = Math.round(sy.salaire.tranche.taux * 100) + " %";
+    var cot = sy.salaire.cotisations / 12, imp = sy.salaire.impotMois;
+    $("p-cnss").textContent = nbsp(f0.format(cot)) + "\u00a0DT";
+    $("p-impot").textContent = nbsp(f0.format(imp)) + "\u00a0DT";
+    if (planete) planete.maj({ brut: sy.salaire.brutMensuel, net: sy.salaire.netMensuel, cnss: cot, impot: imp });
     $("lib-caisse").textContent = secteur === "public" ? "CNRPS" : "CNSS";
   }
   if (form) {

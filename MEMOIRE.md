@@ -453,6 +453,12 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 septtricies. Accueil : planète salaire en 3D (concept 4) (10 oct.)
+
+- L'utilisateur voulait un haut de page innovant et futuriste, sans copier le concurrent (vidéo : carte de 4 étapes « vous épargnez → impôt baisse → net augmente »). Sept maquettes proposées en pages privées (concepts 1-3 : https://claude.ai/artifact/RoYdLGE2tzoP4vuP2EcAkG ; concepts 4-7 : https://claude.ai/artifact/M8sbzP4TQe7GrpPsiw7Qdq). Choix : **4, planète salaire en 3D**.
+- `public/commun/planete.js` (`window.OrbitePlanete.creer(canvas, { reduit })` → `{ maj({ brut, net, cnss, impot }) }`) : ~1 700 particules, cœur vert = net, anneaux bleu (cotisations) et ambre (impôt) proportionnels au brut, rotation auto + glisser au doigt, pause hors écran, mouvement réduit = image fixe.
+- `index.html` : dans le formulaire « Essayez avec votre salaire », `.apercu__planete` (canvas `#planete` + `#net` au cœur + légende `#p-cnss` / `#p-impot`) remplace le bloc blanc du net. `accueil.js` alimente la planète à chaque calcul (cotisations/12, `impotMois`).
+
 ## 3 sextricies. Cloudflare Turnstile (anti-robots) sur la connexion (10 oct.)
 
 - **Demande de l'utilisateur** : pourquoi pas de cadre « Vérifiez que vous êtes humain » comme sur d'autres sites ? Choix (questions cliquables) : connexion + inscription + mot de passe oublié ; affichage automatique (mode Managed).
