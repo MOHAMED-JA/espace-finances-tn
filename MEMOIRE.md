@@ -453,6 +453,12 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 tricies. Taux du futur crédit auto modifiable aussi (10 oct.)
+
+- Remarque de l'utilisateur : « Ils sont tous modifiables logiquement ». Les trois taux (immobilier, auto, consommation) sont désormais modifiables dans le panneau « Taux de vos futurs crédits ».
+- Profil : `tauxAutoPct`. `tauxChoisiOuCredit(p, type, choisi, marché)` sert à l'auto (TMM + 3) et à la conso (TMM + 3,5). Champs `#cap-taux-auto-pct` / `#cap-taux-auto-reset`.
+- L'immobilier sur 25 ans utilise le même taux que l'immobilier.
+
 ## 3 novovicies. Taux du futur crédit à la consommation modifiable (10 oct.)
 
 - **Question de l'utilisateur** : pourquoi la capacité conso est calculée à 11 % ? Réponse : 11 % était un taux de marché fixe, utilisé faute de crédit de type « Consommation » dans le profil (son crédit mariage à 2 % est saisi en type « Autre »).

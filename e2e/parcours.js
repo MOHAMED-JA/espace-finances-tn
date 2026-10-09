@@ -165,6 +165,11 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => !document.getElementById("cap-taux-conso-auto").hidden);
     await page.waitForFunction((n) => Number(document.querySelector("#cap-liste li:last-child .capacite__capital").textContent.replace(/[^\d]/g, "")) > n, avant);
     assert(/2\s?%/.test(await page.textContent("#cap-liste li:last-child .capacite__cond")), "durée et taux affichés à 2 %");
+    await page.fill("#cap-taux-auto-pct", "4");
+    await page.waitForFunction(() => !document.getElementById("cap-taux-auto-reset").hidden);
+    await page.waitForFunction(() => /4\s?%/.test([...document.querySelectorAll("#cap-liste li")].filter((li) => /auto/i.test(li.textContent))[0].textContent));
+    await page.click("#cap-taux-auto-reset");
+    await page.waitForFunction(() => document.getElementById("cap-taux-auto-reset").hidden);
     await (await page.$(".taux-futurs")).screenshot({ path: path.join(CAPTURES, "taux-futurs.png") });
     await page.click("#cap-taux-conso-auto");
     await page.waitForFunction(() => document.getElementById("cap-taux-conso-auto").hidden);

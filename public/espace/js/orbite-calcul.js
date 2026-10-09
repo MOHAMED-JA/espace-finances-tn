@@ -179,6 +179,7 @@
       revenuBanque: p.revenuBanque === "mensuel" ? "mensuel" : "annuel",
       banque: texte(p.banque, 40),
       /* Taux d'un nouveau crédit immobilier choisi par l'utilisateur (null : déduit automatiquement, voir tauxImmo). */
+      tauxAutoPct: p.tauxAutoPct === null || p.tauxAutoPct === undefined || p.tauxAutoPct === "" ? null : nombre(p.tauxAutoPct, null, 0, 30),
       tauxConsoPct: p.tauxConsoPct === null || p.tauxConsoPct === undefined || p.tauxConsoPct === "" ? null : nombre(p.tauxConsoPct, null, 0, 30),
       tauxImmoPct: p.tauxImmoPct === null || p.tauxImmoPct === undefined || p.tauxImmoPct === "" ? null : nombre(p.tauxImmoPct, null, 0, 30),
       /* Mode couple / foyer : salaire du conjoint et mensualités de ses propres crédits (imposé séparément). */
@@ -201,23 +202,19 @@
     return { tauxPct: TMM + 2.5, source: "marche" };
   }
 
-  /* Taux retenu pour un nouveau crédit à la consommation : celui choisi par l'utilisateur, sinon celui de son
-     crédit conso en cours, sinon le marché (TMM + 3,5 points). */
-  function tauxConso(p) {
-    if (p.tauxConsoPct !== null && p.tauxConsoPct !== undefined && isFinite(p.tauxConsoPct)) return { tauxPct: p.tauxConsoPct, source: "choisi" };
-    var c = (p.credits || []).filter(function (x) { return x.type === "conso" && x.tauxPct > 0; })[0];
+  /* Taux retenu pour un nouveau crédit auto ou à la consommation : celui choisi par l'utilisateur, sinon celui de son
+     crédit en cours du même type (taux préférentiel probable), sinon le marché (TMM + 3 points pour l'auto, + 3,5 pour la conso). */
+  function tauxChoisiOuCredit(p, type, choisi, marche) {
+    if (choisi !== null && choisi !== undefined && isFinite(choisi)) return { tauxPct: choisi, source: "choisi" };
+    var c = (p.credits || []).filter(function (x) { return x.type === type && x.tauxPct > 0; })[0];
     if (c) return { tauxPct: c.tauxPct, source: "credit", libelle: c.libelle };
-    return { tauxPct: TMM + 3.5, source: "marche" };
+    return { tauxPct: marche, source: "marche" };
   }
 
   /* Taux retenus pour chaque type de nouveau crédit. Hors immobilier : celui d'un crédit en cours du même type
      (taux préférentiel probable), sinon le taux du marché. */
   function tauxNouveaux(p) {
-    function duType(type, marche) {
-      var c = (p.credits || []).filter(function (x) { return x.type === type && x.tauxPct > 0; })[0];
-      return c ? { tauxPct: c.tauxPct, source: "credit", libelle: c.libelle } : { tauxPct: marche, source: "marche" };
-    }
-    return { immo: tauxImmo(p), auto: duType("auto", TMM + 3), conso: tauxConso(p) };
+    return { immo: tauxImmo(p), auto: tauxChoisiOuCredit(p, "auto", p.tauxAutoPct, TMM + 3), conso: tauxChoisiOuCredit(p, "conso", p.tauxConsoPct, TMM + 3.5) };
   }
   function tauxDe(taux, cle) { var t = taux && taux[cle.indexOf("immo") === 0 ? "immo" : cle]; return t ? t.tauxPct : null; }
 
