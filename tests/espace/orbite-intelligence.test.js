@@ -130,3 +130,38 @@ test('simulateur de vie : augmentation, mutation avec loyer, achat immobilier qu
   /* Événement inconnu ignoré. */
   assert.equal(I.simulateurVie(p, [{ type: 'loterie' }], MAINTENANT).evenements.length, 0);
 });
+
+test('foyer : inactif ou sans salaire du conjoint → null', () => {
+  assert.equal(I.foyer(sy(PROFIL)), null);
+  assert.equal(I.foyer(sy(Object.assign({}, PROFIL, { foyer: true, conjointMontant: 0 }))), null);
+});
+
+test('foyer : revenus additionnés selon la règle de la banque, crédits des deux déduits', () => {
+  const p = Object.assign({}, PROFIL, { foyer: true, conjointPrenom: 'Sarra', conjointMontant: 2000, conjointSens: 'brut', conjointSalaires: 12, conjointCredits: 300 });
+  const s = sy(p), f = I.foyer(s);
+  assert.equal(f.prenom, 'Sarra');
+  /* Banque sur le brut, revenu annuel ÷ 12 : 68 000 / 12 + 24 000 / 12. */
+  assert.ok(Math.abs(f.revenuBanque - (68000 + 24000) / 12) < 0.01, String(f.revenuBanque));
+  const charges = 875.894 + 695.008 + 497.93 + 300;
+  assert.ok(Math.abs(f.capacite.mensualiteMax - ((68000 + 24000) / 12 * 0.4 - charges)) < 0.01);
+  assert.ok(f.gainCapacite > 0, 'un second salaire augmente la capacité');
+  assert.ok(Math.abs(f.endettement - charges / f.revenuBanque) < 1e-9);
+  /* Le conjoint est imposé seul, sans les déductions familiales du chef de famille. */
+  const seul = O.salaire(O.normaliser({ montant: 2000, sens: 'brut', situation: 'marie', chefDeFamille: false }));
+  assert.ok(Math.abs(f.conjoint.impotAnnuel - seul.irpp) < 0.01);
+  assert.ok(Math.abs(f.netMoyen - (s.salaire.netMoyen + seul.netMoyen)) < 0.01);
+  /* Charges communes au prorata des revenus nets. */
+  assert.ok(Math.abs(f.contributions.moi + f.contributions.conjoint - (p.chargesFixes)) < 0.01);
+  assert.ok(f.partMoi > 0.5 && f.partMoi < 1);
+  assert.ok(Math.abs(f.budget.reste - (f.netMoyen - charges - 600 - 100)) < 0.01);
+});
+
+test('foyer : normalisation des champs du conjoint', () => {
+  const n = O.normaliser({ foyer: 1, conjointMontant: -5, conjointSens: 'x', conjointSalaires: 30, conjointSecteur: 'public', conjointPrenom: '<b>Sarra</b>' });
+  assert.equal(n.foyer, true);
+  assert.equal(n.conjointMontant, 0);
+  assert.equal(n.conjointSens, 'brut');
+  assert.equal(n.conjointSalaires, 18);
+  assert.equal(n.conjointSecteur, 'public');
+  assert.equal(n.conjointPrenom, 'bSarra/b');
+});

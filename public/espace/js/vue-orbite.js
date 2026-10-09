@@ -405,6 +405,46 @@
     if (opt.rappel) $("sante-rappel-txt").textContent = "Plus que " + opt.joursAvantFin + " jours pour réduire votre impôt " + opt.annee + " : jusqu'à " + F.dt0(opt.gainPossible) + " DT d'économie possible.";
   }
 
+  /* ---------- Foyer (mode couple) ---------- */
+  function rendreFoyer(sy) {
+    var bloc = $("foyer"), f = OI && OI.foyer(sy);
+    bloc.hidden = !f;
+    if (!f) return;
+    var p = sy.profil, cap = f.capacite;
+    $("foyer-sous").textContent = "Vous et " + f.prenom + " : revenus additionnés selon la règle de " + (p.banque || "votre banque") + " (" + F.pct(f.quotite, 0) + " du " + f.base + "), crédits des deux déduits.";
+    var kpi = $("foyer-kpi"); kpi.textContent = "";
+    [["Net du foyer", F.dt0(f.netMoyen) + " DT", "par mois, en moyenne sur l'année"],
+     ["Reste à vivre commun", F.dt0(f.budget.reste) + " DT", "après crédits, logement, charges et épargne"],
+     ["Endettement commun", F.pct(f.endettement, 1), "pour " + F.pct(f.quotite, 0) + " admis"],
+     ["Mensualité possible ensemble", F.dt0(cap.mensualiteMax) + " DT", f.gainCapacite > 0 ? "+" + F.dt0(f.gainCapacite) + " DT grâce au second salaire" : "par mois"]].forEach(function (k, i) {
+      var d = cree("div", i === 3 ? "foyer__k--fort" : null); d.appendChild(cree("dt", null, k[0])); d.appendChild(cree("dd", "chiffre", k[1])); d.appendChild(cree("dd", "foyer__sous", k[2])); kpi.appendChild(d);
+    });
+    var pm = Math.round(f.partMoi * 100);
+    $("foyer-barre-moi").style.setProperty("--p", pm + "%");
+    $("foyer-barre").setAttribute("aria-label", "Vous apportez " + pm + " % des revenus du foyer, " + f.prenom + " " + (100 - pm) + " %.");
+    var lg = $("foyer-legende"); lg.textContent = "";
+    [["moi", "Vous", f.moi.netMoyen, pm], ["conjoint", f.prenom, f.conjoint.netMoyen, 100 - pm]].forEach(function (x) {
+      var li = cree("li", "foyer__leg foyer__leg--" + x[0]); li.appendChild(cree("i")); li.appendChild(cree("span", null, x[1]));
+      li.appendChild(cree("strong", "chiffre", F.dt0(x[2]) + " DT · " + x[3] + " %")); lg.appendChild(li);
+    });
+    $("foyer-contrib").textContent = f.contributions.total > 0
+      ? "Logement et charges communes (" + F.dt0(f.contributions.total) + " DT par mois), partagés au prorata : vous " + F.dt0(f.contributions.moi) + " DT, " + f.prenom + " " + F.dt0(f.contributions.conjoint) + " DT."
+      : "Renseignez le loyer et les charges dans « Votre budget » pour voir comment les partager équitablement.";
+    var ul = $("foyer-offres"); ul.textContent = "";
+    cap.credits.filter(function (c) { return c.cle !== "immo25"; }).forEach(function (c) {
+      var li = cree("li", "foyer__offre");
+      li.appendChild(icone(c.cle === "immo" ? "maison" : c.cle === "auto" ? "voiture" : "credit"));
+      var t = cree("span"); t.appendChild(cree("span", null, c.court)); t.appendChild(cree("small", null, (c.dureeMois / 12).toLocaleString("fr-FR", { maximumFractionDigits: 1 }) + " ans à " + F.pct(c.tauxPct / 100, 2))); li.appendChild(t);
+      li.appendChild(cree("strong", "chiffre", F.dt0(c.capital) + " DT"));
+      var a = cree("a", "lien-action", "Simuler"); a.appendChild(icone("fleche"));
+      a.href = "#credit?type=" + c.cle + "&capital=" + Math.floor(c.capital) + "&mois=" + c.dureeMois + "&taux=" + c.tauxPct + "&mensualite=" + Math.floor(cap.mensualiteMax * 100) / 100;
+      a.setAttribute("aria-label", "Simuler un crédit " + c.court.toLowerCase() + " commun de " + F.dt0(c.capital) + " DT");
+      li.appendChild(a);
+      ul.appendChild(li);
+    });
+    $("foyer-cap-note").textContent = cap.mensualiteMax < 1 ? "Aujourd'hui, vos crédits à deux atteignent déjà la limite de la banque." : "Avec une mensualité de " + F.dt0(cap.mensualiteMax) + " DT par mois. La banque demandera en général un crédit aux deux noms.";
+  }
+
   function rendre(sy) {
     if (sy) syncBase(sy);
     if (!sy) return;
@@ -416,6 +456,7 @@
     rendreCapacite(sy);
     rendreSuggestions(sy);
     rendreProjets(sy);
+    try { rendreFoyer(sy); } catch (e) { if (window.console) console.error(e); }
     clearTimeout(minuterieSante);
     minuterieSante = setTimeout(function () { try { rendreSante(O.synthese() || sy); } catch (e) { if (window.console) console.error(e); } }, 120);
     var badge = $("badge-profil");

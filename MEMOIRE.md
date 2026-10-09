@@ -396,6 +396,22 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
   - Statistiques d'usage `simulation:vie` et `simulation:fiscal`.
 - **Tests** : unitaires 294, e2e 23/23 (étape santé, vie, application et annulation, fiscal), axe sans violation, `resp.js` sans débordement, vue `vie` comprise.
 
+## 3 octodecies. Mode couple / foyer (9 oct., lot 4 sur 6)
+
+- **Profil** (`normaliser`) : nouveaux champs plats `foyer` (booléen), `conjointPrenom`, `conjointMontant`, `conjointSens`, `conjointSalaires` (12 à 18), `conjointSecteur` et `conjointCredits` (mensualités des crédits à son nom).
+- **Moteur** : `OI.foyer(sy)` renvoie null si le mode est inactif ou sans salaire.
+  - Le conjoint est imposé séparément, sans déductions familiales : `OC.salaire` avec `chefDeFamille: false`.
+  - Capacité commune : revenus des deux selon la règle de la banque (net ou brut, revenu annuel ÷ 12 ou mensuel) × quotité − crédits des deux.
+  - Budget commun : net moyen des deux − crédits − logement − charges − épargne.
+  - Logement et charges communes partagés au prorata des nets.
+  - `gainCapacite` donne ce que le second salaire apporte.
+  - 3 tests.
+- **Profil (interface)** : section « Votre foyer » (`#sec-foyer`, lien `#profil?section=foyer`) avec interrupteur et champs du conjoint.
+  - Les champs du conjoint s'affichent via `rendreFoyer`, hors de `remplirChamps`. Piège : `remplirChamps` est sauté pendant `enEdition` (la case à cocher déclenche « input »).
+- **Mon orbite** : bloc « Votre foyer » visible en mode couple : indicateurs, part de chacun, contribution aux charges, et ce que la banque peut prêter ensemble (immobilier, auto, consommation), avec « Simuler » qui transmet la mensualité.
+- **Exemple** : avec le profil de l'utilisateur et un conjoint à 2 000 DT brut × 13, la mensualité commune est de 1 065 DT (+867 DT), soit 168 261 DT en immobilier sur 20 ans à 4,5 %.
+- **Tests** : unitaires 297, e2e 24/24 (activation, vérification, désactivation), aucun débordement.
+
 ## 4. Prochaines actions (améliorations possibles, rien de bloquant)
 
 1. Vérifier le site en ligne après chaque déploiement (Cloudflare se déploie depuis `main`).

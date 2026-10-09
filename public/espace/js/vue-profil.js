@@ -8,8 +8,8 @@
   var O = window.Orbite, F = O.F, $ = O.$, doc = document;
   var OC = window.OrbiteCalcul;
   var form = $("form-profil-complet");
-  var MAX = { enfants: 15, etudiants: 15, handicapes: 15, parents: 2, nombreSalaires: 18 };
-  var MIN = { nombreSalaires: 12 };
+  var MAX = { enfants: 15, etudiants: 15, handicapes: 15, parents: 2, nombreSalaires: 18, conjointSalaires: 18 };
+  var MIN = { nombreSalaires: 12, conjointSalaires: 12 };
   var LISTES = { credits: "modele-credit", contrats: "modele-contrat", projets: "modele-projet" };
   var enEdition = false;
 
@@ -46,6 +46,13 @@
       });
     });
     ["credits", "contrats", "projets"].forEach(function (k) { remplirListe(k, p[k]); });
+  }
+  /* Champs du conjoint : affichés dès que le mode couple est activé (même pendant une saisie). */
+  function rendreFoyer(p) {
+    var fc = $("foyer-champs"), avant = fc.hidden;
+    fc.hidden = !p.foyer;
+    if (avant && !fc.hidden) requestAnimationFrame(function () { O.placerPastilles(fc); });
+    $("sec-foyer-sous").textContent = p.foyer && p.conjointMontant > 0 ? "Mode couple · " + (p.conjointPrenom || "conjoint") + " : " + F.dt0(p.conjointMontant) + " DT " + p.conjointSens : "Mode couple : deux salaires, un budget et une capacité communs";
   }
 
   function remplirListe(cle, items) {
@@ -93,7 +100,7 @@
     if (el.type === "radio") { if (!el.checked) return; partiel[cle] = el.value; }
     else if (el.type === "checkbox") partiel[cle] = el.checked;
     else if (el.tagName === "SELECT") partiel[cle] = el.value;
-    else if (cle === "prenom" || cle === "banque") partiel[cle] = el.value;
+    else if (cle === "prenom" || cle === "banque" || cle === "conjointPrenom") partiel[cle] = el.value;
     else if (cle === "anneeNaissance") { var a = parseInt(el.value, 10); if (!(a > 1900)) return; partiel[cle] = a; }
     else {
       var v = depuisTexte(el.getAttribute("data-type"), el.value);
@@ -196,6 +203,7 @@
   function rendre(sy, p) {
     if (!sy) return;
     if (!enEdition) remplirChamps(p);
+    rendreFoyer(p);
     var s = sy.salaire;
     $("p-age").textContent = sy.age + " ans";
     $("p-montant-lib").textContent = "Salaire " + (p.sens === "net" ? "net" : "brut") + (p.periode === "annuel" ? " par an" : " par mois");

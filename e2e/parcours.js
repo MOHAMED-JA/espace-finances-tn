@@ -380,6 +380,27 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.selectOption("#param-accueil", "orbite");
   });
 
+  await etape("mode couple : salaire du conjoint, budget et capacité communs", async () => {
+    await page.goto(base + "/espace/#profil?section=foyer");
+    await page.waitForSelector("#sec-foyer[open]");
+    await page.locator("label:has(#p-foyer)").click();
+    await page.waitForSelector("#foyer-champs:not([hidden])");
+    await page.fill("#p-cj-prenom", "Sarra");
+    await page.fill("#p-cj-montant", "1 800");
+    await page.locator("#p-cj-montant").blur();
+    await page.waitForFunction(() => window.Orbite.profil().conjointMontant === 1800);
+    await page.goto(base + "/espace/#orbite");
+    await page.waitForSelector("#foyer:not([hidden])");
+    assert(/Mensualité possible ensemble/.test(await page.textContent("#foyer-kpi")), "capacité commune");
+    assert(/Sarra/.test(await page.textContent("#foyer-legende")), "part de chacun");
+    assert((await page.$$("#foyer-offres li")).length === 3, "immobilier, auto, consommation");
+    await page.goto(base + "/espace/#profil?section=foyer");
+    await page.locator("label:has(#p-foyer)").click();
+    await page.waitForFunction(() => window.Orbite.profil().foyer === false);
+    await page.goto(base + "/espace/#orbite");
+    await page.waitForSelector("#foyer", { state: "hidden" });
+  });
+
   await etape("santé financière, simulateur de vie (appliquer puis annuler) et optimiseur fiscal", async () => {
     await page.goto(base + "/espace/#orbite");
     await page.waitForFunction(() => /^\d+$/.test(document.getElementById("sante-score").textContent.trim()));
