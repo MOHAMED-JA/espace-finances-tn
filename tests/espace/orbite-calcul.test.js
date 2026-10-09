@@ -336,3 +336,12 @@ test('taux du futur crédit conso : choisi, sinon crédit conso en cours, sinon 
   const capConso = (sy) => sy.capacite.net.credits.filter((x) => x.cle === 'conso')[0];
   assert.ok(capConso(a).capital > capConso(b).capital, 'un taux plus bas augmente le capital');
 });
+
+test('taux du futur crédit auto : choisi, sinon crédit auto en cours, sinon TMM + 3', () => {
+  const base = { montant: 4000, nombreSalaires: 17, dateNaissance: '1990-01-01' };
+  assert.equal(O.tauxNouveaux(O.normaliser(base)).auto.tauxPct, O.TMM + 3);
+  assert.equal(O.tauxNouveaux(O.normaliser(Object.assign({}, base, { credits: [{ type: 'auto', mensualite: 695, tauxPct: 4.5 }] }))).auto.tauxPct, 4.5);
+  const choisi = O.normaliser(Object.assign({}, base, { credits: [{ type: 'auto', mensualite: 695, tauxPct: 4.5 }], tauxAutoPct: 8 }));
+  assert.deepEqual(O.tauxNouveaux(choisi).auto, { tauxPct: 8, source: 'choisi' }, 'le taux choisi prime sur le crédit en cours');
+  assert.equal(O.normaliser({ tauxAutoPct: '' }).tauxAutoPct, null);
+});

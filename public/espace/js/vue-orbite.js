@@ -232,7 +232,15 @@
     rendrePaliers(sy, cap);
   }
 
-  /* Taux des futurs crédits (immobilier et consommation) : toujours visibles, même sans calendrier de la marge. */
+  function afficherTaux(t, idChamp, idAide, idRetour, marche, lib) {
+    var champ = $(idChamp);
+    if (doc.activeElement !== champ) champ.value = String(t.tauxPct).replace(".", ",");
+    $(idAide).textContent = t.source === "choisi" ? "Taux que vous avez indiqué. Il sert à tous les montants " + lib + "."
+      : t.source === "credit" ? "Repris de votre " + t.libelle.toLowerCase() + ". Indiquez le taux proposé par votre banque s'il est différent."
+      : "Taux moyen du marché (" + marche + "). Indiquez le taux proposé par votre banque.";
+    $(idRetour).hidden = t.source !== "choisi";
+  }
+  /* Taux des futurs crédits (immobilier, auto et consommation) : toujours visibles, même sans calendrier de la marge. */
   function rendreTaux(sy) {
     var ti = sy.tauxImmo, champTaux = $("cap-taux-immo");
     if (doc.activeElement !== champTaux) champTaux.value = String(ti.tauxPct).replace(".", ",");
@@ -240,12 +248,9 @@
       : ti.source === "credit" ? "Repris de votre " + ti.libelle.toLowerCase() + ". Indiquez le taux proposé par votre banque s'il est différent."
       : "Taux moyen du marché (TMM " + F.pct(OC.TMM / 100, 2) + " + 2,5 points). Indiquez le taux proposé par votre banque.";
     $("cap-taux-auto").hidden = ti.source !== "choisi";
-    var tc = OC.tauxNouveaux(sy.profil).conso, champConso = $("cap-taux-conso");
-    if (doc.activeElement !== champConso) champConso.value = String(tc.tauxPct).replace(".", ",");
-    $("cap-taux-conso-aide").textContent = tc.source === "choisi" ? "Taux que vous avez indiqué. Il sert à tous les montants « Consommation »."
-      : tc.source === "credit" ? "Repris de votre " + tc.libelle.toLowerCase() + ". Indiquez le taux proposé par votre banque s'il est différent."
-      : "Taux moyen du marché (TMM " + F.pct(OC.TMM / 100, 2) + " + 3,5 points). Indiquez le taux proposé par votre banque.";
-    $("cap-taux-conso-auto").hidden = tc.source !== "choisi";
+    var tn = OC.tauxNouveaux(sy.profil);
+    afficherTaux(tn.auto, "cap-taux-auto-pct", "cap-taux-auto-aide", "cap-taux-auto-reset", "TMM " + F.pct(OC.TMM / 100, 2) + " + 3 points", "« Auto »");
+    afficherTaux(tn.conso, "cap-taux-conso", "cap-taux-conso-aide", "cap-taux-conso-auto", "TMM " + F.pct(OC.TMM / 100, 2) + " + 3,5 points", "« Consommation »");
   }
 
   /* Calendrier de la marge : une étape par fin de crédit qui augmente la mensualité possible. */
@@ -525,18 +530,17 @@
     O.majProfil({ tauxImmoPct: null });
     O.toast("Taux automatique rétabli.");
   });
-  /* Taux du futur crédit à la consommation : même principe. */
-  var champTauxConso = $("cap-taux-conso"), minuterieConso = null;
-  champTauxConso.addEventListener("input", function () {
-    clearTimeout(minuterieConso);
-    var lu = F.lire(champTauxConso.value), ok = lu.valide && !lu.vide && lu.valeur >= 0 && lu.valeur <= 30;
-    champTauxConso.setAttribute("aria-invalid", ok || lu.vide ? "false" : "true");
-    if (!ok) return;
-    minuterieConso = setTimeout(function () { O.majProfil({ tauxConsoPct: lu.valeur }); }, 350);
-  });
-  $("cap-taux-conso-auto").addEventListener("click", function () {
-    O.majProfil({ tauxConsoPct: null });
-    O.toast("Taux automatique rétabli.");
+  /* Taux des futurs crédits auto et conso : même principe. */
+  [["cap-taux-auto-pct", "cap-taux-auto-reset", "tauxAutoPct"], ["cap-taux-conso", "cap-taux-conso-auto", "tauxConsoPct"]].forEach(function (x) {
+    var champ = $(x[0]), minuterie = null;
+    champ.addEventListener("input", function () {
+      clearTimeout(minuterie);
+      var lu = F.lire(champ.value), ok = lu.valide && !lu.vide && lu.valeur >= 0 && lu.valeur <= 30;
+      champ.setAttribute("aria-invalid", ok || lu.vide ? "false" : "true");
+      if (!ok) return;
+      minuterie = setTimeout(function () { var o = {}; o[x[2]] = lu.valeur; O.majProfil(o); }, 350);
+    });
+    $(x[1]).addEventListener("click", function () { var o = {}; o[x[2]] = null; O.majProfil(o); O.toast("Taux automatique rétabli."); });
   });
 
   O.surProfil(rendre);
