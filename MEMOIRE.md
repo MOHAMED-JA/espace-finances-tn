@@ -453,6 +453,22 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 quatervicies. Salaire : répartition annuelle, coût employeur, autres charges (10 oct.)
+
+- **Règle de l'utilisateur : toujours poser les questions avec des réponses à choix multiples cliquables (outil AskUserQuestion), et expliquer son point de vue avant toute modification.**
+- Cas réel de l'utilisateur, d'après ses fiches de paie : 4 000 DT brut × 17, chef de famille sans enfant, CNSS. L'IRPP est plus élevé les mois de prime. Son employeur paie aussi une assurance groupe et une retraite complémentaire.
+- Correctifs, identiques dans le simulateur (portail-rh#11) et dans Orbite (moteur commun `public/moteurs/salaire/calcul.js` et `etat.js`, copiés du simulateur) :
+  - **« Sur 100 dinars »** sur l'année réelle (24,43 DT d'impôt, taux marginal 38 %). Avant, elle portait sur un mois habituel calculé comme une année de 12 salaires (≈ 21 DT, 36 %).
+  - **Mois de prime** : impôt par versement (1 355 DT) affiché à côté de celui d'un mois habituel (845 DT).
+  - **Coût employeur** :
+    - total d'une fiche habituelle (4 822,8 DT) ;
+    - coût annuel (81 987,6 DT), moyenne mensuelle et charges patronales ;
+    - répartition annuelle en « DT par an ».
+    - Avant, le « par mois » valait annuel ÷ 12.
+  - **Autres charges de l'entreprise** : `autresChargesPct` (% du brut) et `autresChargesMontant` (DT par mois × 12), ligne `code: "autres"`. Elles sont classées dans « caisse + protection complémentaire » (`rep.caisse.dontComplementaire`). Lien de partage : `acp`, `acm`.
+- Charges légales inchangées : 16,57 % + 0,5 % + AT 0,5 % (par défaut) + TFP 2 % + FOPROLOS 1 % = 20,57 %.
+- Tests : simulateur 52, Orbite 316 unitaires, e2e 27/27.
+
 ## 3 tervicies. Partage LinkedIn (9 oct.)
 
 - Balises Open Graph et Twitter dans `public/index.html` (canonical, og:title, og:description, og:image et ses dimensions, og:image:alt, twitter:card summary_large_image).
