@@ -517,6 +517,11 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - Les boutons radio des `.bascule` sont invisibles : en test, cliquer le `label`, ou utiliser `check(..., {force:true})`.
 - Le faux Supabase (`e2e/faux-supabase.js`) gère `updateUser({data})`, donc les métadonnées.
 - Grille CSS : mettre `minmax(0,1fr)` sur `.champ`, sinon les grands champs débordent sur mobile.
+- Listes déroulantes (9 oct.) :
+  - Avant, la flèche (`svg` frère du `select`) était hors du `select` : un clic dessus ne faisait rien.
+  - Maintenant le `select` occupe tout le cadre `.saisie` (padding à droite de 44 px) et la flèche est posée en absolu par-dessus, avec `pointer-events: none`.
+  - Le menu utilise `appearance: base-select` (Chrome/Edge 135+) : carte arrondie, ombre, option choisie en bleu avec ✓, animation d'ouverture, flèche qui pivote (`:open`).
+  - Les autres navigateurs gardent le menu natif. Tout est dans `orbite.css`, aucun JavaScript.
 - Réglages : `.reglage__controle` doit garder `align-content: start`. Sinon la grille étire le contrôle à la hauteur du texte de gauche, et une `.bascule` (dont la pastille est en `top/bottom: 4px`) devient un grand bloc vide. Le bug a été vu sur « Animations » le 8 oct.
 - Crédit, scénarios (8 oct.) : un bouton corbeille `#cr-supprimer`, à côté de Dupliquer, supprime le scénario affiché. La touche Suppr fonctionne aussi sur un onglet. Le dernier scénario restant ne peut pas être supprimé. Un toast « Annuler » rétablit le scénario. Les lettres suivantes se décalent.
   Quand la colonne fait moins de 520 px (requête de conteneur sur `.cr-editeur__tete`), les actions passent sous les onglets, car les 3 onglets ne descendent pas sous ~304 px.

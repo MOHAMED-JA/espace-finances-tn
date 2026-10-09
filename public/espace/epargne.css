@@ -57,7 +57,7 @@
 .module--epargne .ep-ligne__txt strong { font-size: 15px; font-weight: 650; }
 .module--epargne .ep-ligne__txt small { font-size: 13px; color: var(--encre-3); }
 .module--epargne .saisie select { padding-right: 26px; }
-.module--epargne .saisie .ep-select-ico { width: 18px; height: 18px; margin-left: -28px; pointer-events: none; color: var(--encre-3); }
+.module--epargne .saisie .ep-select-ico { width: 18px; height: 18px; pointer-events: none; color: var(--encre-3); }
 
 /* Contrats déjà détenus */
 .module--epargne .ep-contrats { display: grid; gap: 10px; }
