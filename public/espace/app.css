@@ -609,3 +609,7 @@ body.attente .app { visibility: hidden; }
 .admin__fiche-grille { display: grid; gap: 10px 24px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); margin: 12px 0 0; }
 .admin__fiche-grille dt { font-size: 12.5px; color: var(--encre-2, inherit); }
 .admin__fiche-grille dd { margin: 2px 0 0; font-size: 14.5px; }
+
+/* Taux des futurs crédits, sous les montants de la capacité */
+.taux-futurs { margin-top: 16px; padding: 18px 20px; }
+.taux-futurs .paliers__taux:first-of-type { margin-top: 6px; }

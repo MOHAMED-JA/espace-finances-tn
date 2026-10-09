@@ -155,6 +155,21 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.screenshot({ path: path.join(CAPTURES, "03-profil.png"), fullPage: true });
   });
 
+  await etape("capacité : taux du futur crédit à la consommation modifiable", async () => {
+    /* Taux du futur crédit conso : modifiable, il change le capital affiché. */
+    const capConso = async () => chiffre(await page.textContent("#cap-liste li:last-child .capacite__capital"));
+    await page.goto(base + "/espace/#orbite");
+    await page.waitForSelector("#cap-taux-conso", { state: "visible" });
+    const avant = await capConso();
+    await page.fill("#cap-taux-conso", "2");
+    await page.waitForFunction(() => !document.getElementById("cap-taux-conso-auto").hidden);
+    await page.waitForFunction((n) => Number(document.querySelector("#cap-liste li:last-child .capacite__capital").textContent.replace(/[^\d]/g, "")) > n, avant);
+    assert(/2\s?%/.test(await page.textContent("#cap-liste li:last-child .capacite__cond")), "durée et taux affichés à 2 %");
+    await (await page.$(".taux-futurs")).screenshot({ path: path.join(CAPTURES, "taux-futurs.png") });
+    await page.click("#cap-taux-conso-auto");
+    await page.waitForFunction(() => document.getElementById("cap-taux-conso-auto").hidden);
+  });
+
   await etape("orbite : budget et conseils tiennent compte du profil", async () => {
     await page.goto(base + "/espace/#orbite");
     await page.waitForSelector("#vue-orbite:not([hidden])");

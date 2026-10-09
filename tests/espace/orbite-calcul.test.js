@@ -323,3 +323,16 @@ test('dates du profil : valeurs invalides ignorées', () => {
   assert.equal(p.dateNaissance, '');
   assert.equal(p.dateEmbauche, '');
 });
+
+test('taux du futur crédit conso : choisi, sinon crédit conso en cours, sinon TMM + 3,5', () => {
+  const base = { montant: 4000, nombreSalaires: 17, chefDeFamille: true, dateNaissance: '1990-01-01' };
+  assert.equal(O.tauxNouveaux(O.normaliser(base)).conso.tauxPct, O.TMM + 3.5);
+  assert.equal(O.tauxNouveaux(O.normaliser(Object.assign({}, base, { credits: [{ type: 'autre', mensualite: 497.93, tauxPct: 2 }] }))).conso.source, 'marche', 'un crédit « autre » ne fixe pas le taux conso');
+  assert.equal(O.tauxNouveaux(O.normaliser(Object.assign({}, base, { credits: [{ type: 'conso', mensualite: 497.93, tauxPct: 2 }] }))).conso.tauxPct, 2);
+  const choisi = O.normaliser(Object.assign({}, base, { tauxConsoPct: 7 }));
+  assert.equal(O.tauxNouveaux(choisi).conso.source, 'choisi');
+  const a = O.synthese(Object.assign({}, base, { tauxConsoPct: 2 }));
+  const b = O.synthese(base);
+  const capConso = (sy) => sy.capacite.net.credits.filter((x) => x.cle === 'conso')[0];
+  assert.ok(capConso(a).capital > capConso(b).capital, 'un taux plus bas augmente le capital');
+});
