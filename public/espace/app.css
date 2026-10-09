@@ -517,3 +517,31 @@ body.attente .app { visibility: hidden; }
 .fiscal__budget { display: grid; gap: 8px; max-width: 520px; }
 .fiscal__budget-res { font-size: 14.5px; color: var(--encre-2); }
 .fiscal__notes { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--encre-2); font-size: 13.5px; }
+
+/* ---------- Foyer (mode couple) ---------- */
+.foyer .bloc-orbite__tete { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 16px; }
+.foyer__kpi { margin: 0 0 16px; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
+.foyer__kpi > div { display: grid; gap: 2px; padding: 14px; border-radius: var(--r-int); background: var(--surface); border: 1px solid var(--filet); }
+.foyer__kpi dt { color: var(--encre-3); font-size: 13px; font-weight: 600; }
+.foyer__kpi dd { margin: 0; font-family: var(--affiche); font-size: 22px; font-weight: 760; }
+.foyer__kpi dd.foyer__sous { font-family: inherit; font-size: 12.5px; font-weight: 500; color: var(--encre-3); }
+.foyer__k--fort dd:not(.foyer__sous) { color: var(--credit-t); }
+.foyer__grille { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+.foyer__part, .foyer__cap { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.foyer__part h3, .foyer__cap h3 { font-size: 16px; }
+.foyer__barre { height: 14px; border-radius: 7px; background: var(--epargne); position: relative; overflow: hidden; }
+.foyer__barre i { position: absolute; inset: 0 auto 0 0; width: var(--p, 50%); background: var(--credit); border-right: 2px solid var(--surface); transition: width 500ms cubic-bezier(.23, 1, .32, 1); }
+.foyer__legende { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.foyer__leg { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; align-items: center; gap: 8px; font-size: 14px; }
+.foyer__leg i { width: 12px; height: 12px; border-radius: 3px; background: var(--credit); }
+.foyer__leg--conjoint i { background: var(--epargne); }
+.foyer__note { color: var(--encre-2); font-size: 13.5px; }
+.foyer__offres { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.foyer__offre { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto auto; align-items: center; gap: 4px 12px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); }
+.foyer__offre > svg { width: 18px; height: 18px; color: var(--credit-t); }
+.foyer__offre > span { display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; min-width: 0; font-weight: 650; font-size: 14.5px; }
+.foyer__offre small { color: var(--encre-3); font-weight: 500; font-size: 13px; }
+.foyer__offre strong { font-size: 15.5px; }
+.foyer__cap { container-type: inline-size; }
+@container (max-width: 400px) { .foyer__offre { grid-template-columns: 20px minmax(0, 1fr) auto; } .foyer__offre .lien-action { grid-column: 2 / -1; justify-self: end; } }
+.foyer-champs { padding: 0; }

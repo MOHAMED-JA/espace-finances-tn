@@ -156,7 +156,15 @@
       revenuBanque: p.revenuBanque === "mensuel" ? "mensuel" : "annuel",
       banque: texte(p.banque, 40),
       /* Taux d'un nouveau crédit immobilier choisi par l'utilisateur (null : déduit automatiquement, voir tauxImmo). */
-      tauxImmoPct: p.tauxImmoPct === null || p.tauxImmoPct === undefined || p.tauxImmoPct === "" ? null : nombre(p.tauxImmoPct, null, 0, 30)
+      tauxImmoPct: p.tauxImmoPct === null || p.tauxImmoPct === undefined || p.tauxImmoPct === "" ? null : nombre(p.tauxImmoPct, null, 0, 30),
+      /* Mode couple / foyer : salaire du conjoint et mensualités de ses propres crédits (imposé séparément). */
+      foyer: !!p.foyer,
+      conjointPrenom: texte(p.conjointPrenom, 40),
+      conjointMontant: nombre(p.conjointMontant, 0, 0, 1e7),
+      conjointSens: p.conjointSens === "net" ? "net" : "brut",
+      conjointSalaires: entier(p.conjointSalaires, 12, 12, 18),
+      conjointSecteur: p.conjointSecteur === "public" ? "public" : "prive",
+      conjointCredits: nombre(p.conjointCredits, 0, 0, 1e6)
     };
   }
 

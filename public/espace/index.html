@@ -175,6 +175,26 @@
             </section>
           </div>
 
+          <!-- Foyer (mode couple) -->
+          <section class="bloc-orbite foyer" id="foyer" aria-labelledby="titre-foyer" hidden>
+            <div class="bloc-orbite__tete"><div><h2 id="titre-foyer">Votre foyer</h2><p id="foyer-sous">Deux salaires, un budget commun, une capacité d'emprunt commune.</p></div>
+              <a class="lien-action" href="#profil?section=foyer">Modifier<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a></div>
+            <dl class="foyer__kpi" id="foyer-kpi"></dl>
+            <div class="foyer__grille">
+              <div class="panneau foyer__part">
+                <h3>Qui apporte quoi</h3>
+                <div class="foyer__barre" id="foyer-barre" role="img"><i id="foyer-barre-moi"></i></div>
+                <ul class="foyer__legende" id="foyer-legende" role="list"></ul>
+                <p class="foyer__note" id="foyer-contrib"></p>
+              </div>
+              <div class="panneau foyer__cap">
+                <h3>Ensemble, la banque peut vous prêter</h3>
+                <ul class="foyer__offres" id="foyer-offres" role="list"></ul>
+                <p class="foyer__note" id="foyer-cap-note"></p>
+              </div>
+            </div>
+          </section>
+
           <!-- Santé financière -->
           <section class="bloc-orbite sante" id="sante" aria-labelledby="titre-sante">
             <div class="bloc-orbite__tete"><div><h2 id="titre-sante">Votre santé financière</h2>
@@ -305,6 +325,21 @@
               </div>
             </details>
 
+            <details class="depliant" id="sec-foyer">
+              <summary><span class="depliant__icone icone--salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg></span><span>Votre foyer<small id="sec-foyer-sous">Mode couple : deux salaires, un budget et une capacité communs</small></span><svg class="chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
+              <div class="depliant__corps grille-champs">
+                <label class="interrupteur champ--large"><span>Mode couple : ajouter le salaire de mon conjoint</span><input type="checkbox" data-p="foyer" id="p-foyer" role="switch"><span class="interrupteur__piste" aria-hidden="true"></span></label>
+                <div class="foyer-champs champ--large grille-champs" id="foyer-champs" hidden>
+                  <div class="champ"><label for="p-cj-prenom">Prénom du conjoint</label><div class="saisie"><input id="p-cj-prenom" data-p="conjointPrenom" type="text" maxlength="40" autocomplete="off"></div></div>
+                  <div class="champ"><label for="p-cj-montant">Son salaire par mois</label><div class="saisie"><input id="p-cj-montant" data-p="conjointMontant" data-type="montant" type="text" inputmode="decimal" autocomplete="off"><span class="saisie__unite">DT</span></div></div>
+                  <div class="bascule" role="radiogroup" aria-label="Salaire du conjoint saisi en"><label><input type="radio" name="p-cj-sens" data-p="conjointSens" value="brut"><span>Brut</span></label><label><input type="radio" name="p-cj-sens" data-p="conjointSens" value="net"><span>Net</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
+                  <div class="bascule" role="radiogroup" aria-label="Secteur du conjoint"><label><input type="radio" name="p-cj-secteur" data-p="conjointSecteur" value="prive"><span>Privé · CNSS</span></label><label><input type="radio" name="p-cj-secteur" data-p="conjointSecteur" value="public"><span>Public · CNRPS</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
+                  <div class="compteur-ligne champ--large"><span id="lp-cj-salaires">Nombre de salaires par an</span><span class="compteur" role="group" aria-labelledby="lp-cj-salaires"><button type="button" data-pp="conjointSalaires" data-pas="-1" aria-label="Un salaire de moins"><svg aria-hidden="true"><use href="/orbite/icones.svg#moins"/></svg></button><output data-po="conjointSalaires">12</output><button type="button" data-pp="conjointSalaires" data-pas="1" aria-label="Un salaire de plus"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg></button></span></div>
+                  <div class="champ"><label for="p-cj-credits">Mensualités de ses crédits</label><div class="saisie"><input id="p-cj-credits" data-p="conjointCredits" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div><span class="champ__aide">Crédits à son nom, non déclarés dans « Vos crédits en cours »</span></div>
+                  <p class="champ__aide champ--large">Le logement et les charges fixes de « Votre budget » sont considérés comme communs. Chacun est imposé séparément.</p>
+                </div>
+              </div>
+            </details>
             <details class="depliant" id="sec-credits">
               <summary><span class="depliant__icone icone--credit"><svg aria-hidden="true"><use href="/orbite/icones.svg#credit"/></svg></span><span>Vos crédits en cours<small id="sec-credits-sous">Aucun crédit déclaré</small></span><svg class="chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
               <div class="depliant__corps">

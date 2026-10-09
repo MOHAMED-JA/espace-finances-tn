@@ -258,5 +258,41 @@
     return { evenements: ap.notes, avant: a, apres: b, lignes: lignes, alertes: alertes, profilApres: ap.profil, syntheseApres: syB };
   }
 
-  return { scoreSante: scoreSante, optimiseurFiscal: optimiseurFiscal, simulateurVie: simulateurVie, appliquerEvenements: appliquer, TYPES_EVT: TYPES_EVT };
+  /* ===================================================================
+     Mode couple / foyer : deux salaires, un budget commun, une capacité d'emprunt commune
+     =================================================================== */
+  function foyer(sy) {
+    var p = sy.profil;
+    if (!p.foyer || !(p.conjointMontant > 0)) return null;
+    /* Le conjoint est imposé séparément ; les déductions familiales restent à la personne déclarée chef de famille. */
+    var sc = OC.salaire(OC.normaliser({ montant: p.conjointMontant, sens: p.conjointSens, nombreSalaires: p.conjointSalaires,
+      secteur: p.conjointSecteur, situation: "marie", chefDeFamille: false, anneeNaissance: p.anneeNaissance }));
+    var b = p.baseBanque, q = b === "brut" ? p.quotiteBrut : p.quotiteNet, annuel = p.revenuBanque === "annuel";
+    var revConj = b === "brut" ? (annuel ? sc.brutAnnuel / 12 : sc.brutMensuel) : (annuel ? sc.netAnnuel / 12 : sc.netMensuel);
+    var revMoi = sy.capacite[b].revenu;
+    var charges = sy.chargesCredits + p.conjointCredits;
+    var revenu = revMoi + revConj;
+    var taux = OC.tauxNouveaux(p);
+    var cap = OC.capacite(revenu, q, charges, sy.age, taux);
+    var netMoi = sy.salaire.netMoyen + p.autresRevenus, netConj = sc.netMoyen, net = netMoi + netConj;
+    var epargne = p.contrats.reduce(function (t, c) { return t + c.versementMensuel; }, 0);
+    var communes = p.loyer + p.chargesFixes;
+    var partMoi = net > 0 ? netMoi / net : 1;
+    return {
+      prenom: p.conjointPrenom || "Conjoint",
+      conjoint: { netMensuel: sc.netMensuel, netMoyen: sc.netMoyen, brutMensuel: sc.brutMensuel, impotAnnuel: sc.irpp, revenuBanque: revConj, credits: p.conjointCredits },
+      moi: { netMoyen: netMoi, revenuBanque: revMoi, credits: sy.chargesCredits },
+      netMoyen: net,
+      budget: OC.budget(net, charges, communes, epargne),
+      revenuBanque: revenu, quotite: q, base: b,
+      capacite: cap,
+      endettement: revenu > 0 ? charges / revenu : 0,
+      partMoi: partMoi,
+      /* Charges communes (logement et charges fixes) partagées au prorata des revenus nets. */
+      contributions: { moi: communes * partMoi, conjoint: communes * (1 - partMoi), total: communes },
+      gainCapacite: Math.max(0, cap.mensualiteMax - sy.capacite[b].mensualiteMax)
+    };
+  }
+
+  return { foyer: foyer, scoreSante: scoreSante, optimiseurFiscal: optimiseurFiscal, simulateurVie: simulateurVie, appliquerEvenements: appliquer, TYPES_EVT: TYPES_EVT };
 });
