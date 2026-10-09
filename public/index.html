@@ -110,7 +110,14 @@
               <label class="interrupteur apercu__chef"><span>Chef de famille</span><input type="checkbox" id="chef" role="switch" checked><span class="interrupteur__piste" aria-hidden="true"></span></label>
             </div>
             <div class="apercu__orbite" aria-live="polite">
-              <div class="apercu__noyau"><span>Net par mois</span><strong id="net">—</strong></div>
+              <div class="apercu__planete">
+                <canvas id="planete" class="apercu__toile" aria-hidden="true"></canvas>
+                <div class="apercu__noyau"><span>Net par mois</span><strong id="net">—</strong></div>
+                <p class="apercu__anneaux" aria-label="Les anneaux de la planète">
+                  <span class="anneau anneau--cnss"><i aria-hidden="true"></i>Cotisations <b id="p-cnss">—</b></span>
+                  <span class="anneau anneau--impot"><i aria-hidden="true"></i>Impôt <b id="p-impot">—</b></span>
+                </p>
+              </div>
               <ul class="apercu__satellites" role="list">
                 <li class="sat sat--salaire"><span>Tranche d'impôt</span><strong id="tranche">—</strong></li>
                 <li class="sat sat--credit"><span>Crédit immobilier possible</span><strong id="credit">—</strong></li>
@@ -201,6 +208,7 @@
   <script src="/moteurs/vie/projection.js"></script>
   <script src="/moteurs/vie/scenario.js"></script>
   <script src="/espace/js/orbite-calcul.js"></script>
+  <script src="/commun/planete.js"></script>
   <script src="/commun/accueil.js"></script>
 </body>
 </html>
