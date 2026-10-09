@@ -192,7 +192,7 @@
         '<div class="ep-tete"><h2 id="ep-t-versement">Votre épargne</h2><span class="puce puce--epargne">Art. 39 · IRPP</span></div>' +
         bascule("ep-produit", "Produit", [["av", "Assurance vie"], ["cea", "CEA"], ["ac", "Les deux"]], "ep-produits") +
         bascule("ep-freq", "Fréquence des versements", [["Mensuel", "Mois"], ["Trimestriel", "Trimestre"], ["Semestriel", "Semestre"], ["Annuel", "An"]]) +
-        '<div class="champ ep-grand-champ" id="ep-bloc-av"><label for="ep-v-av" id="ep-lib-v-av">Versement assurance vie par mois</label><div class="saisie saisie--grande"><input id="ep-v-av" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-ep="versement" data-t="m" aria-describedby="ep-v-av-aide"><span class="saisie__unite" aria-hidden="true">DT</span></div><span class="champ__aide" id="ep-v-av-aide"></span></div>' +
+        '<div class="champ ep-grand-champ" id="ep-bloc-av"><label for="ep-v-av" id="ep-lib-v-av">Versement assurance vie par mois</label><div class="saisie saisie--grande"><input id="ep-v-av" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-ep="versement" data-t="m" aria-describedby="ep-v-av-aide"><span class="saisie__unite" aria-hidden="true">DT</span></div><span class="champ__aide" id="ep-v-av-aide"></span><button type="button" class="lien-action ep-suggestion" id="ep-suggestion" hidden></button></div>' +
         '<div class="champ ep-grand-champ" id="ep-bloc-cea"><label for="ep-v-cea" id="ep-lib-v-cea">Dépôt CEA par mois</label><div class="saisie saisie--grande"><input id="ep-v-cea" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-ep="versementCea" data-t="m" aria-describedby="ep-v-cea-aide"><span class="saisie__unite" aria-hidden="true">DT</span></div><span class="champ__aide" id="ep-v-cea-aide"></span></div>' +
         '<div class="ep-duo">' +
           '<div id="ep-bloc-iav">' + champ("ep-i-av", "Versement initial (vie)", "initialAv", "m", "DT", "Versé au départ, déductible la 1re année") + "</div>" +
@@ -1412,9 +1412,19 @@
     if (t.id === "ep-duree") { planifier(true); }
   });
 
+  function majSuggestion() {
+    var b = $("ep-suggestion"); if (!b) return;
+    b.hidden = !(ui.suggestion > 0);
+    b.textContent = "Suggestion : épargner ≈ 10 % de votre net, soit " + dt0(ui.suggestion) + " par mois en plus de vos contrats";
+  }
   R.addEventListener("click", function (ev) {
     var b = ev.target.closest("button");
     if (!b || !R.contains(b)) return;
+    if (b.id === "ep-suggestion") {
+      ui.inclure = true; if (ui.mode === "cea") ui.mode = "av";
+      etat.versement = arr3(ui.suggestion * 12 / FACT[etat.frequence]);
+      rendreContrats(); remplirChamps(); majProduits(); O.placerPastilles(R); planifier(true); signaler(); return;
+    }
     var cpt = b.getAttribute("data-cpt");
     if (cpt) {
       var max = cpt === "parents" ? 2 : 15;
@@ -1847,12 +1857,26 @@
       etat.chef = !!p.chefDeFamille; etat.enfants = p.enfants; etat.etudiants = p.etudiants; etat.infirmes = p.handicapes; etat.parents = p.parents;
       etat.ageActuel = borne(OC.age(p), 18, 80);
       lireContrats(p);
+      /* Suggestion « équilibrée » (≈ 10 % du net), proposée par un bouton. */
+      try {
+        var syS = OC.synthese(p), eqS = syS.epargne.propositions.filter(function (x) { return x.cle === "equilibree"; })[0];
+        ui.suggestion = eqS && eqS.versementMensuel > 0 ? eqS.versementMensuel : 0;
+      } catch (e) { ui.suggestion = 0; }
+      majSuggestion();
       if (ui.premier) {
         ui.premier = false;
-        try {
-          var sy = OC.synthese(p), eq = sy.epargne.propositions.filter(function (x) { return x.cle === "equilibree"; })[0];
-          if (eq) { etat.versement = arr3(eq.versementMensuel * 12 / FACT[etat.frequence]); if (ui.mode === "cea") ui.mode = "av"; }
-        } catch (e) { /* profil incomplet : on garde les valeurs actuelles */ }
+        /* À l'ouverture : vos contrats actuels (versements mensuels réels), sans les compter deux fois ;
+           sans contrat, la suggestion équilibrée. */
+        var mAv = 0, mCea = 0;
+        p.contrats.forEach(function (c) { if (c.type === "cea") mCea += c.versementMensuel; else mAv += c.versementMensuel; });
+        if (mAv > 0 || mCea > 0) {
+          ui.inclure = false;
+          ui.mode = mAv > 0 && mCea > 0 ? "ac" : mCea > 0 ? "cea" : "av";
+          etat.versement = arr3(mAv * 12 / FACT[etat.frequence]);
+          etat.versementCea = arr3(mCea * 12 / FACT[etat.frequence]);
+        } else if (ui.suggestion > 0) {
+          etat.versement = arr3(ui.suggestion * 12 / FACT[etat.frequence]); if (ui.mode === "cea") ui.mode = "av";
+        }
       }
       appliquerRetraite();
       rendreContrats();
