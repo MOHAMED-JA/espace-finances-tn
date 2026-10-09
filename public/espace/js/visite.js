@@ -134,6 +134,8 @@
     etat = { i: 0, racine: c.racine, halo: c.halo, bulle: c.bulle, precedent: doc.activeElement };
     var ouvrir = function () {
       doc.body.appendChild(etat.racine);
+      /* Feuille de style pas encore à jour (ancienne version en cache) : on n'affiche pas une visite sans mise en forme. */
+      if (getComputedStyle(etat.racine).position !== "fixed") { etat.racine.remove(); etat = null; return; }
       doc.body.classList.add("visite-ouverte");
       window.addEventListener("resize", placer);
       window.addEventListener("scroll", placer, true);
