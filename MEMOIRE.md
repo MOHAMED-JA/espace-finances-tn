@@ -453,6 +453,24 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 duovicies. Assistant intégré, sans clé d'IA (9 oct.)
+
+- **Problème** : sans le secret `ANTHROPIC_API_KEY`, la fonction `assistant` répond `code: "bientot"` et l'utilisateur voyait « L'Assistant Orbite arrive très bientôt ».
+- **Solution** : `public/espace/js/assistant-local.js` (UMD pur, testé sous Node) : `AssistantLocal.repondre(question, sy)` → `{ texte, lien }`.
+  - Il reconnaît des intentions en français et en darija : auto, immo, conso, crédit, impôt, épargne, salaire, score, budget, endettement, événements de vie. Il répond dans la langue de la question.
+  - Il comprend une année (« en 2027 », « fi 2032 ») : il prend la dernière étape du calendrier de la marge atteinte cette année-là.
+  - Il comprend « après la fin de mon crédit auto » (« ba3d ma nkammel crédit el karhba ») : il prend l'étape où ce crédit se termine. Le premier bien cité est l'objet de l'achat.
+  - Chiffres pris de `synthese`, `optimiseurFiscal` et `scoreSante` (aucune règle dupliquée), avec un lien vers la bonne vue (`#credit?mensualite=`, `#vie?onglet=fiscal`, etc.).
+- **Dans `vue-assistant.js`** :
+  - sur `code: "bientot"`, l'Assistant passe en mode intégré pour toute la session, sans plus appeler le serveur ;
+  - sur une erreur réseau ou 5xx, réponse intégrée pour cette question seulement ;
+  - hors connexion, réponse intégrée directement ;
+  - la note devient « Réponses calculées sur votre appareil… ».
+  - Les codes `abonnement`, `quota` et `invalide` gardent leur message.
+- Dès que le secret `ANTHROPIC_API_KEY` est ajouté dans Supabase (Edge Functions → Secrets), l'IA en ligne reprend la main automatiquement.
+- Service worker : VERSION `orbite-2026-10-09b`. Confidentialité mise à jour.
+- **Tests** : unitaires 314 (dont `tests/assistant/local.test.js`, sur le profil réel de l'utilisateur) ; e2e 27/27, nouvelle étape « assistant intégré » (faux Supabase : `assistantSansCle(true)`).
+
 ## 3 unvicies. Vidéo promotionnelle (9 oct.)
 
 - **Livrables** : `orbite-promo-9x16.mp4` (1080×1920, Reels/TikTok/Shorts/Stories) et `orbite-promo-16x9.mp4` (1920×1080, YouTube/LinkedIn/site), 30 s, 60 i/s, H.264 + AAC, son à −14 LUFS. Les MP4 ne sont pas dans le dépôt (trop lourds) : ils ont été envoyés à l'utilisateur.

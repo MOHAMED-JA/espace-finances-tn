@@ -27,7 +27,7 @@ function creer() {
   const photos = new Map();  // chemin -> Buffer (stockage privé « avatars »)
   /* Administration (migration 0006) : admins, alertes d'inscription, compteurs anonymes. */
   const admins = new Set();
-  let dernierAssistant = null;
+  let dernierAssistant = null, assistantBientot = false;
   const alertes = [];
   const usage = new Map();  // "type:cle" -> nombre
   /* Codes promo et parrainage (migration 0007) : même règles que prix_formule / activer_paiement. */
@@ -226,6 +226,7 @@ function creer() {
     if (url.pathname === "/functions/v1/assistant") {
       if (!u) return repondre(route, 401, { erreur: "Connexion requise" });
       dernierAssistant = corps;
+      if (assistantBientot) return repondre(route, 200, { erreur: "L'Assistant Orbite arrive très bientôt.", code: "bientot" });
       if (!corps || !corps.question || corps.question.length < 2) return repondre(route, 400, { erreur: "Posez votre question.", code: "invalide" });
       return repondre(route, 200, { reponse: "Oui, à partir de **mars 2032** :\n- mensualité possible : 893 DT\n- endettement sous 40 %", refus: false, restantes: 29 });
     }
@@ -371,6 +372,7 @@ function creer() {
     abonnementDe(email) { return abonnementDe(comptes.get(email).user.id); },
     marquerAdmin(email) { admins.add(comptes.get(email).user.id); },
     dernierAssistant() { return dernierAssistant; },
+    assistantSansCle(v) { assistantBientot = v; },
     abonnementDe(email) { return abonnementDe(comptes.get(email).user.id); },
     paiementsDe(email) { const id = comptes.get(email).user.id; return paiements.filter((p) => p.user_id === id); },
     usage() { return new Map(usage); },

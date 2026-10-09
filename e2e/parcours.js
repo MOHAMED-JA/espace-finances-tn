@@ -539,6 +539,25 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(faux.dernierAssistant().historique.length === 2, "échanges précédents transmis");
   });
 
+  await etape("assistant intégré : sans clé d'IA, réponse calculée sur l'appareil (français et darija)", async () => {
+    faux.assistantSansCle(true);
+    await page.reload();
+    await page.waitForFunction(() => window.Orbite && window.Orbite.pret);
+    await page.waitForSelector("#vue-assistant:not([hidden])");
+    await page.fill("#assistant-question", "Est-ce que je peux acheter une voiture en 2027 ?");
+    await page.press("#assistant-question", "Enter");
+    await page.waitForFunction(() => !document.querySelector(".assistant__msg--attente") && /mensualité possible/.test(document.getElementById("assistant-fil").textContent));
+    assert(!/très bientôt/.test(await page.textContent("#assistant-fil")), "plus de message « bientôt »");
+    assert(await page.evaluate(() => /^#credit\?mensualite=\d+$/.test(document.getElementById("assistant-fil").lastElementChild.querySelector("a.lien-action").getAttribute("href"))), "lien vers la simulation");
+    assert(/calculées sur votre appareil/.test(await page.textContent("#assistant-note")), "note du mode intégré");
+    faux.assistantSansCle(false);
+    const avant = faux.dernierAssistant();
+    await page.fill("#assistant-question", "Najjem nechri dar ?");
+    await page.press("#assistant-question", "Enter");
+    await page.waitForFunction(() => /dar wala appartement|Ey, najjem|Mazelt|Tawa/.test(document.querySelector(".assistant__msg--ia:last-child").textContent));
+    assert(faux.dernierAssistant() === avant, "ensuite, plus d'appel au serveur pendant la session");
+  });
+
   await etape("application : service worker, consultation hors connexion, rappels", async () => {
     await page.goto(base + "/espace/#orbite");
     await page.waitForFunction(() => navigator.serviceWorker && navigator.serviceWorker.controller, null, { timeout: 20000 }).catch(() => {});
