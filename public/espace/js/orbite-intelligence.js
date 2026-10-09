@@ -294,5 +294,65 @@
     };
   }
 
-  return { foyer: foyer, scoreSante: scoreSante, optimiseurFiscal: optimiseurFiscal, simulateurVie: simulateurVie, appliquerEvenements: appliquer, TYPES_EVT: TYPES_EVT };
+  /* ===================================================================
+     Résumé chiffré du profil pour l'Assistant : aucune donnée d'identité (ni prénom, ni e-mail)
+     =================================================================== */
+  var MOIS_NOMS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+  var SITUATIONS = { celibataire: "célibataire", marie: "marié(e)", divorce: "divorcé(e)", veuf: "veuf / veuve" };
+  function pc(v) { return nb(v * 100) + "\u00a0%"; }
+
+  function resumeAssistant(sy, options) {
+    var o = options || {}, m = o.maintenant || sy.maintenant || new Date(), p = sy.profil, s = sy.salaire;
+    var b = p.baseBanque, cap = sy.capacite[b], q = b === "brut" ? p.quotiteBrut : p.quotiteNet, L = [];
+    L.push("Date du jour : " + m.getDate() + " " + MOIS_NOMS[m.getMonth()] + " " + m.getFullYear() + ".");
+    L.push("Personne : " + sy.age + " ans, " + (SITUATIONS[p.situation] || p.situation) + (p.chefDeFamille ? ", chef de famille" : "") +
+      ", " + p.enfants + " enfant(s) à charge" + (p.etudiants ? " dont " + p.etudiants + " étudiant(s)" : "") + ". Contrat : " + p.statut + ", secteur " + (p.secteur === "public" ? "public (CNRPS)" : "privé (CNSS)") + ".");
+    L.push("Salaire : " + dt(p.montant) + " " + p.sens + " par " + (p.periode === "annuel" ? "an" : "mois") + ", " + p.nombreSalaires + " salaires par an. Net mensuel : " + dt(s.netMensuel) +
+      " ; net moyen (année ÷ 12) : " + dt(s.netMoyen) + " ; brut annuel : " + dt(s.brutAnnuel) + " ; impôt sur le revenu : " + dt(s.irpp) + " par an (tranche à " + pc(s.tranche.taux) + ")." +
+      (p.autresRevenus ? " Autres revenus : " + dt(p.autresRevenus) + " par mois." : ""));
+    L.push("Banque : " + (p.banque || "non précisée") + ", prête jusqu'à " + pc(q) + " du " + b + " (revenu retenu : " + dt(cap.revenu) + " par mois, " +
+      (p.revenuBanque === "annuel" ? "salaires et primes de l'année ÷ 12" : "salaire mensuel") + "). Endettement actuel : " + pc(cap.tauxEndettementActuel) + ". Nouvelle mensualité possible aujourd'hui : " + dt(cap.mensualiteMax) + ".");
+    if (cap.mensualiteMax >= 1) L.push("Aujourd'hui, la banque peut prêter : " + cap.credits.filter(function (c) { return c.cle !== "immo25"; }).map(function (c) {
+      return c.court + " " + dt(c.capital) + " (" + nb(c.dureeMois / 12) + " ans à " + nb(c.tauxPct) + "\u00a0%)"; }).join(" ; ") + ".");
+    if (p.credits.length) {
+      L.push("Crédits en cours (" + dt(sy.chargesCredits) + " par mois au total) :");
+      p.credits.forEach(function (c, i) {
+        var e = sy.credits[i] || {};
+        L.push("- " + c.libelle + " (" + c.type + ") : " + dt(c.mensualite) + " par mois" + (c.tauxPct ? " à " + nb(c.tauxPct) + "\u00a0%" : "") +
+          (e.restantes ? ", " + e.restantes + " échéances restantes, dernière en " + e.fin : "") + (c.capitalRestant ? ", capital restant " + dt(c.capitalRestant) : "") + ".");
+      });
+    } else L.push("Aucun crédit en cours.");
+    var pal = cap.paliers || [];
+    if (pal.length) {
+      L.push("Calendrier de la marge (à chaque fin de crédit, la mensualité possible augmente ; les montants d'une même étape sont l'un OU l'autre) :");
+      pal.forEach(function (x) {
+        L.push("- " + x.date + " (fin : " + x.credits.join(", ") + ") : " + dt(x.mensualiteMax) + " par mois, soit " + (x.offres || []).map(function (of) {
+          return of.libelle.toLowerCase() + " " + dt(of.capital) + " sur " + nb(of.dureeMois / 12) + " ans à " + nb(of.tauxPct) + "\u00a0%"; }).join(", ") + ".");
+      });
+    }
+    L.push("Budget : loyer " + dt(p.loyer) + ", charges fixes " + dt(p.chargesFixes) + " par mois ; épargne disponible " + dt(p.epargneDisponible) + " ; reste à vivre " + dt(sy.budget.reste) + " par mois.");
+    if (sy.contrats && sy.contrats.length) {
+      L.push("Contrats d'épargne :");
+      sy.contrats.forEach(function (c, i) {
+        var cc = p.contrats[i];
+        L.push("- " + (c.type === "cea" ? "CEA" : "Assurance vie") + " : " + dt(cc.versementMensuel) + " par mois" + (cc.versementsLibresAn ? " + " + dt(cc.versementsLibresAn) + " de versements libres cette année" : "") +
+          ", " + dt(c.verse) + " versés, capital " + (c.estime ? "estimé " : "") + dt(c.capital) + ", durée fiscale (" + c.dureeFiscale + " ans) " + (c.dureeAtteinte ? "atteinte" : "atteinte en " + c.dateDureeFiscale) + ".");
+      });
+    }
+    var f = optimiseurFiscal(sy, { maintenant: m });
+    if (f.impotAvant > 0) L.push("Impôt et épargne : économie actuelle " + dt(f.economieActuelle) + " par an, maximale " + dt(f.economieMax) +
+      (f.statut === "a_optimiser" ? " ; complément utile avant le 31 décembre : " + dt(f.complement.av) + " en assurance vie et " + dt(f.complement.cea) + " en CEA (" + f.joursAvantFin + " jours restants)" : "") + ".");
+    var sc = scoreSante(sy, { optimiseur: f, maintenant: m });
+    L.push("Score de santé financière : " + sc.score + "/100 (" + sc.niveau + "). Priorités : " + sc.objectifs.map(function (x) { return x.libelle.toLowerCase(); }).join(", ") + ".");
+    var fo = foyer(sy);
+    if (fo) L.push("Foyer (mode couple) : conjoint " + dt(fo.conjoint.netMoyen) + " net moyen par mois, ses crédits " + dt(fo.conjoint.credits) + " ; net du foyer " + dt(fo.netMoyen) +
+      ", mensualité possible ensemble " + dt(fo.capacite.mensualiteMax) + ", crédit immobilier possible ensemble " + dt((fo.capacite.credits.filter(function (c) { return c.cle === "immo"; })[0] || {}).capital || 0) + ".");
+    if (sy.projets && sy.projets.length) {
+      L.push("Projets :");
+      sy.projets.forEach(function (x) { L.push("- " + x.libelle + " : " + dt(x.montant) + " dans " + x.horizonAns + " an(s), " + ({ ok: "finançable", a_preparer: "à préparer", hors_portee: "hors de portée pour l'instant" }[x.statut] || x.statut) + "."); });
+    }
+    return L.join("\n").slice(0, 9000);
+  }
+
+  return { resumeAssistant: resumeAssistant, foyer: foyer, scoreSante: scoreSante, optimiseurFiscal: optimiseurFiscal, simulateurVie: simulateurVie, appliquerEvenements: appliquer, TYPES_EVT: TYPES_EVT };
 });

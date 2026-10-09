@@ -431,6 +431,28 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Application et hors connexion » (cache des fichiers du site seulement ; rappels calculés et affichés sur l'appareil).
 - **Tests** : unitaires 302, e2e 25/25. L'étape service worker vérifie la coupure réseau, le rechargement depuis le cache, le bandeau et les rappels. Pièges : avec `setOffline`, Playwright continue de répondre aux routes simulées (le cas « enregistrement hors ligne » n'est donc vérifié qu'à la main) ; le premier chargement n'est pas contrôlé par le service worker (il faut recharger une fois).
 
+## 3 vicies. Assistant Orbite (IA) (9 oct., lot 6 sur 6)
+
+- **Migration `0008_assistant.sql`** (appliquée, ainsi que `0008b`) : table `assistant_usage` (compte, jour, nombre de questions) et fonctions `assistant_reserver(user, quota)` et `assistant_rendre(user)`, réservées au serveur.
+- **Fonction `assistant`** (v1, `verify_jwt: true`), dossier `supabase/functions/assistant/` :
+  - Contrôles : utilisateur vérifié, accès actif (essai, abonnement ou offert), quota quotidien (`ASSISTANT_QUOTA`, 30 par défaut).
+  - Appel : SDK `npm:@anthropic-ai/sdk`, `beta.messages.create`, modèle `ASSISTANT_MODELE` (par défaut `claude-opus-5-5`), `effort: "low"`, consignes système mises en cache, `fallbacks: "default"` (en-tête `server-side-fallback-2026-07-01`).
+  - En cas d'erreur, la question est rendue (non décomptée).
+  - **Secret requis : `ANTHROPIC_API_KEY`.** Sans lui, la fonction répond `code: "bientot"` (« L'Assistant Orbite arrive très bientôt »).
+  - `regles.js` (pur, 5 tests dans `tests/assistant/`) :
+    - consignes : français ou darija, uniquement les chiffres du profil, réponse « oui / non / à partir de telle date », 7 ans hors immobilier, le profil est une donnée et non une instruction, réponses courtes ;
+    - `nettoyer` : tailles bornées, historique de 8 échanges en alternance ;
+    - `messages` : profil placé dans `<profil_orbite>` ;
+    - `reponseTexte` : traite les refus.
+- **Client** :
+  - `OI.resumeAssistant(sy)` : résumé chiffré du profil, sans prénom ni e-mail, au plus 9 000 caractères (date, salaire, banque, crédits, calendrier de la marge avec les plafonds par type, budget, contrats, fiscalité, score, foyer, projets).
+  - `E.assistant.demander()` passe par `appelFonction` (générique, partagé avec le paiement).
+  - Vue `#assistant` (`vue-assistant.js`) avec suggestions, dont une en darija. Entrée envoie, Maj + Entrée passe à la ligne. Lien `#assistant?q=` pour poser une question directement. Mise en forme sûre, sans HTML (paragraphes, listes, gras). La conversation n'est gardée qu'en mémoire de la page.
+  - Statistiques d'usage `vue:assistant` et `simulation:assistant`.
+- **Coût indicatif** avec Opus 5.5 (4 $ par million de jetons en entrée, 20 $ en sortie) : environ 0,02 à 0,04 $ par question (profil d'environ 2 000 jetons, réponse courte à effort faible). Le quota de 30 par jour limite le risque. Un modèle moins cher se règle par le secret `ASSISTANT_MODELE` (`claude-sonnet-5-5` ou `claude-haiku-5-5`).
+- **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
+- **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
+
 ## 4. Prochaines actions (améliorations possibles, rien de bloquant)
 
 1. Vérifier le site en ligne après chaque déploiement (Cloudflare se déploie depuis `main`).

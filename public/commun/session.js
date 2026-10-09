@@ -155,18 +155,25 @@
   /* ---------- Abonnement ----------
    * Lecture seule côté navigateur (RLS) ; les commandes et l'activation passent par la
    * fonction serveur « paiement », qui vérifie chaque paiement auprès de la passerelle. */
-  function appelPaiement(corps) {
-    return client.functions.invoke("paiement", { body: corps }).then(function (r) {
+  function appelPaiement(corps) { return appelFonction("paiement", corps, "Le service de paiement ne répond pas."); }
+  function appelFonction(nom, corps, indisponible) {
+    return client.functions.invoke(nom, { body: corps }).then(function (r) {
       if (!r.error && r.data && r.data.erreur) { var b = new Error(r.data.erreur); b.code = r.data.code; throw b; }
       if (!r.error) return r.data;
       var ctx = r.error.context;
       if (ctx && typeof ctx.json === "function") {
-        return ctx.json().then(function (d) { var e = new Error((d && d.erreur) || "Le service de paiement ne répond pas."); e.statut = ctx.status; throw e; },
-          function () { throw new Error("Le service de paiement ne répond pas."); });
+        return ctx.json().then(function (d) { var e = new Error((d && d.erreur) || indisponible); e.statut = ctx.status; e.code = d && d.code; throw e; },
+          function () { throw new Error(indisponible); });
       }
-      throw new Error("Le service de paiement ne répond pas.");
+      throw new Error(indisponible);
     });
   }
+  /* Assistant (IA) : question, échanges précédents et résumé chiffré du profil, calculé sur l'appareil. */
+  var assistant = {
+    demander: function (question, historique, contexte) {
+      return appelFonction("assistant", { question: question, historique: historique, contexte: contexte }, "L'Assistant ne répond pas pour le moment.");
+    }
+  };
   /* ---------- Photo de profil ----------
    * Préférence dans user_metadata.orbite_avatar : "stockage" (photo importée, espace privé),
    * "google" (photo du compte Google), "aucun" (initiales). Par défaut : Google s'il y en a une. */
@@ -326,6 +333,7 @@
     avatar: avatar,
     admin: admin,
     parrainage: parrainage,
+    assistant: assistant,
     estErreurReseau: estErreurReseau,
     horsLigne: function () { return horsLigne || (typeof navigator !== "undefined" && navigator.onLine === false); },
     compterUsage: compterUsage,
