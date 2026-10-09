@@ -522,6 +522,8 @@ function icon(kind, x, y, s, c) {
     g.strokeStyle = COL.ale; g.shadowColor = COL.ale; g.beginPath(); g.moveTo(-s * .38, -s * .32); g.lineTo(s * .38, s * .42); g.stroke(); }
   if (kind === "bell") { g.beginPath(); g.moveTo(-s * .32, s * .2); g.quadraticCurveTo(-s * .26, -s * .38, 0, -s * .38); g.quadraticCurveTo(s * .26, -s * .38, s * .32, s * .2); g.closePath(); g.stroke();
     g.beginPath(); g.arc(0, s * .3, s * .07, 0, 7); g.fill(); }
+  if (kind === "phone") { g.beginPath(); g.roundRect(-s * .24, -s * .42, s * .48, s * .84, s * .1); g.stroke(); g.beginPath(); g.moveTo(-s * .07, -s * .3); g.lineTo(s * .07, -s * .3); g.stroke();
+    g.beginPath(); g.moveTo(0, -s * .1); g.lineTo(0, s * .18); g.stroke(); g.beginPath(); g.moveTo(-s * .1, s * .08); g.lineTo(0, s * .18); g.lineTo(s * .1, s * .08); g.stroke(); }
   if (kind === "gift") { g.strokeRect(-s * .32, -s * .12, s * .64, s * .46); g.strokeRect(-s * .38, -s * .26, s * .76, s * .14); g.beginPath(); g.moveTo(0, -s * .26); g.lineTo(0, s * .34); g.stroke();
     g.beginPath(); g.ellipse(-s * .1, -s * .34, s * .1, s * .06, .5, 0, 7); g.stroke(); g.beginPath(); g.ellipse(s * .1, -s * .34, s * .1, s * .06, -.5, 0, 7); g.stroke(); }
   g.restore();
@@ -537,7 +539,7 @@ function tile(x, y, w, h, kind, title, sub, c, k) {
   g.restore();
 }
 function s8(u) {
-  const T = [["couple", "Mode couple", "le budget du foyer", COL.salL], ["offline", "Hors connexion", "vos chiffres partout", COL.ale], ["bell", "Rappels", "au bon moment", COL.creL], ["gift", "Parrainage", "un mois offert chacun", COL.epaL]];
+  const T = [["couple", "Mode couple", "le budget du foyer", COL.salL], ["offline", "Hors connexion", "vos chiffres partout", COL.ale], ["bell", "Rappels", "au bon moment", COL.creL], ["phone", "Installable", "comme une vraie appli", COL.epaL]];
   if (P) {
     words("Pensée pour", W / 2, 330, 100, seg(u, 0, .35), { align: "center", weight: 800 });
     words("votre quotidien.", W / 2, 440, 100, seg(u, .1, .45), { align: "center", weight: 800, grad: [COL.salL, COL.epaL] });
@@ -546,7 +548,7 @@ function s8(u) {
     words("Pensée pour votre quotidien.", W / 2, 270, 92, seg(u, 0, .4), { align: "center", weight: 800 });
     T.forEach((t, i) => tile(150 + i * 410, 380, 390, 440, t[0], t[1], t[2], t[3], seg(u, .05 + i * .25, .45 + i * .25)));
   }
-  text("+ application installable sur votre téléphone", W / 2, P ? 1560 : 920, { size: P ? 32 : 30, fam: "Mona", weight: 500, color: COL.ink2, align: "center", alpha: eo(seg(u, 1.1, 1.5)) });
+  text("… et bien plus encore", W / 2, P ? 1560 : 920, { size: P ? 32 : 30, fam: "Mona", weight: 500, color: COL.ink2, align: "center", alpha: eo(seg(u, 1.1, 1.5)) });
 }
 
 /* 9 — Ce n'est que le début (24–27 s) */
@@ -595,8 +597,8 @@ function s10(u) {
     text("Orbite", cx, 790 + (1 - k) * 50, { size: 160, weight: 800, ls: -4, align: "center", alpha: k });
     words("Votre salaire au centre.", cx, 870, 48, seg(u, .3, .8), { align: "center", weight: 600, color: COL.ink2 });
     cta(cx, 1010, 760, 130, u, .45);
-    const ko = back(seg(u, .75, 1.1)); if (ko > 0) { g.save(); g.translate(cx, 1150); g.scale(ko, ko); chip("OFFRE DE LANCEMENT  −30 %", 0, 0, { align: "center", size: 30, color: COL.ale, dot: true }); g.restore(); }
-    text("appliquée automatiquement", cx, 1220, { size: 28, fam: "Mona", weight: 500, color: COL.mut, align: "center", alpha: eo(seg(u, .95, 1.3)) });
+    const ko = back(seg(u, .75, 1.1)); if (ko > 0) { g.save(); g.translate(cx, 1150); g.scale(ko, ko); chip("DISPONIBLE MAINTENANT", 0, 0, { align: "center", size: 30, color: COL.salL, dot: true }); g.restore(); }
+    text("sur mobile et sur ordinateur", cx, 1220, { size: 28, fam: "Mona", weight: 500, color: COL.mut, align: "center", alpha: eo(seg(u, .95, 1.3)) });
     text("espace-finances-tn.jaouadimohamedaziz.workers.dev", cx, 1330, { size: 30, fam: "JB", weight: 600, color: COL.creL, align: "center", alpha: eo(seg(u, 1.0, 1.4)) });
     signature(cx, 1480, u, 1.2);
   } else {
@@ -605,8 +607,8 @@ function s10(u) {
     text("Orbite", 560, 720 + (1 - k) * 50, { size: 150, weight: 800, ls: -4, align: "center", alpha: k });
     words("Votre salaire au centre.", 560, 800, 44, seg(u, .3, .8), { align: "center", weight: 600, color: COL.ink2 });
     cta(1340, 360, 760, 130, u, .45);
-    const ko = back(seg(u, .75, 1.1)); if (ko > 0) { g.save(); g.translate(1340, 500); g.scale(ko, ko); chip("OFFRE DE LANCEMENT  −30 %", 0, 0, { align: "center", size: 30, color: COL.ale, dot: true }); g.restore(); }
-    text("appliquée automatiquement", 1340, 570, { size: 28, fam: "Mona", weight: 500, color: COL.mut, align: "center", alpha: eo(seg(u, .95, 1.3)) });
+    const ko = back(seg(u, .75, 1.1)); if (ko > 0) { g.save(); g.translate(1340, 500); g.scale(ko, ko); chip("DISPONIBLE MAINTENANT", 0, 0, { align: "center", size: 30, color: COL.salL, dot: true }); g.restore(); }
+    text("sur mobile et sur ordinateur", 1340, 570, { size: 28, fam: "Mona", weight: 500, color: COL.mut, align: "center", alpha: eo(seg(u, .95, 1.3)) });
     text("espace-finances-tn.jaouadimohamedaziz.workers.dev", 1340, 670, { size: 28, fam: "JB", weight: 600, color: COL.creL, align: "center", alpha: eo(seg(u, 1.0, 1.4)) });
     signature(1340, 800, u, 1.2);
   }
@@ -622,7 +624,7 @@ function cta(cx, cy, w, h, u, t0) {
   g.fillStyle = sg; g.fillRect(-w / 2, -h / 2, w, h); g.restore();
   g.restore();
   g.save(); g.translate(cx, cy); g.scale(k, k);
-  text("Essai gratuit 3 jours", 0, 18, { size: 52, weight: 800, align: "center", color: "#fff" });
+  text("Découvrez Orbite", 0, 18, { size: 52, weight: 800, align: "center", color: "#fff" });
   g.restore();
 }
 function signature(cx, y, u, t0) {
