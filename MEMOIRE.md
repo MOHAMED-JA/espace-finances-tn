@@ -472,6 +472,15 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
   - le versement optimal paie, avec un bouton « Utiliser ce montant » ;
   - le résultat du montant saisi, découpé de la même façon.
 - L'Assistant (intégré et en ligne) reprend cette découpe.
+- **Lien « Simuler ce versement dans Épargne vie & CEA »** (10 oct.) :
+  - **Avant** :
+    - champ vide : le lien gardait une valeur périmée (10 DT par mois) ;
+    - montant rempli : il convertissait le versement en mensualités d'assurance vie sur 15 ans, et le CEA était perdu.
+  - **Maintenant** : versement ponctuel `#epargne?av=…&cea=…` avec la répartition de l'optimiseur.
+    - Le module Épargne passe en mode « av », « cea » ou « ac » (les deux), met `initialAv` / `initialCea` et remet les mensualités à 0.
+    - Champ vide : versement « optimal paie », sinon le complément.
+    - Ancien paramètre `?versement=` (mensuel AV) conservé.
+  - Libellés : « Montant optimal en assurance vie seule », barème « Loi de finances 2025 (en vigueur en 2026) ».
 - **Tests** : 317 unitaires, e2e 27/27.
 
 ## 3 quatervicies. Salaire : répartition annuelle, coût employeur, autres charges (10 oct.)

@@ -222,7 +222,7 @@
           '<li><span>Capital au terme</span><strong id="ep-cap"></strong></li>' +
           '<li><span>Valeur totale</span><strong id="ep-valeur"></strong></li>' +
         "</ul>" +
-        '<div class="ep-optimal" id="ep-optimal"><div><span class="ep-optimal__lib">Montant optimal en assurance vie</span><strong id="ep-opt-val"></strong><small id="ep-opt-sous"></small></div>' +
+        '<div class="ep-optimal" id="ep-optimal"><div><span class="ep-optimal__lib">Montant optimal en assurance vie seule</span><strong id="ep-opt-val"></strong><small id="ep-opt-sous"></small></div>' +
           '<button type="button" class="bouton bouton--plein bouton--petit" id="ep-opt-appliquer">' + ico("valide") + "Appliquer</button></div>" +
         '<p class="ep-res__note" id="ep-cea-utile"></p>' +
         '<p class="ep-res__note" id="ep-note-contrats" hidden></p>' +
@@ -1876,10 +1876,26 @@
     if (res) planifier(false);
   });
 
-  /* Paramètre de route : #epargne?versement=250 (DT par mois en assurance vie) */
+  /* Paramètres de route :
+     #epargne?versement=250      DT par mois en assurance vie
+     #epargne?av=5650&cea=18560  versement ponctuel de l'année (optimiseur fiscal) : initial assurance vie et dépôt initial CEA,
+                                 sans mensualité ajoutée */
   doc.addEventListener("orbite:vue", function (ev) {
     var d = ev.detail || {};
     if (d.vue !== "epargne" || !d.params) return;
+    if (d.params.has("av") || d.params.has("cea")) {
+      var lav = F.lire(d.params.get("av") || ""), lcea = F.lire(d.params.get("cea") || "");
+      var pav = lav.valide && !lav.vide ? lav.valeur : 0, pcea = lcea.valide && !lcea.vide ? lcea.valeur : 0;
+      if (!(pav > 0) && !(pcea > 0)) return;
+      ui.mode = pav > 0 && pcea > 0 ? "ac" : pav > 0 ? "av" : "cea";
+      etat.versement = 0; etat.versementCea = 0;
+      etat.initialAv = arr3(pav); etat.initialCea = arr3(pcea);
+      remplirChamps();
+      O.placerPastilles(R);
+      calculer(true);
+      signaler();
+      return;
+    }
     var v = d.params.get("versement");
     if (v == null) return;
     var r = F.lire(v);

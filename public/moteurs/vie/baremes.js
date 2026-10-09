@@ -12,7 +12,7 @@
     annees: {
       '2025': {
         annee: 2025,
-        libelle: 'Loi de finances 2025',
+        libelle: 'Loi de finances 2025 (en vigueur en 2026)',
         source: 'Paramètres à confirmer avec le texte officiel (Code de l\'IRPP et de l\'IS, article 39).',
         tranches: [
           { min: 0,     max: 5000,     taux: 0.00 },
