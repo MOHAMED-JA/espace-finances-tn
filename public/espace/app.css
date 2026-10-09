@@ -613,3 +613,29 @@ body.attente .app { visibility: hidden; }
 /* Taux des futurs crédits, sous les montants de la capacité */
 .taux-futurs { margin-top: 16px; padding: 18px 20px; }
 .taux-futurs .paliers__taux:first-of-type { margin-top: 6px; }
+
+/* ---------- Visite guidée (première connexion, bouton « ? ») ---------- */
+.barre__aide { flex: none; font-family: var(--affiche); font-weight: 700; font-size: 16px; }
+.visite { position: fixed; inset: 0; z-index: 200; }
+.visite__halo { position: fixed; left: 0; top: 0; border-radius: 14px; box-shadow: 0 0 0 9999px rgba(7, 9, 15, .62), 0 0 0 2px var(--credit-lum); pointer-events: none;
+  transition: transform 320ms var(--sortie), width 320ms var(--sortie), height 320ms var(--sortie); }
+.visite--centre .visite__halo { box-shadow: 0 0 0 9999px rgba(7, 9, 15, .62); }
+.visite__bulle { position: fixed; left: 0; top: 0; padding: 18px 18px 14px; border-radius: 18px; background: var(--surface); color: var(--encre); border: 1px solid var(--filet);
+  box-shadow: 0 24px 60px -12px rgba(7, 9, 15, .45); transition: transform 320ms var(--sortie); }
+.visite__bulle--entre { animation: visite-entre 240ms var(--sortie); }
+@keyframes visite-entre { from { opacity: 0; filter: blur(2px); } to { opacity: 1; filter: none; } }
+.visite__tete { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.visite__compteur { font-size: 12.5px; font-weight: 650; color: var(--encre-3); font-variant-numeric: tabular-nums; }
+.visite__passer { border: 0; background: none; padding: 4px 6px; margin: -4px -6px; border-radius: 8px; color: var(--encre-3); font: inherit; font-size: 13.5px; cursor: pointer; }
+.visite__passer:hover { color: var(--encre); }
+.visite__titre { margin: 8px 0 6px; font-family: var(--affiche); font-size: 20px; line-height: 1.2; letter-spacing: -.01em; }
+.visite__texte { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--encre-2); }
+.visite__points { display: flex; gap: 5px; margin: 14px 0 12px; }
+.visite__points i { width: 6px; height: 6px; border-radius: 999px; background: var(--filet-fort); transition: width 240ms var(--sortie), background-color 200ms ease; }
+.visite__points i.actif { width: 18px; background: var(--credit); }
+.visite__pied { display: flex; justify-content: flex-end; gap: 8px; }
+@media (prefers-reduced-motion: reduce) {
+  .visite__halo, .visite__bulle, .visite__points i { transition: none; }
+  .visite__bulle--entre { animation: none; }
+}
+:root[data-mouvement="reduit"] .visite__halo, :root[data-mouvement="reduit"] .visite__bulle { transition: none; }

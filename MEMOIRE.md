@@ -453,6 +453,17 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 untricies. Visite guidée de la première connexion (10 oct.)
+
+- **Demande de l'utilisateur** : un module d'aide qui montre étape par étape les rubriques à la première connexion. Choix (questions cliquables) : visite guidée (bulles), après le premier pas, bouton « Aide » pour la revoir, français avec vouvoiement.
+- **Réponse donnée** : les modifications de code valent pour tous les utilisateurs ; les données (taux choisis, profil) restent propres à chaque compte ; l'Administration n'est visible que par l'admin.
+- `public/espace/js/visite.js` (`window.OrbiteVisite`) : 12 étapes, à savoir bienvenue, `.scene`, capacité (ou encart date de naissance), puis Profil, Salaire, Épargne, Crédit, Vie & impôts, Assistant, Simulations, Paramètres et enfin le bouton « ? ».
+  - Cible : premier sélecteur visible (barre latérale, sinon onglets du bas) ; sans cible, bulle centrée (téléphone).
+  - Halo (box-shadow géant) + bulle `role=dialog`, focus gardé, flèches/Échap, « Passer », points de progression. Mouvement réduit respecté.
+- Démarrage : événement `orbite:premier-pas` (émis par le formulaire du premier pas dans `vue-orbite.js`), 1,2 s après, si `user_metadata.orbite_visite` est absent. À la fin (ou en passant), `orbite_visite` = date ISO via `E.compte.preferences`.
+- Revoir : bouton `#aide-visite` (« ? ») dans la barre du haut et `#param-visite` dans Paramètres → Préférences.
+- e2e : étape visite (12 étapes, clavier, marquage du compte, relance par « ? », Échap) et contrôle sur téléphone (bulle dans l'écran). 30/30.
+
 ## 3 tricies. Taux du futur crédit auto modifiable aussi (10 oct.)
 
 - Remarque de l'utilisateur : « Ils sont tous modifiables logiquement ». Les trois taux (immobilier, auto, consommation) sont désormais modifiables dans le panneau « Taux de vos futurs crédits ».

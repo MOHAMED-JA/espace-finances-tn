@@ -513,6 +513,7 @@
       chefDeFamille: $("d-chef").checked
     }, { immediat: true });
     O.toast("Votre orbite est en mouvement. Complétez « Mon profil » pour des conseils encore plus précis.");
+    doc.dispatchEvent(new CustomEvent("orbite:premier-pas"));
     var scene = doc.querySelector(".scene");
     if (scene) scene.scrollIntoView({ behavior: O.mouvementReduit.matches ? "auto" : "smooth", block: "start" });
   });
