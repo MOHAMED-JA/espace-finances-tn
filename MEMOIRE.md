@@ -457,7 +457,7 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 
 - **Livrables** : `orbite-promo-9x16.mp4` (1080×1920, Reels/TikTok/Shorts/Stories) et `orbite-promo-16x9.mp4` (1920×1080, YouTube/LinkedIn/site), 30 s, 60 i/s, H.264 + AAC, son à −14 LUFS. Les MP4 ne sont pas dans le dépôt (trop lourds) : ils ont été envoyés à l'utilisateur.
 - **Sources** dans `promo/video/` (régénérables, sans secret) :
-  - `captures.js` : captures réelles de l'app avec un profil fictif « Sami » (3 200 DT brut × 13, marié, 1 enfant) via le faux Supabase ;
+  - `captures.js` : captures réelles de l'app avec un profil de démonstration « Aziz » (3 200 DT brut × 13, marié, 1 enfant) via le faux Supabase ;
   - `scene.html` : toute l'animation sur un canevas, `render(t)` déterministe (aucune animation CSS), mises en page portrait et paysage, polices de la marque ;
   - `rendu.js` : 4 onglets Chromium en parallèle → JPEG → ffmpeg (`node rendu.js v|h all 60 sortie.mp4`, ou `preview t1 t2…` pour des aperçus) ;
   - `musique.py` : bande-son composée par code (numpy, 120 BPM, la mineur, Am–F–C–G) : impacts sur chaque mot de l'accroche, drop à 4 s, cassure à 24 s, second drop à 27 s, souffles à chaque coupe.

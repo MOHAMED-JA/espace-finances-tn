@@ -5,7 +5,7 @@ const { demarrer } = require(RACINE + "/e2e/serveur.js");
 const Faux = require(RACINE + "/e2e/faux-supabase.js");
 const SUPABASE = "https://txrwgqgnqdkipwtwpevl.supabase.co";
 const OUT = __dirname + "/captures/";
-const PROFIL = { prenom: "Sami", montant: 3200, sens: "brut", nombreSalaires: 13, situation: "marie", chefDeFamille: true, enfants: 1, anneeNaissance: 1990, baseBanque: "brut",
+const PROFIL = { prenom: "Aziz", montant: 3200, sens: "brut", nombreSalaires: 13, situation: "marie", chefDeFamille: true, enfants: 1, anneeNaissance: 1990, baseBanque: "brut",
   epargneDisponible: 9000, loyer: 550, chargesFixes: 400,
   credits: [{ type: "auto", libelle: "Crédit auto", tauxPct: 9, mensualite: 520, moisRestants: 30 }],
   contrats: [{ type: "av", libelle: "Assurance vie", anneeDebut: 2023, moisDebut: 1, versementMensuel: 150 }] };
@@ -20,7 +20,7 @@ async function session(nav, base, faux, mobile) {
   const p = await ctx.newPage();
   const email = (mobile ? "m" : "d") + "@demo.tn";
   await p.goto(base + "/connexion.html?mode=inscription");
-  await p.fill("#nom", "Sami"); await p.fill("#email", email); await p.fill("#mdp", "Demo-Orbite-2026!"); await p.fill("#mdp2", "Demo-Orbite-2026!");
+  await p.fill("#nom", "Aziz"); await p.fill("#email", email); await p.fill("#mdp", "Demo-Orbite-2026!"); await p.fill("#mdp2", "Demo-Orbite-2026!");
   await p.check("#cgu").catch(() => {}); await p.click("#envoyer");
   await p.waitForURL(/\/espace\//);
   await p.waitForFunction(() => window.Orbite && window.Orbite.pret);
