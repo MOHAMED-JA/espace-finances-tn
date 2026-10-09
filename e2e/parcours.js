@@ -112,6 +112,32 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.screenshot({ path: path.join(CAPTURES, "02-orbite.png") });
   });
 
+  await etape("visite guidée : démarre après le premier pas, une seule fois, et se revoit avec « ? »", async () => {
+    await page.waitForSelector(".visite__bulle");
+    assert(/Bienvenue/.test(await page.textContent("#visite-titre")), "première étape");
+    const total = Number((await page.textContent("#visite-compteur")).match(/sur (\d+)/)[1]);
+    assert(total >= 10, "toutes les rubriques présentées");
+    await page.click("#visite-suiv");
+    assert(/Mon orbite/.test(await page.textContent("#visite-titre")), "étape Mon orbite");
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: path.join(CAPTURES, "visite-orbite.png") });
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowRight");
+    assert(/Mon profil/.test(await page.textContent("#visite-titre")), "navigation au clavier");
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: path.join(CAPTURES, "visite-profil.png") });
+    for (let i = 3; i < total - 1; i++) await page.click("#visite-suiv");
+    assert(/Terminer/.test(await page.textContent("#visite-suiv")), "dernière étape");
+    await page.click("#visite-suiv");
+    await page.waitForSelector(".visite", { state: "detached" });
+    await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite);
+    assert(faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite_visite, "visite marquée comme vue sur le compte");
+    await page.click("#aide-visite");
+    await page.waitForSelector(".visite__bulle");
+    await page.keyboard.press("Escape");
+    await page.waitForSelector(".visite", { state: "detached" });
+  });
+
   await etape("capacité : bascule net → brut", async () => {
     const net = chiffre(await page.textContent("#cap-mensualite"));
     await page.check('input[name="base-capacite"][value="brut"]', { force: true });
@@ -368,6 +394,16 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await pm.click("#envoyer");
     await pm.waitForURL(/\/espace\//);
     await pm.waitForSelector(".onglets-bas");
+    /* Visite guidée sur téléphone : bulle dans l'écran, onglets du bas désignés. */
+    await pm.click("#aide-visite");
+    await pm.waitForSelector(".visite__bulle");
+    for (let i = 0; i < 4; i++) await pm.click("#visite-suiv");
+    await pm.waitForTimeout(500);
+    const bb = await pm.evaluate(() => { const r = document.querySelector(".visite__bulle").getBoundingClientRect(); return [r.left, r.right, r.top, r.bottom]; });
+    assert(bb[0] >= 0 && bb[1] <= 390 && bb[2] >= 0 && bb[3] <= 844, "bulle entièrement visible sur téléphone : " + bb);
+    await pm.screenshot({ path: path.join(CAPTURES, "visite-mobile.png") });
+    await pm.keyboard.press("Escape");
+    await pm.waitForSelector(".visite", { state: "detached" });
     for (const vue of ["orbite", "salaire", "epargne", "credit", "profil"]) {
       await pm.tap('.onglets-bas a[data-vue="' + vue + '"]');
       await pm.waitForSelector("#vue-" + vue + ":not([hidden])");

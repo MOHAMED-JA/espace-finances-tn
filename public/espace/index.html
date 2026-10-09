@@ -80,6 +80,7 @@
         </a>
         <p class="barre__titre" id="barre-titre" aria-hidden="true">Mon orbite</p>
         <span class="barre__etat" id="etat-enregistrement" role="status" aria-live="polite"></span>
+        <button type="button" class="bouton bouton--fantome bouton--icone bouton--petit barre__aide" id="aide-visite" aria-label="Aide : revoir la visite guidée" title="Revoir la visite guidée"><span aria-hidden="true">?</span></button>
         <a class="pastille-acces" id="pastille-acces" href="#abonnement" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#couronne"/></svg><span id="pastille-acces-lib"></span></a>
         <div class="barre__actions" id="barre-actions" hidden>
           <button type="button" class="bouton bouton--petit" id="reprendre-profil"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span class="bouton__lib">Reprendre mon profil</span></button>
@@ -932,6 +933,10 @@
                 </div>
               </div>
             </section>
+            <section class="panneau reglage" aria-labelledby="r-visite">
+              <div class="reglage__texte"><h2 id="r-visite">Visite guidée</h2><p>Revoyez en une minute chaque rubrique d'Orbite et ce qu'elle vous apporte.</p></div>
+              <div class="reglage__controle"><button type="button" class="bouton bouton--petit" id="param-visite">Revoir la visite</button></div>
+            </section>
             <section class="panneau reglage" aria-labelledby="r-accueil">
               <div class="reglage__texte"><h2 id="r-accueil">Page d'ouverture</h2><p>La page affichée quand vous ouvrez Orbite, sur tous vos appareils.</p></div>
               <div class="reglage__controle">
@@ -1189,5 +1194,6 @@
   <script src="/espace/js/rappels-calcul.js"></script>
   <script src="/espace/js/appli.js"></script>
   <script src="/espace/js/vue-assistant.js"></script>
+  <script src="/espace/js/visite.js"></script>
 </body>
 </html>
