@@ -2065,9 +2065,17 @@
       empDepuis(sy);
       if (!S.profilCharge) {
         S.profilCharge = true;
-        var cap = sy && sy.capacite && sy.capacite.net ? sy.capacite.net.credits.filter(function (c) { return c.cle === "immo"; })[0] : null;
-        var capital = cap && cap.capital > 0 ? Math.floor(cap.capital / 5000) * 5000 : 0;
-        var sc = scenarioVierge("immo", capital >= 10000 ? Math.min(capital, 2000000) : 150000);
+        /* Montant de départ : la capacité réelle sur la base de la banque (brut ou net, selon le profil).
+           Capacité nulle aujourd'hui : le premier montant du calendrier de la marge. Sans profil : exemple de 150 000 DT. */
+        var base = sy && sy.profil ? sy.profil.baseBanque : "net";
+        var capB = sy && sy.capacite ? sy.capacite[base] || sy.capacite.net : null;
+        var cap = capB ? capB.credits.filter(function (c) { return c.cle === "immo"; })[0] : null;
+        var capital = cap && cap.capital > 0 ? Math.floor(cap.capital / 1000) * 1000 : 0;
+        if (capital < 1000 && capB && capB.paliers && capB.paliers.length) {
+          var o1 = (capB.paliers[0].offres || []).filter(function (x) { return x.cle === "immo"; })[0];
+          if (o1 && o1.capital > 0) { capital = Math.floor(o1.capital / 1000) * 1000; cap = { dureeMois: o1.dureeMois, dureeLimitee: o1.dureeMois < 240 }; }
+        }
+        var sc = scenarioVierge("immo", capital >= 1000 ? Math.min(capital, 2000000) : 150000);
         if (cap && cap.dureeLimitee && cap.dureeMois >= 12) sc.mois = Math.floor(cap.dureeMois / 12) * 12;
         S.scenarios[0] = sc;
         S.actif = 0;

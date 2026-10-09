@@ -453,6 +453,16 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 sexvicies. Valeurs d'ouverture, hausse de salaire (10 oct.)
+
+- **Crédit** : à l'ouverture, le montant est la capacité réelle sur `baseBanque` (brut ou net), arrondie au millier (31 000 DT pour l'utilisateur).
+  - Si la capacité est nulle, on prend le premier montant du calendrier de la marge ; sans profil, l'exemple de 150 000 DT.
+  - Avant, le module lisait toujours la capacité sur le net et retombait sur 150 000 DT.
+- **Épargne** : à l'ouverture, ce sont les versements mensuels réels des contrats, avec `ui.inclure = false` pour ne pas les compter deux fois.
+  - Le bouton `#ep-suggestion` propose « ≈ 10 % du net en plus de vos contrats » et remet `inclure`.
+  - Sans contrat, la suggestion équilibrée est utilisée directement.
+- **Hausse de salaire** (simulateur et Orbite) : bornes 5 000 DT brut, 50 % du brut et 3 500 DT net. Libellé « % du brut ».
+
 ## 3 quinvicies. Optimiseur fiscal : paie d'ici le 31 décembre ou déclaration annuelle (10 oct.)
 
 - **Remarque de l'utilisateur** : l'économie affichée (8 682 DT) dépassait l'impôt qui reste à retenir sur ses paies d'ici décembre. Son employeur prend en compte l'attestation assurance vie / CEA, et il est prêt à faire la déclaration annuelle.
