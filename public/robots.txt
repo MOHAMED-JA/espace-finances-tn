@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /$
+Allow: /orbite/
 Disallow: /espace/
 Disallow: /outils/
 Disallow: /connexion

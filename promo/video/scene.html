@@ -486,8 +486,8 @@ function chat(x, y, w, h, u) {
   if (kd > 0 && kdOut < 1) { g.save(); g.globalAlpha = kd * (1 - kdOut); rr(x + 40, by, 130, 70, 30); g.fillStyle = "rgba(255,255,255,.07)"; g.fill();
     for (let i = 0; i < 3; i++) { const b = Math.sin(u * 14 - i * .8) * .5 + .5; g.beginPath(); g.arc(x + 75 + i * 30, by + 35 - b * 8, 8, 0, 7); g.fillStyle = rgba(COL.ink2, .5 + b * .5); g.fill(); } g.restore(); }
   const lines = [
-    [F("Ey, najjem ! "), F("Men avril 2029", COL.ink, 800), F(",")],
-    [F("ki ykammel crédit el karhba :", COL.ink2)],
+    [F("Ey, etnajjem ! "), F("Men avril 2029", COL.ink, 800), F(",")],
+    [F("ki yekmel crédit el karhba :", COL.ink2)],
     [F("•  Mensualité possible : ", COL.ink2), F("1 387 DT", COL.salL, 800)],
     [F("•  Karhba jusqu'à ", COL.ink2), F("86 187 DT", COL.creL, 800)],
     [F("    3la 7 snin", COL.ink2)],
@@ -670,8 +670,30 @@ function render(t) {
   finish(t);
   if (t > 29.8) { X.fillStyle = `rgba(0,0,0,${seg(t, 29.8, 30) * .35})`; X.fillRect(0, 0, W, H); }
 }
+/* Image de partage (LinkedIn, Open Graph) : 1,91:1. */
+function poster() {
+  const t = 12;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1;
+  background(t, .7);
+  logo(205, 215, 64, 1, 0, { spin: .6 });
+  chip("NOUVELLE APPLICATION", 300, 215, { color: COL.salL, dot: true, size: 24 });
+  text("Orbite", 120, 430, { size: 190, weight: 800, ls: -6, glow: 30, glowColor: rgba(COL.cre, .6) });
+  text("Votre salaire au centre.", 126, 520, { size: 58, weight: 700 });
+  text("Tout le reste en orbite.", 126, 590, { size: 58, weight: 700, grad: [COL.salL, COL.creL, COL.epaL] });
+  const tags = [["Brut → net", COL.salL], ["Capacité de crédit", COL.creL], ["Impôt & épargne", COL.ale], ["Assistant IA · darija", COL.epaL]];
+  let x = 126, y = 690;
+  tags.forEach(([s0, c], i) => { if (i === 2) { x = 126; y += 72; } x += chip(s0, x, y, { color: c, fam: "Mona", ls: 0, size: 27, weight: 600 }) + 16; });
+  text("POWERED BY", 126, 905, { size: 20, fam: "JB", weight: 600, ls: 4, color: COL.mut });
+  text("Mohamed Aziz Jaouadi", 126 + width("POWERED BY", 20, 600, "JB", 4) + 20, 910, { size: 32, weight: 700 });
+  browser(IMG["d-orbite"], 1385, 450, 900, 0, { h: 560 });
+  phone(IMG["m-orbite"], 1735, 640, 250, 0, { glow: rgba(COL.sal, .55) });
+  g.save(); g.translate(1040, 790); glass(-170, -66, 340, 132, 28, { glow: rgba(COL.sal, .45) });
+  text("Net par mois", -140, -14, { size: 26, fam: "Mona", weight: 500, color: COL.ink2 }); text("2 293 DT", -140, 40, { size: 50, weight: 800, color: COL.salL }); g.restore();
+  X.setTransform(1, 0, 0, 1, 0, 0); X.drawImage(S, 0, 0); finish(t);
+}
+window.poster = poster;
 async function setup(fmtName) {
-  if (fmtName === "h") { W = 1920; H = 1080; } else { W = 1080; H = 1920; }
+  if (fmtName === "og") { W = 1920; H = 1005; } else if (fmtName === "h") { W = 1920; H = 1080; } else { W = 1080; H = 1920; }
   P = H > W; C.width = S.width = W; C.height = S.height = H;
   C.style.width = W + "px"; C.style.height = H + "px";
   g = S.getContext("2d");
