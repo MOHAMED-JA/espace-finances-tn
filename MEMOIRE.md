@@ -453,6 +453,17 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 tervicies. Partage LinkedIn (9 oct.)
+
+- Balises Open Graph et Twitter dans `public/index.html` (canonical, og:title, og:description, og:image et ses dimensions, og:image:alt, twitter:card summary_large_image).
+- Image de partage : `public/orbite/og-orbite.jpg` (1200×627, JPEG). Elle est générée par `poster()` dans `promo/video/scene.html` (`node og.js`), avec les mêmes captures que la vidéo.
+- `robots.txt` autorise explicitement `/orbite/`.
+- Vérification : LinkedIn Post Inspector (https://www.linkedin.com/post-inspector/) sur l'adresse du site ; il force aussi LinkedIn à rafraîchir son cache.
+- Vidéo LinkedIn/YouTube (16:9) régénérée :
+  - darija adressée à l'utilisateur (« Ey, etnajjem ! », « ki yekmel ») ;
+  - liens « Abonnement » et « Administration » masqués dans la capture.
+- Article LinkedIn : `promo/linkedin/article.md`.
+
 ## 3 duovicies. Assistant intégré, sans clé d'IA (9 oct.)
 
 - **Problème** : sans le secret `ANTHROPIC_API_KEY`, la fonction `assistant` répond `code: "bientot"` et l'utilisateur voyait « L'Assistant Orbite arrive très bientôt ».

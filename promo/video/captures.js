@@ -25,7 +25,7 @@ async function session(nav, base, faux, mobile) {
   await p.waitForURL(/\/espace\//);
   await p.waitForFunction(() => window.Orbite && window.Orbite.pret);
   await p.evaluate((pr) => window.Orbite.majProfil(pr, { immediat: true }), PROFIL);
-  await p.addStyleTag({ content: ".toasts,.pastille-acces{display:none!important} *{caret-color:transparent!important}" });
+  await p.addStyleTag({ content: ".toasts,.pastille-acces,.rail a[data-vue=abonnement],.rail a[data-vue=admin]{display:none!important} *{caret-color:transparent!important}" });
   return { ctx, p };
 }
 const pause = (p, ms) => p.waitForTimeout(ms);
