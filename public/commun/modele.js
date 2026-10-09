@@ -127,6 +127,7 @@
 
   var MESSAGES = [
     [/invalid login credentials/i, "Adresse e-mail ou mot de passe incorrect."],
+    [/captcha/i, "La vérification anti-robots a échoué ou a expiré. Patientez une seconde que le cadre de vérification se valide, puis réessayez."],
     [/email not confirmed/i, "Votre adresse n'est pas encore confirmée. Ouvrez le lien reçu par e-mail."],
     [/user already registered|already been registered/i, "Un compte existe déjà avec cette adresse. Connectez-vous ou réinitialisez le mot de passe."],
     [/password should be at least|weak password|password is too weak/i, "Mot de passe trop faible : 10 caractères au moins, avec lettres, chiffres et symbole."],

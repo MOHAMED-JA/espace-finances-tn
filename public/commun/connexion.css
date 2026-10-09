@@ -90,3 +90,7 @@
 }
 @keyframes mo-tour { to { transform: rotate(360deg); } }
 .invitation { padding: 10px 14px; border-radius: 12px; border: 1px solid var(--signal); background: var(--signal-soft); color: var(--ink); font-size: 14px; }
+
+/* Cloudflare Turnstile : cadre de vérification anti-robots, au-dessus du bouton d'envoi. */
+.turnstile { display: flex; justify-content: center; min-height: 65px; margin: 4px 0 14px; }
+.turnstile[hidden] { display: none; }

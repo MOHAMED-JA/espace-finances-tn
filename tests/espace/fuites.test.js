@@ -33,3 +33,15 @@ test('lecture des suffixes : insensible à la casse, compte numérique', () => {
   assert.equal(F.occurrences('abc:5\nDEF:7', 'ABC'), 5);
   assert.equal(F.occurrences('abc:5', 'XYZ'), 0);
 });
+
+test('Turnstile : sans clé de site, rien n\'est chargé et le jeton est vide', async () => {
+  const T = require('../../public/commun/turnstile.js');
+  const v = T.preparer('', null);
+  assert.equal(await v.jeton(), null);
+  v.renouveler();
+});
+
+test('messages : erreur anti-robots de Supabase traduite', () => {
+  const M = require('../../public/commun/modele.js');
+  assert.match(M.messageErreur({ message: 'captcha verification process failed' }), /vérification anti-robots/);
+});
