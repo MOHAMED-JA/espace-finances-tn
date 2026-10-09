@@ -453,6 +453,32 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 duodequadragies. Programme « créativité » en 8 lots (10 oct.)
+
+- **Demande de l'utilisateur** : une créativité énorme (design, fonctionnalités, options avancées), un travail sans faute, des propositions **avant** toute modification, et des questions en cas de doute.
+- **Retenues** : A1, A2, A3, A4, B1, B2, B5, B6, C2, C3, C4. Design « spectaculaire mais sobre ». Interface en français seulement. **Une maquette validée avant chaque fonctionnalité**.
+- **Ordre validé** :
+  1. A4 micro-interactions + A1 Orbite vivante ;
+  2. B2 scénarios côte à côte + C2 mode Expert (amortissement, export Excel/CSV) ;
+  3. B6 historique et carrière + C3 objectifs et défis (nouvelle table Supabase avec RLS) ;
+  4. B1 retraite CNSS / CNRPS ;
+  5. A2 accueil « scroll-cinéma » ;
+  6. A3 « Mon année en orbite » ;
+  7. B5 lecture de fiche de paie ;
+  8. C4 assistant vocal.
+- **Décisions** :
+  - Retraite (B1) : je rassemble les textes officiels (réforme 2019) avec leurs sources, l'utilisateur valide avant tout calcul. Aucune règle de mémoire.
+  - Vocal (C4) : **lecture à voix haute seulement** (sur l'appareil). Pas de dictée du navigateur : Chrome envoie la voix à Google.
+  - Accueil (A2) : **aucun faux témoignage** ; trois cas types marqués « Exemple », avec leurs vrais calculs.
+  - Fiche de paie (B5) : PDF fiable, photo moins ; il faudra des fiches anonymisées pour l'étalonner. Historique (B6) : chiffres d'inflation de l'INS soumis avant intégration.
+- **Lot 1, maquette** : artifact privé « Orbite vivante » https://claude.ai/artifact/J4nyTjZy2LXQWKmHmet1W9 (source dans le scratchpad, `demos/orbite-vivante.html`).
+  - Planète de particules (le net) ; chaque crédit, contrat et projet est un satellite-bouton. Taille selon la mensualité (ou le capital), traîne selon les mois restants. Projet vide : satellite en pointillé.
+  - Toucher un satellite : la caméra pivote vers lui, les orbites s'arrêtent, la fiche s'ouvre en fondu-flou (statut, échéances, capital restant estimé, intérêts restants, capacité à la fin du crédit, bouton « Voyager jusqu'en … »).
+  - Voyage dans le temps (curseur, lecture, prochain jalon) jusqu'à la fin du dernier crédit, à salaire constant. À la fin d'un crédit, des étincelles rejoignent le noyau et la capacité roule (198 → 893 → 1 391 → 2 267 DT/mois pour l'utilisateur). Assurance vie : anneau à 8 ans (décembre 2029).
+  - A4 : chiffres qui roulent chiffre par chiffre, vibration (Android seulement), squelettes de chargement, thème selon l'heure (lever et coucher du soleil à Tunis, formules NOAA, UTC+1).
+  - Chiffres calculés par `orbite-calcul.js` (synthèse au 9 oct. 2026) ; capital restant par la formule d'amortissement ; capacité = 40 % du brut annuel ÷ 12 − mensualités ; capital immo sur 20 ans à 4,5 %.
+  - **En attente de la validation de l'utilisateur** avant intégration.
+
 ## 3 septtricies. Accueil : planète salaire en 3D (concept 4) (10 oct.)
 
 - L'utilisateur voulait un haut de page innovant et futuriste, sans copier le concurrent (vidéo : carte de 4 étapes « vous épargnez → impôt baisse → net augmente »). Sept maquettes proposées en pages privées (concepts 1-3 : https://claude.ai/artifact/RoYdLGE2tzoP4vuP2EcAkG ; concepts 4-7 : https://claude.ai/artifact/M8sbzP4TQe7GrpPsiw7Qdq). Choix : **4, planète salaire en 3D**.
