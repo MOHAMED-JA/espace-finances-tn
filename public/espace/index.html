@@ -827,6 +827,16 @@
                   </form>
                 </details>
               </section>
+              <section class="panneau admin__bloc" aria-labelledby="admin-t-fiches">
+                <div class="admin__tete"><h2 id="admin-t-fiches">Fiches partagées</h2></div>
+                <p class="admin__note">Seuls les comptes qui ont activé « Partager ma fiche avec l'administrateur » apparaissent ici. Chaque ouverture de fiche est enregistrée et visible par l'utilisateur.</p>
+                <ul class="admin__fiches" id="admin-fiches"></ul>
+                <article class="admin__fiche" id="admin-fiche" tabindex="-1" hidden>
+                  <div class="admin__tete"><h3 id="admin-fiche-titre"></h3><button type="button" class="bouton bouton--petit bouton--fantome" id="admin-fiche-fermer">Fermer</button></div>
+                  <p class="admin__note" id="admin-fiche-sous"></p>
+                  <dl class="admin__fiche-grille" id="admin-fiche-grille"></dl>
+                </article>
+              </section>
               <section class="panneau admin__bloc" aria-labelledby="admin-t-liste">
                 <div class="admin__tete"><h2 id="admin-t-liste">Comptes</h2>
                   <label class="admin__filtre"><span class="cache">Rechercher un compte</span><input type="search" id="admin-recherche" placeholder="Nom ou e-mail" autocomplete="off"></label></div>
@@ -979,6 +989,14 @@
               <div class="reglage__controle reglage__boutons">
                 <button type="button" class="bouton bouton--petit" id="exporter"><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg>Exporter mes données</button>
                 <button type="button" class="bouton bouton--petit bouton--danger" id="supprimer-compte"><svg aria-hidden="true"><use href="/orbite/icones.svg#poubelle"/></svg>Supprimer mon compte</button>
+              </div>
+            </section>
+            <section class="panneau reglage" aria-labelledby="r-partage">
+              <div class="reglage__texte"><h2 id="r-partage">Partager ma fiche avec l'administrateur</h2>
+                <p>Facultatif. Si vous l'activez, l'administrateur d'Orbite peut consulter votre profil (nom, dates, salaire, crédits, contrats, famille) pour vous aider ou améliorer l'application. Il n'y a jamais accès sans votre accord, et vous pouvez le retirer à tout moment : l'effet est immédiat. Chaque consultation est enregistrée.</p>
+                <p class="reglage__etat" id="partage-etat" aria-live="polite"></p></div>
+              <div class="reglage__controle">
+                <label class="interrupteur"><span class="cache">Autoriser l'administrateur à consulter ma fiche</span><input type="checkbox" id="partage-admin" role="switch" disabled><span class="interrupteur__piste" aria-hidden="true"></span></label>
               </div>
             </section>
             </div>

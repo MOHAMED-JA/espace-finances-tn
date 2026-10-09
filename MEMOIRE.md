@@ -453,6 +453,19 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 octovicies. Admin : fiches individuelles avec consentement explicite (10 oct.)
+
+- **Demande de l'utilisateur** : voir, en tant qu'admin, les données de ceux qui se connectent. Choix (question cliquable) : « Données individuelles avec consentement ».
+- **Migration `0009_partage_admin.sql`** (appliquée sur Supabase) :
+  - tables `partage_admin(user_id, accorde_le, version)` et `admin_consultations(admin_id, user_id, consulte_le)`, RLS activée sans politique : accès seulement par fonctions ;
+  - `partage_admin_etat()` et `partage_admin_definir(p_accord)` pour l'utilisateur ;
+  - `admin_fiches()` (liste des consentants) et `admin_fiche(p_user)` (profil `user_metadata.orbite`, refusée sans accord, consultation journalisée), gardées par `exiger_admin()`.
+- **Client** : `E.partage.etat/definir`, `E.admin.fiches/fiche` (`session.js`).
+  - Paramètres → Vos données : interrupteur `#partage-admin` (désactivé par défaut), état `#partage-etat` (date d'accord, nombre et date des consultations).
+  - Administration : bloc « Fiches partagées » (`#admin-fiches`, `#admin-fiche`), calculs (âge, salaire brut/net, capacité) faits dans le navigateur avec `OrbiteCalcul.synthese`.
+- Page Confidentialité mise à jour. Rappel à l'utilisateur : la déclaration à l'INPDP lui revient.
+- e2e : nouvelle étape (accord, fiche, journal, retrait). 28/28.
+
 ## 3 septvicies. Profil : nom et prénom, date de naissance obligatoire, date d'embauche (10 oct.)
 
 - **Demande de l'utilisateur** : date de naissance complète au lieu de l'année, date d'embauche au lieu du nombre d'années d'ancienneté, nom et prénom séparés. Choix (question cliquable) : « Date de naissance obligatoire ».

@@ -235,7 +235,14 @@
     tableau: function () { return client.rpc("admin_tableau").then(verifier); },
     alertes: function () { return client.rpc("admin_alertes_liste").then(verifier); },
     alertesLues: function () { return client.rpc("admin_alertes_lues").then(verifier); },
-    statistiques: function (jours) { return client.rpc("admin_statistiques", { p_jours: jours || 30 }).then(verifier); }
+    statistiques: function (jours) { return client.rpc("admin_statistiques", { p_jours: jours || 30 }).then(verifier); },
+    fiches: function () { return client.rpc("admin_fiches").then(verifier); },
+    fiche: function (id) { return client.rpc("admin_fiche", { p_user: id }).then(verifier); }
+  };
+  /* Accord de l'utilisateur pour que l'administrateur consulte sa fiche (révocable à tout moment). */
+  var partage = {
+    etat: function () { return client.rpc("partage_admin_etat").then(verifier); },
+    definir: function (oui) { return client.rpc("partage_admin_definir", { p_accord: !!oui }).then(verifier); }
   };
   /* Statistiques anonymes : un simple compteur (type, page), jamais d'identifiant ni de contenu. Sans effet en cas d'erreur. */
   function compterUsage(type, cle) {
@@ -331,7 +338,7 @@
     simulations: simulations,
     abonnement: abonnement,
     avatar: avatar,
-    admin: admin,
+    admin: admin, partage: partage,
     parrainage: parrainage,
     assistant: assistant,
     estErreurReseau: estErreurReseau,

@@ -27,6 +27,10 @@ function creer() {
   const photos = new Map();  // chemin -> Buffer (stockage privé « avatars »)
   /* Administration (migration 0006) : admins, alertes d'inscription, compteurs anonymes. */
   const admins = new Set();
+  /* Accords de partage avec l'admin (migration 0009) et journal des consultations. */
+  const partages = new Map(), consultations = [];
+  const etatPartage = (id) => { const c = consultations.filter((x) => x.user_id === id); return { accorde: partages.has(id), accorde_le: partages.get(id) || null, derniere_consultation: c.length ? c[c.length - 1].consulte_le : null, consultations: c.length }; };
+  const compteParId = (id) => [...comptes.values()].find((c) => c.user.id === id);
   let dernierAssistant = null, assistantBientot = false;
   const alertes = [];
   const usage = new Map();  // "type:cle" -> nombre
@@ -319,6 +323,8 @@ function creer() {
       parrainages.set(u.id, { parrain: p[0], recompense: false });
       return repondre(route, 200, { ok: true });
     }
+    if (url.pathname === "/rest/v1/rpc/partage_admin_etat") return repondre(route, 200, etatPartage(u.id));
+    if (url.pathname === "/rest/v1/rpc/partage_admin_definir") { if (corps.p_accord) { if (!partages.has(u.id)) partages.set(u.id, new Date().toISOString()); } else partages.delete(u.id); return repondre(route, 200, etatPartage(u.id)); }
     if (url.pathname === "/rest/v1/rpc/compter_usage") { const k = corps.p_type + ":" + corps.p_cle; usage.set(k, (usage.get(k) || 0) + 1); return repondre(route, 204); }
     if (url.pathname.indexOf("/rest/v1/rpc/admin_") === 0 && !admins.has(u.id)) return repondre(route, 403, { code: "42501", message: "Réservé à l'administrateur" });
     if (url.pathname === "/rest/v1/rpc/admin_tableau") {
@@ -328,6 +334,16 @@ function creer() {
         essais: liste.filter((x) => x.etat === "essai").length, abonnes: liste.filter((x) => x.etat === "actif").length, offerts: 0, expires: liste.filter((x) => x.etat === "expire").length,
         par_formule: {}, revenus_total: 0, revenus_30j: 0, paiements_30j: 0, paiements_test: paiements.filter((p) => p.statut === "paye").length,
         essais_termines: 0, convertis: 0, desabonnes: 0, inscriptions_30j: [{ jour: new Date().toISOString().slice(0, 10), n }], utilisateurs: liste, alertes_non_lues: alertes.filter((a) => !a.lue).length });
+    }
+    if (url.pathname === "/rest/v1/rpc/admin_fiches") {
+      return repondre(route, 200, [...partages.keys()].map((id) => { const c = compteParId(id).user, o = (c.user_metadata || {}).orbite || {};
+        return { id, email: c.email, accorde_le: partages.get(id), nom: ((o.prenom || "") + " " + (o.nom || "")).trim(), nom_compte: (c.user_metadata || {}).nom || "" }; }));
+    }
+    if (url.pathname === "/rest/v1/rpc/admin_fiche") {
+      if (!partages.has(corps.p_user)) return repondre(route, 403, { code: "42501", message: "Ce compte n'a pas donné son accord" });
+      const c = compteParId(corps.p_user).user;
+      consultations.push({ user_id: corps.p_user, consulte_le: new Date().toISOString() });
+      return repondre(route, 200, { id: c.id, email: c.email, inscrit_le: c.created_at, derniere_connexion: c.last_sign_in_at || c.created_at, accorde_le: partages.get(c.id), profil: (c.user_metadata || {}).orbite || {} });
     }
     if (url.pathname === "/rest/v1/rpc/admin_alertes_liste") return repondre(route, 200, alertes);
     if (url.pathname === "/rest/v1/rpc/admin_codes") {
@@ -370,6 +386,7 @@ function creer() {
     paiements: () => paiements,
     photos: () => photos,
     abonnementDe(email) { return abonnementDe(comptes.get(email).user.id); },
+    partageDe(email) { return etatPartage(comptes.get(email).user.id); },
     marquerAdmin(email) { admins.add(comptes.get(email).user.id); },
     dernierAssistant() { return dernierAssistant; },
     assistantSansCle(v) { assistantBientot = v; },
