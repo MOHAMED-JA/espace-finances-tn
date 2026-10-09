@@ -554,7 +554,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     const avant = faux.dernierAssistant();
     await page.fill("#assistant-question", "Najjem nechri dar ?");
     await page.press("#assistant-question", "Enter");
-    await page.waitForFunction(() => /dar wala appartement|Ey, najjem|Mazelt|Tawa/.test(document.querySelector(".assistant__msg--ia:last-child").textContent));
+    await page.waitForFunction(() => /dar wala appartement|Ey, etnajjem|Mazelt|Tawa/.test(document.querySelector(".assistant__msg--ia:last-child").textContent));
     assert(faux.dernierAssistant() === avant, "ensuite, plus d'appel au serveur pendant la session");
   });
 

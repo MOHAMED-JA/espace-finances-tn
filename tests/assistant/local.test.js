@@ -26,7 +26,7 @@ test('aujourd\'hui : capacité actuelle, et le meilleur moment est proposé', ()
 
 test('darija : « dar ba3d ma nkammel crédit el karhba » vise la maison, à la fin du crédit auto', () => {
   const r = A.repondre('Najjem nechri dar ba3d ma nkammel crédit el karhba ?', sy);
-  assert.match(r.texte, /^Ey, najjem ! Men \*\*mars 2032\*\*, ki ykammel crédit auto/);
+  assert.match(r.texte, /^Ey, etnajjem ! Men \*\*mars 2032\*\*, ki yekmel crédit auto/);
   assert.match(r.texte, /immobilier jusqu'à/);
   assert.ok(A.langueDarija('chnowa score mte3i'));
   assert.ok(!A.langueDarija('Quel est mon score ?'));

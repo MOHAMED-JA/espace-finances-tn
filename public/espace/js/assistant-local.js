@@ -20,7 +20,7 @@
   function ans(mois) { var a = mois / 12; return a === Math.round(a) ? nb(a) + " ans" : mois + " mois"; }
 
   /* Mots reconnus (sans accents, en minuscules). */
-  var DARIJA = /\b(najjem|nnajjem|tnajjem|nechri|nachri|nchri|nheb|n7eb|chnowa|chnoua|chniya|kifech|kifach|qaddech|9addech|kadech|qadech|karhba|flous|ena|3la|mte3i|mta3i|bech|wa9tech|waqtech|waktech|famma|ya3tini|ta3tini|nkammel|ykammel|ba3d|tawa|barcha|chahriya|khlas|nab9a|dhriba|9ardh|9rodh|kridi|snin|3am)\b/;
+  var DARIJA = /\b(najjem|nnajjem|tnajjem|nechri|nachri|nchri|nheb|n7eb|chnowa|chnoua|chniya|kifech|kifach|qaddech|9addech|kadech|qadech|karhba|flous|ena|3la|mte3i|mta3i|bech|wa9tech|waqtech|waktech|famma|ya3tini|ta3tini|nkammel|ykammel|yekmel|nekmel|etnajjem|ba3d|tawa|barcha|chahriya|khlas|nab9a|dhriba|9ardh|9rodh|kridi|snin|3am)\b/;
   var INTENTIONS = [
     ["vie", /\b(mariage|marie|nesta?rawej|3ers|enfant|bebe|naissance|mutation|demenag|augmentation)/],
     ["auto", /\b(voiture|karhba|auto|vehicule|sayara|tomobil)\b/],
@@ -62,11 +62,11 @@
   function finDe(credits, D) {
     var l = credits.map(function (c) { return c.toLowerCase(); });
     var t = l.length > 1 ? l.slice(0, -1).join(", ") + (D ? " w " : " et ") + l[l.length - 1] : l[0];
-    return D ? "ki ykammel " + t : "à la fin de " + (l.length > 1 ? "vos " : "votre ") + t;
+    return D ? "ki yekmel " + t : "à la fin de " + (l.length > 1 ? "vos " : "votre ") + t;
   }
   /* « après la fin de mon crédit auto » : l'étape du calendrier où ce crédit se termine. */
   function etapeApres(sy, qn, cible) {
-    if (!/\b(ba3d|apres|fin|kammel|nkammel|ykammel|termine)\b/.test(qn)) return null;
+    if (!/\b(ba3d|apres|fin|kammel|nkammel|ykammel|yekmel|nekmel|termine)\b/.test(qn)) return null;
     var p = sy.profil, pal = sy.capacite[p.baseBanque].paliers || [];
     var types = INTENTIONS.filter(function (x) { return ["auto", "immo", "conso"].indexOf(x[0]) !== -1 && x[0] !== cible && x[1].test(qn); }).map(function (x) { return x[0]; });
     var cr = p.credits.filter(function (c) { return types.indexOf(c.type) !== -1 || (/mariage|3ers/.test(qn) && /mariage/i.test(c.libelle)); })[0];
@@ -89,7 +89,7 @@
       return { texte: L.join("\n"), lien: { libelle: "Voir le calendrier de la marge", href: "#orbite" } };
     }
     if (o) {
-      L.push(D ? "Ey, najjem ! " + (c.date ? "Men **" + c.date + "**, " + finDe(c.credits, true) + " :" : "**" + quand.charAt(0).toUpperCase() + quand.slice(1) + "**, el banque ta3tik :")
+      L.push(D ? "Ey, etnajjem ! " + (c.date ? "Men **" + c.date + "**, " + finDe(c.credits, true) + " :" : "**" + quand.charAt(0).toUpperCase() + quand.slice(1) + "**, el banque ta3tik :")
         : "Oui" + (c.date ? ", à partir de **" + c.date + "**, " + finDe(c.credits, false) : ", " + quand) + ", la banque peut financer " + nom + " :");
       L.push((D ? "- mensualité possible : **" : "- mensualité possible : **") + dt(c.mensualite) + "** par mois");
       L.push((D ? "- " + (cle === "auto" ? "karhba" : o.libelle.toLowerCase()) + " jusqu'à **" : "- " + o.libelle.toLowerCase() + " : jusqu'à **") + dt(o.capital) + "** " + (D ? "3la " + (o.dureeMois / 12 === Math.round(o.dureeMois / 12) ? nb(o.dureeMois / 12) + " snin" : o.dureeMois + " chhar") : "sur " + ans(o.dureeMois)) + " à " + nb(o.tauxPct) + " %");
@@ -106,7 +106,7 @@
     c.offres.forEach(function (x) { L.push("- " + x.libelle + " : **" + dt(x.capital) + "** " + (D ? "3la " : "sur ") + ans(x.dureeMois) + " à " + nb(x.tauxPct) + " %"); });
     var pal = sy.capacite[p.baseBanque].paliers || [];
     if (pal.length && !c.date) {
-      L.push(D ? "W kol ma ykammel crédit, el marge tzid :" : "Et à chaque fin de crédit, la marge augmente :");
+      L.push(D ? "W kol ma yekmel crédit, el marge tzid :" : "Et à chaque fin de crédit, la marge augmente :");
       pal.forEach(function (x) { L.push("- " + x.date + " : **" + dt(x.mensualiteMax) + "** " + (D ? "fil chhar" : "par mois")); });
     }
     return { texte: L.join("\n"), lien: { libelle: "Voir le détail", href: "#orbite" } };
