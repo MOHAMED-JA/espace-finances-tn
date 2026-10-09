@@ -15,7 +15,7 @@ test('voiture à une année donnée : étape du calendrier de cette année', () 
   const r = A.repondre('Est-ce que je peux acheter une voiture en 2032 ?', sy);
   assert.match(r.texte, /juin 2032/);
   assert.match(r.texte, /auto : jusqu'à \*\*/);
-  assert.match(r.lien.href, /^#credit\?mensualite=\d+$/);
+  assert.match(r.lien.href, /^#credit\?type=auto&capital=\d+&mois=84&taux=4\.5&mensualite=[\d.]+$/);
 });
 
 test('aujourd\'hui : capacité actuelle, et le meilleur moment est proposé', () => {

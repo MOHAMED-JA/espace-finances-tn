@@ -472,6 +472,8 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
   - Il comprend une année (« en 2027 », « fi 2032 ») : il prend la dernière étape du calendrier de la marge atteinte cette année-là.
   - Il comprend « après la fin de mon crédit auto » (« ba3d ma nkammel crédit el karhba ») : il prend l'étape où ce crédit se termine. Le premier bien cité est l'objet de l'achat.
   - Chiffres pris de `synthese`, `optimiseurFiscal` et `scoreSante` (aucune règle dupliquée), avec un lien vers la bonne vue (`#credit?mensualite=`, `#vie?onglet=fiscal`, etc.).
+- Lien « Simuler ce crédit » (9 oct.) : il transmet tout le crédit (`#credit?type=&capital=&mois=&taux=&mensualite=`), comme le calendrier. Avant, seule la mensualité passait : le simulateur ouvrait l'immobilier par défaut (150 000 DT, TMM + 2,5 = 10 %).
+- Simulateur crédit : `tauxProfil(type)` (module-credit.js) fait qu'un nouveau scénario ou un changement de type prend le taux personnel du profil, en taux fixe. Ce taux est le taux immobilier choisi, ou le taux d'un crédit en cours du même type, via `OC.tauxNouveaux`. Sinon, le préréglage du marché s'applique (immobilier en TMM + marge).
 - **Dans `vue-assistant.js`** :
   - sur `code: "bientot"`, l'Assistant passe en mode intégré pour toute la session, sans plus appeler le serveur ;
   - sur une erreur réseau ou 5xx, réponse intégrée pour cette question seulement ;

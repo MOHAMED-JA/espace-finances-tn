@@ -548,8 +548,17 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.press("#assistant-question", "Enter");
     await page.waitForFunction(() => !document.querySelector(".assistant__msg--attente") && /mensualité possible/.test(document.getElementById("assistant-fil").textContent));
     assert(!/très bientôt/.test(await page.textContent("#assistant-fil")), "plus de message « bientôt »");
-    assert(await page.evaluate(() => /^#credit\?mensualite=\d+$/.test(document.getElementById("assistant-fil").lastElementChild.querySelector("a.lien-action").getAttribute("href"))), "lien vers la simulation");
+    assert(await page.evaluate(() => /^#credit\?type=auto&capital=\d+&mois=\d+&taux=[\d.]+&mensualite=[\d.]+$/.test(document.getElementById("assistant-fil").lastElementChild.querySelector("a.lien-action").getAttribute("href"))), "lien vers la simulation");
     assert(/calculées sur votre appareil/.test(await page.textContent("#assistant-note")), "note du mode intégré");
+    const lienSim = await page.evaluate(() => document.getElementById("assistant-fil").lastElementChild.querySelector("a.lien-action").getAttribute("href"));
+    await page.click(".assistant__msg--ia:last-child a.lien-action");
+    await page.waitForSelector("#vue-credit:not([hidden])");
+    await page.waitForFunction(() => { const r = document.querySelector('input[name="cr-type"][value="auto"]'); return r && r.checked; });
+    assert(await page.isChecked('#cr-mode input[value="fixe"]'), "taux du lien affiché en taux fixe");
+    const capLien = Number(new URLSearchParams(lienSim.split("?")[1]).get("capital"));
+    assert(Number((await page.inputValue("#cr-capital")).replace(/\D/g, "")) === capLien, "montant proposé par l'Assistant repris");
+    await page.goto(base + "/espace/#assistant");
+    await page.waitForSelector("#vue-assistant:not([hidden])");
     faux.assistantSansCle(false);
     const avant = faux.dernierAssistant();
     await page.fill("#assistant-question", "Najjem nechri dar ?");

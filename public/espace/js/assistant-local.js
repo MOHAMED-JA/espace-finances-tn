@@ -99,7 +99,9 @@
         if (o2 && o2.capital > o.capital * 1.05) L.push(D ? "Ken testanna **" + m2.date + "**, twalli tnajjem tousel **" + dt(o2.capital) + "**." : "Si vous attendez **" + m2.date + "**, ce plafond monte à **" + dt(o2.capital) + "**.");
       }
       if (p.epargneDisponible > 0) L.push(D ? "W 3andek " + dt(p.epargneDisponible) + " tawfir tnajjem t7otthom avance." : "Vous disposez aussi de " + dt(p.epargneDisponible) + " d'épargne pour l'apport.");
-      return { texte: L.join("\n"), lien: { libelle: "Simuler ce crédit", href: "#credit?mensualite=" + Math.floor(c.mensualite) } };
+      /* Le simulateur reçoit tout le crédit proposé : type, montant, durée, taux (fixe) et mensualité. */
+      return { texte: L.join("\n"), lien: { libelle: "Simuler ce crédit", href: "#credit?type=" + cle + "&capital=" + Math.floor(o.capital) + "&mois=" + o.dureeMois +
+        "&taux=" + o.tauxPct + "&mensualite=" + Math.floor(c.mensualite * 100) / 100 } };
     }
     /* Question générale sur le crédit : les trois plafonds, puis le calendrier. */
     L.push(D ? quand.charAt(0).toUpperCase() + quand.slice(1) + ", el banque ta3tik **" + dt(c.mensualite) + "** fil chhar, ya3ni wa7da men hethom :" : (c.date ? "À partir de **" + c.date + "**" : "Aujourd'hui") + ", vous pouvez rembourser **" + dt(c.mensualite) + "** par mois, soit l'un de ces crédits :");
