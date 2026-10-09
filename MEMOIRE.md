@@ -453,6 +453,13 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 duotricies. Cache : réseau d'abord pour scripts et styles (10 oct.)
+
+- **Bug signalé (capture téléphone)** : la visite guidée s'affichait en texte brut en bas de page. Cause : le service worker servait js/css **depuis le cache d'abord** ; la nouvelle page (réseau) et `visite.js` (absent du cache, donc réseau) étaient chargés avec l'**ancien** `app.css` en cache.
+- Correctif `sw.js` : scripts, styles, svg et manifeste en **réseau d'abord** (`cache: "no-cache"`), cache seulement hors connexion ; polices et png restent en cache d'abord. À l'installation, `c.add(new Request(u, { cache: "reload" }))`.
+- Garde-fou dans `visite.js` : si la feuille de style n'est pas appliquée (`.visite` pas en `position: fixed`), la visite ne s'ouvre pas et n'est pas marquée comme vue.
+- Règle : toute nouvelle fonctionnalité qui ajoute du CSS profite maintenant de ce réseau d'abord ; continuer à incrémenter `VERSION`.
+
 ## 3 untricies. Visite guidée de la première connexion (10 oct.)
 
 - **Demande de l'utilisateur** : un module d'aide qui montre étape par étape les rubriques à la première connexion. Choix (questions cliquables) : visite guidée (bulles), après le premier pas, bouton « Aide » pour la revoir, français avec vouvoiement.

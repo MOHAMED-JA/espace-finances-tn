@@ -8,7 +8,7 @@
  *   la synchronisation périodique (application installée) les affiche même quand Orbite est fermée.
  */
 "use strict";
-var VERSION = "orbite-2026-10-10j";
+var VERSION = "orbite-2026-10-10k";
 var CACHE = VERSION + "-site";
 var RAPPELS = "/__orbite/rappels.json";
 var DEJA = "/__orbite/rappels-vus.json";
@@ -32,7 +32,7 @@ self.addEventListener("install", function (e) {
       if (!r.ok) throw new Error("page indisponible");
       return r.clone().text().then(function (html) {
         var liste = ESSENTIELS.concat(fichiersDe(html, self.location.origin)).filter(function (u, i, t) { return t.indexOf(u) === i; });
-        return c.put("/espace/", r).then(function () { return Promise.all(liste.map(function (u) { return u === "/espace/" ? null : c.add(u).catch(function () {}); })); })
+        return c.put("/espace/", r).then(function () { return Promise.all(liste.map(function (u) { return u === "/espace/" ? null : c.add(new Request(u, { cache: "reload" })).catch(function () {}); })); })
           .then(function () {
             /* Polices citées dans les feuilles de style déjà mises en cache. */
             return Promise.all(liste.filter(function (u) { return /\.css$/.test(u); }).map(function (u) {
@@ -69,11 +69,20 @@ self.addEventListener("fetch", function (e) {
     return;
   }
   if (!/\.(?:js|css|svg|png|woff2|webmanifest)$/.test(url.pathname)) return;
+  /* Polices et images : le cache d'abord (elles ne changent pas). */
+  if (/\.(?:woff2|png)$/.test(url.pathname)) {
+    e.respondWith(caches.open(CACHE).then(function (c) {
+      return c.match(url.pathname).then(function (enCache) {
+        return enCache || fetch(req).then(function (r) { if (r.ok) c.put(url.pathname, r.clone()); return r; });
+      });
+    }));
+    return;
+  }
+  /* Scripts, styles et icônes : le réseau d'abord, pour que la page, ses scripts et ses styles soient toujours de la
+     même version (sinon une nouvelle page peut s'afficher avec une ancienne feuille de style) ; le cache hors connexion. */
   e.respondWith(caches.open(CACHE).then(function (c) {
-    return c.match(url.pathname).then(function (enCache) {
-      var reseau = fetch(req).then(function (r) { if (r.ok) c.put(url.pathname, r.clone()); return r; }).catch(function () { return enCache; });
-      return enCache || reseau;
-    });
+    return fetch(req, { cache: "no-cache" }).then(function (r) { if (r.ok) c.put(url.pathname, r.clone()); return r; })
+      .catch(function () { return c.match(url.pathname).then(function (enCache) { return enCache || Response.error(); }); });
   }));
 });
 
