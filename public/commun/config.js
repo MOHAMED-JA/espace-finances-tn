@@ -10,6 +10,9 @@
     supabaseUrl: "https://txrwgqgnqdkipwtwpevl.supabase.co",
     supabaseCle: "sb_publishable_mKAmNg3uuxbcD3cvn7UwJg_s0o3AXlI",
     cleSession: "ef-session",
+    /* Cloudflare Turnstile (anti-robots) : clé de SITE, publique par nature. Vide = vérification désactivée.
+       La clé SECRÈTE correspondante ne va que dans Supabase (Authentication → Bot and Abuse Protection). */
+    turnstileCle: "",
     nomApplication: "Espace Finances TN"
   });
   if (typeof module !== "undefined" && module.exports) module.exports = CONFIG;

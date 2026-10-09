@@ -453,6 +453,15 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 sextricies. Cloudflare Turnstile (anti-robots) sur la connexion (10 oct.)
+
+- **Demande de l'utilisateur** : pourquoi pas de cadre « Vérifiez que vous êtes humain » comme sur d'autres sites ? Choix (questions cliquables) : connexion + inscription + mot de passe oublié ; affichage automatique (mode Managed).
+- `public/commun/turnstile.js` (`window.EFTurnstile.preparer(cle, conteneur, doc)` → `{ jeton(), renouveler() }`) : charge `challenges.cloudflare.com/turnstile/v0/api.js?render=explicit` seulement si `EF_CONFIG.turnstileCle` est renseignée ; sinon `jeton()` → null (comportement inchangé). Jeton à usage unique, renouvelé après chaque envoi ; délai max 20 s ; erreurs claires.
+- `connexion.js` : `captchaToken` passé à `signInWithPassword`, `signUp`, `resetPasswordForEmail` (pas pour Google ni la réinitialisation). `#turnstile` au-dessus du bouton. `modele.js` traduit l'erreur « captcha ».
+- `_headers` (/connexion.html, /connexion) : `script-src` + `frame-src https://challenges.cloudflare.com`.
+- **Ordre de mise en service** (sinon plus personne ne peut se connecter) : 1) code en ligne (fait) ; 2) l'utilisateur crée le widget Turnstile (mode Managed, domaine `espace-finances-tn.jaouadimohamedaziz.workers.dev`) et donne la **clé de site** (publique) ; 3) je la mets dans `config.js` ; 4) **ensuite seulement**, il active Supabase → Authentication → Bot and Abuse Protection → Turnstile avec la **clé secrète** (jamais dans le dépôt ni la conversation).
+- e2e : étape avec clé injectée et faux script Turnstile → `gotrue_meta_security.captcha_token` transmis.
+
 ## 3 quintricies. Assistant : « Orbite calcule, l'IA rédige » (10 oct.)
 
 - **Constat (captures de l'utilisateur)** : Cloudflare Workers AI répond (ton naturel), mais invente dates et montants (« crédit auto fini en 2030 », « 64 233 DT en 2030 », « octobre 2027 »). Réalité : auto fini en mars 2032, mariage en juin 2032 ; en 2030-2031 la capacité auto reste 14 233 DT. Il citait aussi le score de santé sur un simple « bonjour ».

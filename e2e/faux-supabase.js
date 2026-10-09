@@ -31,7 +31,7 @@ function creer() {
   const partages = new Map(), consultations = [];
   const etatPartage = (id) => { const c = consultations.filter((x) => x.user_id === id); return { accorde: partages.has(id), accorde_le: partages.get(id) || null, derniere_consultation: c.length ? c[c.length - 1].consulte_le : null, consultations: c.length }; };
   const compteParId = (id) => [...comptes.values()].find((c) => c.user.id === id);
-  let dernierAssistant = null, assistantBientot = false;
+  let dernierAssistant = null, assistantBientot = false, dernierAuth = null;
   const alertes = [];
   const usage = new Map();  // "type:cle" -> nombre
   /* Codes promo et parrainage (migration 0007) : même règles que prix_formule / activer_paiement. */
@@ -156,6 +156,7 @@ function creer() {
     if (url.pathname === "/auth/v1/token") {
       const type = url.searchParams.get("grant_type");
       if (type === "password") {
+        dernierAuth = corps;
         const c = comptes.get(corps.email);
         if (!c || c.mdp !== corps.password) return repondre(route, 400, { code: 400, error_code: "invalid_credentials", msg: "Invalid login credentials" });
         return repondre(route, 200, jeton(c.user));
@@ -389,6 +390,7 @@ function creer() {
     partageDe(email) { return etatPartage(comptes.get(email).user.id); },
     marquerAdmin(email) { admins.add(comptes.get(email).user.id); },
     dernierAssistant() { return dernierAssistant; },
+    dernierAuth() { return dernierAuth; },
     assistantSansCle(v) { assistantBientot = v; },
     abonnementDe(email) { return abonnementDe(comptes.get(email).user.id); },
     paiementsDe(email) { const id = comptes.get(email).user.id; return paiements.filter((p) => p.user_id === id); },

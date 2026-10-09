@@ -382,6 +382,29 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector("#vue-salaire:not([hidden])");
   });
 
+  await etape("anti-robots : avec une clé Turnstile, le jeton est exigé et transmis à Supabase à la connexion", async () => {
+    const t = await navigateur.newContext({ locale: "fr-FR" });
+    await t.route(SUPABASE + "/**", (r) => faux.gerer(r));
+    /* Clé de site de test injectée dans config.js, et faux script Turnstile qui valide en 100 ms. */
+    await t.route("**/commun/config.js", async (r) => {
+      const rep = await r.fetch();
+      r.fulfill({ response: rep, body: (await rep.text()).replace('turnstileCle: ""', 'turnstileCle: "1x00000000000000000000AA"') });
+    });
+    await t.route("https://challenges.cloudflare.com/**", (r) => r.fulfill({ contentType: "application/javascript",
+      body: "window.turnstile={render:function(el,o){var d=document.createElement('p');d.className='faux-turnstile';d.textContent='Vérification…';el.appendChild(d);setTimeout(function(){d.textContent='Réussi';o.callback('jeton-test-'+Date.now())},100);return 1},reset:function(){}};" }));
+    const pt = await t.newPage();
+    suivre(pt);
+    await pt.goto(base + "/connexion.html");
+    await pt.waitForSelector("#anti-robots:not([hidden]) .faux-turnstile");
+    await pt.fill("#email", "aziz@exemple.tn");
+    await pt.fill("#mdp", "Tunis-2026-solide");
+    await pt.click("#envoyer");
+    await pt.waitForURL(/\/espace\//);
+    const a = faux.dernierAuth();
+    assert(a && a.gotrue_meta_security && /^jeton-test-/.test(a.gotrue_meta_security.captcha_token), "jeton Turnstile transmis : " + JSON.stringify(a && a.gotrue_meta_security));
+    await t.close();
+  });
+
   await etape("mobile : onglets du bas, orbite et modules sans défilement horizontal", async () => {
     const m = await navigateur.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, locale: "fr-FR" });
     await m.route(SUPABASE + "/**", (r) => faux.gerer(r));

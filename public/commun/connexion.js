@@ -166,17 +166,25 @@
     });
   });
 
+  /* Anti-robots (Cloudflare Turnstile) : jeton exigé par Supabase pour la connexion, l'inscription et le mot de passe oublié. */
+  var verif = window.EFTurnstile ? window.EFTurnstile.preparer((window.EF_CONFIG || {}).turnstileCle, $("anti-robots"), document)
+    : { jeton: function () { return Promise.resolve(null); }, renouveler: function () {} };
+
   function envoyerFormulaire(v) {
-    var action;
+    if (mode === "reinitialiser") return envoyerAvecJeton(v, null);
+    verif.jeton().then(function (j) { envoyerAvecJeton(v, j); }, function (err) { message(err.message, "erreur"); occupe(envoyer, false); });
+  }
+  function envoyerAvecJeton(v, jeton) {
+    var action, capt = jeton ? { captchaToken: jeton } : {};
     if (mode === "connexion") {
-      action = client.auth.signInWithPassword({ email: v.email, password: v.mdp }).then(function (r) {
+      action = client.auth.signInWithPassword({ email: v.email, password: v.mdp, options: capt }).then(function (r) {
         if (r.error) throw r.error;
         location.replace(suite);
       });
     } else if (mode === "inscription") {
       action = client.auth.signUp({
         email: v.email, password: v.mdp,
-        options: { emailRedirectTo: origine + "/connexion.html?confirme=1&suite=" + encodeURIComponent(suite), data: v.nom ? { full_name: v.nom } : {} }
+        options: Object.assign({ emailRedirectTo: origine + "/connexion.html?confirme=1&suite=" + encodeURIComponent(suite), data: v.nom ? { full_name: v.nom } : {} }, capt)
       }).then(function (r) {
         if (r.error) throw r.error;
         if (r.data.session) { location.replace(suite); return; }
@@ -185,7 +193,7 @@
         message("Compte créé. Ouvrez le lien de confirmation envoyé à " + v.email + " pour activer votre espace (pensez aux courriers indésirables).", "succes");
       });
     } else if (mode === "oubli") {
-      action = client.auth.resetPasswordForEmail(v.email, { redirectTo: origine + "/connexion.html?mode=reinitialiser" }).then(function (r) {
+      action = client.auth.resetPasswordForEmail(v.email, Object.assign({ redirectTo: origine + "/connexion.html?mode=reinitialiser" }, capt)).then(function (r) {
         if (r.error) throw r.error;
         message("Si un compte existe pour " + v.email + ", un lien de réinitialisation vient d'être envoyé. Ouvrez-le dans ce même navigateur.", "succes");
       });
@@ -197,7 +205,7 @@
       });
     }
     action.catch(function (err) { message(M.messageErreur(err), "erreur"); })
-      .finally(function () { occupe(envoyer, false); });
+      .finally(function () { occupe(envoyer, false); verif.renouveler(); });
   }
 
   $("google").addEventListener("click", function () {
