@@ -46,8 +46,31 @@
       });
     });
     ["credits", "contrats", "projets"].forEach(function (k) { remplirListe(k, p[k]); });
+    remplirPrimes(p);
   }
   /* Champs du conjoint : affichés dès que le mode couple est activé (même pendant une saisie). */
+  /* Calendrier des versements supplémentaires : visible au-delà de 12 salaires ; par défaut, tout en décembre. */
+  function remplirPrimes(p) {
+    var bloc = $("p-primes-bloc"); if (!bloc) return;
+    bloc.hidden = p.nombreSalaires <= 12;
+    var cal = OC.calendrierPrimes(p);
+    form.querySelectorAll("[data-prime]").forEach(function (el) { var v = cal[+el.getAttribute("data-prime")]; el.value = v ? String(v).replace(".", ",") : ""; });
+    controlePrimes(p, cal);
+  }
+  function controlePrimes(p, cal) {
+    var total = cal.reduce(function (t, v) { return t + v; }, 0), attendu = p.nombreSalaires - 12, bloc = $("p-primes-bloc");
+    var ecart = Math.abs(total - attendu) > 0.01;
+    if (ecart) bloc.setAttribute("data-ecart", ""); else bloc.removeAttribute("data-ecart");
+    $("p-primes-aide").textContent = ecart
+      ? "Total réparti : " + String(total).replace(".", ",") + " versement(s) sur " + attendu + " prévus (" + p.nombreSalaires + " salaires par an). Ajustez les mois ou le nombre de salaires."
+      : "En nombre de salaires, par pas de 0,5 (ex. 1,5 en décembre). Sert à calculer l'impôt qui reste à retenir sur vos paies.";
+  }
+  function lirePrimes() {
+    var cal = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    form.querySelectorAll("[data-prime]").forEach(function (el) { var r = F.lire(el.value); cal[+el.getAttribute("data-prime")] = r.valide && !r.vide ? Math.min(6, Math.round(r.valeur * 2) / 2) : 0; });
+    return cal;
+  }
+
   function rendreFoyer(p) {
     var fc = $("foyer-champs"), avant = fc.hidden;
     fc.hidden = !p.foyer;
@@ -133,6 +156,8 @@
     } else if (el.hasAttribute("data-c")) {
       var cle = el.closest("[data-liste]").getAttribute("data-liste");
       planifier("l:" + cle, function () { majListe(cle); }, 300);
+    } else if (el.hasAttribute("data-prime")) {
+      planifier("primes", function () { var cal = lirePrimes(); O.majProfil({ calendrierPrimes: cal }); controlePrimes(O.profil(), cal); }, 300);
     }
   });
   form.addEventListener("change", function (e) {
@@ -144,6 +169,7 @@
     var el = e.target;
     if (el.hasAttribute && el.hasAttribute("data-p")) vider("p:" + el.getAttribute("data-p"));
     else if (el.hasAttribute && el.hasAttribute("data-c")) vider("l:" + el.closest("[data-liste]").getAttribute("data-liste"));
+    else if (el.hasAttribute && el.hasAttribute("data-prime")) vider("primes");
     if (el.getAttribute && el.getAttribute("data-type") === "montant") { var lu = F.lire(el.value); if (lu.valide && !lu.vide) el.value = F.saisie(lu.valeur); }
     enEdition = false;
   });

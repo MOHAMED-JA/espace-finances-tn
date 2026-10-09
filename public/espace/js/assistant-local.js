@@ -125,6 +125,11 @@
       if (f.complement.cea) L.push("- CEA : **" + dt(f.complement.cea) + "**");
       L.push(D ? "Ya3ni t9ammer **" + dt(f.gainPossible) + "** zeyda fil 3am (el max " + dt(f.economieMax) + ")." : "Gain supplémentaire : **" + dt(f.gainPossible) + "** par an (économie maximale " + dt(f.economieMax) + ").");
       if (f.parMoisRestant && f.moisRestants > 1) L.push(D ? "Wala " + dt(f.parMoisRestant) + " fil chhar 7atta lekher el 3am." : "Soit environ " + dt(f.parMoisRestant) + " par mois d'ici la fin de l'année.");
+      if (f.paie && f.paie.declaration > 20) {
+        L.push(D ? "Rod belek : 3al paie 7atta décembre tnajjem terja3lek **" + dt(f.paie.recuperable) + "** bark ; el ba9i (" + dt(f.paie.declaration) + ") yerja3 bel déclaration annuelle."
+          : "Attention : d'ici décembre, vos paies ne peuvent vous rendre que **" + dt(f.paie.recuperable) + "** (l'impôt qui reste à retenir) ; le reste (" + dt(f.paie.declaration) + ") se récupère par la déclaration annuelle.");
+        if (f.optimalPaie) L.push(D ? "Bech yerja3 kol chay 3al paie : 7ott **" + dt(f.optimalPaie.total) + "**." : "Pour que tout revienne sur vos paies, versez **" + dt(f.optimalPaie.total) + "**.");
+      }
     }
     return { texte: L.join("\n"), lien: { libelle: "Ouvrir l'optimiseur fiscal", href: "#vie?onglet=fiscal" } };
   }
