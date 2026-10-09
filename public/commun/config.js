@@ -12,7 +12,7 @@
     cleSession: "ef-session",
     /* Cloudflare Turnstile (anti-robots) : clé de SITE, publique par nature. Vide = vérification désactivée.
        La clé SECRÈTE correspondante ne va que dans Supabase (Authentication → Bot and Abuse Protection). */
-    turnstileCle: "",
+    turnstileCle: "0x4AAAAAAFSsJoQNyLaiL5tt",
     nomApplication: "Espace Finances TN"
   });
   if (typeof module !== "undefined" && module.exports) module.exports = CONFIG;
