@@ -434,3 +434,86 @@ body.attente .app { visibility: hidden; }
 .admin__formules legend { padding: 0; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
 .admin__case { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; font-size: 14px; }
 .admin__form .erreur-champ, .admin__form button[type=submit] { grid-column: 1 / -1; justify-self: start; }
+
+/* ---------- Santé financière ---------- */
+.sante__grille { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .sante__grille { grid-template-columns: 260px minmax(0, 1fr); } }
+.sante__score { display: grid; justify-items: center; align-content: center; gap: 10px; }
+.sante__jauge { position: relative; width: 168px; aspect-ratio: 1; }
+.sante__jauge svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.sante__fond, .sante__arc { fill: none; stroke-width: 10; }
+.sante__fond { stroke: var(--surface-2); }
+.sante__arc { stroke: var(--credit); stroke-linecap: round; stroke-dasharray: var(--p, 0) 100; transition: stroke-dasharray 700ms cubic-bezier(.23, 1, .32, 1), stroke 300ms ease; }
+.sante__jauge[data-niveau="excellent"] .sante__arc { stroke: var(--succes); }
+.sante__jauge[data-niveau="bon"] .sante__arc { stroke: var(--salaire); }
+.sante__jauge[data-niveau="fragile"] .sante__arc { stroke: var(--alerte); }
+.sante__jauge[data-niveau="faible"] .sante__arc { stroke: var(--erreur); }
+.sante__centre { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.sante__centre strong { font-family: var(--affiche); font-size: 46px; font-weight: 800; line-height: 1; letter-spacing: -.03em; }
+.sante__centre span { color: var(--encre-3); font-size: 13px; }
+.sante__niveau { font-family: var(--affiche); font-weight: 720; font-size: 18px; }
+.sante__criteres { list-style: none; margin: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); align-content: start; }
+.sante__critere { display: grid; gap: 6px; min-width: 0; }
+.sante__critere-tete { display: flex; justify-content: space-between; gap: 8px; font-size: 14.5px; }
+.sante__critere-lib { font-weight: 650; }
+.sante__critere small { color: var(--encre-3); font-size: 12.5px; line-height: 1.4; }
+.sante__barre { display: block; height: 7px; border-radius: 4px; background: var(--surface-2); position: relative; overflow: hidden; }
+.sante__barre::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--p, 0%); border-radius: 4px; background: linear-gradient(90deg, var(--credit), var(--salaire)); transition: width 600ms cubic-bezier(.23, 1, .32, 1); }
+.sante__objectifs { margin-top: 16px; display: grid; gap: 12px; }
+.sante__objectifs h3 { font-size: 16px; }
+.sante__objectifs-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.sante__objectif { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 14px; align-items: center; padding: 12px 14px; border-radius: var(--r-int); background: var(--surface-2); }
+.sante__objectif p { color: var(--encre-2); font-size: 14px; }
+.sante__gain { display: grid; place-items: center; min-width: 46px; height: 32px; padding: 0 8px; border-radius: 999px; background: color-mix(in srgb, var(--succes) 16%, var(--surface)); color: var(--succes); font-weight: 760; font-size: 14px; }
+@container (max-width: 480px) { .sante__objectif { grid-template-columns: auto minmax(0, 1fr); } .sante__objectif .lien-action { grid-column: 2; justify-self: start; } }
+.sante__objectifs { container-type: inline-size; }
+.sante__rappel { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding: 12px 16px; color: var(--encre); text-decoration: none; border: 1px solid color-mix(in srgb, var(--alerte) 50%, transparent); background: color-mix(in srgb, var(--alerte) 10%, var(--surface)); font-weight: 600; font-size: 14.5px; }
+.sante__rappel svg { width: 18px; height: 18px; flex: none; color: var(--alerte); }
+.sante__rappel span { flex: 1; min-width: 0; }
+
+/* ---------- Vie & impôts ---------- */
+.vie-onglets { margin-bottom: 16px; width: max-content; max-width: 100%; }
+.vie-panneau { display: grid; gap: 16px; }
+@media (min-width: 1100px) { #vie-panneau-vie:not([hidden]) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
+.vie-evts, .vie-resultat, .fiscal { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.vie-evts h2, .vie-resultat h2, .fiscal h2 { font-size: 18px; }
+.vie-ajout { display: flex; flex-wrap: wrap; gap: 8px; }
+.puce-choix { min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1px dashed var(--filet-fort, var(--filet)); background: var(--surface); color: var(--encre); font: inherit; font-weight: 650; font-size: 14px; cursor: pointer; transition: transform 140ms ease-out, background-color 160ms ease; }
+.puce-choix::before { content: "+ "; color: var(--credit-t); }
+.puce-choix:hover { background: var(--surface-2); }
+.puce-choix:active { transform: scale(.97); }
+.puce-choix:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.vie-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.vie-evt { display: grid; gap: 10px; padding: 12px 14px; border-radius: var(--r-int); background: var(--surface-2); }
+.vie-evt__tete { display: flex; align-items: center; gap: 8px; }
+.vie-evt__tete > svg { width: 18px; height: 18px; color: var(--credit-t); }
+.vie-evt__tete strong { flex: 1; }
+.vie-evt__champs { display: grid; gap: 10px 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); align-items: end; }
+.vie-evt__champs .champ { min-width: 0; }
+.vie-evt .saisie { background: var(--surface); }
+.vie-case { display: flex; align-items: center; gap: 8px; font-size: 14px; min-height: 44px; grid-column: 1 / -1; }
+.vie-alertes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.vie-alertes:empty { display: none; }
+.vie-table-zone { overflow-x: auto; }
+.vie-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.vie-table th, .vie-table td { padding: 9px 8px; border-bottom: 1px solid var(--filet); text-align: right; }
+.vie-table th:first-child { text-align: left; font-weight: 600; }
+.vie-table thead th { font-size: 12.5px; color: var(--encre-3); font-weight: 650; }
+.vie-ligne--mieux .vie-ecart { color: var(--succes); font-weight: 700; }
+.vie-ligne--moins_bien .vie-ecart { color: var(--erreur); font-weight: 700; }
+.vie-ligne--egal .vie-ecart { color: var(--encre-3); }
+#vie-appliquer { justify-self: start; }
+.fiscal__kpi { margin: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); }
+.fiscal__kpi > div { display: grid; gap: 2px; padding: 12px 14px; border-radius: var(--r-int); background: var(--surface-2); }
+.fiscal__kpi dt { color: var(--encre-3); font-size: 13px; font-weight: 600; }
+.fiscal__kpi dd { margin: 0; font-family: var(--affiche); font-size: 22px; font-weight: 760; }
+.fiscal__kpi dd.fiscal__sous { font-family: inherit; font-size: 12.5px; font-weight: 500; color: var(--encre-3); }
+.fiscal__repart { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.fiscal__produit { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 10px; padding: 14px; border-radius: var(--r-int); background: var(--surface-2); }
+.fiscal__produit strong { font-size: 18px; }
+.fiscal__jauge { grid-column: 1 / -1; height: 7px; border-radius: 4px; background: var(--surface); position: relative; overflow: hidden; }
+.fiscal__jauge::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--p, 0%); background: var(--epargne); border-radius: 4px; }
+.fiscal__produit--cea .fiscal__jauge::after { background: var(--salaire); }
+.fiscal__budget { display: grid; gap: 8px; max-width: 520px; }
+.fiscal__budget-res { font-size: 14.5px; color: var(--encre-2); }
+.fiscal__notes { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--encre-2); font-size: 13.5px; }
