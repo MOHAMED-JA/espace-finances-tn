@@ -453,6 +453,16 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 quintricies. Assistant : « Orbite calcule, l'IA rédige » (10 oct.)
+
+- **Constat (captures de l'utilisateur)** : Cloudflare Workers AI répond (ton naturel), mais invente dates et montants (« crédit auto fini en 2030 », « 64 233 DT en 2030 », « octobre 2027 »). Réalité : auto fini en mars 2032, mariage en juin 2032 ; en 2030-2031 la capacité auto reste 14 233 DT. Il citait aussi le score de santé sur un simple « bonjour ».
+- Choix (question cliquable) : **Orbite calcule, l'IA rédige**.
+- `assistant-local.js` : chaque réponse porte `intention` ; `calculPourIA(question, sy, precedente)` renvoie le calcul exact du moteur (null pour salutation/question générale). Relance « et si j'attends un an / deux ans », darija « nostanna 3am » : la question précédente est reprise avec l'année décalée.
+  - Réponse crédit enrichie : après la capacité à la date demandée, **l'étape suivante** du calendrier (« À partir de mars 2032, à la fin de votre crédit auto, ce plafond passe à 64 233 DT »), puis le meilleur moment s'il est plus loin.
+- `vue-assistant.js` : envoie `calcul` avec la question ; le lien du calcul (« Simuler ce crédit ») s'affiche sous la réponse de l'IA. `E.assistant.demander(q, hist, contexte, calcul)`.
+- Serveur (`regles.js`, fonction déployée v5) : `LIMITES.calcul` 3000, bloc `<calcul_orbite>` avant la question ; consignes : le calcul est la vérité, reformuler sans changer aucun chiffre ni date ; salutation/question générale sans aucun chiffre du profil.
+- `nouveautes.js` version « 2026-10-10b ». Tests 329, e2e (calcul joint, lien affiché, pas de calcul pour « Bonjour »).
+
 ## 3 quatertricies. Assistant : IA gratuite Cloudflare Workers AI + ton plus humain (10 oct.)
 
 - **Demande de l'utilisateur** : un Assistant intelligent « comme Claude ». Constat : la fonction appelait déjà Claude, mais `ANTHROPIC_API_KEY` n'est pas configurée, d'où l'assistant intégré. L'utilisateur veut **du gratuit** → choix (question cliquable) : **Cloudflare Workers AI**. Ton plus humain : oui.

@@ -80,9 +80,15 @@
     attente.classList.add("assistant__msg--attente");
     attente.setAttribute("aria-label", "L'Assistant réfléchit");
     if (!compte) { compte = true; E.compterUsage("simulation", "assistant"); }
-    E.assistant.demander(q, historique.slice(-8), contexte()).then(function (r) {
+    /* Orbite calcule, l'IA rédige : le calcul exact du moteur (s'il y en a un pour cette question) accompagne la question. */
+    var calc = null;
+    try {
+      var prec = historique.filter(function (t) { return t.role === "user"; }).slice(-1)[0];
+      calc = AL && !O.profilVierge() ? AL.calculPourIA(q, O.synthese(), prec && prec.contenu) : null;
+    } catch (e) { calc = null; }
+    E.assistant.demander(q, historique.slice(-8), contexte(), calc ? calc.texte : "").then(function (r) {
       attente.remove();
-      ajouter("ia", r.reponse);
+      ajouter("ia", r.reponse, { lien: calc && calc.lien });
       historique.push({ role: "user", contenu: q }, { role: "assistant", contenu: r.reponse });
       if (typeof r.restantes === "number" && r.restantes <= 5) $("assistant-note").textContent = "Encore " + r.restantes + " question" + (r.restantes > 1 ? "s" : "") + " aujourd'hui. Réponses indicatives, à confirmer avec votre banque.";
     }).catch(function (x) {
