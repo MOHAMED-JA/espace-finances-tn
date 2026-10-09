@@ -36,6 +36,14 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   const base = "http://127.0.0.1:" + serveur.address().port;
   const faux = Faux.creer();
   const navigateur = await chromium.launch({ executablePath: process.env.CHROMIUM || "/opt/pw-browsers/chromium/chrome-linux/chrome" }).catch(() => chromium.launch());
+  /* Cloudflare Turnstile (hors réseau pendant les tests) : faux script qui valide en 100 ms, dans chaque contexte. */
+  const FAUX_TURNSTILE = "window.turnstile={render:function(el,o){var d=document.createElement('p');d.className='faux-turnstile';d.textContent='Vérification…';el.appendChild(d);setTimeout(function(){d.textContent='Réussi';o.callback('jeton-test-'+Date.now())},100);return 1},reset:function(){}};";
+  const nouveauContexte = navigateur.newContext.bind(navigateur);
+  navigateur.newContext = async (o) => {
+    const c = await nouveauContexte(o);
+    await c.route("https://challenges.cloudflare.com/**", (r) => r.fulfill({ contentType: "application/javascript", body: FAUX_TURNSTILE }));
+    return c;
+  };
   const contexte = await navigateur.newContext({ viewport: { width: 1360, height: 900 }, locale: "fr-FR", acceptDownloads: true });
   await contexte.route(SUPABASE + "/**", (r) => faux.gerer(r));
   await contexte.route("https://api.pwnedpasswords.com/**", fuites);
@@ -385,13 +393,6 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   await etape("anti-robots : avec une clé Turnstile, le jeton est exigé et transmis à Supabase à la connexion", async () => {
     const t = await navigateur.newContext({ locale: "fr-FR" });
     await t.route(SUPABASE + "/**", (r) => faux.gerer(r));
-    /* Clé de site de test injectée dans config.js, et faux script Turnstile qui valide en 100 ms. */
-    await t.route("**/commun/config.js", async (r) => {
-      const rep = await r.fetch();
-      r.fulfill({ response: rep, body: (await rep.text()).replace('turnstileCle: ""', 'turnstileCle: "1x00000000000000000000AA"') });
-    });
-    await t.route("https://challenges.cloudflare.com/**", (r) => r.fulfill({ contentType: "application/javascript",
-      body: "window.turnstile={render:function(el,o){var d=document.createElement('p');d.className='faux-turnstile';d.textContent='Vérification…';el.appendChild(d);setTimeout(function(){d.textContent='Réussi';o.callback('jeton-test-'+Date.now())},100);return 1},reset:function(){}};" }));
     const pt = await t.newPage();
     suivre(pt);
     await pt.goto(base + "/connexion.html");

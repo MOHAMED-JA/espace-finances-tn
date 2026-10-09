@@ -79,6 +79,13 @@
     }
   }
 
+  /* Défilement et redimensionnement : un seul repositionnement par image affichée. */
+  var imagePrevue = false;
+  function placerBientot() {
+    if (imagePrevue) return;
+    imagePrevue = true;
+    requestAnimationFrame(function () { imagePrevue = false; placer(); });
+  }
   function placer() {
     if (!etat) return;
     var etape = ETAPES[etat.i], cible = cibleDe(etape), b = etat.bulle, h = etat.halo;
@@ -137,8 +144,8 @@
       /* Feuille de style pas encore à jour (ancienne version en cache) : on n'affiche pas une visite sans mise en forme. */
       if (getComputedStyle(etat.racine).position !== "fixed") { etat.racine.remove(); etat = null; return; }
       doc.body.classList.add("visite-ouverte");
-      window.addEventListener("resize", placer);
-      window.addEventListener("scroll", placer, true);
+      window.addEventListener("resize", placerBientot);
+      window.addEventListener("scroll", placerBientot, true);
       aller(0);
     };
     if (!/^#orbite\b|^#?$/.test(location.hash)) { location.hash = "#orbite"; setTimeout(ouvrir, 350); }
@@ -147,8 +154,8 @@
 
   function terminer(complete) {
     if (!etat) return;
-    window.removeEventListener("resize", placer);
-    window.removeEventListener("scroll", placer, true);
+    window.removeEventListener("resize", placerBientot);
+    window.removeEventListener("scroll", placerBientot, true);
     etat.racine.remove();
     doc.body.classList.remove("visite-ouverte");
     var prec = etat.precedent;

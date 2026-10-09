@@ -460,7 +460,9 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - `connexion.js` : `captchaToken` passé à `signInWithPassword`, `signUp`, `resetPasswordForEmail` (pas pour Google ni la réinitialisation). `#turnstile` au-dessus du bouton. `modele.js` traduit l'erreur « captcha ».
 - `_headers` (/connexion.html, /connexion) : `script-src` + `frame-src https://challenges.cloudflare.com`.
 - **Ordre de mise en service** (sinon plus personne ne peut se connecter) : 1) code en ligne (fait) ; 2) l'utilisateur crée le widget Turnstile (mode Managed, domaine `espace-finances-tn.jaouadimohamedaziz.workers.dev`) et donne la **clé de site** (publique) ; 3) je la mets dans `config.js` ; 4) **ensuite seulement**, il active Supabase → Authentication → Bot and Abuse Protection → Turnstile avec la **clé secrète** (jamais dans le dépôt ni la conversation).
-- e2e : étape avec clé injectée et faux script Turnstile → `gotrue_meta_security.captcha_token` transmis.
+- e2e : faux script Turnstile servi dans **chaque** contexte (enveloppe de `navigateur.newContext`), étape dédiée → `gotrue_meta_security.captcha_token` transmis.
+- Clé de site activée dans `config.js` : `0x4AAAAAAFSsJoQNyLaiL5tt` (widget « Orbite connexion », mode Managed). L'utilisateur a montré la clé secrète dans une capture et a choisi de la garder (pas de rotation). Elle n'est que dans Supabase.
+- Piège : un élément `id="turnstile"` crée `window.turnstile` (accès nommé) et masque l'API Cloudflare → conteneur `#anti-robots` et test `typeof turnstile.render === "function"`.
 
 ## 3 quintricies. Assistant : « Orbite calcule, l'IA rédige » (10 oct.)
 
