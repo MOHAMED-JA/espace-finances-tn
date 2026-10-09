@@ -204,6 +204,7 @@
     if (opt.statut !== "a_optimiser") return;
     $("fi-opt-sous").textContent = "Pour atteindre l'économie maximale, ajoutez " + F.dt0(opt.complement.total) + " DT de versements d'ici le 31 décembre" +
       (opt.moisRestants > 1 ? " (environ " + F.dt0(opt.parMoisRestant) + " DT par mois sur " + opt.moisRestants + " mois)" : "") + ".";
+    rendrePaie(opt);
     var rep = $("fi-repart"); rep.textContent = "";
     [["av", "Assurance vie", opt.complement.av], ["cea", "CEA", opt.complement.cea]].forEach(function (x) {
       var d = cree("div", "fiscal__produit fiscal__produit--" + x[0]);
@@ -221,13 +222,38 @@
     }
     resultatBudget(sy, opt);
   }
+  /* Paie d'ici le 31 décembre ou déclaration annuelle : l'employeur ne peut rendre que l'impôt qui reste à retenir. */
+  function rendrePaie(opt) {
+    var bloc = $("fi-paie"), pa = opt.paie;
+    bloc.hidden = !pa || !(opt.gainPossible > 0);
+    if (bloc.hidden) return;
+    var detail = pa.moisRestants + " paie" + (pa.moisRestants > 1 ? "s" : "") + (pa.primesRestantes > 0 ? " et " + String(pa.primesRestantes).replace(".", ",") + " salaire" + (pa.primesRestantes > 1 ? "s" : "") + " de prime" : "");
+    var kpi = $("fi-paie-kpi"); kpi.textContent = "";
+    [["Sur vos paies d'ici le 31 décembre", F.dt0(pa.recuperable) + " DT", "impôt restant à retenir sur " + detail],
+     ["Via la déclaration annuelle", F.dt0(pa.declaration) + " DT", pa.declaration > 0 ? "restitution de l'impôt retenu en trop, l'an prochain" : "rien à récupérer de ce côté"]].forEach(function (k) {
+      var d = cree("div"); d.appendChild(cree("dt", null, k[0])); d.appendChild(cree("dd", "chiffre", k[1])); d.appendChild(cree("dd", "fiscal__sous", k[2])); kpi.appendChild(d);
+    });
+    var op = opt.optimalPaie, txt = $("fi-paie-opt"), bt = $("fi-paie-utiliser");
+    txt.textContent = "";
+    bt.hidden = !op;
+    if (op) {
+      txt.appendChild(doc.createTextNode("Pour que tout l'avantage revienne sur vos paies de cette année, versez "));
+      txt.appendChild(cree("strong", null, F.dt0(op.total) + " DT"));
+      txt.appendChild(doc.createTextNode(" (" + [op.av ? F.dt0(op.av) + " DT en assurance vie" : "", op.cea ? F.dt0(op.cea) + " DT en CEA" : ""].filter(Boolean).join(" et ") + ") : environ "));
+      txt.appendChild(cree("strong", null, F.dt0(op.gain) + " DT d'impôt en moins"));
+      txt.appendChild(doc.createTextNode(" d'ici décembre. Au-delà, l'économie supplémentaire passe par la déclaration annuelle."));
+      bt.onclick = function () { $("fi-budget").value = F.saisie(op.total); budgetSaisi = $("fi-budget").value; var sy = O.synthese(); if (sy) resultatBudget(sy, OI.optimiseurFiscal(sy)); };
+    } else txt.textContent = "Tout l'avantage fiscal restant peut revenir sur vos paies d'ici le 31 décembre.";
+  }
   function resultatBudget(sy, opt) {
     var b = lire($("fi-budget").value), res = $("fi-budget-res"), lien = $("fi-simuler");
     if (!(b > 0)) { res.textContent = "Indiquez un montant."; return; }
     var o = b >= opt.complement.total ? { av: opt.complement.av, cea: opt.complement.cea, gain: opt.gainPossible, economie: opt.economieMax } : OI.optimiseurFiscal(sy, { budgetAnnuel: b }).avecBudget;
     if (!o) { res.textContent = ""; return; }
     res.textContent = "Avec " + F.dt0(b) + " DT : " + (o.av ? F.dt0(o.av) + " DT en assurance vie" : "") + (o.av && o.cea ? " et " : "") + (o.cea ? F.dt0(o.cea) + " DT en CEA" : "") +
-      " → " + F.dt0(o.gain) + " DT d'impôt en moins (" + Math.round(o.gain / b * 100) + " % de ce que vous versez).";
+      " → " + F.dt0(o.gain) + " DT d'impôt en moins (" + Math.round(o.gain / b * 100) + " % de ce que vous versez)" +
+      (opt.paie ? (function () { var pp = Math.min(o.gain, opt.paie.impotRestant), dd = Math.max(0, o.gain - pp);
+        return " : " + F.dt0(pp) + " DT sur vos paies d'ici décembre" + (dd > 0.5 ? " et " + F.dt0(dd) + " DT via la déclaration annuelle." : "."); })() : ".");
     var mois = Math.max(1, opt.moisRestants);
     lien.href = "#epargne?versement=" + Math.max(10, Math.round(b / mois / 10) * 10);
   }

@@ -453,6 +453,27 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 quinvicies. Optimiseur fiscal : paie d'ici le 31 décembre ou déclaration annuelle (10 oct.)
+
+- **Remarque de l'utilisateur** : l'économie affichée (8 682 DT) dépassait l'impôt qui reste à retenir sur ses paies d'ici décembre. Son employeur prend en compte l'attestation assurance vie / CEA, et il est prêt à faire la déclaration annuelle.
+- **Analyse retenue** : la déduction porte sur le revenu annuel. L'économie annuelle reste juste en droit, mais elle se découpe en deux :
+  - **ce que la paie rend d'ici le 31/12**, plafonné par l'impôt restant à retenir ;
+  - **le reste via la déclaration annuelle**, sous forme de restitution.
+- **Profil** : `calendrierPrimes`, 12 nombres (janvier → décembre), pas de 0,5. Vide : tous les versements supplémentaires en décembre (`OC.calendrierPrimes`). L'éditeur (12 cases) s'affiche dans Mon profil au-delà de 12 salaires, avec un contrôle du total.
+  - Pour l'utilisateur : mars 1, juin 1, septembre 1,5, décembre 1,5.
+- `salaire()` expose `impotMois` (IRPP + CSS d'un mois habituel) et `impotParVersement` (supplément d'impôt de l'année ÷ versements supplémentaires).
+- `OC.impotRestantAnnee(sy, date)` additionne les mois habituels restants (mois en cours compris, paie de fin de mois) et les primes prévues à partir du mois en cours.
+  - Au 9 oct. : 3 × 844,5 + 1,5 × 1 355,1 ≈ 4 566 DT, soit ≈ 4 443 DT net de l'avantage des contrats déjà pris en compte.
+- `optimiseurFiscal` :
+  - `paie = { impotRestant, recuperable, declaration, moisRestants, primesRestantes }` ;
+  - `optimalPaie = { av, cea, total, gain }` : le plus petit complément qui fait tout revenir sur les paies (dichotomie). Pour l'utilisateur : 11 900 DT en CEA → 4 442 DT.
+- **Affichage (Vie & impôts)** :
+  - deux cases, « Sur vos paies d'ici le 31 décembre » et « Via la déclaration annuelle » ;
+  - le versement optimal paie, avec un bouton « Utiliser ce montant » ;
+  - le résultat du montant saisi, découpé de la même façon.
+- L'Assistant (intégré et en ligne) reprend cette découpe.
+- **Tests** : 317 unitaires, e2e 27/27.
+
 ## 3 quatervicies. Salaire : répartition annuelle, coût employeur, autres charges (10 oct.)
 
 - **Règle de l'utilisateur : toujours poser les questions avec des réponses à choix multiples cliquables (outil AskUserQuestion), et expliquer son point de vue avant toute modification.**

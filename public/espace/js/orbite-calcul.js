@@ -47,7 +47,7 @@
   function profilParDefaut() {
     return {
       prenom: "", anneeNaissance: 1990, situation: "celibataire", statut: "cdi", anciennete: 3,
-      montant: 2500, sens: "brut", periode: "mensuel", secteur: "prive", nombreSalaires: 12,
+      montant: 2500, sens: "brut", periode: "mensuel", secteur: "prive", nombreSalaires: 12, calendrierPrimes: [],
       primesImposables: 0, primesNonCotisables: 0, avantagesNature: 0, indemnitesNonImposables: 0,
       chefDeFamille: false, enfants: 0, etudiants: 0, handicapes: 0, parents: 0,
       credits: [], contrats: [], projets: [],
@@ -133,6 +133,9 @@
       periode: p.periode === "annuel" ? "annuel" : "mensuel",
       secteur: p.secteur === "public" ? "public" : "prive",
       nombreSalaires: entier(p.nombreSalaires, d.nombreSalaires, 12, 18),
+      /* Versements supplémentaires par mois (janvier → décembre), en nombre de salaires, par pas de 0,5. Vide : tout en décembre. */
+      calendrierPrimes: Array.isArray(p.calendrierPrimes) && p.calendrierPrimes.length === 12
+        ? p.calendrierPrimes.map(function (v) { return Math.round(nombre(v, 0, 0, 6) * 2) / 2; }) : [],
       primesImposables: nombre(p.primesImposables, 0, 0, 1e6),
       primesNonCotisables: nombre(p.primesNonCotisables, 0, 0, 1e6),
       avantagesNature: nombre(p.avantagesNature, 0, 0, 1e6),
@@ -225,9 +228,12 @@
   function salaire(p) {
     var eb = entreeBrut(p);
     var av = C.calculerAvecVersements(eb.entree, P);
-    var a = av.annee.annuel;
+    var a = av.annee.annuel, mt = av.moisType.annuel, supp = av.versements.supplementaires;
     return {
       entree: eb.entree,
+      /* Impôt (IRPP + CSS) retenu sur un mois habituel, et sur chaque versement supplémentaire (supplément de l'année). */
+      impotMois: (mt.irpp + mt.css) / 12,
+      impotParVersement: supp > 0 ? (a.irpp + a.css - mt.irpp - mt.css) / supp : 0,
       resultat: av.annee,
       versements: av.versements,
       netMensuel: av.versements.netMensuel,
@@ -246,6 +252,24 @@
       tauxPrelevement: av.annee.indicateurs.tauxPrelevementGlobal,
       verifie: eb.verifie
     };
+  }
+
+  /* Calendrier des versements supplémentaires : celui du profil, sinon tous en décembre. */
+  function calendrierPrimes(p) {
+    var extra = Math.max(0, p.nombreSalaires - 12), c = p.calendrierPrimes || [];
+    if (c.length === 12 && c.some(function (v) { return v > 0; })) return c.slice();
+    var d = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; d[11] = extra; return d;
+  }
+
+  /* Impôt sur le salaire qui reste à retenir d'ici le 31 décembre : les mois habituels restants (paie de fin de mois,
+     mois en cours compris) et les versements supplémentaires prévus à partir du mois en cours. */
+  function impotRestantAnnee(sy, maintenant) {
+    var m = maintenant || sy.maintenant || new Date(), mois = m.getMonth(), s = sy.salaire;
+    var cal = calendrierPrimes(sy.profil), primes = 0;
+    for (var k = mois; k < 12; k++) primes += cal[k];
+    var moisRestants = 12 - mois;
+    return { moisRestants: moisRestants, primesRestantes: primes, calendrier: cal,
+      montant: moisRestants * s.impotMois + primes * s.impotParVersement };
   }
 
   /* Salaire de base (même unité que la saisie) qui amène le revenu imposable au seuil donné. */
@@ -706,7 +730,7 @@
   return {
     TMM: TMM, CREDITS_TYPES: CREDITS_TYPES, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS,
     profilParDefaut: profilParDefaut, normaliser: normaliser, age: age, etatSalaire: etatSalaire, entreeBrut: entreeBrut,
-    tranche: tranche, salaire: salaire, augmentation: augmentation,
+    tranche: tranche, salaire: salaire, augmentation: augmentation, calendrierPrimes: calendrierPrimes, impotRestantAnnee: impotRestantAnnee,
     capitalPourMensualite: capitalPourMensualite, mensualitePourCapital: mensualitePourCapital, capacite: capacite,
     epargnePour: epargnePour, suggestionsEpargne: suggestionsEpargne, budget: budget, estimationContrat: estimationContrat, paliersMarge: paliersMarge, tauxImmo: tauxImmo, tauxNouveaux: tauxNouveaux, echeancier: echeancier, analyseTaux: analyseTaux, sortieEndettement: sortieEndettement,
     versementPourCapital: versementPourCapital, projet: projet, conseils: conseils, synthese: synthese

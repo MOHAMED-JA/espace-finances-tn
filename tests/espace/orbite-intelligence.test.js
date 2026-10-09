@@ -177,3 +177,30 @@ test("résumé pour l'Assistant : chiffres clés, calendrier, aucune donnée d'i
   assert.match(r, /Score de santé financière : \d+\/100/);
   assert.ok(!/Aziz/.test(r), 'pas de prénom');
 });
+
+/* ---------- Optimiseur fiscal : paie d'ici le 31 décembre ou déclaration annuelle ---------- */
+test('optimiseur : impôt restant à retenir selon le calendrier des primes, versement optimal paie', () => {
+  const OCx = require('../../public/espace/js/orbite-calcul.js');
+  const prof = { montant: 4000, sens: 'brut', nombreSalaires: 17, chefDeFamille: true, situation: 'marie',
+    calendrierPrimes: [0, 0, 1, 0, 0, 1, 0, 0, 1.5, 0, 0, 1.5],
+    contrats: [{ type: 'av', libelle: 'AV', anneeDebut: 2021, moisDebut: 12, versementMensuel: 100 }] };
+  const quand = new Date(2026, 9, 9);
+  const sy = OCx.synthese(prof, {}, quand);
+  const r = OCx.impotRestantAnnee(sy, quand);
+  assert.equal(r.moisRestants, 3);
+  assert.equal(r.primesRestantes, 1.5);
+  /* 3 mois habituels × 844,547 + 1,5 × 1 355,142 */
+  assert.ok(Math.abs(r.montant - (3 * sy.salaire.impotMois + 1.5 * sy.salaire.impotParVersement)) < 1e-6);
+  assert.ok(Math.abs(sy.salaire.impotMois - 844.547) < 0.001);
+  const o = I.optimiseurFiscal(sy, { maintenant: quand });
+  assert.equal(o.statut, 'a_optimiser');
+  assert.ok(o.paie.recuperable < o.gainPossible, 'la paie ne peut pas tout rendre');
+  assert.ok(Math.abs(o.paie.recuperable + o.paie.declaration - o.gainPossible) < 1e-6);
+  assert.ok(o.optimalPaie.total < o.complement.total, 'versement optimal paie inférieur au complément maximal');
+  assert.ok(o.paie.impotRestant - o.optimalPaie.gain < 15, 'le versement optimal récupère presque tout l’impôt restant');
+  /* En janvier, toute l'année reste à retenir : la paie peut tout rendre. */
+  const jan = new Date(2026, 0, 10), oj = I.optimiseurFiscal(OCx.synthese(prof, {}, jan), { maintenant: jan });
+  assert.ok(oj.paie.declaration < 1 && !oj.optimalPaie);
+  /* Sans calendrier : les versements supplémentaires sont supposés en décembre. */
+  assert.deepEqual(OCx.calendrierPrimes({ nombreSalaires: 14, calendrierPrimes: [] }), [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]);
+});

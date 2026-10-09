@@ -516,6 +516,10 @@ body.attente .app { visibility: hidden; }
 .fiscal__produit--cea .fiscal__jauge::after { background: var(--salaire); }
 .fiscal__budget { display: grid; gap: 8px; max-width: 520px; }
 .fiscal__budget-res { font-size: 14.5px; color: var(--encre-2); }
+.fiscal__paie { display: grid; gap: 10px; justify-items: start; }
+.fiscal__paie .fiscal__kpi { width: 100%; }
+.fiscal__paie-opt { margin: 0; font-size: 14.5px; color: var(--encre-2); }
+.fiscal__paie-opt strong { color: var(--encre); }
 .fiscal__notes { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--encre-2); font-size: 13.5px; }
 
 /* ---------- Foyer (mode couple) ---------- */
@@ -577,3 +581,11 @@ body.attente .app { visibility: hidden; }
 .assistant__saisie .bouton { min-height: 52px; }
 .assistant__note { color: var(--encre-3); font-size: 12.5px; }
 @media (max-width: 479px) { .assistant__saisie .bouton span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .assistant__saisie .bouton { width: 52px; padding: 0; justify-content: center; } }
+
+/* Profil : calendrier des versements supplémentaires (12 mois) */
+.p-primes__grille { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+@media (min-width: 720px) { .p-primes__grille { grid-template-columns: repeat(12, minmax(0, 1fr)); } }
+.p-prime { display: grid; gap: 4px; justify-items: center; font-size: 12.5px; font-weight: 600; color: var(--encre-3); }
+.p-prime input { width: 100%; min-width: 0; height: 40px; border-radius: 10px; border: 1.5px solid transparent; background: var(--surface-2); text-align: center; font-weight: 650; font-size: 16px; color: var(--encre); outline: none; transition: border-color 150ms ease; }
+.p-prime input:focus { border-color: var(--focus); background: var(--surface); }
+.p-primes[data-ecart] .champ__aide { color: var(--alerte, #B54708); }

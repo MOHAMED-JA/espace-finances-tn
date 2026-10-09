@@ -73,6 +73,14 @@
       rappel: jours <= 92 && ecoMax - ecoActuelle > 20,
       complement: { av: 0, cea: 0, total: 0 }, optimum: { av: ex.av, cea: ex.cea }
     };
+    /* Ce que la paie peut encore rendre d'ici le 31 décembre : l'impôt qui reste à retenir sur les salaires et primes à venir,
+       net de l'avantage des contrats déjà pris en compte. Au-delà, l'économie se récupère par la déclaration annuelle. */
+    var rest = OC.impotRestantAnnee ? OC.impotRestantAnnee(sy, m) : null;
+    if (rest) {
+      var impotAn = Math.max(1, sy.salaire.irpp + sy.salaire.css);
+      res.paie = { moisRestants: rest.moisRestants, primesRestantes: rest.primesRestantes,
+        impotRestant: Math.max(0, rest.montant * (1 - ecoActuelle / impotAn)) };
+    }
     if (base.impotAvant <= 0) { res.statut = "sans_impot"; return res; }
     if (res.gainPossible <= 20) { res.statut = "optimise"; return res; }
     /* Plus petit montant supplémentaire qui atteint (à 1 DT près) l'économie maximale : recherche par dichotomie. */
@@ -94,6 +102,22 @@
     }
     /* Calendrier : le versement compte pour l'année s'il est encaissé avant le 31 décembre. */
     res.parMoisRestant = moisRestants > 0 ? arrondi(res.complement.total / moisRestants, 10) : res.complement.total;
+    if (res.paie) {
+      var R0 = res.paie.impotRestant;
+      res.paie.recuperable = Math.min(res.gainPossible, R0);
+      res.paie.declaration = Math.max(0, res.gainPossible - R0);
+      /* Versement « optimal paie » : le plus petit complément dont tout l'avantage revient sur les paies de l'année. */
+      if (res.paie.declaration > 20) {
+        var b0 = 0, h0 = res.complement.total, sol = null;
+        for (var k = 0; k < 18 && h0 - b0 > 10; k++) {
+          var mi = (b0 + h0) / 2, es = meilleurPartage(sy, ex, mi, plafAv, plafCea);
+          if (es.eco - ecoActuelle >= R0 - 1) { h0 = mi; sol = es; } else b0 = mi;
+        }
+        sol = sol || meilleurPartage(sy, ex, h0, plafAv, plafCea);
+        var oAv = arrondi(sol.av, 10), oCea = arrondi(sol.cea, 10);
+        res.optimalPaie = { av: oAv, cea: oCea, total: oAv + oCea, gain: Math.min(R0, economie(sy, ex.av + oAv, ex.cea + oCea) - ecoActuelle) };
+      }
+    }
     res.dateConseillee = new Date(m.getFullYear(), 11, 15);
     return res;
   }
@@ -341,7 +365,9 @@
     }
     var f = optimiseurFiscal(sy, { maintenant: m });
     if (f.impotAvant > 0) L.push("Impôt et épargne : économie actuelle " + dt(f.economieActuelle) + " par an, maximale " + dt(f.economieMax) +
-      (f.statut === "a_optimiser" ? " ; complément utile avant le 31 décembre : " + dt(f.complement.av) + " en assurance vie et " + dt(f.complement.cea) + " en CEA (" + f.joursAvantFin + " jours restants)" : "") + ".");
+      (f.statut === "a_optimiser" ? " ; complément utile avant le 31 décembre : " + dt(f.complement.av) + " en assurance vie et " + dt(f.complement.cea) + " en CEA (" + f.joursAvantFin + " jours restants)" : "") + "." +
+      (f.paie && f.statut === "a_optimiser" ? " Impôt restant à retenir sur les paies d'ici le 31 décembre : " + dt(f.paie.impotRestant) + " ; récupérable sur les paies : " + dt(f.paie.recuperable) +
+        (f.paie.declaration > 20 ? ", le reste (" + dt(f.paie.declaration) + ") via la déclaration annuelle" + (f.optimalPaie ? " ; versement qui fait tout revenir sur les paies : " + dt(f.optimalPaie.total) : "") : "") + "." : ""));
     var sc = scoreSante(sy, { optimiseur: f, maintenant: m });
     L.push("Score de santé financière : " + sc.score + "/100 (" + sc.niveau + "). Priorités : " + sc.objectifs.map(function (x) { return x.libelle.toLowerCase(); }).join(", ") + ".");
     var fo = foyer(sy);
