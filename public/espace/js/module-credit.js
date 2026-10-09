@@ -94,8 +94,19 @@
   var AGE_MAX = MC.DEFAUTS.ageMax;
   var LETTRES = ["A", "B", "C"];
 
+  /* Taux personnel du profil pour ce type (taux choisi pour l'immobilier, ou taux d'un crédit en cours du même type) :
+     il remplace le taux du marché par défaut, en taux fixe. Rien si le profil ne donne que le taux du marché. */
+  function tauxProfil(type) {
+    try {
+      var O = Orb(), sy = O && O.synthese ? O.synthese() : null;
+      var t = sy && OC && OC.tauxNouveaux ? OC.tauxNouveaux(sy.profil)[type] : null;
+      return t && t.source !== "marche" && t.tauxPct >= 0 ? t.tauxPct : null;
+    } catch (e) { return null; }
+  }
   function scenarioVierge(type, capital) {
     var pr = MC.appliquerPreset(type) || { mois: 120, taux: 10, tmm: null };
+    var tp = tauxProfil(type);
+    if (tp !== null) pr = { mois: pr.mois, taux: tp, tmm: null };
     return {
       type: type, capital: capital, mois: pr.mois,
       mode: pr.tmm ? "tmm" : "fixe", taux: pr.taux, tmm: pr.tmm ? pr.tmm.tmm : TMM_REF, marge: pr.tmm ? pr.tmm.marge : 3,
@@ -118,7 +129,9 @@
     var pr = MC.appliquerPreset(type);
     if (!pr) return;
     sc.mois = Math.max(sc.periodicite, Math.round(pr.mois / sc.periodicite) * sc.periodicite);
-    if (pr.tmm) { sc.mode = "tmm"; sc.tmm = pr.tmm.tmm; sc.marge = pr.tmm.marge; sc.taux = pr.taux; }
+    var tp = tauxProfil(type);
+    if (tp !== null) { sc.mode = "fixe"; sc.taux = tp; }
+    else if (pr.tmm) { sc.mode = "tmm"; sc.tmm = pr.tmm.tmm; sc.marge = pr.tmm.marge; sc.taux = pr.taux; }
     else { sc.mode = "fixe"; sc.taux = pr.taux; }
   }
   function tauxApplique(sc) { return sc.mode === "tmm" ? MC.tauxTmm(sc.tmm, sc.marge) : sc.taux; }
