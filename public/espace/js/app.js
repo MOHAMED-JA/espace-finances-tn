@@ -105,6 +105,8 @@
 
   function metaProfil(u) { var m = (u && u.user_metadata) || {}; return m.orbite && typeof m.orbite === "object" ? m.orbite : null; }
   function recalculer() {
+    /* Date de naissance obligatoire : sans elle, la capacité d'emprunt (qui dépend de l'âge) reste masquée. */
+    doc.body.classList.toggle("sans-naissance", !!profil && !profil.dateNaissance);
     try { synthese = OC.synthese(profil, choix); } catch (e) { synthese = null; if (window.console) console.error(e); }
     abonnes.forEach(function (fn) { try { fn(synthese, profil); } catch (e) { if (window.console) console.error(e); } });
   }
@@ -330,7 +332,8 @@
   }
   function nomAffiche() {
     var meta = (utilisateur && utilisateur.user_metadata) || {};
-    return casse((profil && profil.prenom) || "") || meta.full_name || meta.name || (utilisateur && utilisateur.email ? utilisateur.email.split("@")[0] : "");
+    var complet = [(profil && profil.prenom) || "", (profil && profil.nom) || ""].map(casse).join(" ").trim();
+    return complet || meta.full_name || meta.name || (utilisateur && utilisateur.email ? utilisateur.email.split("@")[0] : "");
   }
   /* Photo de profil (Google ou importée) ; initiales si absente ou illisible. */
   function peindreAvatar(el, url, initiales) {
@@ -358,12 +361,13 @@
   function remplirUtilisateur() {
     if (!utilisateur) return;
     var nom = nomAffiche(), meta = utilisateur.user_metadata || {};
-    $("nom-utilisateur").textContent = casse(meta.full_name || "") || nom;
+    /* Prénom et nom saisis dans le profil ; à défaut, le nom du compte Google. */
+    $("nom-utilisateur").textContent = nom;
     $("email-utilisateur").textContent = utilisateur.email || "";
     if (!$("avatar").firstChild) $("avatar").textContent = E.initiales(meta.full_name || nom, utilisateur.email);
     var heure = new Date().getHours();
     /* Le nom choisi dans « Comment Orbite doit vous appeler ? » prime sur le prénom. */
-    var appel = (meta.orbite_appel || "").trim() || (nom ? nom.split(" ")[0] : "");
+    var appel = (meta.orbite_appel || "").trim() || casse((profil && profil.prenom) || "").trim() || (nom ? nom.split(" ")[0] : "");
     $("salutation").textContent = (heure >= 18 || heure < 5 ? "Bonsoir" : "Bonjour") + (appel ? ", " + appel : "");
   }
 

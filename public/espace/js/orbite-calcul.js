@@ -46,7 +46,7 @@
 
   function profilParDefaut() {
     return {
-      prenom: "", anneeNaissance: 1990, situation: "celibataire", statut: "cdi", anciennete: 3,
+      prenom: "", nom: "", dateNaissance: "", dateEmbauche: "", anneeNaissance: 1990, situation: "celibataire", statut: "cdi", anciennete: 3,
       montant: 2500, sens: "brut", periode: "mensuel", secteur: "prive", nombreSalaires: 12, calendrierPrimes: [],
       primesImposables: 0, primesNonCotisables: 0, avantagesNature: 0, indemnitesNonImposables: 0,
       chefDeFamille: false, enfants: 0, etudiants: 0, handicapes: 0, parents: 0,
@@ -63,6 +63,21 @@
   }
   function entier(v, def, min, max) { return Math.round(nombre(v, def, min, max)); }
   function choix(v, liste, def) { return liste.indexOf(v) !== -1 ? v : def; }
+  /* Date « AAAA-MM-JJ » valide et comprise entre deux bornes, sinon chaîne vide. */
+  function dateIso(v, min, max) {
+    if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return "";
+    var d = new Date(v + "T12:00:00");
+    if (isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== v) return "";
+    return v >= min && v <= max ? v : "";
+  }
+  function isoDecale(ans, maintenant) { var m = maintenant || new Date(); return new Date(m.getFullYear() - ans, m.getMonth(), m.getDate(), 12).toISOString().slice(0, 10); }
+  /* Années pleines écoulées depuis une date « AAAA-MM-JJ ». */
+  function anneesDepuis(iso, maintenant) {
+    var m = maintenant || new Date(), a = +iso.slice(0, 4), mo = +iso.slice(5, 7), j = +iso.slice(8, 10);
+    var n = m.getFullYear() - a;
+    if (m.getMonth() + 1 < mo || (m.getMonth() + 1 === mo && m.getDate() < j)) n--;
+    return Math.max(0, n);
+  }
   function texte(v, max) { return typeof v === "string" ? v.replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, max) : ""; }
   function anneeCourante(maintenant) { return (maintenant || new Date()).getFullYear(); }
 
@@ -124,10 +139,15 @@
     function liste(v, fn, max) { return Array.isArray(v) ? v.slice(0, max).map(fn) : []; }
     return {
       prenom: texte(p.prenom, 40),
-      anneeNaissance: entier(p.anneeNaissance, d.anneeNaissance, 1930, anneeCourante() - 16),
+      nom: texte(p.nom, 60),
+      /* Date de naissance complète (âge au jour près) ; l'année seule reste lue pour les anciens profils. */
+      dateNaissance: dateIso(p.dateNaissance, "1930-01-01", isoDecale(16)),
+      dateEmbauche: dateIso(p.dateEmbauche, "1960-01-01", isoDecale(0)),
+      anneeNaissance: dateIso(p.dateNaissance, "1930-01-01", isoDecale(16)) ? +p.dateNaissance.slice(0, 4) : entier(p.anneeNaissance, d.anneeNaissance, 1930, anneeCourante() - 16),
       situation: choix(p.situation, ["celibataire", "marie", "divorce", "veuf"], "celibataire"),
       statut: choix(p.statut, ["cdi", "cdd", "fonctionnaire", "contractuel", "autre"], "cdi"),
-      anciennete: entier(p.anciennete, d.anciennete, 0, 50),
+      /* Ancienneté calculée depuis la date d'embauche quand elle est connue. */
+      anciennete: dateIso(p.dateEmbauche, "1960-01-01", isoDecale(0)) ? Math.min(50, anneesDepuis(p.dateEmbauche)) : entier(p.anciennete, d.anciennete, 0, 50),
       montant: nombre(p.montant, d.montant, 0, 1e7),
       sens: p.sens === "net" ? "net" : "brut",
       periode: p.periode === "annuel" ? "annuel" : "mensuel",
@@ -191,7 +211,10 @@
   }
   function tauxDe(taux, cle) { var t = taux && taux[cle.indexOf("immo") === 0 ? "immo" : cle]; return t ? t.tauxPct : null; }
 
-  function age(p, maintenant) { return Math.max(16, anneeCourante(maintenant) - p.anneeNaissance); }
+  function age(p, maintenant) {
+    if (p.dateNaissance) return Math.max(16, anneesDepuis(p.dateNaissance, maintenant));
+    return Math.max(16, anneeCourante(maintenant) - p.anneeNaissance);
+  }
 
   /* État du simulateur de salaire correspondant au profil (format EtatSimulation). */
   function etatSalaire(p) {

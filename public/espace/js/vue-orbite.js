@@ -459,8 +459,9 @@
     try { rendreFoyer(sy); } catch (e) { if (window.console) console.error(e); }
     clearTimeout(minuterieSante);
     minuterieSante = setTimeout(function () { try { rendreSante(O.synthese() || sy); } catch (e) { if (window.console) console.error(e); } }, 120);
+    var sansNaissance = !sy.profil.dateNaissance;
     var badge = $("badge-profil");
-    badge.hidden = !O.profilVierge();
+    badge.hidden = !O.profilVierge() && !sansNaissance;
     if (premierRendu) { premierRendu = false; doc.body.classList.add("orbite-entree"); setTimeout(function () { doc.body.classList.remove("orbite-entree"); }, 1200); }
     O.remplirUtilisateur();
   }

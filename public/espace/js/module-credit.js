@@ -369,6 +369,7 @@
 
   function htmlEligibilite() {
     return '<section class="panneau cr-elig" aria-labelledby="cr-elig-titre">' +
+      '<p class="encart encart--alerte requiert-naissance">Indiquez votre <a href="#profil?section=identite">date de naissance</a> : la banque limite la durée du crédit selon votre âge.</p>' +
       '<div class="cr-elig__tete"><div><h2 class="panneau__titre" id="cr-elig-titre">Éligibilité</h2><p class="panneau__sous" id="cr-elig-sous">Ce que la banque regardera, d\'après votre profil.</p></div><span class="puce" id="cr-elig-verdict"></span></div>' +
       '<div class="cr-accord" id="cr-accord" aria-live="polite"></div><ul class="cr-criteres" id="cr-criteres"></ul>' +
       '<details class="cr-option cr-emprunteur" id="cr-emprunteur"><summary><span class="cr-option__icone">' + ico("profil") + '</span><span class="cr-option__texte">Emprunteur<small id="cr-emp-etat"></small></span>' + ico("chevron", "chevron") + '</summary>' +

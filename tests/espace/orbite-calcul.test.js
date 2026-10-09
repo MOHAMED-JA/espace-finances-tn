@@ -308,3 +308,18 @@ test("calendrier : plafond de chaque type de crédit, 7 ans au plus hors immobil
   /* Les cartes « ce que la banque peut vous prêter » suivent la même règle des 7 ans. */
   sy.capacite.brut.credits.filter((c) => c.cle === "auto" || c.cle === "conso").forEach((c) => assert.equal(c.dureeMois, 84));
 });
+
+test('dates du profil : âge exact, année de naissance et ancienneté déduites', () => {
+  const p = O.normaliser({ prenom: 'Aziz', nom: 'Jaouadi', dateNaissance: '1990-10-20', dateEmbauche: '2019-03-01' });
+  assert.equal(p.nom, 'Jaouadi');
+  assert.equal(p.anneeNaissance, 1990);
+  assert.equal(O.age(p, new Date(2026, 9, 9)), 35, 'anniversaire pas encore passé');
+  assert.equal(O.age(p, new Date(2026, 9, 20)), 36, 'le jour de l\'anniversaire');
+  assert.ok(p.anciennete >= 7 && p.anciennete <= 8);
+});
+
+test('dates du profil : valeurs invalides ignorées', () => {
+  const p = O.normaliser({ dateNaissance: '2099-01-01', dateEmbauche: 'n\'importe quoi' });
+  assert.equal(p.dateNaissance, '');
+  assert.equal(p.dateEmbauche, '');
+});

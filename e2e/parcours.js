@@ -105,6 +105,8 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => document.getElementById("etat-enregistrement").textContent.includes("enregistré") || document.getElementById("etat-enregistrement").textContent === "");
     const meta = faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite;
     assert(meta && meta.montant === 2500 && meta.chefDeFamille === true, "profil enregistré dans le compte : " + JSON.stringify(meta));
+    assert(await page.isVisible("#vue-orbite .requiert-naissance"), "date de naissance demandée avant la capacité");
+    assert(!(await page.isVisible("#capacite")), "capacité masquée sans date de naissance");
     assert((await page.$$("#cap-liste li")).length === 4, "4 crédits types");
     assert((await page.$$("#suggestions li")).length === 3, "3 suggestions d'épargne");
     await page.screenshot({ path: path.join(CAPTURES, "02-orbite.png") });
@@ -121,6 +123,9 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.goto(base + "/espace/#profil");
     await page.waitForSelector("#vue-profil:not([hidden])");
     await page.fill("#p-prenom", "Aziz");
+    await page.fill("#p-nom", "Jaouadi");
+    await page.fill("#p-naissance", "1990-05-14");
+    await page.fill("#p-embauche", "2018-09-01");
     await page.click("#sec-credits summary");
     await page.click('[data-ajouter="credits"]');
     await page.fill('#liste-credits li:first-child [data-c="libelle"]', "Voiture");
@@ -138,6 +143,9 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     const meta = faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite;
     assert(meta.credits.length === 1 && meta.credits[0].mensualite === 300, "crédit enregistré");
     assert(meta.contrats.length === 1 && meta.contrats[0].versementMensuel === 150, "contrat enregistré");
+    assert(meta.nom === "Jaouadi" && meta.dateNaissance === "1990-05-14" && meta.dateEmbauche === "2018-09-01", "nom et dates enregistrés");
+    assert(!(await page.evaluate(() => document.body.classList.contains("sans-naissance"))), "capacité débloquée");
+    assert((await page.textContent("#nom-utilisateur")).includes("Aziz Jaouadi"), "nom complet affiché");
     assert(meta.loyer === 500 && meta.epargneDisponible === 15000 && meta.projets[0].montant === 180000, "budget et projet");
     await page.reload();
     await page.waitForSelector("#vue-profil:not([hidden])");
