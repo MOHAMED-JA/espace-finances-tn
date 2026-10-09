@@ -453,6 +453,17 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 unvicies. Vidéo promotionnelle (9 oct.)
+
+- **Livrables** : `orbite-promo-9x16.mp4` (1080×1920, Reels/TikTok/Shorts/Stories) et `orbite-promo-16x9.mp4` (1920×1080, YouTube/LinkedIn/site), 30 s, 60 i/s, H.264 + AAC, son à −14 LUFS. Les MP4 ne sont pas dans le dépôt (trop lourds) : ils ont été envoyés à l'utilisateur.
+- **Sources** dans `promo/video/` (régénérables, sans secret) :
+  - `captures.js` : captures réelles de l'app avec un profil fictif « Sami » (3 200 DT brut × 13, marié, 1 enfant) via le faux Supabase ;
+  - `scene.html` : toute l'animation sur un canevas, `render(t)` déterministe (aucune animation CSS), mises en page portrait et paysage, polices de la marque ;
+  - `rendu.js` : 4 onglets Chromium en parallèle → JPEG → ffmpeg (`node rendu.js v|h all 60 sortie.mp4`, ou `preview t1 t2…` pour des aperçus) ;
+  - `musique.py` : bande-son composée par code (numpy, 120 BPM, la mineur, Am–F–C–G) : impacts sur chaque mot de l'accroche, drop à 4 s, cassure à 24 s, second drop à 27 s, souffles à chaque coupe.
+- **Script** (10 scènes calées sur les mesures) : accroche « Votre salaire. Vos crédits. Votre épargne. Votre impôt. → Tout est lié. » ; logo ; brut → net (2 293 DT) ; calendrier de la marge (avril 2029, 1 387 DT/mois) ; score 85 ; simulateur de vie + optimiseur fiscal (jusqu'à 4 376 DT) ; Assistant en darija ; couple, hors connexion, rappels, parrainage ; « Et ce n'est que le début. De nouvelles options avancées arrivent au fur et à mesure. » ; CTA essai 3 jours, −30 % de lancement, adresse, « Powered by Mohamed Aziz Jaouadi ».
+- Zones sûres Instagram respectées (rien d'important au-dessus de 150 px, sous 1620 px, ni à droite entre 1100 et 1750 px).
+
 ## 4. Prochaines actions (améliorations possibles, rien de bloquant)
 
 1. Vérifier le site en ligne après chaque déploiement (Cloudflare se déploie depuis `main`).
