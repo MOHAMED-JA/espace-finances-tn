@@ -394,6 +394,25 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await pm.click("#envoyer");
     await pm.waitForURL(/\/espace\//);
     await pm.waitForSelector(".onglets-bas");
+    /* Utilisateur existant sur un nouvel appareil : les nouveautés s'affichent une fois. */
+    await pm.waitForSelector("#dlg-nouveautes[open]");
+    assert((await pm.$$("#nouveautes-liste li")).length >= 2, "nouveautés listées");
+    await pm.click('#dlg-nouveautes button[value="ok"]');
+    await pm.waitForSelector("#dlg-nouveautes:not([open])", { state: "attached" });
+    /* Nouvelle version prête : bandeau, « Plus tard », puis « Mettre à jour » envoie l'activation au service worker. */
+    await pm.evaluate(() => { window.__msg = []; window.OrbiteMaj.proposer({ postMessage: (m) => window.__msg.push(m) }); });
+    await pm.waitForSelector("#maj-bandeau:not([hidden])");
+    await pm.screenshot({ path: path.join(CAPTURES, "maj-bandeau.png") });
+    await pm.click("#maj-plus-tard");
+    await pm.waitForSelector("#maj-bandeau", { state: "hidden" });
+    await pm.evaluate(() => { const b = document.getElementById("maj-bandeau"); b.removeAttribute("data-ferme"); window.OrbiteMaj.proposer({ postMessage: (m) => window.__msg.push(m) }); });
+    await pm.click("#maj-appliquer");
+    assert((await pm.evaluate(() => window.__msg))[0].type === "activer", "activation demandée au service worker");
+    /* Pas de vrai service worker en attente ici : le filet recharge la page après 4 s. */
+    await pm.waitForEvent("load", { timeout: 15000 });
+    await pm.waitForSelector(".onglets-bas");
+    await pm.waitForFunction(() => /Orbite est à jour/.test(document.body.textContent), null, { timeout: 10000 });
+    assert(!(await pm.evaluate(() => document.getElementById("dlg-nouveautes").open)), "nouveautés déjà vues : pas de seconde fenêtre");
     /* Visite guidée sur téléphone : bulle dans l'écran, onglets du bas désignés. */
     await pm.click("#aide-visite");
     await pm.waitForSelector(".visite__bulle");

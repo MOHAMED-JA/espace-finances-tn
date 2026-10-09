@@ -15,8 +15,72 @@
 
   /* ---------- Service worker ---------- */
   if ("serviceWorker" in navigator && (location.protocol === "https:" || /^(127\.0\.0\.1|localhost)$/.test(location.hostname))) {
-    navigator.serviceWorker.register("/sw.js", { scope: "/" }).then(function (r) { enregistrement = r; majAppli(); envoyerRappels(); }).catch(function () { majAppli(); });
+    navigator.serviceWorker.register("/sw.js", { scope: "/" }).then(function (r) { enregistrement = r; majAppli(); envoyerRappels(); surveillerVersion(r); }).catch(function () { majAppli(); });
   }
+
+  /* ---------- Nouvelle version : bandeau « Mettre à jour » ---------- */
+  /* Vérifie à l'ouverture, au retour sur l'application et toutes les 30 minutes. Une version en attente
+     (installée mais pas encore active) déclenche le bandeau ; « Mettre à jour » l'active puis recharge la page. */
+  var rechargementDemande = false;
+  function surveillerVersion(r) {
+    if (!navigator.serviceWorker.controller) return; /* première visite : pas d'ancienne version à remplacer */
+    if (r.waiting) proposerMaj(r.waiting);
+    r.addEventListener("updatefound", function () {
+      var nv = r.installing;
+      if (!nv) return;
+      nv.addEventListener("statechange", function () { if (nv.state === "installed" && navigator.serviceWorker.controller) proposerMaj(nv); });
+    });
+    var verifier = function () { r.update().catch(function () {}); };
+    setInterval(verifier, 30 * 60 * 1000);
+    doc.addEventListener("visibilitychange", function () { if (doc.visibilityState === "visible") verifier(); });
+    navigator.serviceWorker.addEventListener("controllerchange", function () {
+      if (!rechargementDemande) return;
+      rechargementDemande = false;
+      try { sessionStorage.setItem("orbite-maj", "1"); } catch (e) {}
+      location.reload();
+    });
+  }
+  function proposerMaj(sw) {
+    var bandeau = $("maj-bandeau");
+    if (!bandeau || bandeau.getAttribute("data-ferme") === "1") return;
+    bandeau.hidden = false;
+    $("maj-appliquer").onclick = function () {
+      this.disabled = true;
+      this.textContent = "Mise à jour…";
+      rechargementDemande = true;
+      sw.postMessage({ type: "activer" });
+      /* Filet : si l'activation tarde, on recharge quand même (la page suivante prendra la nouvelle version). */
+      setTimeout(function () { if (rechargementDemande) { try { sessionStorage.setItem("orbite-maj", "1"); } catch (e) {} location.reload(); } }, 4000);
+    };
+    $("maj-plus-tard").onclick = function () { bandeau.hidden = true; bandeau.setAttribute("data-ferme", "1"); };
+  }
+
+  /* ---------- Quoi de neuf ---------- */
+  /* Montré une fois par version de notes (nouveautes.js) aux utilisateurs qui avaient déjà Orbite ; jamais à la toute première visite. */
+  function montrerNouveautes() {
+    var N = window.ORBITE_NOUVEAUTES, cle = "orbite-nouveautes";
+    if (!N || !N.version) return;
+    var vue = null, maj = false;
+    try { vue = localStorage.getItem(cle); maj = sessionStorage.getItem("orbite-maj") === "1"; sessionStorage.removeItem("orbite-maj"); } catch (e) { return; }
+    try { localStorage.setItem(cle, N.version); } catch (e) {}
+    /* Sans trace d'une version vue : nouveau venu (profil vierge) → rien ; utilisateur d'avant cette fonction → les notes. */
+    if (vue === N.version || (!vue && !maj && O.profilVierge())) { if (maj) O.toast("Orbite est à jour."); return; }
+    var dlg = $("dlg-nouveautes"), ul = $("nouveautes-liste");
+    if (!dlg || !dlg.showModal) { O.toast("Orbite est à jour."); return; }
+    ul.textContent = "";
+    N.points.forEach(function (p) {
+      var li = doc.createElement("li"), t = doc.createElement("strong");
+      t.textContent = p.titre;
+      li.appendChild(t);
+      li.appendChild(doc.createTextNode(" " + p.texte));
+      ul.appendChild(li);
+    });
+    $("nouveautes-date").textContent = N.date || "";
+    dlg.showModal();
+  }
+  window.OrbiteMaj = { proposer: proposerMaj, nouveautes: montrerNouveautes };
+  if (O.pret) setTimeout(montrerNouveautes, 600);
+  else doc.addEventListener("orbite:pret", function () { setTimeout(montrerNouveautes, 600); }, { once: true });
 
   /* ---------- Installation ---------- */
   window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); invitation = e; majAppli(); });

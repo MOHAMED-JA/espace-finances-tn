@@ -8,7 +8,7 @@
  *   la synchronisation périodique (application installée) les affiche même quand Orbite est fermée.
  */
 "use strict";
-var VERSION = "orbite-2026-10-10k";
+var VERSION = "orbite-2026-10-10l";
 var CACHE = VERSION + "-site";
 var RAPPELS = "/__orbite/rappels.json";
 var DEJA = "/__orbite/rappels-vus.json";
@@ -43,7 +43,9 @@ self.addEventListener("install", function (e) {
           });
       });
     }).catch(function () { return c.addAll(ESSENTIELS).catch(function () {}); });
-  }).then(function () { return self.skipWaiting(); }));
+  }));
+  /* Pas de skipWaiting automatique : la nouvelle version attend que l'utilisateur clique « Mettre à jour »
+     (ou s'applique d'elle-même quand Orbite a été fermée partout). Première installation : active tout de suite. */
 });
 
 self.addEventListener("activate", function (e) {
@@ -107,6 +109,7 @@ function afficherRappels() {
 }
 self.addEventListener("periodicsync", function (e) { if (e.tag === "orbite-rappels") e.waitUntil(afficherRappels()); });
 self.addEventListener("message", function (e) {
+  if (e.data && e.data.type === "activer") { self.skipWaiting(); return; }
   if (e.data && e.data.type === "rappels") e.waitUntil(ecrireJson(RAPPELS, { rappels: e.data.rappels || [], maj: Date.now() }).then(afficherRappels));
 });
 self.addEventListener("notificationclick", function (e) {
