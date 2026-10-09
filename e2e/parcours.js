@@ -463,6 +463,32 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.screenshot({ path: path.join(CAPTURES, "admin.png"), fullPage: true });
   });
 
+  await etape("fiches partagées : visibles par l'admin seulement avec l'accord de l'utilisateur, consultation journalisée", async () => {
+    await page.goto(base + "/espace/#admin");
+    await page.waitForSelector("#admin-corps:not([hidden])");
+    await page.waitForFunction(() => /Aucun compte n'a encore partagé/.test(document.getElementById("admin-fiches").textContent));
+    await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.waitForSelector("#partage-admin:not([disabled])", { state: "attached" });
+    assert(!(await page.isChecked("#partage-admin")), "partage désactivé par défaut");
+    await page.click('label:has(#partage-admin)');
+    await page.waitForFunction(() => /Partage activé/.test(document.getElementById("partage-etat").textContent));
+    assert(faux.partageDe("aziz@exemple.tn").accorde, "accord enregistré sur le serveur");
+    await page.goto(base + "/espace/#admin");
+    await page.waitForSelector("#admin-fiches [data-fiche]");
+    await page.click("#admin-fiches [data-fiche]");
+    await page.waitForSelector("#admin-fiche:not([hidden])");
+    const fiche = await page.textContent("#admin-fiche");
+    assert(/Aziz Jaouadi/.test(fiche) && /Salaire brut/.test(fiche) && /14 mai 1990/.test(fiche) && /Voiture/.test(fiche), "fiche complète : " + fiche);
+    await page.screenshot({ path: path.join(CAPTURES, "admin-fiche.png"), fullPage: true });
+    await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.waitForFunction(() => /Consultée 1 fois/.test(document.getElementById("partage-etat").textContent));
+    await page.click('label:has(#partage-admin)');
+    await page.waitForFunction(() => /Non partagée/.test(document.getElementById("partage-etat").textContent));
+    assert(!faux.partageDe("aziz@exemple.tn").accorde, "accord retiré");
+    await page.goto(base + "/espace/#admin");
+    await page.waitForFunction(() => /Aucun compte n'a encore partagé/.test(document.getElementById("admin-fiches").textContent));
+  });
+
   await etape("codes promo, offre de lancement et parrainage (un mois offert à chacun)", async () => {
     /* L'admin crée une offre de lancement automatique et un code réservé à l'annuel. */
     await page.goto(base + "/espace/#admin");

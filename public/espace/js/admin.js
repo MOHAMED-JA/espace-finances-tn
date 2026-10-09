@@ -180,11 +180,62 @@
       .finally(function () { btn.disabled = false; });
   });
 
+  /* ---------- Fiches partagées (accord explicite de l'utilisateur, migration 0009) ---------- */
+  var SITUATIONS = { celibataire: "Célibataire", marie: "Marié(e)", divorce: "Divorcé(e)", veuf: "Veuf / veuve" };
+  function dateCourte(iso) { return iso ? DATE.format(new Date(iso.length === 10 ? iso + "T12:00:00" : iso)) : "—"; }
+  function rendreFiches(liste) {
+    var ul = $("admin-fiches");
+    ul.textContent = "";
+    if (!liste.length) { ul.appendChild(cree("li", "admin__vide", "Aucun compte n'a encore partagé sa fiche.")); return; }
+    liste.forEach(function (f) {
+      var li = cree("li"), b = cree("button", "admin__fiche-lien");
+      b.type = "button"; b.setAttribute("data-fiche", f.id);
+      b.appendChild(cree("strong", null, f.nom || f.nom_compte || "Sans nom"));
+      b.appendChild(cree("small", null, (f.email || "") + " · accord du " + dateCourte(f.accorde_le)));
+      li.appendChild(b); ul.appendChild(li);
+    });
+  }
+  function ligne(dl, lib, val) { var d = cree("div"); d.appendChild(cree("dt", null, lib)); d.appendChild(cree("dd", null, val)); dl.appendChild(d); }
+  function rendreFiche(f) {
+    var OC = window.OrbiteCalcul, p0 = f.profil || {}, sy = null;
+    try { sy = OC.synthese(p0); } catch (e) { sy = null; }
+    var p = sy ? sy.profil : OC.normaliser(p0), s = sy && sy.salaire, dl = $("admin-fiche-grille");
+    $("admin-fiche-titre").textContent = ((p.prenom || "") + " " + (p.nom || "")).trim() || f.email || "Fiche";
+    $("admin-fiche-sous").textContent = (f.email || "") + " · inscrit le " + dateCourte(f.inscrit_le) + " · dernière connexion " + quand(f.derniere_connexion) + " · accord du " + dateCourte(f.accorde_le) + ".";
+    dl.textContent = "";
+    ligne(dl, "Date de naissance", p.dateNaissance ? dateCourte(p.dateNaissance) + (sy ? " (" + sy.age + " ans)" : "") : "Non renseignée");
+    ligne(dl, "Date d'embauche", p.dateEmbauche ? dateCourte(p.dateEmbauche) + " (" + p.anciennete + " an" + (p.anciennete > 1 ? "s" : "") + ")" : p.anciennete + " an" + (p.anciennete > 1 ? "s" : "") + " d'ancienneté");
+    ligne(dl, "Famille", (SITUATIONS[p.situation] || p.situation) + (p.chefDeFamille ? ", chef de famille" : "") + " · " + p.enfants + " enfant" + (p.enfants > 1 ? "s" : "") + " à charge");
+    ligne(dl, "Secteur", (p.secteur === "public" ? "Public (CNRPS)" : "Privé (CNSS)") + " · " + p.nombreSalaires + " salaires par an");
+    if (s) {
+      ligne(dl, "Salaire brut", F.dt0(s.brutMensuel) + " DT par mois · " + F.dt0(s.brutAnnuel) + " DT par an");
+      ligne(dl, "Salaire net", F.dt0(s.netMensuel) + " DT par mois · " + F.dt0(s.netAnnuel) + " DT par an");
+    }
+    var cr = p.credits || [];
+    ligne(dl, "Crédits en cours", cr.length ? cr.map(function (c) { return (c.libelle || "Crédit") + " : " + F.dt0(c.mensualite) + " DT par mois"; }).join(" · ") : "Aucun");
+    var ct = p.contrats || [];
+    ligne(dl, "Assurance vie et CEA", ct.length ? ct.map(function (c) { return (c.type === "cea" ? "CEA" : "Assurance vie") + " : " + F.dt0(c.versementMensuel) + " DT par mois"; }).join(" · ") : "Aucun contrat");
+    if (sy && sy.capacite) { var cb = sy.capacite[p.baseBanque] || sy.capacite.net; ligne(dl, "Capacité d'emprunt", F.dt0(cb.mensualiteMax) + " DT de mensualité possible (" + (p.banque || "règle " + p.baseBanque) + ")"); }
+    ligne(dl, "Budget", "Logement " + F.dt0(p.loyer) + " DT · charges fixes " + F.dt0(p.chargesFixes) + " DT · épargne disponible " + F.dt0(p.epargneDisponible) + " DT");
+    var art = $("admin-fiche");
+    art.hidden = false; art.focus();
+  }
+  function chargerFiches() { return E.admin.fiches().then(function (l) { rendreFiches(l || []); }); }
+  $("admin-fiches").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-fiche]");
+    if (!b) return;
+    b.disabled = true;
+    E.admin.fiche(b.getAttribute("data-fiche")).then(rendreFiche)
+      .catch(function (x) { E.toast(E.modele.messageErreur(x), { erreur: true }); chargerFiches().catch(function () {}); })
+      .finally(function () { b.disabled = false; });
+  });
+  $("admin-fiche-fermer").addEventListener("click", function () { $("admin-fiche").hidden = true; });
+
   function charger() {
     if (!estAdmin) return Promise.resolve();
     var zone = $("admin"), btn = $("admin-actualiser");
     zone.setAttribute("aria-busy", "true"); btn.disabled = true;
-    return Promise.all([E.admin.tableau(), E.admin.alertes(), chargerStatistiques(), chargerCodes()]).then(function (r) {
+    return Promise.all([E.admin.tableau(), E.admin.alertes(), chargerStatistiques(), chargerCodes(), chargerFiches()]).then(function (r) {
       donnees = r[0];
       rendreTableau(donnees);
       rendreAlertes(r[1] || []);

@@ -158,7 +158,24 @@
     $("u-conseils").textContent = sy && sy.conseils ? String(sy.conseils.length) : "—";
   }
 
-  function demarrer() { remplir(); O.rafraichirAvatar(); }
+  /* ---------- Partage de la fiche avec l'administrateur (accord explicite, révocable) ---------- */
+  function rendrePartage(e) {
+    var c = $("partage-admin"), t = $("partage-etat");
+    c.checked = !!(e && e.accorde); c.disabled = false;
+    if (!e) { t.textContent = ""; return; }
+    var cons = e.consultations ? " Consultée " + e.consultations + " fois, dernière fois le " + DATE_HEURE.format(new Date(e.derniere_consultation)) + "." : " Pas encore consultée.";
+    t.textContent = e.accorde ? "Partage activé depuis le " + DATE.format(new Date(e.accorde_le)) + "." + cons : "Non partagée : l'administrateur ne voit pas votre profil." + (e.consultations ? cons : "");
+  }
+  function chargerPartage() { if (E.partage) E.partage.etat().then(rendrePartage).catch(function () { rendrePartage(null); }); }
+  $("partage-admin").addEventListener("change", function () {
+    var c = this, oui = c.checked;
+    c.disabled = true;
+    E.partage.definir(oui).then(function (e) { rendrePartage(e); E.toast(oui ? "Fiche partagée avec l'administrateur." : "Partage retiré : l'administrateur n'a plus accès à votre fiche."); })
+      .catch(function (x) { c.checked = !oui; c.disabled = false; E.toast(E.modele.messageErreur(x), { erreur: true }); });
+  });
+  doc.addEventListener("orbite:vue", function (e) { if (e.detail.vue === "compte") chargerPartage(); });
+
+  function demarrer() { remplir(); O.rafraichirAvatar(); chargerPartage(); }
   if (O.pret) demarrer();
   else doc.addEventListener("orbite:pret", demarrer, { once: true });
 })();
