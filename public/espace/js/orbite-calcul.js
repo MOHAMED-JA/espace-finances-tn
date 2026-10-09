@@ -26,7 +26,7 @@
     { cle: "immo25", libelle: "Crédit immobilier sur 25 ans", court: "Immobilier 25 ans", dureeMois: 300, tauxPct: TMM + 2.5 },
     /* Hors immobilier, la durée d'un crédit est plafonnée à 7 ans : c'est elle qui donne le montant maximal. */
     { cle: "auto", libelle: "Crédit auto", court: "Auto", dureeMois: 84, tauxPct: TMM + 3 },
-    { cle: "conso", libelle: "Crédit à la consommation", court: "Consommation", dureeMois: 84, tauxPct: 11 }
+    { cle: "conso", libelle: "Crédit à la consommation", court: "Consommation", dureeMois: 84, tauxPct: TMM + 3.5 }
   ];
   var QUOTITE = 0.40;
   var MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
@@ -179,6 +179,7 @@
       revenuBanque: p.revenuBanque === "mensuel" ? "mensuel" : "annuel",
       banque: texte(p.banque, 40),
       /* Taux d'un nouveau crédit immobilier choisi par l'utilisateur (null : déduit automatiquement, voir tauxImmo). */
+      tauxConsoPct: p.tauxConsoPct === null || p.tauxConsoPct === undefined || p.tauxConsoPct === "" ? null : nombre(p.tauxConsoPct, null, 0, 30),
       tauxImmoPct: p.tauxImmoPct === null || p.tauxImmoPct === undefined || p.tauxImmoPct === "" ? null : nombre(p.tauxImmoPct, null, 0, 30),
       /* Mode couple / foyer : salaire du conjoint et mensualités de ses propres crédits (imposé séparément). */
       foyer: !!p.foyer,
@@ -200,6 +201,15 @@
     return { tauxPct: TMM + 2.5, source: "marche" };
   }
 
+  /* Taux retenu pour un nouveau crédit à la consommation : celui choisi par l'utilisateur, sinon celui de son
+     crédit conso en cours, sinon le marché (TMM + 3,5 points). */
+  function tauxConso(p) {
+    if (p.tauxConsoPct !== null && p.tauxConsoPct !== undefined && isFinite(p.tauxConsoPct)) return { tauxPct: p.tauxConsoPct, source: "choisi" };
+    var c = (p.credits || []).filter(function (x) { return x.type === "conso" && x.tauxPct > 0; })[0];
+    if (c) return { tauxPct: c.tauxPct, source: "credit", libelle: c.libelle };
+    return { tauxPct: TMM + 3.5, source: "marche" };
+  }
+
   /* Taux retenus pour chaque type de nouveau crédit. Hors immobilier : celui d'un crédit en cours du même type
      (taux préférentiel probable), sinon le taux du marché. */
   function tauxNouveaux(p) {
@@ -207,7 +217,7 @@
       var c = (p.credits || []).filter(function (x) { return x.type === type && x.tauxPct > 0; })[0];
       return c ? { tauxPct: c.tauxPct, source: "credit", libelle: c.libelle } : { tauxPct: marche, source: "marche" };
     }
-    return { immo: tauxImmo(p), auto: duType("auto", TMM + 3), conso: duType("conso", 11) };
+    return { immo: tauxImmo(p), auto: duType("auto", TMM + 3), conso: tauxConso(p) };
   }
   function tauxDe(taux, cle) { var t = taux && taux[cle.indexOf("immo") === 0 ? "immo" : cle]; return t ? t.tauxPct : null; }
 
@@ -351,14 +361,14 @@
   }
 
   /* Taux du marché pour comparer les crédits déclarés (crédit « autre » : taux d'un crédit à la consommation). */
-  var TAUX_MARCHE = { immo: TMM + 2.5, auto: TMM + 3, conso: 11, autre: 11 };
+  var TAUX_MARCHE = { immo: TMM + 2.5, auto: TMM + 3, conso: TMM + 3.5, autre: TMM + 3.5 };
 
   /* Crédits en cours : ceux dont le taux est nettement inférieur au marché (à garder) ou supérieur (à renégocier). */
   function analyseTaux(p) {
     var bas = [], hauts = [];
     p.credits.forEach(function (c) {
       if (!(c.tauxPct > 0) || !(c.mensualite > 0)) return;
-      var marche = TAUX_MARCHE[c.type] || 11;
+      var marche = TAUX_MARCHE[c.type] || TMM + 3.5;
       if (c.tauxPct <= marche - 2) bas.push({ libelle: c.libelle, tauxPct: c.tauxPct, marchePct: marche });
       else if (c.tauxPct >= marche - 0.5) hauts.push({ libelle: c.libelle, tauxPct: c.tauxPct, marchePct: marche });
     });

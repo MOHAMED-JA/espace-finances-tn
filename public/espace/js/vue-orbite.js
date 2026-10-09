@@ -228,7 +228,24 @@
       a.href = "#credit?type=" + c.cle + "&capital=" + Math.floor(c.capital) + "&mois=" + c.dureeMois + "&taux=" + c.tauxPct;
       a.setAttribute("aria-label", "Simuler un " + c.libelle.toLowerCase() + " de " + F.dt0(c.capital) + " DT");
     });
+    rendreTaux(sy);
     rendrePaliers(sy, cap);
+  }
+
+  /* Taux des futurs crédits (immobilier et consommation) : toujours visibles, même sans calendrier de la marge. */
+  function rendreTaux(sy) {
+    var ti = sy.tauxImmo, champTaux = $("cap-taux-immo");
+    if (doc.activeElement !== champTaux) champTaux.value = String(ti.tauxPct).replace(".", ",");
+    $("cap-taux-aide").textContent = ti.source === "choisi" ? "Taux que vous avez indiqué. Modifiez-le pour voir l'effet sur le capital."
+      : ti.source === "credit" ? "Repris de votre " + ti.libelle.toLowerCase() + ". Indiquez le taux proposé par votre banque s'il est différent."
+      : "Taux moyen du marché (TMM " + F.pct(OC.TMM / 100, 2) + " + 2,5 points). Indiquez le taux proposé par votre banque.";
+    $("cap-taux-auto").hidden = ti.source !== "choisi";
+    var tc = OC.tauxNouveaux(sy.profil).conso, champConso = $("cap-taux-conso");
+    if (doc.activeElement !== champConso) champConso.value = String(tc.tauxPct).replace(".", ",");
+    $("cap-taux-conso-aide").textContent = tc.source === "choisi" ? "Taux que vous avez indiqué. Il sert à tous les montants « Consommation »."
+      : tc.source === "credit" ? "Repris de votre " + tc.libelle.toLowerCase() + ". Indiquez le taux proposé par votre banque s'il est différent."
+      : "Taux moyen du marché (TMM " + F.pct(OC.TMM / 100, 2) + " + 3,5 points). Indiquez le taux proposé par votre banque.";
+    $("cap-taux-conso-auto").hidden = tc.source !== "choisi";
   }
 
   /* Calendrier de la marge : une étape par fin de crédit qui augmente la mensualité possible. */
@@ -239,12 +256,6 @@
     var p = sy.profil;
     $("cap-paliers-sous").textContent = "Calcul à " + F.pct(cap.quotite, 0) + " de " + F.dt0(cap.revenu) + " DT " + base + " par mois (" + (p.revenuBanque === "annuel" ? "salaires et primes de l'année ÷ 12" : "salaire mensuel") + ")" + (p.banque && base === p.baseBanque ? ", comme " + p.banque : "") +
       ". Chaque crédit qui se termine libère une partie de votre capacité d'emprunt. Les montants d'une même étape ne s'additionnent pas : c'est l'un ou l'autre.";
-    var ti = sy.tauxImmo, champTaux = $("cap-taux-immo");
-    if (doc.activeElement !== champTaux) champTaux.value = String(ti.tauxPct).replace(".", ",");
-    $("cap-taux-aide").textContent = ti.source === "choisi" ? "Taux que vous avez indiqué. Modifiez-le pour voir l'effet sur le capital."
-      : ti.source === "credit" ? "Repris de votre " + ti.libelle.toLowerCase() + ". Indiquez le taux proposé par votre banque s'il est différent."
-      : "Taux moyen du marché (TMM " + F.pct(OC.TMM / 100, 2) + " + 2,5 points). Indiquez le taux proposé par votre banque.";
-    $("cap-taux-auto").hidden = ti.source !== "choisi";
     ol.textContent = "";
     paliers.forEach(function (x) {
       var li = cree("li", "palier");
@@ -512,6 +523,19 @@
   });
   $("cap-taux-auto").addEventListener("click", function () {
     O.majProfil({ tauxImmoPct: null });
+    O.toast("Taux automatique rétabli.");
+  });
+  /* Taux du futur crédit à la consommation : même principe. */
+  var champTauxConso = $("cap-taux-conso"), minuterieConso = null;
+  champTauxConso.addEventListener("input", function () {
+    clearTimeout(minuterieConso);
+    var lu = F.lire(champTauxConso.value), ok = lu.valide && !lu.vide && lu.valeur >= 0 && lu.valeur <= 30;
+    champTauxConso.setAttribute("aria-invalid", ok || lu.vide ? "false" : "true");
+    if (!ok) return;
+    minuterieConso = setTimeout(function () { O.majProfil({ tauxConsoPct: lu.valeur }); }, 350);
+  });
+  $("cap-taux-conso-auto").addEventListener("click", function () {
+    O.majProfil({ tauxConsoPct: null });
     O.toast("Taux automatique rétabli.");
   });
 

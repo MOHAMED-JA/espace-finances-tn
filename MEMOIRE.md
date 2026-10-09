@@ -453,6 +453,14 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 novovicies. Taux du futur crédit à la consommation modifiable (10 oct.)
+
+- **Question de l'utilisateur** : pourquoi la capacité conso est calculée à 11 % ? Réponse : 11 % était un taux de marché fixe, utilisé faute de crédit de type « Consommation » dans le profil (son crédit mariage à 2 % est saisi en type « Autre »).
+- Choix (question cliquable) : « Taux modifiable ».
+- Profil : `tauxConsoPct` (null = automatique, borné 0–30). `OC.tauxNouveaux(p).conso` = choisi, sinon crédit conso en cours, sinon **TMM + 3,5** (11 % aujourd'hui, suit le TMM). `TAUX_MARCHE` conso/autre aussi en TMM + 3,5.
+- Mon orbite, calendrier de la marge : champ `#cap-taux-conso` + aide + « Revenir au taux automatique » (`#cap-taux-conso-auto`), comme pour l'immobilier.
+- Le préréglage du module Crédit reste en taux fixe 11 % (`credit.js`) : l'utilisateur ne voulait pas de « TMM + marge » par défaut. Un taux choisi passe au module via `tauxProfil`.
+
 ## 3 octovicies. Admin : fiches individuelles avec consentement explicite (10 oct.)
 
 - **Demande de l'utilisateur** : voir, en tant qu'admin, les données de ceux qui se connectent. Choix (question cliquable) : « Données individuelles avec consentement ».
