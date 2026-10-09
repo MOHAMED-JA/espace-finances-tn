@@ -545,3 +545,12 @@ body.attente .app { visibility: hidden; }
 .foyer__cap { container-type: inline-size; }
 @container (max-width: 400px) { .foyer__offre { grid-template-columns: 20px minmax(0, 1fr) auto; } .foyer__offre .lien-action { grid-column: 2 / -1; justify-self: end; } }
 .foyer-champs { padding: 0; }
+
+/* ---------- Hors connexion ---------- */
+.hors-ligne { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 16px; padding: 12px 16px; border-radius: var(--r-int); background: var(--alerte-doux); color: var(--encre); font-size: 14px; }
+.hors-ligne svg { width: 18px; height: 18px; flex: none; color: var(--alerte); margin-top: 1px; }
+.appli__etat { font-size: 14px; color: var(--encre-2); }
+.rappels-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.rappels-liste li { display: grid; gap: 2px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); font-size: 13.5px; }
+.rappels-liste li strong { font-size: 14px; }
+.rappels-liste li small { color: var(--encre-3); }

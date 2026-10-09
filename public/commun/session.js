@@ -29,12 +29,24 @@
     }).catch(function () { return null; });
   }
 
-  /* Pages réservées : redirige si la session est absente ou invalide. */
+  /* Réseau absent (et non session refusée) : on ne déconnecte jamais pour une simple coupure. */
+  var horsLigne = false;
+  function estErreurReseau(e) {
+    if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
+    return !!e && (e.name === "AuthRetryableFetchError" || e.status === 0 || /fetch|network|réseau|Load failed/i.test(String(e.message || "")));
+  }
+
+  /* Pages réservées : redirige si la session est absente ou invalide.
+     Hors connexion, la session enregistrée sur l'appareil suffit pour relire ses propres données (lecture seule côté serveur). */
   function exigerConnexion() {
     return client.auth.getSession().then(function (r) {
       var s = r.data && r.data.session;
       if (!s) { location.replace(adresseConnexion()); return new Promise(function () {}); }
-      return utilisateur().then(function (u) {
+      var verifie = client.auth.getUser().then(function (rr) {
+        if (rr.error && estErreurReseau(rr.error)) { horsLigne = true; return s.user; }
+        return rr.error || !rr.data ? null : rr.data.user;
+      }, function (e) { if (estErreurReseau(e)) { horsLigne = true; return s.user; } return null; });
+      return verifie.then(function (u) {
         if (!u) {
           return client.auth.signOut({ scope: "local" }).finally(function () { location.replace(adresseConnexion()); })
             .then(function () { return new Promise(function () {}); });
@@ -314,6 +326,8 @@
     avatar: avatar,
     admin: admin,
     parrainage: parrainage,
+    estErreurReseau: estErreurReseau,
+    horsLigne: function () { return horsLigne || (typeof navigator !== "undefined" && navigator.onLine === false); },
     compterUsage: compterUsage,
     compte: compte,
     toast: toast,

@@ -88,6 +88,7 @@
 
       <p class="signature signature--bandeau barre-signature"><span class="signature__pre">Powered by</span><a class="signature__nom" href="https://www.linkedin.com/in/mohamed-aziz-jaouadi-%D9%85%D8%AD%D9%85%D8%AF-%D8%B9%D8%B2%D9%8A%D8%B2-%D8%A7%D9%84%D8%AC%D9%88%D8%A7%D8%AF%D9%8A-%C2%AEpsm-i-%C2%AEpspo-l-%C2%AEistqb-851009115/?isSelfProfile=true" target="_blank" rel="noopener noreferrer" aria-label="Mohamed Aziz Jaouadi, profil LinkedIn (nouvel onglet)"><span class="signature__in" aria-hidden="true">in</span><span translate="no">Mohamed Aziz Jaouadi</span><span class="signature__fleche" aria-hidden="true">↗</span></a></p>
       <main class="principal" id="principal" tabindex="-1">
+        <p class="hors-ligne" id="hors-ligne" role="status" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#info"/></svg><span><strong>Hors connexion.</strong> Vous consultez les données de votre dernière visite ; vos modifications seront enregistrées au retour du réseau.</span></p>
 
         <!-- ======== Mon orbite ======== -->
         <section class="vue" id="vue-orbite" data-vue="orbite" aria-labelledby="titre-orbite">
@@ -877,6 +878,27 @@
                 <div class="champ"><label for="param-accueil">Ouvrir Orbite sur</label><div class="saisie"><select id="param-accueil"><option value="orbite">Mon orbite</option><option value="salaire">Salaire</option><option value="credit">Crédit</option><option value="epargne">Épargne vie &amp; CEA</option><option value="simulations">Simulations</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
               </div>
             </section>
+            <section class="panneau reglage" aria-labelledby="r-appli">
+              <div class="reglage__texte"><h2 id="r-appli">Application</h2><p>Installez Orbite sur votre téléphone ou votre ordinateur : elle s'ouvre comme une application et reste consultable sans réseau.</p></div>
+              <div class="reglage__controle">
+                <p class="appli__etat" id="appli-etat">Vérification…</p>
+                <div class="reglage__boutons">
+                  <button type="button" class="bouton bouton--petit bouton--plein" id="appli-installer" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg>Installer Orbite</button>
+                </div>
+                <p class="champ__aide" id="appli-ios" hidden>Sur iPhone ou iPad : touchez <strong>Partager</strong> dans Safari, puis <strong>Sur l'écran d'accueil</strong>.</p>
+              </div>
+            </section>
+            <section class="panneau reglage" aria-labelledby="r-rappels">
+              <div class="reglage__texte"><h2 id="r-rappels">Rappels</h2><p>Fin de l'essai ou de l'abonnement, dernière échéance d'un crédit, date limite pour réduire votre impôt : Orbite vous prévient sur cet appareil.</p></div>
+              <div class="reglage__controle">
+                <p class="appli__etat" id="rappels-etat"></p>
+                <div class="reglage__boutons">
+                  <button type="button" class="bouton bouton--petit" id="rappels-activer"><svg aria-hidden="true"><use href="/orbite/icones.svg#horloge"/></svg>Activer les rappels</button>
+                  <button type="button" class="bouton bouton--petit bouton--fantome" id="rappels-couper" hidden>Couper les rappels</button>
+                </div>
+                <ul class="rappels-liste" id="rappels-liste" role="list"></ul>
+              </div>
+            </section>
             </div>
             <div class="param-panneau reglages" role="tabpanel" id="onglet-securite" data-onglet="securite" aria-labelledby="tab-securite" hidden>
             <section class="panneau reglage" id="bloc-mdp" aria-labelledby="r-mdp">
@@ -1095,5 +1117,7 @@
   <script src="/espace/js/parametres.js"></script>
   <script src="/espace/js/admin.js"></script>
   <script src="/espace/js/vue-vie.js"></script>
+  <script src="/espace/js/rappels-calcul.js"></script>
+  <script src="/espace/js/appli.js"></script>
 </body>
 </html>
