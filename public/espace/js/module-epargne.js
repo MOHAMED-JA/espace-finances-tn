@@ -1831,6 +1831,15 @@
       return { principal: { libelle: "Économie d'impôt / an", valeur: arr3(s.economie), unite: "DT" }, secondaires: sec.slice(0, 4), ligne: ligne.slice(0, 140) };
     },
     nomParDefaut: function () { return (nomProduits() + " · " + pluriel(etat.dureeAns, "an")).slice(0, 120); },
+    /* Ce que la simulation apporte au profil : un contrat par produit simulé (assurance vie et CEA séparés,
+       ils n'ont pas la même durée fiscale), avec son versement mensuel. */
+    versProfil: function () {
+      if (!res) calculer(false);
+      var c = res, e = c.etat, contrats = [];
+      if (ui.mode !== "cea" && e.versement > 0) contrats.push({ type: "av", libelle: "Assurance vie", versementMensuel: arr3(e.versement * c.facteur / 12) });
+      if (ui.mode !== "av" && e.versementCea > 0) contrats.push({ type: "cea", libelle: "CEA", versementMensuel: arr3(e.versementCea * c.facteur / 12) });
+      return { genre: "epargne", contrats: contrats, motif: contrats.length ? null : "Indiquez un versement pour l'ajouter à vos contrats." };
+    },
     charger: function (texte) {
       var brut = String(texte || "").replace(/^[#?]/, "");
       var d = PA.decoder(brut);

@@ -352,3 +352,21 @@ test("optimiseur, mon crédit, comparateur A/B et calendrier", () => {
   assert.equal(cal[0].cases[3].courant, true);
   assert.ok(cal[0].cases[2].part > cal[2].cases[1].part, "la part d'intérêts diminue");
 });
+
+test('remboursement anticipé avec nouvelle durée fixée par la banque, puis règle des 8 % (vrai tableau de banque)', () => {
+  /* 270 000 DT à 4,5 % sur 299 mois (1re échéance mars 2023) ; 150 000 DT remboursés après l'échéance 11 (janvier 2024),
+     nouvelle durée de 180 échéances ; taux divisé par deux à l'échéance 37 (mars 2026). */
+  const r = M.echeancier({ capital: 270000, mois: 299, taux: 4.5, dateDebut: '2023-03-01', periodicite: 1, amort: 'constant',
+    ras: [{ apres: 11, montant: 150000, mode: 'nouvelle', nouvelleDuree: 180 }], indemnite: 0, raMode: 'duree', reduction: true });
+  assert.equal(r.lignes[0].paiement, 1503.466);
+  assert.equal(r.lignes[11].paiement, 875.894);
+  assert.equal(r.lignes[36].paiement, 765.003);
+  assert.equal(r.lignes[36].interet, 192.781);
+  assert.equal(r.lignes.length, 191);
+  assert.equal(r.lignes[190].date.getFullYear(), 2039);
+  assert.equal(r.lignes[190].date.getMonth(), 0);
+  assert.deepEqual(r.reductions.map((x) => x.mois), [37, 103, 179]);
+  /* Le choix de chaque remboursement survit au lien. */
+  const v = M.decoderLien(M.encoderLien({ capital: 270000, mois: 299, taux: 4.5, dateDebut: '2023-03-01', ras: [{ apres: 11, montant: 150000, mode: 'nouvelle', nouvelleDuree: 180 }, { apres: 40, montant: 5000, mode: 'mensualite' }] }, {}));
+  assert.deepEqual(v.ras.map((x) => [x.apres, x.mode, x.nouvelleDuree]), [[11, 'nouvelle', 180], [40, 'mensualite', undefined]]);
+});

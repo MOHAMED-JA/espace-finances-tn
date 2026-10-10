@@ -269,12 +269,17 @@
           ligne.ra = { montant: verse, indemnite: indem, reste: reste, limite: limite };
           raListe.push({ mois: k, date: ligne.date, montant: verse, indemnite: indem, limite: limite });
           apresRa = true;
+          /* Choix propre à ce remboursement (sinon le choix général) : réduire la durée, réduire l'échéance,
+             ou nouvelle durée restante fixée par la banque (en nombre d'échéances après celle-ci). */
+          var modeK = modeRa, nd = 0;
+          ras.forEach(function (x) { if (x.apres === k && x.mode) { modeK = x.mode; nd = x.nouvelleDuree || 0; } });
           if (reste <= 0) fini = true;
+          else if (modeK === 'nouvelle' && nd >= 1 && amort !== 'infine') { nFin = k + Math.round(nd); recalcul = true; }
           else if (k >= D) {
-            if (modeRa === 'duree' && amort === 'constant' && isFinite(M)) {
+            if (modeK === 'duree' && amort === 'constant' && isFinite(M)) {
               var kc = nombreEcheances(tmDuPeriode(k + 1) / 100, M, reste);
               if (isFinite(kc)) nFin = k + kc; else recalcul = true;
-            } else if (modeRa === 'duree' && amort === 'lineaire' && P > 0) {
+            } else if (modeK === 'duree' && amort === 'lineaire' && P > 0) {
               nFin = k + Math.max(1, Math.ceil(reste / P - 1e-9));
             } else if (amort !== 'infine') recalcul = true;
           }
@@ -1084,7 +1089,9 @@
       if (e.frais.autres) p.push('fa=' + e.frais.autres);
     }
     if (e.apport) p.push('pb=' + e.apport.prix, 'ap=' + e.apport.apport);
-    if (ras.length) p.push('ra=' + ras.map(function (x) { return x.apres + ':' + (x.total ? 'tot' : arrondi(x.montant)); }).join(','));
+    if (ras.length) p.push('ra=' + ras.map(function (x) {
+      return x.apres + ':' + (x.total ? 'tot' : arrondi(x.montant)) + (x.total ? '' : x.mode === 'nouvelle' && x.nouvelleDuree >= 1 ? ':n' + Math.round(x.nouvelleDuree) : x.mode === 'mensualite' ? ':m' : x.mode === 'duree' ? ':d' : '');
+    }).join(','));
     if (e.versement) p.push('vm=' + e.versement.montant, 'vf=' + (e.versement.frequence === 'annee' ? 'a' : 'p'), 'vd=' + e.versement.des);
     if (ras.length || e.versement) {
       if (e.indemnite) p.push('ri=' + e.indemnite);
@@ -1144,10 +1151,15 @@
       if (a1 >= 1 && a1 < N && (q.get('rm') === 'tot' || num('rm') > 0)) ras.push({ apres: a1, total: q.get('rm') === 'tot', montant: q.get('rm') === 'tot' ? null : num('rm') });
     } else if (q.get('ra')) {
       q.get('ra').split(',').forEach(function (x) {
-        var m = /^(\d+):(tot|\d+(?:\.\d+)?)$/.exec(x.trim());
+        var m = /^(\d+):(tot|\d+(?:\.\d+)?)(?::(d|m|n\d{1,3}))?$/.exec(x.trim());
         if (!m) return;
         var ap1 = parseInt(m[1], 10);
-        if (ap1 >= 1 && ap1 < N && ras.length < 10) ras.push({ apres: ap1, total: m[2] === 'tot', montant: m[2] === 'tot' ? null : parseFloat(m[2]) });
+        if (!(ap1 >= 1 && ap1 < N && ras.length < 10)) return;
+        var ra1 = { apres: ap1, total: m[2] === 'tot', montant: m[2] === 'tot' ? null : parseFloat(m[2]) };
+        if (m[3] === 'd') ra1.mode = 'duree';
+        else if (m[3] === 'm') ra1.mode = 'mensualite';
+        else if (m[3] && parseInt(m[3].slice(1), 10) >= 1) { ra1.mode = 'nouvelle'; ra1.nouvelleDuree = parseInt(m[3].slice(1), 10); }
+        ras.push(ra1);
       });
     }
     v.ras = ras;

@@ -235,12 +235,12 @@
   function ficheEnsemble(f) {
     var d = el("div"); d.appendChild(el("p", "fiche-orbite__sur", "Votre système")); d.appendChild(el("h3", "fiche-orbite__titre", "", { "data-v": "date" }));
     f.appendChild(d);
-    var rep = el("ul", "reperes");
+    var rep = el("ul", "orbite-reperes");
     [["#salaire", "salaire", "Tranche d'impôt", repere.tranche, null],
      ["#credit", "credit", "Mensualité possible", "", { "data-v": "capa", "data-montant": "" }],
      ["#epargne", "epargne", "Impôt économisable", repere.eco, null]].forEach(function (r) {
-      var li = el("li"), a = el("a", "repere", null, { href: r[0] });
-      a.appendChild(el("span", "point point--" + r[1])); a.appendChild(el("span", "repere__lib", r[2])); a.appendChild(el("strong", "repere__val", r[3], r[4]));
+      var li = el("li"), a = el("a", "orbite-repere", null, { href: r[0] });
+      a.appendChild(el("span", "point point--" + r[1])); a.appendChild(el("span", "orbite-repere__lib", r[2])); a.appendChild(el("strong", "orbite-repere__val", r[3], r[4]));
       li.appendChild(a); rep.appendChild(li);
     });
     f.appendChild(rep);

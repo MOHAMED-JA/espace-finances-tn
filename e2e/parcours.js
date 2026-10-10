@@ -196,7 +196,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => document.querySelectorAll("#ciel-satellites .satellite").length === 3);
     assert(await page.$eval("#noyau-val", (e) => !!e.querySelector(".roule") && /DT$/.test(e.textContent.trim())), "net en chiffres qui roulent, texte exact");
     assert((await page.$$("#fiche-orbite [data-choisir]")).length === 3, "fiche : crédit, contrat et projet listés");
-    assert(/Tranche d'impôt/.test(await page.textContent("#fiche-orbite .reperes")), "les trois repères dans la vue d'ensemble");
+    assert(/Tranche d'impôt/.test(await page.textContent("#fiche-orbite .orbite-reperes")), "les trois repères dans la vue d'ensemble");
     await page.click('#fiche-orbite [data-choisir="contrat-0"]');
     await page.waitForFunction(() => /Assurance vie/.test(document.querySelector("#fiche-orbite .fiche-orbite__titre").textContent));
     assert(await page.$eval('.satellite[data-genre="vie"]', (b) => b.getAttribute("aria-pressed") === "true"), "satellite choisi");
@@ -783,6 +783,79 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert((await page.$$("#rappels-liste li")).length >= 1, "liste des rappels prévus");
     await page.click("#rappels-couper");
     await page.waitForFunction(() => /désactivés/.test(document.getElementById("rappels-etat").textContent));
+  });
+
+  await etape("crédit : remboursement anticipé par mois et année, nouvelle durée fixée par la banque", async () => {
+    await page.goto(base + "/espace/#credit?type=immo&capital=270000&mois=300&taux=4.5");
+    await page.waitForSelector("#cr-formulaire");
+    await page.evaluate(() => { document.getElementById("cr-opt-ra").open = true; });
+    await page.click("#cr-ra-ajouter");
+    await page.waitForSelector("#cr-ra-an-0");
+    const d0 = await page.evaluate(() => { const r = window.ModuleCredit.versProfil(); return r.credit ? r.credit.dureeMois : null; });
+    /* Le remboursement a lieu le même mois que la 13ᵉ échéance : après l'échéance n° 13. */
+    const cible = await page.evaluate(() => { const t = document.querySelector('[data-ra-date="0"]').textContent; return t; });
+    assert(/Après l'échéance n° \d+/.test(cible), "échéance affichée : " + cible);
+    await page.fill("#cr-ra-mt-0", "150000");
+    await page.selectOption("#cr-ra-mode-0", "nouvelle");
+    await page.waitForSelector("#cr-ra-nd-0");
+    await page.fill("#cr-ra-nd-0", "180");
+    await page.locator("#cr-ra-nd-0").blur();
+    await page.waitForFunction((n) => { const r = window.ModuleCredit.versProfil(); return r.credit && r.credit.dureeMois !== n; }, d0);
+    const ap = await page.evaluate(() => window.ModuleCredit.etat());
+    assert(/ra=\d+:150000:n180/.test(ap), "choix du remboursement gardé dans la simulation : " + ap.match(/ra=[^&]*/));
+    const an = Number(await page.inputValue("#cr-ra-an-0"));
+    await page.fill("#cr-ra-an-0", String(an + 1));
+    await page.locator("#cr-ra-an-0").blur();
+    await page.waitForFunction(() => /Après l'échéance n° (2[0-9]|3[0-9])/.test(document.querySelector('[data-ra-date="0"]').textContent));
+  });
+
+  await etape("simulation → profil : crédit ajouté (puis annulé), épargne ajoutée depuis « Enregistrer »", async () => {
+    await page.goto(base + "/espace/#credit?type=auto&capital=40000&mois=60&taux=9");
+    await page.waitForSelector("#ajouter-profil", { state: "visible" });
+    /* On retire le remboursement anticipé de l'étape précédente. */
+    while (await page.$("[data-ra-retirer]")) { await page.evaluate(() => document.querySelector("[data-ra-retirer]").click()); await page.waitForTimeout(50); }
+    const avant = faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite.credits.length;
+    await page.click("#ajouter-profil");
+    await page.waitForSelector("#dlg-profil[open]");
+    /* Première échéance à venir : « En projet » proposé ; on choisit « Déjà signé ». */
+    assert(await page.isChecked('#profil-corps input[name="ap-statut"][value="projet"]'), "crédit à venir : en projet par défaut");
+    await page.click('#profil-corps label:has(input[name="ap-statut"][value="signe"])');
+    await page.fill("#ap-nom-credit", "Voiture neuve");
+    await page.click('#profil-corps label:has(input[name="ap-dest-credit"][value="nouveau"])');
+    await page.click("#profil-valider");
+    await page.waitForFunction((n) => window.Orbite.profil().credits.length === n + 1, avant);
+    const nc = await page.evaluate(() => { const c = window.Orbite.profil().credits; return c[c.length - 1]; });
+    assert(nc.libelle === "Voiture neuve" && nc.mensualite > 800 && nc.tauxType === "fixe" && nc.dureeMois === 60 && nc.tauxPct === 9, "crédit enregistré : " + JSON.stringify(nc));
+    await page.click('.toast button:has-text("Annuler")');
+    await page.waitForFunction((n) => window.Orbite.profil().credits.length === n, avant);
+    await page.goto(base + "/espace/#epargne");
+    await page.waitForSelector("#barre-actions:not([hidden])");
+    await page.waitForTimeout(400);
+    const nk = await page.evaluate(() => window.Orbite.profil().contrats.length);
+    await page.click("#enregistrer");
+    await page.waitForSelector("#dlg-enregistrer[open]");
+    assert(await page.isVisible("#enr-profil-ligne"), "case « Ajouter aussi à mes contrats » proposée");
+    await page.click("#enr-profil-ligne");
+    assert(await page.isChecked("#enr-profil"), "case cochée");
+    await page.click('#dlg-enregistrer button[value="ok"]');
+    await page.waitForSelector("#dlg-profil[open]");
+    await page.click('#profil-corps label:has(input[name="ap-dest-0"][value="nouveau"])');
+    await page.click("#profil-valider");
+    await page.waitForFunction((n) => window.Orbite.profil().contrats.length === n + 1, nk);
+    await page.screenshot({ path: path.join(CAPTURES, "simulation-vers-profil.png") });
+  });
+
+  await etape("salaire : autres charges en DT seulement, repères de la tranche sans fond parasite", async () => {
+    await page.goto(base + "/espace/#salaire");
+    await page.waitForSelector("#autres-dt", { state: "attached" });
+    assert(!(await page.$("#autres-pct")), "plus de champ en %");
+    const fond = await page.$eval("#repere-avant", (e) => getComputedStyle(e).backgroundColor);
+    assert(fond === "rgba(0, 0, 0, 0)" || fond === "transparent", "repère « Aujourd'hui » sans fond : " + fond);
+    /* Ancienne simulation en % du brut : convertie en DT au chargement, même coût employeur. */
+    const ok = await page.evaluate(() => window.ModuleSalaire.charger("m=2500&acp=2"));
+    assert(ok, "simulation chargée");
+    const dt = await page.inputValue("#autres-dt");
+    assert(Number(dt.replace(/[^\d,]/g, "").replace(",", ".")) > 0, "montant converti : " + dt);
   });
 
   await etape("déconnexion puis suppression définitive du compte", async () => {
