@@ -758,7 +758,7 @@
   }
 
   return {
-    TMM: TMM, CREDITS_TYPES: CREDITS_TYPES, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS,
+    TMM: TMM, CREDITS_TYPES: CREDITS_TYPES, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
     profilParDefaut: profilParDefaut, normaliser: normaliser, age: age, etatSalaire: etatSalaire, entreeBrut: entreeBrut,
     tranche: tranche, salaire: salaire, augmentation: augmentation, calendrierPrimes: calendrierPrimes, impotRestantAnnee: impotRestantAnnee,
     capitalPourMensualite: capitalPourMensualite, mensualitePourCapital: mensualitePourCapital, capacite: capacite,

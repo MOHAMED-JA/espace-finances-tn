@@ -126,6 +126,14 @@
     if (v === "reduit") doc.documentElement.setAttribute("data-mouvement", "reduit"); else doc.documentElement.removeAttribute("data-mouvement");
     E.toast(v === "reduit" ? "Animations réduites." : "Animations selon votre appareil.");
   });
+  var choixVibrations = (function () { try { return localStorage.getItem("ef-vibrations") === "non" ? "non" : ""; } catch (e) { return ""; } })();
+  doc.querySelectorAll('#choix-vibrations input').forEach(function (r) { r.checked = r.value === choixVibrations; });
+  $("choix-vibrations").addEventListener("change", function (e) {
+    var v = e.target.value;
+    try { if (v) localStorage.setItem("ef-vibrations", v); else localStorage.removeItem("ef-vibrations"); } catch (x) {}
+    if (!v && window.Orbite && window.Orbite.vibrer) window.Orbite.vibrer(12);
+    E.toast(v ? "Vibrations désactivées." : "Vibrations activées (sur Android).");
+  });
   $("param-accueil").addEventListener("change", function () {
     var v = this.value;
     E.compte.preferences({ orbite_accueil: v }).then(majUtilisateur).then(function () { E.toast("Orbite s'ouvrira sur « " + $("param-accueil").selectedOptions[0].textContent + " »."); })

@@ -53,11 +53,12 @@ Règles d'usage :
   - sur ordinateur, une barre latérale de 260 px (Orbite, Salaire, Épargne, Crédit, Simulations, Compte) et une barre du haut contextuelle (titre et action « Enregistrer ») ;
   - sur téléphone, des onglets en bas.
 - **Profil** : grand champ montant, bascules brut/net, mois/an, privé/public, interrupteur chef de famille, compteurs, et crédits en cours.
-- **Scène orbitale** (panneau cosmos) :
-  - le noyau affiche le salaire ;
-  - trois satellites portent la valeur clé de chaque module ;
-  - les orbites tournent lentement et s'alignent après chaque calcul ;
-  - un clic sur un satellite ouvre le module (View Transition, le satellite devient l'en-tête).
+- **Scène orbitale** (panneau cosmos, « Orbite vivante ») :
+  - la planète, un nuage de particules vert, porte le net ;
+  - chaque crédit, contrat et projet est un satellite (bouton) : taille selon la mensualité ou le capital, traîne selon les mois restants ; projet vide en pointillé ;
+  - toucher un satellite fait pivoter la caméra vers lui et ouvre sa fiche à côté (fondu-flou de 260 ms) ;
+  - voyage dans le temps sous la scène : à la fin d'un crédit, des étincelles rejoignent le noyau et la capacité roule ;
+  - la fiche « Vue d'ensemble » est l'alternative textuelle complète (repères, endettement, liste des satellites).
 - **Budget orbital** : anneau qui partage le net entre mensualité de crédit, épargne et reste à vivre. C'est la valeur ajoutée : les trois modules se répondent.
 - **Suggestions** : propositions d'épargne (prudente, équilibrée, optimale fiscalement) et capacités d'emprunt sur le net et sur le brut. Chacune a une action « Appliquer », et une puce vole vers le module concerné.
 - **Modules** : la partie essentielle est toujours visible. Le mode expert se replie et regroupe les outils avancés.
@@ -68,7 +69,9 @@ Courbes : `--sortie` cubic-bezier(.16,1,.3,1), `--ressort` cubic-bezier(.34,1.45
 
 - **Moment signature :** l'orbite. Les satellites dérivent lentement (60 à 90 s par tour). Après un calcul, ils s'alignent en 700 ms avec un ressort, et le noyau pulse une fois.
 - **Navigation entre modules :** View Transition avec fondu-flou du titre et glissement de 24 px du contenu. Le satellite devient l'en-tête du module.
-- **Chiffres :** tween de 460 ms en ease-out exponentiel, avec une pastille +/− d'écart. Aucune animation pendant la frappe.
+- **Chiffres :** chaque chiffre roule jusqu'à sa valeur (460 ms, `--sortie`), avec une pastille +/− d'écart. Aucune animation pendant la frappe.
+- **Chargement :** squelettes à la place des chiffres, la coquille et les panneaux gardent leur place.
+- **Vibrations :** 8 ms au toucher d'un satellite ou d'une suggestion, double au passage d'un jalon (Android, désactivable).
 - **Appliquer une suggestion :** une puce vole en arc jusqu'à sa destination (640 ms).
 - **Micro-interactions :** appui à `scale(.97)` ; pastilles de bascule à ressort ; compteurs qui sautent légèrement.
 - **Accueil :** grille de points éclairée autour du pointeur et carte d'aperçu inclinée en 3D, comme le simulateur automobile.

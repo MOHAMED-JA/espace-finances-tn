@@ -309,7 +309,7 @@
   function themeActuel() {
     var t = null;
     try { t = localStorage.getItem(CLE_THEME); } catch (e) {}
-    return t === "dark" || t === "light" ? t : null;
+    return t === "dark" || t === "light" || t === "heure" ? t : null;
   }
   function appliquerTheme(t) {
     var r = document.documentElement;
@@ -317,6 +317,7 @@
     if (window.EFTheme) window.EFTheme.appliquer(); else if (t) r.setAttribute("data-theme", t); else r.removeAttribute("data-theme");
   }
   function themeEffectif() {
+    if (window.EFTheme && window.EFTheme.effectif) return window.EFTheme.effectif();
     var t = themeActuel();
     if (t) return t;
     return window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";

@@ -57,14 +57,15 @@
 
   /* ---------- Quoi de neuf ---------- */
   /* Montré une fois par version de notes (nouveautes.js) aux utilisateurs qui avaient déjà Orbite ; jamais à la toute première visite. */
-  function montrerNouveautes() {
+  function montrerNouveautes(viergeAuDepart) {
     var N = window.ORBITE_NOUVEAUTES, cle = "orbite-nouveautes";
     if (!N || !N.version) return;
     var vue = null, maj = false;
     try { vue = localStorage.getItem(cle); maj = sessionStorage.getItem("orbite-maj") === "1"; sessionStorage.removeItem("orbite-maj"); } catch (e) { return; }
     try { localStorage.setItem(cle, N.version); } catch (e) {}
     /* Sans trace d'une version vue : nouveau venu (profil vierge) → rien ; utilisateur d'avant cette fonction → les notes. */
-    if (vue === N.version || (!vue && !maj && O.profilVierge())) { if (maj) O.toast("Orbite est à jour."); return; }
+    var vierge = typeof viergeAuDepart === "boolean" ? viergeAuDepart : O.profilVierge();
+    if (vue === N.version || (!vue && !maj && vierge)) { if (maj) O.toast("Orbite est à jour."); return; }
     var dlg = $("dlg-nouveautes"), ul = $("nouveautes-liste");
     if (!dlg || !dlg.showModal) { O.toast("Orbite est à jour."); return; }
     ul.textContent = "";
@@ -79,8 +80,10 @@
     dlg.showModal();
   }
   window.OrbiteMaj = { proposer: proposerMaj, nouveautes: montrerNouveautes };
-  if (O.pret) setTimeout(montrerNouveautes, 600);
-  else doc.addEventListener("orbite:pret", function () { setTimeout(montrerNouveautes, 600); }, { once: true });
+  /* Nouveau venu : décidé à l'ouverture (il peut remplir son premier pas avant l'affichage des notes). */
+  function planifier() { var v = O.profilVierge(); setTimeout(function () { montrerNouveautes(v); }, 600); }
+  if (O.pret) planifier();
+  else doc.addEventListener("orbite:pret", planifier, { once: true });
 
   /* ---------- Installation ---------- */
   window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); invitation = e; majAppli(); });

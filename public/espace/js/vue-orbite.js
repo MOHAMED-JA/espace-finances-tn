@@ -9,92 +9,322 @@
   var NS = "http://www.w3.org/2000/svg";
   var base = "net";
 
-  /* ---------- Scène orbitale ---------- */
-  var ORBITES = [
-    { cle: "salaire", rx: 150, ry: 62, incl: -18, vitesse: 1 / 78, angle: 200 },
-    { cle: "credit", rx: 172, ry: 78, incl: 22, vitesse: 1 / 96, angle: 330 },
-    { cle: "epargne", rx: 118, ry: 100, incl: 8, vitesse: 1 / 64, angle: 95 }
-  ];
-  var CIBLES = { salaire: 196, credit: 338, epargne: 92 };
-  var visuel = doc.querySelector(".scene__visuel");
-  var groupe = $("orbites");
-  ORBITES.forEach(function (o) {
-    var e = doc.createElementNS(NS, "ellipse");
-    e.setAttribute("rx", o.rx); e.setAttribute("ry", o.ry);
-    e.setAttribute("transform", "rotate(" + o.incl + ")");
-    e.setAttribute("class", "orbite orbite--" + o.cle);
-    groupe.appendChild(e);
-    var p = doc.createElementNS(NS, "circle");
-    p.setAttribute("r", "7");
-    p.setAttribute("class", "planete planete--" + o.cle);
-    groupe.appendChild(p);
-    o.planete = p;
-    o.etiquette = $("sat-" + o.cle);
+  /* ---------- Scène orbitale : planète, satellites et voyage dans le temps ---------- */
+  var OS = window.OrbiteSysteme;
+  var modele = null, T = 0, repere = null;
+  function vibrer(motif) { if (O.vibrer) O.vibrer(motif); }
+  function dt0(v) { return F.dt0(v) + " DT"; }
+  function majuscule(t) { return t.charAt(0).toUpperCase() + t.slice(1); }
+  function tauxTxt(x) { return String(Math.round(x * 100) / 100).replace(".", ",") + " %"; }
+  function ansTxt(n) { var a = Math.round(n / 12); return a + (a > 1 ? " ans" : " an"); }
+  function etatSat(id) { return modele ? modele.etat(T).satellites[id] || {} : {}; }
+  function jalonDe(id) { return modele ? modele.jalons.filter(function (j) { return j.sat === id; })[0] : null; }
+
+  function texteTag(s, e) {
+    if (s.genre === "credit") return e.actif === false ? "Remboursé" : dt0(s.mensualite) + " par mois";
+    if (s.genre === "vie" || s.genre === "cea") return dt0(e.capital || 0) + (s.capitalSaisi && !T ? "" : " estimés");
+    if (s.genre === "projet") return s.horizon ? "Objectif " + s.horizon : dt0(s.montant);
+    return "Ajouter";
+  }
+  function libelleSat(s, e) {
+    var t = s.nom + ", " + texteTag(s, e).toLowerCase();
+    if (s.genre === "credit" && s.fin && e.actif !== false) t += ", fin " + s.fin;
+    return t + ". Ouvrir sa fiche";
+  }
+
+  var scene = window.OrbiteScene.creer({
+    ciel: $("ciel"), toile: $("ciel-toile"), calque: $("ciel-satellites"), noyau: doc.querySelector(".ciel .noyau__texte"),
+    reduit: function () { return O.mouvementReduit.matches; },
+    capitalRef: function (s) { var e = modele && modele.etat(0).satellites[s.id]; return e && e.capital; },
+    texteTag: texteTag, libelle: libelleSat,
+    surChoix: function (id, parUtilisateur) { if (parUtilisateur && id) vibrer(8); rendreFiche(true); }
+  });
+  doc.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && scene.choisi() && !$("vue-orbite").hidden && !doc.querySelector("dialog[open]")) scene.choisir(null);
   });
 
-  function position(o, angleDeg) {
-    var a = angleDeg * Math.PI / 180, i = o.incl * Math.PI / 180;
-    var x = o.rx * Math.cos(a), y = o.ry * Math.sin(a);
-    return { x: x * Math.cos(i) - y * Math.sin(i), y: x * Math.sin(i) + y * Math.cos(i) };
+  /* --- Voyage dans le temps --- */
+  var curseur = $("voyage-curseur"), bJouer = $("voyage-jouer"), bAuj = $("voyage-auj"), bProchain = $("voyage-prochain");
+  var annonce = $("ciel-annonce"), minuterieAnnonce = 0, anim = null;
+  function annoncer(t) {
+    annonce.textContent = t; annonce.classList.add("visible");
+    clearTimeout(minuterieAnnonce); minuterieAnnonce = setTimeout(function () { annonce.classList.remove("visible"); }, 2800);
   }
-  var RAYON_NOYAU = 64;
-  function poser() {
-    var r = visuel.getBoundingClientRect(), echelle = Math.min(r.width, r.height) / 400;
-    visuel.style.setProperty("--d", (RAYON_NOYAU * 2 * echelle).toFixed(1) + "px");
-    ORBITES.forEach(function (o) {
-      var p = position(o, o.angle);
-      o.planete.setAttribute("cx", p.x.toFixed(2));
-      o.planete.setAttribute("cy", p.y.toFixed(2));
-      o.etiquette.style.setProperty("--x", (r.width / 2 + p.x * echelle).toFixed(1) + "px");
-      o.etiquette.style.setProperty("--y", (r.height / 2 + p.y * echelle).toFixed(1) + "px");
-      /* L'étiquette se place du côté extérieur de la planète : elle ne recouvre jamais le noyau. */
-      var l = Math.sqrt(p.x * p.x + p.y * p.y) || 1, nx = p.x / l, ny = p.y / l;
-      var w = o.etiquette.offsetWidth, h = o.etiquette.offsetHeight, marge = 6;
-      var gx = r.width / 2 + p.x * echelle - (0.5 - 0.5 * nx) * w + nx * 14;
-      var gy = r.height / 2 + p.y * echelle - (0.5 - 0.5 * ny) * h + ny * 14;
-      /* … et reste toujours dans le cadre de la scène. */
-      gx = Math.max(marge, Math.min(r.width - w - marge, gx));
-      gy = Math.max(marge, Math.min(r.height - h - marge, gy));
-      o.etiquette.style.setProperty("--gx", gx.toFixed(1) + "px");
-      o.etiquette.style.setProperty("--gy", gy.toFixed(1) + "px");
-      o.etiquette.classList.toggle("satellite--derriere", Math.sin(o.angle * Math.PI / 180) < -0.35);
+  function majT(t, depuisCurseur) {
+    if (!modele) return;
+    t = Math.max(0, Math.min(modele.horizon, Math.round(t)));
+    var ancien = T; if (t === ancien) return;
+    T = t;
+    if (!depuisCurseur) curseur.value = String(t);
+    if (t > ancien) modele.jalons.forEach(function (j) {
+      if (ancien < j.t && j.t <= t) {
+        if (j.genre === "credit") scene.liberer(j.sat);
+        annoncer(majuscule(modele.dateTexte(j.t)) + " · " + j.lib + (j.gain ? " : +" + dt0(j.gain) + " de marge" : ""));
+        vibrer([10, 40, 10]);
+      }
+    });
+    scene.etat(modele.etat(T));
+    majValeurs(false);
+  }
+  function arreter() {
+    if (!anim) return;
+    anim.stop = true; anim = null;
+    bJouer.setAttribute("aria-label", "Lancer le voyage dans le temps");
+    $("voyage-icone").setAttribute("d", "M4 2.5v11l9-5.5z");
+  }
+  function voyagerVers(cible) {
+    arreter();
+    var de = T, duree = O.mouvementReduit.matches ? 0 : Math.min(1600, 350 + Math.abs(cible - de) * 14), t0 = performance.now(), a = { stop: false };
+    anim = a;
+    (function pas(now) {
+      if (a.stop) return;
+      var k = duree ? Math.min(1, (now - t0) / duree) : 1, e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+      majT(de + (cible - de) * e);
+      if (k < 1) requestAnimationFrame(pas); else if (anim === a) anim = null;
+    })(t0);
+  }
+  function jouer() {
+    if (anim) { arreter(); return; }
+    if (!modele || !modele.horizon) return;
+    if (T >= modele.horizon) majT(0);
+    var a = { stop: false }, prec = performance.now(), acc = 0, pause = 0, pasMs = Math.max(40, Math.min(110, 11000 / modele.horizon));
+    anim = a;
+    bJouer.setAttribute("aria-label", "Mettre le voyage en pause");
+    $("voyage-icone").setAttribute("d", "M4 2.5h3v11H4zM9 2.5h3v11H9z");
+    (function pas(now) {
+      if (a.stop) return;
+      var d = now - prec; prec = now;
+      if (pause > 0) pause -= d; else acc += d;
+      while (acc >= pasMs && T < modele.horizon) {
+        acc -= pasMs; majT(T + 1);
+        if (modele.jalons.some(function (j) { return j.t === T; })) { pause = 900; acc = 0; break; }
+      }
+      if (T >= modele.horizon) { arreter(); return; }
+      requestAnimationFrame(pas);
+    })(prec);
+  }
+  curseur.addEventListener("input", function () { arreter(); majT(+curseur.value, true); });
+  bJouer.addEventListener("click", jouer);
+  bAuj.addEventListener("click", function () { voyagerVers(0); });
+  bProchain.addEventListener("click", function () {
+    var j = modele && modele.jalons.filter(function (x) { return x.t > T; })[0];
+    voyagerVers(j ? j.t : 0);
+  });
+
+  function poserVoyage() {
+    var h = modele.horizon;
+    $("voyage").hidden = !h;
+    curseur.max = String(Math.max(1, h));
+    if (T > h) T = h;
+    curseur.value = String(T);
+    function pos(el, t) { el.style.left = "calc(10px + (100% - 20px) * " + (h ? t / h : 0).toFixed(4) + ")"; }
+    var jal = $("voyage-jalons"); jal.textContent = "";
+    modele.jalons.forEach(function (j) { var i = cree("i"); pos(i, j.t); i.style.background = scene.couleur(j.sat) || "#F2F4F8"; jal.appendChild(i); });
+    var an = $("voyage-annees"); an.textContent = "";
+    var a0 = modele.debut.annee, a1 = modele.debut.annee + Math.floor((modele.debut.mois + h) / 12), etapes = [a0];
+    var n = Math.min($("ciel").clientWidth < 560 ? 3 : 4, a1 - a0);
+    for (var k = 1; k <= n; k++) { var y = Math.round(a0 + (a1 - a0) * k / n); if (etapes.indexOf(y) === -1) etapes.push(y); }
+    /* Positions des années, sans chevauchement (écart minimal selon la largeur). */
+    var places = etapes.map(function (y, k) { return { y: y, t: k === 0 ? 0 : Math.min(h, (y - a0) * 12 - modele.debut.mois) }; });
+    var mini = $("ciel").clientWidth < 560 ? 0.24 : 0.12, retenues = [places[0]];
+    places.slice(1).forEach(function (x, k, reste) {
+      var dernier = k === reste.length - 1;
+      if (dernier) { if ((x.t - retenues[retenues.length - 1].t) / h < mini && retenues.length > 1) retenues.pop(); retenues.push(x); }
+      else if ((x.t - retenues[retenues.length - 1].t) / h >= mini && (places[places.length - 1].t - x.t) / h >= mini) retenues.push(x);
+    });
+    places = retenues;
+    places.forEach(function (x, k) {
+      var sp = cree("span", k === 0 ? "premier" : k === places.length - 1 ? "dernier" : "", String(x.y)); pos(sp, x.t); an.appendChild(sp);
     });
   }
 
-  var alignement = null, dernierT = null, boucle = null;
-  function tic(t) {
-    boucle = null;
-    if ($("vue-orbite").hidden || doc.hidden) { dernierT = null; return; }
-    var dt = dernierT === null ? 0 : Math.min(0.05, (t - dernierT) / 1000);
-    dernierT = t;
-    if (alignement) {
-      var p = Math.min(1, (t - alignement.debut) / 900);
-      var e = 1 - Math.pow(1 - p, 3) * Math.cos(p * Math.PI * 1.2) ;
-      ORBITES.forEach(function (o) { o.angle = alignement.depart[o.cle] + alignement.delta[o.cle] * Math.min(1.04, e); });
-      if (p >= 1) alignement = null;
-    } else if (!O.mouvementReduit.matches) {
-      ORBITES.forEach(function (o) { o.angle = (o.angle + 360 * o.vitesse * dt) % 360; });
+  /* --- Valeurs qui dépendent du mois affiché --- */
+  function majValeurs(instant) {
+    if (!modele) return;
+    var e = modele.etat(T), o = { instantane: instant };
+    $("ciel-date").textContent = majuscule(modele.dateTexte(T));
+    $("ciel-ecart").textContent = modele.ecart(T) + (T ? ", à salaire constant" : "");
+    O.animerNombre($("ciel-capa-val"), e.capacite, function (v) { return F.dt0(v) + " DT / mois"; }, o);
+    var sous;
+    if (e.capacite >= 1) sous = "soit " + dt0(e.capitalImmo) + " sur " + ansTxt(e.dureeImmoMois) + " à " + tauxTxt(e.tauxImmoPct);
+    else {
+      var fut = modele.jalons.filter(function (j) { return j.t > T && j.genre === "credit" && modele.etat(j.t).capacite >= 1; })[0];
+      sous = fut ? "Aucune marge pour l'instant · " + dt0(modele.etat(fut.t).capacite) + " par mois dès " + modele.dateTexte(fut.t) : "Aucune marge pour l'instant";
     }
-    poser();
-    if (!O.mouvementReduit.matches || alignement) boucle = requestAnimationFrame(tic);
-  }
-  function lancer() { if (!boucle) boucle = requestAnimationFrame(tic); }
-  function aligner() {
-    if (O.mouvementReduit.matches) { ORBITES.forEach(function (o) { o.angle = CIBLES[o.cle]; }); poser(); return; }
-    var depart = {}, delta = {};
-    ORBITES.forEach(function (o) {
-      depart[o.cle] = o.angle;
-      var d = ((CIBLES[o.cle] - o.angle) % 360 + 540) % 360 - 180;
-      delta[o.cle] = d;
+    $("ciel-capa-sous").textContent = sous;
+    curseur.style.setProperty("--p", (modele.horizon ? T / modele.horizon * 100 : 0).toFixed(2) + "%");
+    curseur.setAttribute("aria-valuetext", modele.dateTexte(T));
+    bAuj.disabled = T === 0;
+    var j = modele.jalons.filter(function (x) { return x.t > T; })[0];
+    $("voyage-prochain-txt").textContent = j ? "Prochain jalon : " + modele.dateTexte(j.t) + " · " + j.lib : "Fin du voyage · revenir à aujourd'hui";
+    $("voyage-prochain-point").style.background = j ? scene.couleur(j.sat) || "#F2F4F8" : "var(--salaire-lum)";
+    doc.querySelectorAll("#fiche-orbite [data-v]").forEach(function (el) {
+      var cle = el.getAttribute("data-v");
+      if (el.hasAttribute("data-montant")) { var v = valeurNum(cle, e); O.animerNombre(el, v.n, v.f, o); }
+      else { var t = valeurTxt(cle, e); if (el.textContent !== t) el.textContent = t; }
     });
-    alignement = { debut: performance.now(), depart: depart, delta: delta };
-    var n = $("noyau");
-    n.classList.remove("pulse"); void n.getBoundingClientRect(); n.classList.add("pulse");
-    lancer();
+    var barre = $("fiche-endet");
+    if (barre) {
+      var q = modele.quotite || 0.4;
+      barre.style.width = Math.min(100, e.endettement / q * 100).toFixed(1) + "%";
+      barre.classList.toggle("alerte", e.endettement > q * 0.9);
+    }
+    doc.querySelectorAll("#fiche-orbite [data-ligne]").forEach(function (el) { el.classList.toggle("fini", e.satellites[el.getAttribute("data-ligne")].actif === false); });
   }
-  doc.addEventListener("visibilitychange", function () { if (!doc.hidden) lancer(); });
-  window.addEventListener("resize", poser);
+  function valeurNum(cle, e) {
+    var p = cle.split(":"), x = e.satellites[p[1]] || {};
+    var DT0 = function (v) { return F.dt0(v) + " DT"; }, DT3 = function (v) { return F.dt3(v) + " DT"; };
+    switch (p[0]) {
+      case "charges": return { n: e.charges, f: DT3 };
+      case "endet": return { n: e.endettement, f: function (v) { return F.pct(v, 1); } };
+      case "capa": return { n: e.capacite, f: function (v) { return F.dt0(v) + " DT / mois"; } };
+      case "kres": return { n: x.capitalRestant || 0, f: DT0 };
+      case "interets": return { n: x.interets || 0, f: DT0 };
+      case "restantes": return { n: x.restantes || 0, f: function (v) { v = Math.round(v); return v ? v + " échéance" + (v > 1 ? "s" : "") : "Aucune"; } };
+      case "capital": return { n: x.capital || 0, f: DT0 };
+      case "verse": return { n: x.verse || 0, f: DT0 };
+      case "gains": return { n: x.gains || 0, f: DT0 };
+    }
+    return { n: 0, f: DT0 };
+  }
+  function valeurTxt(cle, e) {
+    var p = cle.split(":"), s = modele.satellites.filter(function (z) { return z.id === p[1]; })[0], x = e.satellites[p[1]] || {};
+    switch (p[0]) {
+      case "date": return majuscule(e.date);
+      case "ligne": return s.genre === "credit" ? (x.actif === false ? "Remboursé" : dt0(s.mensualite) + " / mois") : texteTag(s, x);
+      case "sous":
+        if (s.genre === "credit") return x.actif === false ? "Remboursé en " + s.fin : s.fin ? "Fin " + s.fin + " · " + tauxTxt(s.tauxPct) : "Durée restante à préciser";
+        if (s.genre === "vie" || s.genre === "cea") return F.dt0(s.versement) + " DT par mois depuis " + s.depuis;
+        if (s.genre === "projet") return dt0(s.montant) + (s.horizon ? " · " + s.horizon : "");
+        return "Voiture, logement, travaux…";
+      case "statut": return x.actif === false ? "Remboursé en " + s.fin : "En cours";
+      case "fiscal": return x.fiscalAcquis ? (s.tFiscal > 0 ? "Acquis depuis " + s.dateFiscale : "Acquis") : "Acquis en " + s.dateFiscale + " (" + s.dureeFiscale + " ans)";
+      case "voyage": var j = jalonDe(p[1]); return j && T < j.t ? "Voyager jusqu'en " + modele.dateTexte(j.t) : "Revenir à aujourd'hui";
+    }
+    return "";
+  }
 
+  /* --- Fiche : vue d'ensemble ou satellite choisi --- */
+  function el(tag, classe, texte, attrs) {
+    var e = cree(tag, classe, texte);
+    if (attrs) Object.keys(attrs).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+    return e;
+  }
+  function point(id) { var i = el("i", "fiche-orbite__point"); var c = scene.couleur(id); if (c) i.style.background = c; return i; }
+  function lignes(items) {
+    var ul = el("ul", "fiche-orbite__lignes");
+    items.forEach(function (it) { var li = el("li"); li.appendChild(el("span", null, it[0])); var st = el("strong", null, it[1] || "", it[2]); li.appendChild(st); ul.appendChild(li); });
+    return ul;
+  }
+  function tete(id, sur, titre) {
+    var d = el("div");
+    var r = el("button", "fiche-orbite__retour", null, { type: "button", "data-action": "retour" });
+    r.appendChild(icone("fleche")); r.appendChild(doc.createTextNode("Vue d'ensemble"));
+    var p = el("p", "fiche-orbite__sur"); p.appendChild(point(id)); p.appendChild(doc.createTextNode(sur));
+    d.appendChild(p); d.appendChild(el("h3", "fiche-orbite__titre", titre));
+    return [r, d];
+  }
+  function lien(href, texte, plein) { var a = el("a", "bouton bouton--petit" + (plein ? " bouton--plein" : ""), texte, { href: href }); return a; }
+  function boutonVoyage(id) { return el("button", "bouton bouton--petit bouton--plein", "", { type: "button", "data-action": "voyage", "data-sat": id, "data-v": "voyage:" + id }); }
+
+  function ficheEnsemble(f) {
+    var d = el("div"); d.appendChild(el("p", "fiche-orbite__sur", "Votre système")); d.appendChild(el("h3", "fiche-orbite__titre", "", { "data-v": "date" }));
+    f.appendChild(d);
+    var rep = el("ul", "reperes");
+    [["#salaire", "salaire", "Tranche d'impôt", repere.tranche, null],
+     ["#credit", "credit", "Mensualité possible", "", { "data-v": "capa", "data-montant": "" }],
+     ["#epargne", "epargne", "Impôt économisable", repere.eco, null]].forEach(function (r) {
+      var li = el("li"), a = el("a", "repere", null, { href: r[0] });
+      a.appendChild(el("span", "point point--" + r[1])); a.appendChild(el("span", "repere__lib", r[2])); a.appendChild(el("strong", "repere__val", r[3], r[4]));
+      li.appendChild(a); rep.appendChild(li);
+    });
+    f.appendChild(rep);
+    f.appendChild(lignes([["Net par mois", F.dt3(repere.net) + " DT"], ["Mensualités de crédit", "", { "data-v": "charges", "data-montant": "" }]]));
+    var j = el("div", "fiche-orbite__jauge");
+    var l1 = el("div", "fiche-orbite__leg"); l1.appendChild(el("span", null, "Endettement, selon votre banque")); l1.appendChild(el("strong", null, "", { "data-v": "endet", "data-montant": "" }));
+    var barre = el("div", "fiche-orbite__barre"); barre.appendChild(el("i", null, null, { id: "fiche-endet" })); barre.appendChild(el("b"));
+    var l2 = el("div", "fiche-orbite__leg"); l2.appendChild(el("span", null, "0 %")); l2.appendChild(el("span", null, "plafond " + F.pct(modele.quotite || 0.4, 0)));
+    j.appendChild(l1); j.appendChild(barre); j.appendChild(l2); f.appendChild(j);
+    var sec = el("div"); sec.appendChild(el("p", "fiche-orbite__sur", "En orbite"));
+    var ul = el("ul", "fiche-orbite__sats");
+    modele.satellites.forEach(function (s) {
+      var li = el("li"), b = el("button", null, null, { type: "button", "data-choisir": s.id });
+      b.appendChild(point(s.id));
+      var nom = el("span", "nom"); nom.appendChild(el("b", null, s.nom)); nom.appendChild(el("small", null, "", { "data-v": "sous:" + s.id }));
+      b.appendChild(nom); b.appendChild(el("span", "val", "", { "data-v": "ligne:" + s.id, "data-ligne": s.id }));
+      li.appendChild(b); ul.appendChild(li);
+    });
+    sec.appendChild(ul); f.appendChild(sec);
+  }
+  function ficheCredit(f, s) {
+    tete(s.id, "Crédit en cours", s.nom).forEach(function (n) { f.appendChild(n); });
+    var g = el("div", "fiche-orbite__grand", F.dt3(s.mensualite) + " DT"); g.appendChild(el("small", null, "par mois")); f.appendChild(g);
+    var items = [["Statut", "", { "data-v": "statut:" + s.id }], ["Taux", tauxTxt(s.tauxPct)]];
+    if (s.restantes) items.push(["Échéances restantes", "", { "data-v": "restantes:" + s.id, "data-montant": "" }], ["Dernière échéance", s.derniere],
+      ["Capital restant estimé", "", { "data-v": "kres:" + s.id, "data-montant": "" }], ["Intérêts encore à payer", "", { "data-v": "interets:" + s.id, "data-montant": "" }]);
+    f.appendChild(lignes(items));
+    var j = jalonDe(s.id), act = el("div", "fiche-orbite__actions");
+    if (j) {
+      var e = modele.etat(j.t), p = el("p", "encart encart--succes");
+      if (e.capacite >= 1) {
+        p.appendChild(doc.createTextNode("À partir de " + s.fin + ", "));
+        p.appendChild(el("b", null, "+" + dt0(s.mensualite) + " de marge")); p.appendChild(doc.createTextNode(" chaque mois. La banque pourra vous prêter "));
+        p.appendChild(el("b", null, dt0(e.capacite) + " par mois")); p.appendChild(doc.createTextNode(", soit " + dt0(e.capitalImmo) + " sur " + ansTxt(e.dureeImmoMois) + " à " + tauxTxt(e.tauxImmoPct) + "."));
+      } else p.textContent = "À partir de " + s.fin + ", " + dt0(s.mensualite) + " de plus chaque mois dans votre budget. Vos autres mensualités restent au-dessus du plafond de la banque à cette date.";
+      f.appendChild(p);
+      act.appendChild(boutonVoyage(s.id));
+    } else f.appendChild(el("p", "encart encart--alerte", "Indiquez la durée restante de ce crédit dans Mon profil : Orbite calculera sa fin et la marge qu'il vous rendra."));
+    act.appendChild(lien("#profil?section=credits", "Modifier dans Mon profil"));
+    f.appendChild(act);
+  }
+  function ficheContrat(f, s) {
+    tete(s.id, "Contrat d'épargne", s.nom).forEach(function (n) { f.appendChild(n); });
+    var g = el("div", "fiche-orbite__grand"); g.appendChild(el("span", null, "", { "data-v": "capital:" + s.id, "data-montant": "" })); g.appendChild(el("small", null, s.capitalSaisi ? "" : "estimés")); f.appendChild(g);
+    f.appendChild(lignes([["Versement", F.dt0(s.versement) + " DT par mois"], ["Depuis", s.depuis], ["Total versé", "", { "data-v": "verse:" + s.id, "data-montant": "" }],
+      ["Gains estimés", "", { "data-v": "gains:" + s.id, "data-montant": "" }], ["Avantage fiscal", "", { "data-v": "fiscal:" + s.id }]]));
+    var act = el("div", "fiche-orbite__actions");
+    if (s.tFiscal > 0) {
+      var p = el("p", "encart encart--epargne"); p.appendChild(doc.createTextNode("Gardez-le au moins jusqu'en ")); p.appendChild(el("b", null, s.dateFiscale));
+      p.appendChild(doc.createTextNode(" (" + s.dureeFiscale + " ans) pour conserver l'avantage fiscal. Son satellite prend alors un anneau.")); f.appendChild(p);
+      act.appendChild(boutonVoyage(s.id));
+    }
+    act.appendChild(lien("#epargne", "Ouvrir dans Épargne"));
+    f.appendChild(act);
+  }
+  function ficheProjet(f, s) {
+    tete(s.id, "Projet", s.nom).forEach(function (n) { f.appendChild(n); });
+    var g = el("div", "fiche-orbite__grand", dt0(s.montant)); if (s.horizon) g.appendChild(el("small", null, "pour " + s.horizon)); f.appendChild(g);
+    var st = s.statut === "ok" ? "Réalisable dès maintenant" : s.statut === "a_preparer" ? "À préparer : épargnez " + dt0(s.epargneMensuelle) + " par mois" : "Hors de portée pour l'instant";
+    f.appendChild(lignes([["Où en êtes-vous", st]].concat(s.credit ? [["Crédit envisagé", s.credit.court + " · " + dt0(s.credit.mensualite) + " par mois"]] : [])));
+    var act = el("div", "fiche-orbite__actions"); if (jalonDe(s.id)) act.appendChild(boutonVoyage(s.id));
+    act.appendChild(lien("#profil?section=projets", "Voir mes projets")); f.appendChild(act);
+  }
+  function ficheVide(f) {
+    tete("projet-nouveau", "Place libre", "Un projet en vue ?").forEach(function (n) { f.appendChild(n); });
+    f.appendChild(el("p", "fiche-orbite__texte", "Une voiture, un logement, des travaux : ajoutez-le à votre profil. Il prend place sur cette orbite, et Orbite vous dit à partir de quand il devient possible, avec la mensualité et l'apport."));
+    var act = el("div", "fiche-orbite__actions"); act.appendChild(lien("#profil?section=projets", "Ajouter un projet", true)); f.appendChild(act);
+  }
+  function rendreFiche(transition) {
+    var f = $("fiche-orbite");
+    if (!modele || !repere) return;
+    var id = scene.choisi(), s = id && modele.satellites.filter(function (z) { return z.id === id; })[0];
+    f.textContent = "";
+    if (!s) ficheEnsemble(f);
+    else if (s.genre === "credit") ficheCredit(f, s);
+    else if (s.genre === "vie" || s.genre === "cea") ficheContrat(f, s);
+    else if (s.genre === "projet") ficheProjet(f, s);
+    else ficheVide(f);
+    majValeurs(true);
+    if (transition && !O.mouvementReduit.matches && f.animate) {
+      f.animate([{ opacity: 0, transform: "translateY(8px)", filter: "blur(3px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }], { duration: 260, easing: "cubic-bezier(.16,1,.3,1)" });
+    }
+  }
+  $("fiche-orbite").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    if (b.hasAttribute("data-choisir")) scene.choisir(b.getAttribute("data-choisir"));
+    else if (b.getAttribute("data-action") === "retour") scene.choisir(null);
+    else if (b.getAttribute("data-action") === "voyage") { var j = jalonDe(b.getAttribute("data-sat")); voyagerVers(j && T < j.t ? j.t : 0); }
+  });
   /* ---------- Rendu ---------- */
   function cree(tag, classe, texte) { var e = doc.createElement(tag); if (classe) e.className = classe; if (texte != null) e.textContent = texte; return e; }
   function icone(nom) {
@@ -103,30 +333,24 @@
   }
   var premierRendu = true;
 
-  function rendreScene(sy) {
-    var s = sy.salaire, cap = sy.capacite[base];
-    var mensuel = sy.profil.periode !== "annuel";
-    O.animerNombre($("noyau-val"), s.netMensuel, function (v) { return F.dt0(v) + " DT"; });
+  function rendreScene(sy, baseSeule) {
+    var s = sy.salaire, p = sy.profil;
+    O.animerNombre($("noyau-val"), s.netMensuel, function (v) { return F.dt0(v) + " DT"; });
     $("noyau-lib").textContent = "Net par mois";
-    $("noyau-sous").textContent = "sur " + F.dt0(s.brutMensuel) + " DT brut" + (s.versements.nombre > 12 ? " · " + s.versements.nombre + " salaires" : "");
-    var tr = F.pct(s.tranche.taux, 0);
-    $("sat-salaire-val").textContent = tr;
-    var capVue = cap.futur ? cap.futur.capacite : cap;
-    $("sat-credit-lib").textContent = cap.futur ? "Mensualité dès " + cap.futur.date : "Mensualité possible";
-    O.animerNombre($("sat-credit-val"), capVue.mensualiteMax, function (v) { return F.dt0(v) + " DT"; });
+    $("noyau-sous").textContent = "sur " + F.dt0(s.brutMensuel) + " DT brut" + (s.versements.nombre > 12 ? " · " + s.versements.nombre + " salaires" : "");
     var opt = sy.epargne.propositions[sy.epargne.propositions.length - 1];
-    var eco = opt ? opt.economieAnnuelle : 0;
-    O.animerNombre($("sat-epargne-val"), eco, function (v) { return F.dt0(v) + " DT/an"; });
-    $("liste-salaire").textContent = F.dt3(s.netMensuel) + " DT net, tranche à " + tr;
-    $("liste-credit").textContent = cap.futur ? "Aucune marge aujourd'hui, " + F.dt0(capVue.mensualiteMax) + " DT par mois dès " + cap.futur.date : F.dt0(cap.mensualiteMax) + " DT de mensualité possible";
-    $("liste-epargne").textContent = F.dt0(eco) + " DT d'impôt économisable par an";
-    var p = sy.profil;
+    repere = { net: s.netMensuel, tranche: F.pct(s.tranche.taux, 0), eco: F.dt0(opt ? opt.economieAnnuelle : 0) + " DT / an" };
     $("phrase-orbite").textContent = "Avec " + F.dt0(s.netMensuel) + " DT net par mois" +
       (p.credits.length ? " et " + p.credits.length + " crédit" + (p.credits.length > 1 ? "s" : "") + " en cours" : "") +
-      ", voici ce que votre salaire rend possible." + (mensuel ? "" : "");
-    aligner();
+      ", voici ce que votre salaire rend possible.";
+    modele = OS.modele(sy, base);
+    if (T > modele.horizon) T = modele.horizon;
+    scene.satellites(modele.satellites);
+    scene.etat(modele.etat(T));
+    poserVoyage();
+    rendreFiche(false);
+    if (!baseSeule) scene.pulser();
   }
-
   function rendreBudget(sy) {
     var b = sy.budget, cumul = 0;
     [["credits", b.parts.credits], ["logement", b.parts.logement], ["epargne", b.parts.epargne], ["reste", b.parts.reste]].forEach(function (x) {
@@ -324,7 +548,7 @@
         var deja = O.choix().epargne === x.cle && O.choix().ajouterEpargne;
         O.choisir("epargne", x.cle);
         O.choisir("ajouterEpargne", !deja);
-        if (!deja) O.puceVolante(b, $("arc-epargne"), "+" + F.dt0(x.versementMensuel) + " DT", "epargne");
+        if (!deja) { O.puceVolante(b, $("arc-epargne"), "+" + F.dt0(x.versementMensuel) + " DT", "epargne"); vibrer(8); }
       });
       if (x.cle === choisie && O.choix().ajouterEpargne) b.textContent = "Retirer du budget";
       actions.appendChild(b);
@@ -491,7 +715,7 @@
       if (p && p.baseBanque !== base) {
         O.majProfil({ baseBanque: base });
         O.toast("Calcul sur le " + base + (p.banque ? ", comme " + p.banque : "") + " : enregistré dans votre profil.");
-      } else { var sy = O.synthese(); if (sy) { rendreCapacite(sy); rendreScene(sy); } }
+      } else { var sy = O.synthese(); if (sy) { rendreCapacite(sy); rendreScene(sy, true); } }
     });
   });
 
@@ -546,7 +770,7 @@
 
   O.surProfil(rendre);
   doc.addEventListener("orbite:vue", function (e) {
-    if (e.detail.vue === "orbite") { requestAnimationFrame(function () { poser(); lancer(); }); }
+    scene.activer(e.detail.vue === "orbite");
     /* #orbite?section=marge : défile jusqu'au calendrier de la marge (ou à la capacité). */
     if (e.detail.vue === "orbite" && e.detail.params.get("section") === "marge") {
       setTimeout(function () {
@@ -555,6 +779,4 @@
       }, 120);
     }
   });
-  poser();
-  lancer();
 })();
