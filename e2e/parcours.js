@@ -926,6 +926,89 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert((await page.evaluate(() => window.Orbite.profil().historiqueSalaire.length)) === 3, "annulé : historique inchangé");
   });
 
+  await etape("Et si… : modèles, refus de la banque, enregistrement, application annulable, rappel programmé", async () => {
+    await page.goto(base + "/espace/#vie?onglet=scenarios");
+    await page.waitForSelector("#vie-panneau-scenarios:not([hidden])");
+    assert((await page.evaluate(() => window.Orbite.profil().scenarios.length)) === 0, "aucun scénario au départ");
+    assert(await page.isHidden("#etsi-resultats"), "pas de frise sans scénario");
+    await page.click('[data-modele="epargne"]');
+    await page.waitForFunction(() => window.Orbite.profil().scenarios.length === 1);
+    await page.waitForSelector("#etsi-resultats:not([hidden])");
+    assert((await page.textContent("#etsi-verdict")).includes("Sur 10 ans"), "bilan affiché");
+    assert((await page.$$("#etsi-graphe svg .etsi-ligne")).length === 2, "deux lignes : aujourd'hui et A");
+    /* Un gros crédit : refus probable de la banque, zone rouge sur la marge. */
+    await page.click("#etsi-cartes .etsi-carte:nth-child(2) .etsi-ajouter");
+    await page.waitForSelector("#etsi-editeur:not([hidden])");
+    await page.click('#etsi-ed-types [data-type="credit"]');
+    await page.fill("#etsi-capital", "600000");
+    await page.fill("#etsi-annee", String(new Date().getFullYear() - 1));
+    await page.click("#etsi-ed-ok");
+    assert(await page.isVisible("#etsi-ed-erreur"), "année passée refusée");
+    await page.fill("#etsi-annee", String(new Date().getFullYear() + 1));
+    await page.click("#etsi-ed-ok");
+    await page.waitForFunction(() => window.Orbite.profil().scenarios[0].changements.length === 2);
+    await page.waitForSelector(".etsi-carte__alerte");
+    assert((await page.textContent(".etsi-carte__alerte")).includes("Refus probable"), "refus de la banque signalé");
+    await page.click('#etsi-indic [data-indic="marge"]');
+    await page.waitForSelector("#etsi-graphe .etsi-refus");
+    /* Deuxième scénario : un enfant l'an prochain → rappel programmé à l'application. */
+    await page.click('[data-modele="famille"]');
+    await page.waitForFunction(() => window.Orbite.profil().scenarios.length === 2);
+    await page.fill("#etsi-nom-B", "Bébé");
+    await page.locator("#etsi-nom-B").press("Tab");
+    await page.waitForFunction(() => window.Orbite.profil().scenarios[1].nom === "Bébé");
+    await page.waitForTimeout(1600);
+    assert(faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite.scenarios.length === 2, "scénarios enregistrés dans le compte");
+    const avant = await page.evaluate(() => { const p = window.Orbite.profil(); return { projets: p.projets.length, contrats: p.contrats.length, rappels: p.rappelsPerso.length, enfants: p.enfants }; });
+    await page.selectOption("#etsi-appliquer-choix", "0");
+    await page.click("#etsi-appliquer");
+    await page.waitForFunction((n) => window.Orbite.profil().projets.length === n + 1, avant.projets);
+    assert((await page.evaluate(() => window.Orbite.profil().contrats.length)) === avant.contrats + 1, "épargne : contrat à sa date");
+    await page.click('.toast:has-text("appliqué") button:has-text("Annuler")');
+    await page.waitForFunction((n) => window.Orbite.profil().projets.length === n, avant.projets);
+    assert((await page.evaluate(() => window.Orbite.profil().contrats.length)) === avant.contrats, "annulé : contrats comme avant");
+    await page.selectOption("#etsi-appliquer-choix", "1");
+    await page.click("#etsi-appliquer");
+    await page.waitForFunction((n) => window.Orbite.profil().rappelsPerso.length === n + 1, avant.rappels);
+    assert((await page.evaluate(() => window.Orbite.profil().enfants)) === avant.enfants, "naissance future : rappel, pas d'enfant ajouté tout de suite");
+    await page.click('.toast:has-text("appliqué") button:has-text("Annuler")');
+    await page.waitForFunction((n) => window.Orbite.profil().rappelsPerso.length === n, avant.rappels);
+    await page.screenshot({ path: path.join(CAPTURES, "et-si.png"), fullPage: true });
+    /* Suppression annulable. */
+    await page.click('#etsi-cartes .etsi-carte:nth-child(3) button[aria-label^="Supprimer"]');
+    await page.waitForFunction(() => window.Orbite.profil().scenarios.length === 1);
+    await page.click('.toast:has-text("supprimé") button:has-text("Annuler")');
+    await page.waitForFunction(() => window.Orbite.profil().scenarios.length === 2);
+  });
+
+  await etape("mode Expert : réglage, paie mois par mois, Mon orbite mois par mois, CSV et classeur Excel", async () => {
+    await page.goto(base + "/espace/#compte?onglet=preferences");
+    await page.waitForSelector("#choix-expert", { state: "visible" });
+    assert(!(await page.evaluate(() => document.body.classList.contains("expert"))), "désactivé par défaut");
+    assert(await page.isHidden("#exporter-xlsx"), "export Excel caché hors mode Expert");
+    await page.click('#choix-expert label:has(input[value="oui"])');
+    await page.waitForFunction(() => document.body.classList.contains("expert"));
+    await page.goto(base + "/espace/#profil");
+    await page.waitForSelector("#p-paie", { state: "visible" });
+    await page.click("#p-paie > summary");
+    await page.waitForFunction(() => document.querySelectorAll("#p-paie-table tbody tr").length === 13);
+    const [csv] = await Promise.all([page.waitForEvent("download"), page.click("#p-paie-csv")]);
+    assert(/^orbite-paie-\d{4}\.csv$/.test(csv.suggestedFilename()), "nom du CSV : " + csv.suggestedFilename());
+    const texte = fs.readFileSync(await csv.path(), "utf8");
+    assert(texte.includes("Mois;Salaires;Brut (DT)"), "CSV en point-virgule");
+    await page.goto(base + "/espace/#orbite");
+    await page.waitForSelector("#orbite-expert", { state: "visible" });
+    await page.waitForFunction(() => document.querySelectorAll("#orbite-table tbody tr").length === 121);
+    const [xl] = await Promise.all([page.waitForEvent("download"), page.click("#orbite-xlsx")]);
+    assert(/^orbite-\d{4}-\d{2}-\d{2}\.xlsx$/.test(xl.suggestedFilename()), "nom du classeur : " + xl.suggestedFilename());
+    const octets = fs.readFileSync(await xl.path());
+    assert(octets[0] === 0x50 && octets[1] === 0x4b && octets.length > 5000, "classeur Excel (zip) : " + octets.length + " octets");
+    assert(octets.toString("latin1").includes("Mon orbite"), "feuille « Mon orbite » présente");
+    await page.goto(base + "/espace/#compte?onglet=preferences");
+    await page.click('#choix-expert label:has(input[value=""])');
+    await page.waitForFunction(() => !document.body.classList.contains("expert"));
+  });
+
   await etape("déconnexion puis suppression définitive du compte", async () => {
     await page.goto(base + "/espace/#compte?onglet=donnees");
     await page.waitForSelector("#supprimer-compte");

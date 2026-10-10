@@ -103,6 +103,22 @@
     try { return !!(navigator.vibrate && navigator.vibrate(motif)); } catch (e) { return false; }
   }
 
+  /* ---------- Mode Expert (réglage de cet appareil) : tableaux détaillés et exports ---------- */
+  function expert() { try { return localStorage.getItem("ef-expert") === "oui"; } catch (e) { return false; } }
+  function definirExpert(on) {
+    try { if (on) localStorage.setItem("ef-expert", "oui"); else localStorage.removeItem("ef-expert"); } catch (e) {}
+    document.body.classList.toggle("expert", !!on);
+    document.dispatchEvent(new CustomEvent("orbite:expert", { detail: { actif: !!on } }));
+  }
+  document.body.classList.toggle("expert", expert());
+  /* Téléchargement d'un fichier produit sur l'appareil (CSV, classeur) : rien ne part sur le réseau. */
+  function telecharger(nom, contenu, type) {
+    var blob = contenu instanceof Blob ? contenu : new Blob([contenu], { type: type || "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = url; a.download = nom; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+
   /* ---------- Puce qui vole jusqu'à sa destination ---------- */
   function puceVolante(depuis, vers, texte, couleur) {
     if (mouvementReduit.matches || !depuis || !vers || !depuis.animate) return;
@@ -650,6 +666,9 @@
     mouvementReduit: mouvementReduit,
     animerNombre: animerNombre,
     mettreAJourSalaire: mettreAJourSalaire,
+    expert: expert,
+    definirExpert: definirExpert,
+    telecharger: telecharger,
     retirerSalaire: retirerSalaire,
     rouler: rouler,
     vibrer: vibrer,

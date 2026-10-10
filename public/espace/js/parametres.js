@@ -134,6 +134,13 @@
     if (!v && window.Orbite && window.Orbite.vibrer) window.Orbite.vibrer(12);
     E.toast(v ? "Vibrations désactivées." : "Vibrations activées (sur Android).");
   });
+  /* Mode Expert : tableaux complets et exports dans toute l'application (cet appareil). */
+  doc.querySelectorAll('#choix-expert input').forEach(function (r) { r.checked = r.value === (window.Orbite.expert() ? "oui" : ""); });
+  $("choix-expert").addEventListener("change", function (e) {
+    var on = e.target.value === "oui";
+    window.Orbite.definirExpert(on);
+    E.toast(on ? "Mode Expert activé : tableaux détaillés et exports Excel ou CSV dans votre profil, Mon orbite et « Et si… »." : "Mode Expert désactivé.");
+  });
   $("param-accueil").addEventListener("change", function () {
     var v = this.value;
     E.compte.preferences({ orbite_accueil: v }).then(majUtilisateur).then(function () { E.toast("Orbite s'ouvrira sur « " + $("param-accueil").selectedOptions[0].textContent + " »."); })

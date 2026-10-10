@@ -93,7 +93,7 @@
     function contratsExistants(t) {
       var d = new Date(m.getFullYear(), m.getMonth() + t, 15), verse = 0, capital = 0;
       p.contrats.forEach(function (c) {
-        verse += c.versementMensuel;
+        if (OC.contratCommence(c, d)) verse += c.versementMensuel;
         if (c.capitalActuel > 0) { var f = Math.pow(1 + I_MOIS, t); capital += c.capitalActuel * f + c.versementMensuel * (f - 1) / I_MOIS; }
         else capital += OC.estimationContrat(c, d).capital;
       });

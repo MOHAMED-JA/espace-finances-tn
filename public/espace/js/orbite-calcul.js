@@ -665,9 +665,11 @@
   }
 
   /* Versements de l'année (mensuels et libres) : ce sont eux qui ouvrent la déduction fiscale. */
+  /* Un contrat dont le premier versement est à venir (ajouté depuis un scénario « Et si… ») ne compte qu'à partir de sa date. */
+  function contratCommence(c, maintenant) { var m = maintenant || new Date(); return c.anneeDebut * 12 + c.moisDebut - 1 <= m.getFullYear() * 12 + m.getMonth(); }
   function versementsExistants(p) {
     var av = 0, cea = 0;
-    p.contrats.forEach(function (c) { var an = c.versementMensuel * 12 + c.versementsLibresAn; if (c.type === "cea") cea += an; else av += an; });
+    p.contrats.forEach(function (c) { if (!contratCommence(c)) return; var an = c.versementMensuel * 12 + c.versementsLibresAn; if (c.type === "cea") cea += an; else av += an; });
     return { av: av, cea: cea };
   }
 
@@ -939,7 +941,7 @@
     var capBrut = capacite((annuel ? s.brutAnnuel / 12 : s.brutMensuel) + p.autresRevenus, p.quotiteBrut, charges, ageActuel, tauxNouveaux(p));
     var ep = suggestionsEpargne(s, p);
     var epChoisie = ep.propositions.filter(function (x) { return x.cle === (ch.epargne || "equilibree"); })[0] || ep.propositions[0];
-    var epargneActuelle = p.contrats.reduce(function (t, c) { return t + c.versementMensuel; }, 0);
+    var epargneActuelle = p.contrats.reduce(function (t, c) { return t + (contratCommence(c, maintenant) ? c.versementMensuel : 0); }, 0);
     var sy = {
       profil: p,
       age: ageActuel,
@@ -989,7 +991,7 @@
   }
 
   return {
-    TMM: TMM, CREDITS_TYPES: CREDITS_TYPES, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, normaliserChangement: normaliserChangement, normaliserScenario: normaliserScenario, MAX_SCENARIOS: MAX_SCENARIOS, MAX_CHANGEMENTS: MAX_CHANGEMENTS, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
+    TMM: TMM, CREDITS_TYPES: CREDITS_TYPES, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, contratCommence: contratCommence, normaliserChangement: normaliserChangement, normaliserScenario: normaliserScenario, MAX_SCENARIOS: MAX_SCENARIOS, MAX_CHANGEMENTS: MAX_CHANGEMENTS, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
     profilParDefaut: profilParDefaut, normaliser: normaliser, age: age, etatSalaire: etatSalaire, entreeBrut: entreeBrut,
     tranche: tranche, salaire: salaire, augmentation: augmentation, calendrierPrimes: calendrierPrimes, impotRestantAnnee: impotRestantAnnee,
     capitalPourMensualite: capitalPourMensualite, mensualitePourCapital: mensualitePourCapital, capacite: capacite,

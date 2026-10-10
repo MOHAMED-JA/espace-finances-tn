@@ -292,6 +292,18 @@
           </section>
 
           <!-- Suggestions d'épargne -->
+          <section class="bloc-orbite expert-seul" id="orbite-expert" aria-labelledby="titre-orbite-expert">
+            <div class="bloc-orbite__tete">
+              <div><h2 id="titre-orbite-expert">Mon orbite, mois par mois</h2>
+                <p>Mode Expert : le voyage dans le temps en chiffres, sur 10 ans (vos hausses de salaire prévues comprises).</p></div>
+              <div class="expert-boutons">
+                <button type="button" class="bouton bouton--petit" id="orbite-csv"><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg>CSV</button>
+                <button type="button" class="bouton bouton--petit bouton--plein" id="orbite-xlsx"><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg>Tout exporter (Excel)</button>
+              </div>
+            </div>
+            <div class="tableau-cadre"><table class="tableau" id="orbite-table"></table></div>
+          </section>
+
           <section class="bloc-orbite" aria-labelledby="titre-suggestions">
             <div class="bloc-orbite__tete">
               <div><h2 id="titre-suggestions">Trois façons d'épargner, adaptées à votre net</h2>
@@ -366,6 +378,13 @@
                 <div class="champ"><label for="p-embauche">Date d'embauche</label><div class="saisie"><input id="p-embauche" data-p="dateEmbauche" data-type="date" type="date" min="1960-01-01" aria-describedby="p-anciennete-aide"></div><span class="champ__aide" id="p-anciennete-aide"></span></div>
                 <div class="champ"><label for="p-autres">Autres revenus réguliers (par mois)</label><div class="saisie"><input id="p-autres" data-p="autresRevenus" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div><span class="champ__aide">Loyer perçu, pension… pris en compte par la banque</span></div>
                 <p class="profil-resume champ--large" id="p-resume-salaire" aria-live="polite"></p>
+                <details class="expert-seul expert-bloc champ--large" id="p-paie">
+                  <summary>Ma paie de l'année, mois par mois<small>Mode Expert : salaire alors en vigueur, salaires en plus, impôt retenu</small></summary>
+                  <div class="expert-bloc__corps">
+                    <button type="button" class="bouton bouton--petit" id="p-paie-csv"><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg>CSV</button>
+                    <div class="tableau-cadre"><table class="tableau" id="p-paie-table"></table></div>
+                  </div>
+                </details>
               </div>
             </details>
 
@@ -634,6 +653,7 @@
           <div class="onglets vie-onglets" role="tablist" aria-label="Outils">
             <button type="button" role="tab" id="vie-tab-vie" aria-controls="vie-panneau-vie" aria-selected="true" data-onglet="vie">Simulateur de vie</button>
             <button type="button" role="tab" id="vie-tab-fiscal" aria-controls="vie-panneau-fiscal" aria-selected="false" tabindex="-1" data-onglet="fiscal">Optimiseur fiscal</button>
+            <button type="button" role="tab" id="vie-tab-scenarios" aria-controls="vie-panneau-scenarios" aria-selected="false" tabindex="-1" data-onglet="scenarios">Et si…</button>
           </div>
 
           <div class="vie-panneau" id="vie-panneau-vie" role="tabpanel" aria-labelledby="vie-tab-vie">
@@ -687,6 +707,57 @@
                 <li>Calcul indicatif selon le barème en vigueur : faites-le confirmer par votre conseiller.</li>
               </ul>
               <a class="lien-action" id="fi-simuler" href="#epargne">Simuler ce versement dans Épargne vie &amp; CEA<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
+            </section>
+          </div>
+
+          <div class="vie-panneau etsi" id="vie-panneau-scenarios" role="tabpanel" aria-labelledby="vie-tab-scenarios" hidden>
+            <section class="panneau etsi__bloc" aria-labelledby="etsi-t">
+              <div class="etsi__tete">
+                <h2 id="etsi-t">Vos scénarios</h2>
+                <p>Jusqu'à 3 avenirs, comparés à votre situation d'aujourd'hui sur 10 ans. Enregistrés automatiquement dans votre compte. Touchez un nom pour le changer.</p>
+              </div>
+              <div class="etsi-cartes" id="etsi-cartes"></div>
+              <div class="etsi-editeur" id="etsi-editeur" hidden>
+                <div class="etsi-editeur__tete">
+                  <h3 id="etsi-ed-titre">Ajouter un changement</h3>
+                  <div class="etsi-types" id="etsi-ed-types" role="group" aria-label="Type de changement"></div>
+                </div>
+                <div class="grille-champs etsi-champs" id="etsi-ed-champs"></div>
+                <p class="erreur-champ" id="etsi-ed-erreur" role="alert" hidden></p>
+                <div class="etsi-editeur__pied">
+                  <button type="button" class="bouton bouton--plein" id="etsi-ed-ok">Ajouter</button>
+                  <button type="button" class="bouton bouton--fantome" id="etsi-ed-annuler">Annuler</button>
+                  <span class="champ__aide" id="etsi-ed-aide"></span>
+                </div>
+              </div>
+            </section>
+
+            <section class="panneau etsi__bloc" id="etsi-resultats" aria-labelledby="etsi-t-frise" hidden>
+              <div class="etsi__tete"><h2 id="etsi-t-frise">Sur 10 ans</h2><p id="etsi-indic-aide"></p></div>
+              <div class="etsi-frise">
+                <div class="etsi-frise__haut">
+                  <div class="etsi-indic" id="etsi-indic" role="group" aria-label="Ce que montre la frise"></div>
+                  <div class="etsi-legende" id="etsi-legende"></div>
+                </div>
+                <div class="etsi-graphe" id="etsi-graphe"><div class="etsi-bulle" id="etsi-bulle" aria-live="polite"></div></div>
+                <div class="etsi-curseur"><span id="etsi-curseur-date"></span><input type="range" id="etsi-curseur" min="0" max="120" value="0" aria-label="Mois affiché"></div>
+              </div>
+              <div class="etsi-verdict" id="etsi-verdict"></div>
+              <div class="etsi-bilans" id="etsi-bilans"></div>
+              <div class="etsi__tete"><h3 id="etsi-t-jalons">Aux dates clés</h3><p id="etsi-jalons-sous"></p></div>
+              <div class="tableau-cadre"><table class="tableau" id="etsi-jalons" aria-labelledby="etsi-t-jalons"></table></div>
+              <details class="depliant expert-seul etsi-expert" id="etsi-expert">
+                <summary><span>Séries mois par mois<small>Mode Expert : reste, marge et épargne de chaque scénario, sur 121 mois</small></span></summary>
+                <div class="depliant__corps etsi-expert__corps">
+                  <button type="button" class="bouton bouton--petit" id="etsi-csv"><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg>CSV</button>
+                  <div class="tableau-cadre"><table class="tableau" id="etsi-series"></table></div>
+                </div>
+              </details>
+              <div class="etsi-actions">
+                <div class="saisie etsi-actions__choix"><select id="etsi-appliquer-choix" aria-label="Scénario à appliquer"></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div>
+                <button type="button" class="bouton bouton--plein" id="etsi-appliquer">Appliquer à mon profil</button>
+                <p class="champ__aide">Salaire → historique du salaire ; crédit → Mes projets ; épargne → contrat à sa date ; mariage, enfant, remboursement → rappel à la date. Annulable. Bilan hors valeur des biens achetés.</p>
+              </div>
             </section>
           </div>
         </section>
@@ -968,6 +1039,16 @@
                 </div>
               </div>
             </section>
+            <section class="panneau reglage" aria-labelledby="r-expert">
+              <div class="reglage__texte"><h2 id="r-expert">Mode Expert</h2><p>Tableaux d'amortissement de vos crédits, paie de l'année mois par mois, Mon orbite et vos scénarios mois par mois, exports CSV et « Tout exporter » en Excel.</p></div>
+              <div class="reglage__controle">
+                <div class="bascule" id="choix-expert" role="radiogroup" aria-label="Mode Expert">
+                  <label><input type="radio" name="expert" value=""><span>Désactivé</span></label>
+                  <label><input type="radio" name="expert" value="oui"><span>Activé</span></label>
+                  <i class="bascule__pastille" aria-hidden="true"></i>
+                </div>
+              </div>
+            </section>
             <section class="panneau reglage" aria-labelledby="r-visite">
               <div class="reglage__texte"><h2 id="r-visite">Visite guidée</h2><p>Revoyez en une minute chaque rubrique d'Orbite et ce qu'elle vous apporte.</p></div>
               <div class="reglage__controle"><button type="button" class="bouton bouton--petit" id="param-visite">Revoir la visite</button></div>
@@ -1040,6 +1121,7 @@
             <section class="panneau reglage" aria-labelledby="r-donnees">
               <div class="reglage__texte"><h2 id="r-donnees">Vos données</h2><p>Votre profil, vos simulations et votre abonnement ne sont visibles que par vous. Vous pouvez tout télécharger, ou tout effacer. <a href="/confidentialite.html">Confidentialité</a> · <a href="/cgv.html">Conditions de vente</a></p></div>
               <div class="reglage__controle reglage__boutons">
+                <button type="button" class="bouton bouton--petit expert-seul" id="exporter-xlsx"><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg>Tout exporter (Excel)</button>
                 <button type="button" class="bouton bouton--petit" id="exporter"><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg>Exporter mes données</button>
                 <button type="button" class="bouton bouton--petit bouton--danger" id="supprimer-compte"><svg aria-hidden="true"><use href="/orbite/icones.svg#poubelle"/></svg>Supprimer mon compte</button>
               </div>
@@ -1105,6 +1187,14 @@
       </div>
       <p class="ligne-liste__info ligne-liste__info--credit" data-echeancier aria-live="polite">Indiquez la date de début et la durée : Orbite calcule les échéances restantes et la date de fin.</p>
       <p class="ligne-liste__info ligne-liste__info--credit" data-reduction aria-live="polite" hidden></p>
+      <details class="expert-seul expert-bloc" data-amort>
+        <summary>Tableau d'amortissement<small>Mode Expert : chaque échéance restante, réductions de taux comprises</small></summary>
+        <div class="expert-bloc__corps">
+          <p class="champ__aide" data-amort-info></p>
+          <button type="button" class="bouton bouton--petit" data-amort-csv><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg>CSV</button>
+          <div class="tableau-cadre"><table class="tableau" data-amort-table></table></div>
+        </div>
+      </details>
       <div class="ligne-liste__actions">
         <a class="bouton bouton--petit" data-analyser href="#credit">Analyser ce crédit</a>
         <button type="button" class="bouton bouton--fantome bouton--petit" data-retirer><svg aria-hidden="true"><use href="/orbite/icones.svg#poubelle"/></svg>Retirer</button>
@@ -1274,6 +1364,10 @@
   <script src="/espace/js/parametres.js"></script>
   <script src="/espace/js/admin.js"></script>
   <script src="/espace/js/vue-vie.js"></script>
+  <script src="/espace/js/scenarios-calcul.js"></script>
+  <script src="/espace/js/expert-calcul.js"></script>
+  <script src="/espace/js/vue-scenarios.js"></script>
+  <script src="/espace/js/vue-expert.js"></script>
   <script src="/espace/js/rappels-calcul.js"></script>
   <script src="/espace/js/nouveautes.js"></script>
   <script src="/espace/js/appli.js"></script>
