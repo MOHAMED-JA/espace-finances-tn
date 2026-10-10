@@ -342,15 +342,23 @@
       L.push("Crédits en cours (" + dt(sy.chargesCredits) + " par mois au total) :");
       p.credits.forEach(function (c, i) {
         var e = sy.credits[i] || {};
-        L.push("- " + c.libelle + " (" + c.type + ") : " + dt(c.mensualite) + " par mois" + (c.tauxPct ? " à " + nb(c.tauxPct) + "\u00a0%" : "") +
-          (e.restantes ? ", " + e.restantes + " échéances restantes, dernière en " + e.fin : "") + (c.capitalRestant ? ", capital restant " + dt(c.capitalRestant) : "") + ".");
+        var rt = e.reduction, r8 = "";
+        /* Règle des 8 % (loi n° 2024-41) : taux fixe, plus de 84 mois ; taux divisé par deux, sur demande à la banque. */
+        if (rt && rt.applicable) {
+          if (rt.possibleDepuis) r8 = " Règle des 8 % : réduction de moitié du taux possible depuis " + rt.possibleDepuis.date + ", pas encore demandée.";
+          else if (rt.reductions.length) r8 = " Règle des 8 % : réductions de taux prévues " + rt.reductions.map(function (r) { return "en " + r.date + " (" + nb(r.tauxAvant) + "\u00a0% → " + nb(r.tauxPct) + "\u00a0%, mensualité " + dt(r.mensualite) + ")"; }).join(", ") + ", à demander à la banque.";
+          else r8 = " Règle des 8 % : plus de réduction de taux d'ici la fin.";
+          if (rt.derniere) r8 = " Taux déjà divisé par deux en " + rt.derniere.date + "." + r8;
+        } else if (rt && rt.motif === "type") r8 = " Type de taux (fixe ou variable) non précisé : règle des 8 % non évaluée.";
+        L.push("- " + c.libelle + " (" + c.type + ") : " + dt(c.mensualite) + " par mois" + (c.tauxPct ? " à " + nb(c.tauxPct) + "\u00a0%" + (c.tauxType ? " " + c.tauxType : "") : "") +
+          (e.restantes ? ", " + e.restantes + " échéances restantes, dernière en " + e.fin : "") + (c.capitalRestant ? ", capital restant " + dt(c.capitalRestant) : "") + "." + r8);
       });
     } else L.push("Aucun crédit en cours.");
     var pal = cap.paliers || [];
     if (pal.length) {
-      L.push("Calendrier de la marge (à chaque fin de crédit, la mensualité possible augmente ; les montants d'une même étape sont l'un OU l'autre) :");
+      L.push("Calendrier de la marge (à chaque fin de crédit ou réduction de taux, la mensualité possible augmente ; les montants d'une même étape sont l'un OU l'autre) :");
       pal.forEach(function (x) {
-        L.push("- " + x.date + " (fin : " + x.credits.join(", ") + ") : " + dt(x.mensualiteMax) + " par mois, soit " + (x.offres || []).map(function (of) {
+        L.push("- " + x.date + " (" + OC.evenementEtape(x) + ") : " + dt(x.mensualiteMax) + " par mois, soit " + (x.offres || []).map(function (of) {
           return of.libelle.toLowerCase() + " " + dt(of.capital) + " sur " + nb(of.dureeMois / 12) + " ans à " + nb(of.tauxPct) + "\u00a0%"; }).join(", ") + ".");
       });
     }

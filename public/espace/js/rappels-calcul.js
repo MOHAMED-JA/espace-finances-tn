@@ -1,6 +1,6 @@
 /*
  * Orbite — rappels datés (pur, testé sous Node) : fin de l'essai, fin de l'abonnement,
- * dernière échéance d'un crédit, échéance fiscale de fin d'année.
+ * dernière échéance d'un crédit, réduction de taux à demander (règle des 8 %), échéance fiscale de fin d'année.
  * Chaque rappel : { id (unique, stable), titre, corps, url, quand (ISO : à partir de quand l'afficher), jusqua (ISO, facultatif) }.
  * Aucun montant précis du profil n'est mis dans les rappels transmis au service worker au-delà de ce que l'utilisateur voit déjà.
  */
@@ -39,6 +39,28 @@
         liste.push({ id: "credit-" + i + "-" + d.getFullYear() + "-" + (d.getMonth() + 1), titre: "Dernière échéance : " + cr.libelle.toLowerCase(),
           corps: "Ce mois-ci (" + MOIS[d.getMonth()] + " " + d.getFullYear() + "), " + dt(cr.mensualite) + " par mois se libèrent : votre capacité d'emprunt augmente.",
           url: "/espace/#orbite?section=marge", quand: iso(Math.max(d.getTime(), t)), jusqua: iso(fin) });
+      });
+    }
+    /* Règle des 8 % : un mois avant la prochaine réduction de taux, rappeler de la demander à la banque. */
+    if (sy && sy.profil) {
+      (sy.credits || []).forEach(function (c, i) {
+        var cr = sy.profil.credits[i], rt = c.reduction;
+        if (!cr || !rt || !rt.applicable) return;
+        var nomCr = cr.libelle.charAt(0).toLowerCase() + cr.libelle.slice(1);
+        function pc(x) { return String(Math.round(x * 10000) / 10000).replace(".", ",") + " %"; }
+        if (rt.possibleDepuis) {
+          liste.push({ id: "reduction-" + i + "-depuis-" + rt.possibleDepuis.echeance, titre: "Réduction de taux à demander : " + nomCr,
+            corps: "Depuis " + rt.possibleDepuis.date + ", la règle des 8 % permet de diviser votre taux par deux. Demandez-le à votre banque.",
+            url: "/espace/#orbite", quand: iso(t), jusqua: iso(t + 60 * JOUR) });
+          return;
+        }
+        var r = rt.reductions[0];
+        if (!r) return;
+        var d = new Date(maintenant.getFullYear(), maintenant.getMonth() + r.t, 1, 9, 0, 0);
+        var avant = new Date(d.getFullYear(), d.getMonth() - 1, 1, 9, 0, 0), fin = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+        liste.push({ id: "reduction-" + i + "-" + d.getFullYear() + "-" + (d.getMonth() + 1), titre: "Réduction de taux le mois prochain : " + nomCr,
+          corps: "En " + MOIS[d.getMonth()] + " " + d.getFullYear() + ", la règle des 8 % divise votre taux par deux (" + pc(r.tauxAvant) + " → " + pc(r.tauxPct) + "). Pensez à la demander à votre banque.",
+          url: "/espace/#orbite", quand: iso(Math.max(avant.getTime(), t)), jusqua: iso(fin) });
       });
     }
     if (fiscal && fiscal.statut === "a_optimiser" && fiscal.gainPossible > 20) {

@@ -157,7 +157,9 @@
     var e = {
       type: sc.type, capital: sc.capital, mois: sc.mois, taux: tauxApplique(sc), dateDebut: sc.dateDebut || "",
       periodicite: p, amort: sc.amort, differe: null, tmm: null, variation: null, assurance: null, frais: null, apport: null,
-      ras: [], versement: null, indemnite: sc.indemnite || 0, raMode: sc.raMode, reduction: !!sc.reduction
+      ras: [], versement: null, indemnite: sc.indemnite || 0, raMode: sc.raMode,
+      /* Règle des 8 % : réservée aux crédits à taux fixe. */
+      reduction: !!sc.reduction && sc.mode !== "tmm"
     };
     if (sc.differe.on && sc.differe.mois > 0 && sc.differe.mois < sc.mois && sc.differe.mois % p === 0) e.differe = { mois: sc.differe.mois, type: sc.differe.type };
     if (sc.mode === "tmm") {
@@ -837,7 +839,10 @@
     if (ft) ft.textContent = "Total des frais : " + dt(r.frais) + ". TEG : " + pc(r.teg, 2) + " pour un taux nominal de " + pc(e.taux, 3) + ".";
     var nRa = e.ras.length + (e.versement ? 1 : 0);
     etat("ra", nRa ? pluriel(nRa, "versement") + " · " + dt0(r.totRA) : "Aucun");
-    etat("reduction", e.reduction ? (r.reductions.length ? "Appliquée dès l'échéance " + r.reductions[0].mois : (e.mois > 84 ? "Demandée, pas encore atteinte" : "Crédit de 84 mois ou moins")) : (e.mois > 84 ? "Non appliquée" : "Non concerné (84 mois ou moins)"));
+    var ir = doc.querySelector('#cr-formulaire input[data-k="reduction"]');
+    if (ir) ir.disabled = sc.mode === "tmm";
+    if (sc.mode === "tmm") etat("reduction", "Non concerné (taux variable)");
+    else etat("reduction", e.reduction ? (r.reductions.length ? "Appliquée dès l'échéance " + r.reductions[0].mois : (e.mois > 84 ? "Demandée, pas encore atteinte" : "Crédit de 84 mois ou moins")) : (e.mois > 84 ? "Non appliquée" : "Non concerné (84 mois ou moins)"));
     majDatesRas();
     /* Bilan des remboursements anticipés */
     var bilan = $("cr-ra-bilan");
@@ -853,7 +858,8 @@
     } else bilan.innerHTML = "";
     /* Bilan de la règle des 8 % */
     var rb = $("cr-red-bilan"), an = MC.analyseReduction(entree(sc, false));
-    if (!an.dureeOk) rb.innerHTML = encart("", "info", "<p>Ce crédit dure 84 mois ou moins : la règle ne s'applique pas.</p>");
+    if (sc.mode === "tmm") rb.innerHTML = encart("", "info", "<p>Taux variable (TMM + marge) : la règle des 8 % ne concerne que les crédits à taux fixe.</p>");
+    else if (!an.dureeOk) rb.innerHTML = encart("", "info", "<p>Ce crédit dure 84 mois ou moins : la règle ne s'applique pas.</p>");
     else if (an.reductions.length) {
       var red = an.reductions[0];
       rb.innerHTML = encart("succes", "valide", "<p>La condition est remplie dès l'échéance <strong>" + red.mois + "</strong>" + (red.date ? " (" + moisAn(red.date) + ")" : "") + " : ratio de " + pc(red.ratio * 100, 2) + ". Votre taux passerait de " + pc(red.avant, 3) + " à " + pc(red.apres, 3) + ".</p>" +
@@ -1663,11 +1669,13 @@
     if (!x) return;
     var sel = corps.querySelector("[data-choix-credit]"); if (sel) sel.value = String(index);
     if (cle === "mon") {
-      poserC(corps, "capital", x.capitalRestant || 0);
+      poserC(corps, "capital", x.capitalRestant || (OC && x.mensualite > 0 ? Math.round(OC.capitalPourMensualite(x.mensualite, x.tauxPct || 0, x.moisRestants || 1) * 1000) / 1000 : 0));
       poserC(corps, "mois", x.moisRestants || 1);
       poserC(corps, "taux", x.tauxPct || 0);
       poserC(corps, "date", premierMoisSuivant());
-      poserC(corps, "duree", Math.max(x.moisRestants || 1, { immo: 240, auto: 60, conso: 36 }[x.type] || x.moisRestants || 1));
+      poserC(corps, "duree", x.dureeMois || Math.max(x.moisRestants || 1, { immo: 240, auto: 60, conso: 36 }[x.type] || x.moisRestants || 1));
+      /* Règle des 8 % : seulement pour un crédit déclaré à taux fixe. */
+      var rc = corps.querySelector('[data-c="reduc"]'); if (rc) rc.checked = x.tauxType === "fixe";
     } else if (cle === "reneg") {
       poserC(corps, "crd", x.capitalRestant || 0);
       poserC(corps, "ta", x.tauxPct || 0);

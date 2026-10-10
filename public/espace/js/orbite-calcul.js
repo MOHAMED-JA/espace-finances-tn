@@ -93,7 +93,11 @@
       /* Facultatif : date de début et durée totale ; les échéances restantes en sont alors déduites. */
       moisDebut: entier(c.moisDebut, 0, 0, 12),
       anneeDebut: entier(c.anneeDebut, 0, 0, 2100),
-      dureeMois: entier(c.dureeMois, 0, 0, 480)
+      dureeMois: entier(c.dureeMois, 0, 0, 480),
+      /* Règle des 8 % : type de taux (« fixe », « variable » ou non précisé) et dernière réduction de taux obtenue. */
+      tauxType: choix(c.tauxType, ["fixe", "variable"], ""),
+      reductionMois: entier(c.reductionMois, 0, 0, 12),
+      reductionAnnee: entier(c.reductionAnnee, 0, 0, 2100)
     };
   }
 
@@ -107,9 +111,65 @@
     return { payees: Math.min(payees, c.dureeMois), restantes: restantes, fin: MOIS[fin % 12] + " " + (c.anneeDebut + Math.floor(fin / 12)) };
   }
   function appliquerEcheanciers(p, maintenant) {
-    p.credits.forEach(function (c) { var e = echeancier(c, maintenant); if (e) c.moisRestants = e.restantes; });
+    p.credits.forEach(function (c) { var e = echeancier(c, maintenant); if (e) c.moisRestants = e.restantes; c.reductionTaux = reductionsTaux(c, maintenant); });
     return p;
   }
+
+  /* Règle des 8 % (loi n° 2024-41 du 2 août 2024), crédit à taux fixe de plus de 84 mois : avant l'échéance k, si les
+     intérêts des 36 échéances précédentes dépassent strictement 8 % du capital restant dû, le taux est divisé par deux
+     et la mensualité baisse (même date de fin). Premier contrôle à l'échéance 37, puis chaque mois tant que la
+     condition n'est pas remplie ; après une réduction, contrôle suivant 36 échéances plus tard, sans limite de nombre.
+     Le passé est reconstitué à partir de la mensualité, du taux et des échéances restantes (taux et mensualité
+     constants depuis le début du crédit, ou depuis la dernière réduction obtenue). */
+  var REGLE_8 = { seuil: 0.08, fenetre: 36, dureeMin: 84 };
+  function dateEcheance(c, k) { var i = c.moisDebut - 1 + k; return MOIS[i % 12] + " " + (c.anneeDebut + Math.floor(i / 12)); }
+  function reductionsTaux(c, maintenant) {
+    var res = { applicable: false, motif: null, reductions: [], prochainControle: null, possibleDepuis: null, derniere: null };
+    if (!(c.mensualite > 0) || !(c.tauxPct > 0)) { res.motif = "donnees"; return res; }
+    if (c.tauxType === "variable") { res.motif = "variable"; return res; }
+    var e = echeancier(c, maintenant);
+    if (c.dureeMois > 0 && c.dureeMois <= REGLE_8.dureeMin) { res.motif = "duree"; return res; }
+    if (c.tauxType !== "fixe") { res.motif = "type"; return res; }
+    if (!e) { res.motif = "dates"; return res; }
+    var p = e.payees, n = e.restantes, fin = p + n, F0 = REGLE_8.fenetre;
+    if (!(n > 0)) { res.motif = "fini"; return res; }
+    res.applicable = true;
+    var R = c.reductionAnnee > 1970 && c.reductionMois > 0 ? (c.reductionAnnee - c.anneeDebut) * 12 + (c.reductionMois - c.moisDebut) : 0;
+    if (R < 1 || R > p) R = 0;
+    if (R) res.derniere = { echeance: R, date: dateEcheance(c, R) };
+    /* Intérêts payés depuis le début ou la dernière réduction (reconstitués à rebours) et capital restant après chaque échéance. */
+    var r = c.tauxPct / 1200, M = c.mensualite, K = capitalPourMensualite(M, c.tauxPct, n), interets = {}, restes = {}, debut = Math.max(R, 1);
+    restes[p] = K;
+    for (var k = p, Kb = K; k >= debut; k--) { var Kav = (Kb + M) / (1 + r); interets[k] = Kav * r; restes[k - 1] = Kav; Kb = Kav; }
+    function somme(a, b) { var t = 0; for (var j = a; j <= b; j++) t += interets[j]; return t; }
+    var prochain = R ? R + F0 : F0 + 1;
+    /* Contrôles déjà passés : réduction possible mais pas encore obtenue ? */
+    for (k = prochain; k <= p; k++) {
+      var ratio0 = somme(k - F0, k - 1) / restes[k - 1];
+      if (ratio0 > REGLE_8.seuil) { res.possibleDepuis = { echeance: k, date: dateEcheance(c, k), ratio: ratio0 }; break; }
+    }
+    prochain = Math.max(prochain, p + 1);
+    var fenetre = [];
+    for (k = Math.max(debut, p - F0 + 1); k <= p; k++) fenetre.push(interets[k]);
+    var taux = c.tauxPct, Kc = K, Mc = M;
+    for (k = p + 1; k <= fin; k++) {
+      if (k >= prochain) {
+        var w = fenetre.slice(-F0), s = w.reduce(function (a, b) { return a + b; }, 0), ratio = Kc > 0 ? s / Kc : 0;
+        var ok = w.length === F0 && ratio > REGLE_8.seuil;
+        if (!res.prochainControle) res.prochainControle = { t: k - p, echeance: k, date: dateEcheance(c, k), ratio: ratio, ok: ok };
+        if (ok) {
+          var avant = taux, mAvant = Mc;
+          taux /= 2; Mc = mensualitePourCapital(Kc, taux, fin - k + 1);
+          res.reductions.push({ t: k - p, echeance: k, date: dateEcheance(c, k), tauxAvant: avant, tauxPct: taux, mensualiteAvant: mAvant, mensualite: Mc, ratio: ratio, capital: Kc });
+          prochain = k + F0;
+        } else prochain = k + 1;
+      }
+      var i = Kc * taux / 1200; fenetre.push(i); Kc -= Mc - i;
+    }
+    return res;
+  }
+  /* Taux d'origine d'un crédit dont le taux a déjà été divisé par deux (référence pour les futurs crédits). */
+  function tauxOrigine(c) { return c.reductionAnnee > 1970 && c.reductionMois > 0 && c.tauxType === "fixe" ? c.tauxPct * 2 : c.tauxPct; }
   function normaliserContrat(c) {
     c = c || {};
     return {
@@ -198,7 +258,7 @@
   function tauxImmo(p) {
     if (p.tauxImmoPct !== null && p.tauxImmoPct !== undefined && isFinite(p.tauxImmoPct)) return { tauxPct: p.tauxImmoPct, source: "choisi" };
     var c = (p.credits || []).filter(function (x) { return x.type === "immo" && x.tauxPct > 0; })[0];
-    if (c) return { tauxPct: c.tauxPct, source: "credit", libelle: c.libelle };
+    if (c) return { tauxPct: tauxOrigine(c), source: "credit", libelle: c.libelle, origine: tauxOrigine(c) !== c.tauxPct };
     return { tauxPct: TMM + 2.5, source: "marche" };
   }
 
@@ -207,7 +267,7 @@
   function tauxChoisiOuCredit(p, type, choisi, marche) {
     if (choisi !== null && choisi !== undefined && isFinite(choisi)) return { tauxPct: choisi, source: "choisi" };
     var c = (p.credits || []).filter(function (x) { return x.type === type && x.tauxPct > 0; })[0];
-    if (c) return { tauxPct: c.tauxPct, source: "credit", libelle: c.libelle };
+    if (c) return { tauxPct: tauxOrigine(c), source: "credit", libelle: c.libelle, origine: tauxOrigine(c) !== c.tauxPct };
     return { tauxPct: marche, source: "marche" };
   }
 
@@ -372,52 +432,93 @@
     return { bas: bas, hauts: hauts };
   }
 
-  /* À quelle date l'endettement repasse sous la quotité, au fil de la fin des crédits en cours ? */
+  /* Évolution des mensualités en cours : fin de chaque crédit et, pour un crédit à taux fixe de plus de 84 mois,
+     baisses de mensualité dues à la règle des 8 %. Regroupées par mois (depuis aujourd'hui), dans l'ordre. */
+  function evolutionCharges(p) {
+    var ev = [];
+    p.credits.forEach(function (c, i) {
+      if (!(c.mensualite > 0)) return;
+      (c.reductionTaux && c.reductionTaux.reductions || []).forEach(function (r) {
+        if (!(c.moisRestants > 0) || r.t < c.moisRestants) ev.push({ mois: r.t, i: i, mensualite: r.mensualite, reduction: true, libelle: c.libelle });
+      });
+      if (c.moisRestants > 0) ev.push({ mois: c.moisRestants, i: i, mensualite: 0, reduction: false, libelle: c.libelle });
+    });
+    ev.sort(function (a, b) { return a.mois - b.mois || (a.reduction ? -1 : 1); });
+    var groupes = [];
+    ev.forEach(function (e) { var g = groupes[groupes.length - 1]; if (!g || g.mois !== e.mois) groupes.push(g = { mois: e.mois, ev: [] }); g.ev.push(e); });
+    return groupes;
+  }
+  function chargesActuelles(p) {
+    var m = {};
+    p.credits.forEach(function (c, i) { if (c.mensualite > 0) m[i] = c.mensualite; });
+    return m;
+  }
+  function total(m) { return Object.keys(m).reduce(function (t, k) { return t + m[k]; }, 0); }
+
+  /* À quelle date l'endettement repasse sous la quotité, au fil de la fin des crédits en cours (et des réductions de taux) ? */
   function sortieEndettement(p, revenuMensuel, quotite) {
     var actifs = p.credits.filter(function (c) { return c.mensualite > 0; });
-    var charges = actifs.reduce(function (t, c) { return t + c.mensualite; }, 0);
+    var m = chargesActuelles(p), charges = total(m);
     if (!(revenuMensuel > 0) || charges <= revenuMensuel * quotite) return null;
     if (actifs.some(function (c) { return !(c.moisRestants > 0); })) return null;
-    var tries = actifs.slice().sort(function (a, b) { return a.moisRestants - b.moisRestants; });
-    var finis = [];
-    for (var i = 0; i < tries.length; i++) {
-      charges -= tries[i].mensualite;
-      finis.push(tries[i].libelle);
-      if (i + 1 < tries.length && tries[i + 1].moisRestants === tries[i].moisRestants) continue;
+    var finis = [], reduits = [], groupes = evolutionCharges(p);
+    for (var g = 0; g < groupes.length; g++) {
+      groupes[g].ev.forEach(function (e) {
+        if (e.mensualite > 0) m[e.i] = e.mensualite; else delete m[e.i];
+        if (e.reduction) { if (reduits.indexOf(e.libelle) === -1) reduits.push(e.libelle); } else finis.push(e.libelle);
+      });
+      charges = total(m);
       if (charges <= revenuMensuel * quotite + 1e-9) {
-        return { mois: tries[i].moisRestants, credits: finis.slice(), charges: Math.max(0, charges), taux: Math.max(0, charges) / revenuMensuel,
+        return { mois: groupes[g].mois, credits: finis.slice(), reduits: reduits.filter(function (l) { return finis.indexOf(l) === -1; }), charges: Math.max(0, charges), taux: Math.max(0, charges) / revenuMensuel,
           mensualiteLiberee: Math.max(0, revenuMensuel * quotite - charges) };
       }
     }
     return null;
   }
 
-  /* Étapes de la marge d'emprunt : à chaque fin de crédit, la mensualité possible augmente. */
+  /* Étapes de la marge d'emprunt : à chaque fin de crédit (ou réduction de taux d'un crédit à taux fixe), la mensualité possible augmente. */
   function paliersMarge(p, revenu, quotite, ageActuel, maintenant) {
-    var m = maintenant || new Date();
-    var actifs = p.credits.filter(function (c) { return c.mensualite > 0 && c.moisRestants > 0; })
-      .sort(function (a, b) { return a.moisRestants - b.moisRestants; });
-    var charges = p.credits.reduce(function (t, c) { return t + (c.mensualite > 0 ? c.mensualite : 0); }, 0);
-    var res = [], i = 0, avant = Math.max(0, revenu * quotite - charges), finis = [], taux = tauxNouveaux(p), t = taux.immo.tauxPct;
-    while (i < actifs.length) {
-      var mois = actifs[i].moisRestants;
-      while (i < actifs.length && actifs[i].moisRestants === mois) { charges -= actifs[i].mensualite; finis.push(actifs[i].libelle); i++; }
-      var marge = Math.max(0, revenu * quotite - charges);
-      if (marge > avant + 0.5) {
-        var d = new Date(m.getFullYear(), m.getMonth() + mois, 1);
+    var mt = maintenant || new Date();
+    var m = chargesActuelles(p), charges = total(m);
+    var res = [], avant = Math.max(0, revenu * quotite - charges), finis = [], reduits = [], taux = tauxNouveaux(p), t = taux.immo.tauxPct;
+    evolutionCharges(p).forEach(function (g) {
+      g.ev.forEach(function (e) {
+        if (e.mensualite > 0) m[e.i] = e.mensualite; else delete m[e.i];
+        if (e.reduction) { if (reduits.indexOf(e.libelle) === -1) reduits.push(e.libelle); } else finis.push(e.libelle);
+      });
+      charges = total(m);
+      var marge = Math.max(0, revenu * quotite - charges), mois = g.mois;
+      /* Une réduction de taux seule ne fait une étape que si elle libère au moins 10 DT par mois. */
+      var seuil = g.ev.every(function (e) { return e.reduction; }) ? 10 : 0.5;
+      if (marge > avant + seuil) {
+        var d = new Date(mt.getFullYear(), mt.getMonth() + mois, 1);
         var moisAge = Math.max(0, (AGE_MAX - ageActuel - Math.ceil(mois / 12)) * 12), n = Math.min(240, moisAge);
         /* Plafond de chaque type de crédit avec la même mensualité (immobilier 20 ans, autres 7 ans au plus). */
         var offres = ["immo", "auto", "conso"].map(function (cle) {
           var ty = CREDITS_TYPES.filter(function (x) { return x.cle === cle; })[0], nn = Math.min(ty.dureeMois, moisAge), tx = tauxDe(taux, cle);
           return { cle: cle, libelle: ty.court, dureeMois: nn, tauxPct: tx, capital: capitalPourMensualite(marge, tx, nn), source: taux[cle].source };
         });
-        res.push({ mois: mois, date: MOIS[d.getMonth()] + " " + d.getFullYear(), credits: finis, charges: Math.max(0, charges),
+        res.push({ mois: mois, date: MOIS[d.getMonth()] + " " + d.getFullYear(), credits: finis, reduits: reduits.filter(function (l) { return finis.indexOf(l) === -1; }), charges: Math.max(0, charges),
           mensualiteMax: marge, capitalImmo: capitalPourMensualite(marge, t, n), dureeImmoMois: n, tauxPct: t, offres: offres });
-        finis = [];
+        finis = []; reduits = [];
       }
       avant = marge;
-    }
+    });
     return res;
+  }
+
+  /* Libellé d'une étape : « fin du crédit auto », « réduction de taux du crédit immobilier », ou les deux. */
+  function evenementEtape(x, darija) {
+    function liste(l, et) { l = l.map(function (c) { return c.charAt(0).toLowerCase() + c.slice(1); }); return l.length > 1 ? l.slice(0, -1).join(", ") + et + l[l.length - 1] : l[0]; }
+    var morceaux = [], cr = x.credits || [], rd = x.reduits || [];
+    if (darija) {
+      if (cr.length) morceaux.push("ki yekmel " + liste(cr, " w "));
+      if (rd.length) morceaux.push("ki yon9ess el taux mta3 " + liste(rd, " w "));
+      return morceaux.join(" w ");
+    }
+    if (cr.length) morceaux.push("fin " + (cr.length > 1 ? "des crédits " : "du crédit ") + liste(cr.map(function (c) { return c.replace(/^crédit /i, ""); }), " et "));
+    if (rd.length) morceaux.push("réduction de taux " + (rd.length > 1 ? "des crédits " : "du crédit ") + liste(rd.map(function (c) { return c.replace(/^crédit /i, ""); }), " et "));
+    return morceaux.join(" et ");
   }
 
   function chargesCredits(p) {
@@ -737,7 +838,8 @@
     sy.credits = p.credits.map(function (c) {
       var e = echeancier(c, sy.maintenant), mois = e ? e.restantes : c.moisRestants;
       var d = mois > 0 ? new Date(sy.maintenant.getFullYear(), sy.maintenant.getMonth() + mois, 1) : null;
-      return { calcule: !!e, payees: e ? e.payees : null, restantes: mois, duree: c.dureeMois || null, fin: e ? e.fin : d ? MOIS[d.getMonth()] + " " + d.getFullYear() : null };
+      return { calcule: !!e, payees: e ? e.payees : null, restantes: mois, duree: c.dureeMois || null, fin: e ? e.fin : d ? MOIS[d.getMonth()] + " " + d.getFullYear() : null,
+        reduction: c.reductionTaux || null };
     });
     /* L'alerte d'endettement du budget suit la règle de la banque (12 salaires, net ou brut). */
     var capBanque = sy.capacite[p.baseBanque], qBanque = p.baseBanque === "brut" ? p.quotiteBrut : p.quotiteNet;
@@ -758,7 +860,7 @@
   }
 
   return {
-    TMM: TMM, CREDITS_TYPES: CREDITS_TYPES, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
+    TMM: TMM, CREDITS_TYPES: CREDITS_TYPES, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
     profilParDefaut: profilParDefaut, normaliser: normaliser, age: age, etatSalaire: etatSalaire, entreeBrut: entreeBrut,
     tranche: tranche, salaire: salaire, augmentation: augmentation, calendrierPrimes: calendrierPrimes, impotRestantAnnee: impotRestantAnnee,
     capitalPourMensualite: capitalPourMensualite, mensualitePourCapital: mensualitePourCapital, capacite: capacite,

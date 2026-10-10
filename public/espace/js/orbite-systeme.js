@@ -28,9 +28,17 @@
     p.credits.forEach(function (c, i) {
       if (!(c.mensualite > 0)) return;
       var info = sy.credits[i] || {}, n = info.restantes > 0 ? info.restantes : 0;
-      sats.push({ id: "credit-" + i, genre: "credit", type: c.type, nom: c.libelle, mensualite: c.mensualite, tauxPct: c.tauxPct,
-        restantes: n, fin: n ? info.fin : null, derniere: n ? dateTexte(debut, n - 1) : null });
-      if (n) jalons.push({ t: n, sat: "credit-" + i, genre: "credit", lib: "Fin du " + c.libelle.charAt(0).toLowerCase() + c.libelle.slice(1), gain: c.mensualite });
+      var rt = info.reduction || { applicable: false, motif: null, reductions: [] };
+      /* Règle des 8 % : réductions de taux à venir (avant la fin du crédit). */
+      var reds = rt.reductions.filter(function (r) { return !n || r.t < n; });
+      var nom = c.libelle.charAt(0).toLowerCase() + c.libelle.slice(1);
+      sats.push({ id: "credit-" + i, genre: "credit", type: c.type, nom: c.libelle, mensualite: c.mensualite, tauxPct: c.tauxPct, tauxType: c.tauxType,
+        restantes: n, fin: n ? info.fin : null, derniere: n ? (info.calcule ? info.fin : dateTexte(debut, n - 1)) : null, regle8: rt, reductions: reds });
+      reds.forEach(function (r) {
+        jalons.push({ t: r.t, sat: "credit-" + i, genre: "reduction", gain: r.mensualiteAvant - r.mensualite, reduction: r,
+          lib: "Réduction de taux du " + nom + " : " + String(Math.round(r.tauxPct * 10000) / 10000).replace(".", ",") + " %" });
+      });
+      if (n) jalons.push({ t: n, sat: "credit-" + i, genre: "credit", lib: "Fin du " + nom, gain: reds.length ? reds[reds.length - 1].mensualite : c.mensualite });
     });
     sats.sort(function (a, b) { return (a.restantes || 1e4) - (b.restantes || 1e4); });
 
@@ -77,9 +85,16 @@
         if (s.genre === "credit") {
           var reste = s.restantes ? Math.max(0, s.restantes - t) : null;
           var actif = reste === null || reste > 0;
-          if (actif) charges += s.mensualite;
-          var k = reste ? OC.capitalPourMensualite(s.mensualite, s.tauxPct, reste) : 0;
-          parSat[s.id] = { actif: actif, restantes: reste, capitalRestant: reste === null ? null : k, interets: reste === null ? null : Math.max(0, s.mensualite * reste - k) };
+          /* Mensualité et taux au mois t : ceux de la dernière réduction de taux déjà passée. */
+          var mens = s.mensualite, tx = s.tauxPct, apres = [];
+          s.reductions.forEach(function (r) { if (r.t <= t) { mens = r.mensualite; tx = r.tauxPct; } else apres.push(r); });
+          if (actif) charges += mens;
+          var k = reste ? OC.capitalPourMensualite(mens, tx, reste) : 0;
+          /* Intérêts restants : total des mensualités à venir (qui baissent à chaque réduction) moins le capital. */
+          var aPayer = 0, de = t, m0 = mens;
+          if (reste) { apres.forEach(function (r) { aPayer += m0 * (r.t - 1 - de); m0 = r.mensualite; de = r.t - 1; }); aPayer += m0 * (s.restantes - de); }
+          parSat[s.id] = { actif: actif, restantes: reste, capitalRestant: reste === null ? null : k, interets: reste === null ? null : Math.max(0, aPayer - k),
+            mensualite: mens, tauxPct: tx, prochaine: apres[0] || null };
         } else if (s.genre === "vie" || s.genre === "cea") {
           var e = OC.estimationContrat(s.contrat, d), capital = e.capital;
           if (s.capitalSaisi && t > 0) {

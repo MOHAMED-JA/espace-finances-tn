@@ -56,13 +56,21 @@
     var etapes = (cap.paliers || []).filter(function (x) { return !annee || dateEtape(sy, x.mois).getFullYear() <= annee; });
     var x = etape || (annee ? etapes[etapes.length - 1] : null);
     if (!x) return actuel;
-    return { mensualite: x.mensualiteMax, date: x.date, mois: x.mois, credits: x.credits, base: p.baseBanque, quotite: q, offres: x.offres };
+    return { mensualite: x.mensualiteMax, date: x.date, mois: x.mois, credits: x.credits, reduits: x.reduits || [], base: p.baseBanque, quotite: q, offres: x.offres };
   }
   function offre(c, cle) { return c.offres.filter(function (o) { return o.cle === cle; })[0]; }
-  function finDe(credits, D) {
-    var l = credits.map(function (c) { return c.toLowerCase(); });
-    var t = l.length > 1 ? l.slice(0, -1).join(", ") + (D ? " w " : " et ") + l[l.length - 1] : l[0];
-    return D ? "ki yekmel " + t : "à la fin de " + (l.length > 1 ? "vos " : "votre ") + t;
+  /* « à la fin de votre crédit auto », « après la réduction de taux de votre crédit immobilier » (étape du calendrier). */
+  function finDe(x, D) {
+    function liste(l, et) { l = l.map(function (c) { return c.toLowerCase(); }); return l.length > 1 ? l.slice(0, -1).join(", ") + et + l[l.length - 1] : l[0]; }
+    var cr = x.credits || [], rd = (x.reduits || []).filter(function (c) { return cr.indexOf(c) === -1; }), t = [];
+    if (D) {
+      if (cr.length) t.push("ki yekmel " + liste(cr, " w "));
+      if (rd.length) t.push("ki yon9ess el taux mta3 " + liste(rd, " w "));
+      return t.join(" w ");
+    }
+    if (cr.length) t.push("à la fin de " + (cr.length > 1 ? "vos " : "votre ") + liste(cr, " et "));
+    if (rd.length) t.push("après la réduction de taux de " + (rd.length > 1 ? "vos " : "votre ") + liste(rd, " et "));
+    return t.join(" et ");
   }
   /* « après la fin de mon crédit auto » : l'étape du calendrier où ce crédit se termine. */
   function etapeApres(sy, qn, cible) {
@@ -85,12 +93,12 @@
       L.push(D ? "Mazelt, " + quand + " el banque ma tnajjemch ta3tik crédit jdid : el endettement mte3ek wosel " + pc(cap.tauxEndettementActuel) + " (el limite " + pc(c.quotite) + ")."
         : "Pas encore " + quand + " : votre endettement atteint déjà " + pc(cap.tauxEndettementActuel) + ", alors que la banque s'arrête à " + pc(c.quotite) + " de votre " + c.base + ".");
       var m = meilleurMoment(sy);
-      if (m) L.push(D ? "Men **" + m.date + "**, " + finDe(m.credits, true) + ", tnajjem t5allas **" + dt(m.mensualiteMax) + "** fil chhar." : "À partir de **" + m.date + "**, " + finDe(m.credits, false) + ", vous pourrez rembourser jusqu'à **" + dt(m.mensualiteMax) + "** par mois.");
+      if (m) L.push(D ? "Men **" + m.date + "**, " + finDe(m, true) + ", tnajjem t5allas **" + dt(m.mensualiteMax) + "** fil chhar." : "À partir de **" + m.date + "**, " + finDe(m, false) + ", vous pourrez rembourser jusqu'à **" + dt(m.mensualiteMax) + "** par mois.");
       return { texte: L.join("\n"), lien: { libelle: "Voir le calendrier de la marge", href: "#orbite" } };
     }
     if (o) {
-      L.push(D ? "Ey, etnajjem ! " + (c.date ? "Men **" + c.date + "**, " + finDe(c.credits, true) + " :" : "**" + quand.charAt(0).toUpperCase() + quand.slice(1) + "**, el banque ta3tik :")
-        : "Oui" + (c.date ? ", à partir de **" + c.date + "**, " + finDe(c.credits, false) : ", " + quand) + ", la banque peut financer " + nom + " :");
+      L.push(D ? "Ey, etnajjem ! " + (c.date ? "Men **" + c.date + "**, " + finDe(c, true) + " :" : "**" + quand.charAt(0).toUpperCase() + quand.slice(1) + "**, el banque ta3tik :")
+        : "Oui" + (c.date ? ", à partir de **" + c.date + "**, " + finDe(c, false) : ", " + quand) + ", la banque peut financer " + nom + " :");
       L.push((D ? "- mensualité possible : **" : "- mensualité possible : **") + dt(c.mensualite) + "** par mois");
       L.push((D ? "- " + (cle === "auto" ? "karhba" : o.libelle.toLowerCase()) + " jusqu'à **" : "- " + o.libelle.toLowerCase() + " : jusqu'à **") + dt(o.capital) + "** " + (D ? "3la " + (o.dureeMois / 12 === Math.round(o.dureeMois / 12) ? nb(o.dureeMois / 12) + " snin" : o.dureeMois + " chhar") : "sur " + ans(o.dureeMois)) + " à " + nb(o.tauxPct) + " %");
       L.push(D ? "- endettement taht " + pc(c.quotite) + " mel " + c.base : "- endettement : sous " + pc(c.quotite) + " de votre " + c.base);
@@ -98,7 +106,7 @@
       var pal2 = sy.capacite[p.baseBanque].paliers || [];
       var suivant = pal2.filter(function (x) { return c.mois != null ? x.mois > c.mois : !annee || dateEtape(sy, x.mois).getFullYear() > annee; })[0];
       var o3 = suivant ? offre(suivant, cle) : null;
-      if (o3 && o3.capital > o.capital * 1.05) L.push(D ? "Men **" + suivant.date + "**, " + finDe(suivant.credits, true) + ", twalli tnajjem tousel **" + dt(o3.capital) + "**." : "À partir de **" + suivant.date + "**, " + finDe(suivant.credits, false) + ", ce plafond passe à **" + dt(o3.capital) + "**.");
+      if (o3 && o3.capital > o.capital * 1.05) L.push(D ? "Men **" + suivant.date + "**, " + finDe(suivant, true) + ", twalli tnajjem tousel **" + dt(o3.capital) + "**." : "À partir de **" + suivant.date + "**, " + finDe(suivant, false) + ", ce plafond passe à **" + dt(o3.capital) + "**.");
       var m2 = meilleurMoment(sy), o2 = m2 && m2 !== suivant ? offre(m2, cle) : null;
       if (o2 && o2.capital > Math.max(o.capital, o3 ? o3.capital : 0) * 1.05) L.push(D ? "Ken testanna **" + m2.date + "**, twalli tnajjem tousel **" + dt(o2.capital) + "**." : "Si vous attendez **" + m2.date + "**, il monte jusqu'à **" + dt(o2.capital) + "**.");
       if (p.epargneDisponible > 0) L.push(D ? "W 3andek " + dt(p.epargneDisponible) + " tawfir tnajjem t7otthom avance." : "Vous disposez aussi de " + dt(p.epargneDisponible) + " d'épargne pour l'apport.");

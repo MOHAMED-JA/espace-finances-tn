@@ -756,3 +756,5 @@ body.attente #voyage[hidden] { display: grid !important; visibility: hidden; }
 @media (min-width: 1024px) { .bulle-assistant { display: none; } }
 body.attente .bulle-assistant { opacity: 0; pointer-events: none; }
 body[data-vue-active="assistant"] .bulle-assistant { visibility: hidden; }
+.ligne-liste__info + .ligne-liste__info { margin-top: -4px; }
+.ligne-liste__info--alerte { background: var(--alerte-doux); color: var(--alerte); }

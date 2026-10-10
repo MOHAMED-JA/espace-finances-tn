@@ -453,6 +453,18 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 quadragies. Règle des 8 % dans Orbite (10 oct.)
+
+- **Règle** (loi n° 2024-41 du 2 août 2024, déjà dans le module Crédit et le simulateur crédit) : crédit à **taux fixe** de plus de 84 mois ; avant l'échéance k, intérêts des 36 échéances précédentes > 8 % du capital restant dû ⇒ taux divisé par 2 (même date de fin, la mensualité baisse) ; 1er contrôle à l'échéance 37, puis chaque mois ; après une réduction, contrôle suivant 36 échéances plus tard ; sans limite.
+- **Choix de l'utilisateur** : calcul automatique partout ; taux fixe seulement (module Crédit compris : interrupteur désactivé en TMM + marge) ; type de taux non précisé ⇒ aucune réduction, invitation à le préciser ; rappel seul (pas de lettre).
+- **Vérifié sur le vrai tableau de l'utilisateur** (fichier Excel, non versionné) : crédit immobilier 270 000 DT à 4,5 % (1re échéance mars 2023), remboursement partiel 150 000 DT le 09/01/2024 (mensualité 875,894 DT), ratio 20,7 % à l'échéance 37 ⇒ 2,25 % en mars 2026, mensualité 765,003 DT (retrouvée au millime), fin janvier 2039. Projection : contrôle mars 2029 à 7,67 %, puis réductions en septembre 2031 (8,01 % ⇒ 1,125 %, 734,081 DT) et janvier 2038 (0,5625 %). Ses crédits conso (50 000 DT) et FAS (39 000 DT) durent 84 mois : non concernés. **Son profil Orbite indique encore 875,894 DT à 4,5 %** : à mettre à jour par lui (765,003 DT, 2,25 %, début février 2023, 191 mois, fixe, réduit en mars 2026) ; capacité ≈ 309 DT/mois au lieu de 198.
+- **Code** :
+  - `orbite-calcul.js` : champs crédit `tauxType`, `reductionMois`, `reductionAnnee` ; `reductionsTaux(c, maintenant)` (passé reconstitué à rebours depuis la mensualité, le taux et les échéances restantes ; `possibleDepuis` si une réduction n'a pas été demandée) attachée en `c.reductionTaux` et `sy.credits[i].reduction` ; `paliersMarge` et `sortieEndettement` suivent les baisses de mensualité (`evolutionCharges`), étapes avec `reduits` (une réduction seule fait une étape si elle libère ≥ 10 DT) ; `evenementEtape(x, darija)` ; `tauxOrigine(c)` (taux × 2 si déjà réduit) pour les taux des futurs crédits.
+  - `orbite-systeme.js` : jalons `reduction`, mensualité / taux / capital / intérêts au mois t, `prochaine`. Fiche du crédit : taux, prochaine réduction, encart (ou invitation). Calendrier de la marge, Assistant (résumé IA et réponses locales) et rappels (`reduction-*`, un mois avant, ou tout de suite si « possible depuis ») mis à jour.
+  - Profil : « Type de taux », « Dernière réduction : mois / année », phrase d'état sous chaque crédit.
+  - Limite connue : un remboursement anticipé à l'intérieur de la fenêtre de 36 mois n'est pas reconstitué (on suppose mensualité et taux constants depuis le début ou la dernière réduction).
+- Tests : `tests/espace/regle-8.test.js` (tableau de la banque), rappel ajouté ; unitaires 347, e2e 33/33. Nouveautés « 2026-10-10d », SW `orbite-2026-10-10r`.
+
 ## 3 undequadragies. Assistant et Vie & impôts sur téléphone (10 oct.)
 
 - Cause : la barre du bas (5 onglets : Orbite, Salaire, Épargne, Crédit, Moi) ne contenait ni l'Assistant ni Vie & impôts, présents seulement dans la barre latérale (ordinateur).

@@ -94,8 +94,8 @@
         var lab = el.closest(".champ") && el.closest(".champ").querySelector("label");
         if (lab) lab.setAttribute("for", id);
         if (el.tagName === "SELECT") el.value = v;
-        else if ((c === "anneeDebut" || c === "dureeMois") && !v) el.value = "";
-        else el.value = c === "anneeDebut" ? String(v) : versTexte(el.getAttribute("data-type"), v);
+        else if ((c === "anneeDebut" || c === "dureeMois" || c === "reductionAnnee") && !v) el.value = "";
+        else el.value = c === "anneeDebut" || c === "reductionAnnee" ? String(v) : versTexte(el.getAttribute("data-type"), v);
       });
       var analyser = li.querySelector("[data-analyser]");
       if (analyser) analyser.href = "#credit?mon=" + i;
@@ -264,6 +264,12 @@
       info.textContent = e.calcule
         ? e.payees + " échéances payées sur " + e.duree + " · " + e.restantes + " restantes · dernière échéance en " + e.fin
         : e.restantes > 0 ? e.restantes + " échéances restantes · fin prévue en " + e.fin + ". Indiquez la date de début et la durée pour un calcul exact." : "Indiquez la date de début et la durée : Orbite calcule les échéances restantes et la date de fin.";
+      /* Règle des 8 % : où en est ce crédit ? */
+      var r8 = li.querySelector("[data-reduction]"), rt = e.reduction;
+      if (r8) {
+        var t8 = texteRegle8(rt);
+        r8.textContent = t8.texte; r8.hidden = !t8.texte; r8.classList.toggle("ligne-liste__info--alerte", !!t8.alerte);
+      }
     });
     /* Sous chaque contrat : total versé et capital estimé (ou saisi). */
     var lis = $("liste-contrats").children;
@@ -279,6 +285,22 @@
     $("profil-jauge").style.setProperty("--p", String(pr));
     $("profil-progression-texte").textContent = "Profil complété à " + Math.round(pr * 100) + " %" + (pr < 1 ? " : chaque information affine vos conseils." : ". Merci, vos conseils sont aussi précis que possible.");
   }
+  /* Règle des 8 % (loi n° 2024-41) : une phrase par crédit, sans promettre de gain tant que le taux n'est pas « fixe ». */
+  function texteRegle8(rt) {
+    function pc(x) { return String(Math.round(x * 10000) / 10000).replace(".", ",") + " %"; }
+    function ratio(x) { return (x * 100).toFixed(2).replace(".", ",") + " %"; }
+    if (!rt) return { texte: "" };
+    if (rt.motif === "type") return { texte: "Taux fixe ou variable ? Pour un crédit à taux fixe de plus de 7 ans, la règle des 8 % peut diviser votre taux par deux : précisez-le.", alerte: true };
+    if (rt.motif === "dates") return { texte: "Règle des 8 % : indiquez la date de début et la durée totale pour savoir quand demander une réduction de taux.", alerte: true };
+    if (rt.motif === "variable") return { texte: "Taux variable : non concerné par la règle des 8 % (réservée aux taux fixes)." };
+    if (rt.motif === "duree") return { texte: "7 ans ou moins : non concerné par la règle des 8 % (crédits de plus de 84 mois)." };
+    if (!rt.applicable) return { texte: "" };
+    if (rt.possibleDepuis) return { texte: "Réduction de taux possible depuis " + rt.possibleDepuis.date + " (intérêts des 3 dernières années : " + ratio(rt.possibleDepuis.ratio) + " du capital restant). Demandez-la à votre banque ; si elle est déjà obtenue, indiquez sa date.", alerte: true };
+    var r = rt.reductions[0];
+    if (r) return { texte: "Règle des 8 % : prochaine réduction de taux en " + r.date + " (" + pc(r.tauxAvant) + " → " + pc(r.tauxPct) + ", mensualité " + F.dt3(r.mensualiteAvant) + " → " + F.dt3(r.mensualite) + " DT)" + (rt.prochainControle && !rt.prochainControle.ok ? ". Premier contrôle en " + rt.prochainControle.date + " : " + ratio(rt.prochainControle.ratio) + ", sous le seuil de 8 %." : ".") };
+    return { texte: "Règle des 8 % : aucune nouvelle réduction de taux d'ici la fin de ce crédit." };
+  }
+
   O.surProfil(rendre);
 
   /* Ouverture d'une section précise : #profil?section=budget */
