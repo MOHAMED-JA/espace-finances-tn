@@ -976,3 +976,15 @@ body:not(.expert) .expert-seul { display: none !important; }
 @media (max-width: 900px) { .pension-vue { grid-template-columns: minmax(0, 1fr); } .pension-vue__saisie { position: static; } }
 @media (max-width: 560px) { .pension-vue__net b { font-size: 32px; } .pension-barres { gap: 6px; } }
 body.pension-active[data-vue-active="salaire"] #barre-actions { display: none !important; }
+
+/* ---------- Optimiseur fiscal : détail de l'impôt restant ---------- */
+.fiscal__detail { border: 1px solid var(--filet); border-radius: var(--r-int); padding: 0 14px; }
+.fiscal__detail > summary { cursor: pointer; padding: 12px 0; font-weight: 650; font-size: 14px; color: var(--credit-t); list-style: none; }
+.fiscal__detail > summary::-webkit-details-marker { display: none; }
+.fiscal__detail > summary::after { content: " +"; }
+.fiscal__detail[open] > summary::after { content: " −"; }
+.fiscal__calcul { margin: 0 0 12px; padding-left: 20px; display: grid; gap: 6px; font-size: 13.5px; line-height: 1.5; color: var(--encre-2); font-variant-numeric: tabular-nums; }
+.fiscal__employeur { display: grid; gap: 8px; padding: 12px 0 14px; border-top: 1px solid var(--filet); }
+.fiscal__employeur .champ__lib { margin: 0; font-weight: 600; font-size: 14px; }
+.fiscal__employeur .bascule { max-width: 280px; }
+.fiscal__employeur .champ__aide { margin: 0; }

@@ -80,8 +80,12 @@
     var rest = OC.impotRestantAnnee ? OC.impotRestantAnnee(sy, m) : null;
     if (rest) {
       var sAn = sy.salaireAnnee || sy.salaire, impotAn = Math.max(1, sAn.irpp + sAn.css);
+      /* L'employeur tient-il déjà compte des contrats en cours dans la retenue mensuelle ? Oui par défaut (profil.avPaie). */
+      var applique = sy.profil.avPaie !== false && ecoActuelle > 0, part = applique ? ecoActuelle / impotAn : 0;
       res.paie = { moisRestants: rest.moisRestants, primesRestantes: rest.primesRestantes,
-        impotRestant: Math.max(0, rest.montant * (1 - ecoActuelle / impotAn)) };
+        impotRestant: Math.max(0, rest.montant * (1 - part)),
+        detail: { impotAn: impotAn, impotMois: sAn.impotMois, impotParVersement: sAn.impotParVersement, moisParMois: !!rest.moisParMois,
+          avantPart: rest.montant, ecoActuelle: ecoActuelle, part: part, appliquee: applique, contrats: ecoActuelle > 0 } };
     }
     if (base.impotAvant <= 0) { res.statut = "sans_impot"; return res; }
     if (res.gainPossible <= 20) { res.statut = "optimise"; return res; }

@@ -277,6 +277,8 @@
       contactOk: !!p.contactOk,
       contactOkLe: p.contactOk && typeof p.contactOkLe === "string" && /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(p.contactOkLe) ? p.contactOkLe : "",
       rappelsEmail: !!p.rappelsEmail,
+      /* L'employeur déduit-il déjà l'assurance vie / le CEA de la retenue mensuelle ? (optimiseur fiscal ; oui par défaut) */
+      avPaie: p.avPaie !== false,
       /* Date de naissance complète (âge au jour près) ; l'année seule reste lue pour les anciens profils. */
       dateNaissance: dateIso(p.dateNaissance, "1930-01-01", isoDecale(16)),
       dateEmbauche: dateIso(p.dateEmbauche, "1960-01-01", isoDecale(0)),

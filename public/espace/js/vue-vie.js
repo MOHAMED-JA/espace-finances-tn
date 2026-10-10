@@ -236,6 +236,25 @@
      ["Via la déclaration annuelle", F.dt0(pa.declaration) + " DT", pa.declaration > 0 ? "restitution de l'impôt retenu en trop, l'an prochain" : "rien à récupérer de ce côté"]].forEach(function (k) {
       var d = cree("div"); d.appendChild(cree("dt", null, k[0])); d.appendChild(cree("dd", "chiffre", k[1])); d.appendChild(cree("dd", "fiscal__sous", k[2])); kpi.appendChild(d);
     });
+    /* Détail du calcul de l'impôt restant. */
+    var d = pa.detail, ol = $("fi-paie-calcul"); ol.textContent = "";
+    if (d) {
+      function etape(t) { ol.appendChild(cree("li", null, t)); }
+      etape("Impôt de l'année retenu sur vos paies : " + F.dt3(d.impotAn) + " DT (impôt sur le revenu et contribution de solidarité).");
+      if (d.moisParMois) etape("Votre salaire change dans l'année : chaque paie restante retient l'impôt au salaire de son mois, soit " + F.dt3(d.avantPart) + " DT d'ici le 31 décembre.");
+      else {
+        etape(pa.moisRestants + " paie" + (pa.moisRestants > 1 ? "s" : "") + " restante" + (pa.moisRestants > 1 ? "s" : "") + " × " + F.dt3(d.impotMois) + " DT = " + F.dt3(pa.moisRestants * d.impotMois) + " DT.");
+        if (pa.primesRestantes > 0) etape(String(pa.primesRestantes).replace(".", ",") + " salaire" + (pa.primesRestantes > 1 ? "s" : "") + " de prime × " + F.dt3(d.impotParVersement) + " DT = " + F.dt3(pa.primesRestantes * d.impotParVersement) + " DT (une prime s'ajoute à vos autres revenus : elle est imposée au taux le plus haut de votre barème).");
+        etape("Total encore à retenir : " + F.dt3(d.avantPart) + " DT.");
+      }
+      if (d.appliquee) etape("Moins la part déjà couverte par vos contrats en cours (" + F.dt0(d.ecoActuelle) + " DT d'économie par an, soit " + F.pct(d.part, 1) + " de votre impôt) : " + F.dt3(d.avantPart) + " × (1 − " + F.pct(d.part, 1) + ") = " + F.dt3(pa.impotRestant) + " DT.");
+      else if (d.contrats) etape("Votre employeur ne tient pas compte de vos contrats en cours : rien n'est déduit, l'impôt restant reste " + F.dt3(pa.impotRestant) + " DT.");
+      etape("Votre employeur ne peut pas rendre plus que cet impôt restant : c'est le maximum récupérable sur vos paies cette année ; le reste passe par la déclaration annuelle.");
+      $("fi-paie-employeur").hidden = !d.contrats;
+      var v = O.profil().avPaie === false ? "non" : "oui";
+      doc.querySelectorAll('input[name="fi-av-paie"]').forEach(function (r) { r.checked = r.value === v; });
+      if (d.contrats && $("fi-paie-detail").open) O.placerPastilles($("fi-paie-employeur"));
+    }
     var op = opt.optimalPaie, txt = $("fi-paie-opt"), bt = $("fi-paie-utiliser");
     txt.textContent = "";
     bt.hidden = !op;
@@ -269,6 +288,14 @@
   $("fi-budget").addEventListener("input", function () {
     budgetSaisi = this.value; compter("fiscal");
     var sy = O.synthese(); if (sy) resultatBudget(sy, OI.optimiseurFiscal(sy));
+  });
+
+  $("fi-paie-detail").addEventListener("toggle", function () { if (this.open) O.placerPastilles($("fi-paie-employeur")); });
+  doc.querySelectorAll('input[name="fi-av-paie"]').forEach(function (r) {
+    r.addEventListener("change", function () {
+      O.majProfil({ avPaie: r.value === "oui" });
+      O.toast(r.value === "oui" ? "Noté : votre employeur déduit déjà votre assurance vie de la retenue mensuelle." : "Noté : votre employeur ne déduit pas votre assurance vie ; l'impôt restant est recalculé.");
+    });
   });
 
   /* ---------- Navigation ---------- */

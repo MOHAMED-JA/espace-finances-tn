@@ -1082,6 +1082,25 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(await page.isVisible("#p-embauche"), "date d'embauche de retour");
   });
 
+  await etape("optimiseur fiscal : détail de l'impôt restant et assurance vie déduite ou non par l'employeur", async () => {
+    await page.evaluate(() => window.Orbite.majProfil({ contrats: [{ type: "av", versementMensuel: 100, moisDebut: 1, anneeDebut: 2020 }] }, { immediat: true }));
+    await page.goto(base + "/espace/#vie?onglet=fiscal");
+    await page.waitForSelector("#vie-panneau-fiscal:not([hidden])");
+    const visible = await page.isVisible("#fi-paie");
+    if (visible) {
+      await page.click("#fi-paie-detail > summary");
+      await page.waitForFunction(() => document.querySelectorAll("#fi-paie-calcul li").length >= 3);
+      assert(await page.isVisible("#fi-paie-employeur"), "question employeur affichée (contrat en cours)");
+      const avant = await page.evaluate(() => window.OrbiteIntelligence.optimiseurFiscal(window.Orbite.synthese()).paie.impotRestant);
+      await page.click('#fi-paie-employeur label:has(input[value="non"])');
+      await page.waitForFunction(() => window.Orbite.profil().avPaie === false);
+      const apres = await page.evaluate(() => window.OrbiteIntelligence.optimiseurFiscal(window.Orbite.synthese()).paie.impotRestant);
+      assert(apres > avant, "impôt restant plus élevé sans déduction de l'employeur : " + avant + " → " + apres);
+      await page.click('#fi-paie-employeur label:has(input[value="oui"])');
+      await page.waitForFunction(() => window.Orbite.profil().avPaie === true);
+    }
+  });
+
   await etape("déconnexion puis suppression définitive du compte", async () => {
     await page.goto(base + "/espace/#compte?onglet=donnees");
     await page.waitForSelector("#supprimer-compte");

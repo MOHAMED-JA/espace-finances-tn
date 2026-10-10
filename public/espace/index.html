@@ -736,6 +736,15 @@
               <p class="panneau__sous" id="fi-opt-sous"></p>
               <div class="fiscal__paie" id="fi-paie" hidden>
                 <dl class="fiscal__kpi" id="fi-paie-kpi"></dl>
+                <details class="fiscal__detail" id="fi-paie-detail">
+                  <summary>Comment est calculé ce montant ?</summary>
+                  <ol class="fiscal__calcul" id="fi-paie-calcul"></ol>
+                  <div class="fiscal__employeur" id="fi-paie-employeur" hidden>
+                    <p class="champ__lib" id="fi-av-lib">Votre employeur tient-il déjà compte de votre assurance vie (ou CEA) dans la retenue de chaque mois ?</p>
+                    <div class="bascule" role="radiogroup" aria-labelledby="fi-av-lib"><label><input type="radio" name="fi-av-paie" value="oui"><span>Oui</span></label><label><input type="radio" name="fi-av-paie" value="non"><span>Non</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
+                    <p class="champ__aide">Dans le doute, demandez au service paie si votre attestation d'assurance vie lui a été remise.</p>
+                  </div>
+                </details>
                 <p class="fiscal__paie-opt" id="fi-paie-opt"></p>
                 <button type="button" class="bouton bouton--petit" id="fi-paie-utiliser" hidden>Utiliser ce montant</button>
               </div>
