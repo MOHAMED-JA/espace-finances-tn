@@ -174,6 +174,15 @@
       return appelFonction("assistant", { question: question, historique: historique, contexte: contexte, calcul: calcul || "" }, "L'Assistant ne répond pas pour le moment.");
     }
   };
+  /* ---------- Rappels par email ----------
+   * Le plan (rappels datés, textes sans montant) est calculé sur l'appareil ; la fonction serveur « rappels-email »
+   * l'envoie à 12 h 30 les jours où un rappel arrive. Confirmation immédiate d'une adresse de contact différente. */
+  var rappelsEmail = {
+    enregistrer: function (plan) { return client.rpc("rappels_plan_enregistrer", { p_plan: plan }).then(verifier); },
+    etat: function () { return client.rpc("rappels_mon_etat").then(verifier); },
+    reactiver: function () { return client.rpc("rappels_reactiver").then(verifier); },
+    confirmer: function () { return appelFonction("rappels-email", { action: "confirmation" }, "L'email de confirmation ne part pas pour le moment."); }
+  };
   /* ---------- Photo de profil ----------
    * Préférence dans user_metadata.orbite_avatar : "stockage" (photo importée, espace privé),
    * "google" (photo du compte Google), "aucun" (initiales). Par défaut : Google s'il y en a une. */
@@ -343,6 +352,7 @@
     admin: admin, partage: partage,
     parrainage: parrainage,
     assistant: assistant,
+    rappelsEmail: rappelsEmail,
     estErreurReseau: estErreurReseau,
     horsLigne: function () { return horsLigne || (typeof navigator !== "undefined" && navigator.onLine === false); },
     compterUsage: compterUsage,

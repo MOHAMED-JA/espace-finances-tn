@@ -16,3 +16,8 @@
 .introuvable h1 { font-size: clamp(32px, 5vw, 52px); font-weight: 660; font-stretch: 112%; letter-spacing: -.03em; }
 .introuvable p { color: var(--ink-2); }
 .introuvable__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+/* Page des liens d'email (désinscription, confirmation d'adresse) */
+.rappels-page__icone { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: var(--signal-soft); }
+.rappels-page__icone svg { width: 24px; height: 24px; color: var(--signal); }
+.rappels-page h1 { text-wrap: balance; }
+.rappels-page p { max-width: 46ch; }

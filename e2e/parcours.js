@@ -1046,6 +1046,46 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => /Personne n'a encore demandé/.test(document.getElementById("admin-contacts").textContent));
   });
 
+  await etape("rappels par email : plan sans montant, confirmation de l'adresse de contact, désinscription en un clic", async () => {
+    await page.goto(base + "/espace/#profil");
+    await page.waitForSelector("#p-rappels-email", { state: "attached" });
+    if (await page.isChecked("#p-rappels-email")) await page.click("label:has(#p-rappels-email)");
+    await page.click("label:has(#p-rappels-email)");
+    await page.waitForFunction(() => window.Orbite.profil().rappelsEmail === true);
+    for (let i = 0; i < 40 && !faux.confirmationsEnvoyees().length; i++) await page.waitForTimeout(250);
+    const conf = faux.confirmationsEnvoyees();
+    assert(conf.length === 1 && conf[0].adresse === "aziz.pro@exemple.tn", "confirmation demandée pour l'adresse de contact : " + JSON.stringify(conf));
+    const ligne = faux.rappelsEmailDe("aziz@exemple.tn");
+    assert(Array.isArray(ligne.plan), "plan enregistré");
+    assert(!/\bDT\b/.test(JSON.stringify(ligne.plan)), "aucun montant dans le plan : " + JSON.stringify(ligne.plan).slice(0, 300));
+    await page.waitForFunction(() => /Confirmez aziz\.pro@exemple\.tn/.test(document.getElementById("p-rappels-email-aide").textContent));
+    await page.goto(base + "/rappels.html#c=" + conf[0].jeton);
+    await page.waitForFunction(() => /Adresse confirmée/.test(document.getElementById("rp-titre").textContent));
+    assert(!(await page.evaluate(() => location.hash)), "jeton retiré de l'adresse");
+    assert((await page.textContent("#rp-texte")).includes("aziz.pro@exemple.tn"), "adresse confirmée affichée");
+    await page.goto(base + "/espace/#profil");
+    await page.waitForFunction(() => /Activé : vos rappels partent à aziz\.pro@exemple\.tn/.test(document.getElementById("p-rappels-email-aide").textContent));
+    const jeton = faux.rappelsEmailDe("aziz@exemple.tn").jeton;
+    await page.goto(base + "/rappels.html#d=" + jeton);
+    await page.waitForFunction(() => /C'est noté/.test(document.getElementById("rp-titre").textContent));
+    const meta = () => faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite.rappelsEmail;
+    assert(meta() === false && faux.rappelsEmailDe("aziz@exemple.tn").desinscrit_le, "désinscrit, case du profil décochée");
+    await page.click("#rp-action");
+    await page.waitForFunction(() => /Emails réactivés/.test(document.getElementById("rp-titre").textContent));
+    assert(meta() === true && !faux.rappelsEmailDe("aziz@exemple.tn").desinscrit_le, "réactivé");
+    await page.click("#rp-action");
+    await page.waitForFunction(() => /C'est noté/.test(document.getElementById("rp-titre").textContent));
+    await page.goto("about:blank");
+    await page.goto(base + "/rappels.html#d=00000000-0000-4000-8000-000000000000");
+    await page.waitForFunction(() => /Lien expiré/.test(document.getElementById("rp-titre").textContent));
+    await page.goto("about:blank");
+    await page.goto(base + "/rappels.html");
+    await page.waitForFunction(() => /Lien incomplet/.test(document.getElementById("rp-titre").textContent));
+    await page.goto(base + "/espace/#profil");
+    await page.waitForFunction(() => window.Orbite.profil() && window.Orbite.profil().rappelsEmail === false, null, { timeout: 8000 });
+    assert(!(await page.isChecked("#p-rappels-email")), "case décochée après la désinscription par email");
+  });
+
   await etape("statut retraité : profil, « Ma pension », loi de finances 2026, retour au statut salarié", async () => {
     await page.goto(base + "/espace/#profil?section=salaire");
     await page.waitForSelector("#sec-salaire", { state: "visible" });

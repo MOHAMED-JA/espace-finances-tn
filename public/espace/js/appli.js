@@ -154,9 +154,63 @@
     O.toast("Rappels coupés sur cet appareil.");
   });
 
+  /* ---------- Rappels par email ----------
+     Plan daté (textes sans montant, RappelsCalcul.planEmail) enregistré seulement s'il a changé ; la fonction serveur
+     « rappels-email » l'envoie à 12 h 30. Adresse de contact différente de la connexion : confirmation par un clic. */
+  var RE = E && E.rappelsEmail, signatureEnvoyee = null, etatEmail = null, confirmationDemandee = "", relanceFaite = false, attente = null;
+  function connexion() { var u = O.utilisateur && O.utilisateur(); return ((u && u.email) || "").toLowerCase(); }
+  function signature(plan) { return JSON.stringify(plan.map(function (x) { return [x.id, String(x.quand).slice(0, 10), x.jusqua, x.etiquette, x.titre, x.corps, x.conseil, x.url]; })); }
+  function recent(iso, jours) { var t = iso ? Date.parse(iso) : NaN; return isFinite(t) && Date.now() - t < jours * 86400000; }
+  function synchroniserEmail() {
+    var p = O.profil(); if (!p || !RE || !R || !R.planEmail) return;
+    if (!p.rappelsEmail) { rendreEmail(); return; }
+    var plan = R.planEmail(liste()), sig = signature(plan);
+    if (sig === signatureEnvoyee) { rendreEmail(); return; }
+    signatureEnvoyee = sig;
+    /* Après une réactivation en cours, pour ne pas lire l'ancienne désinscription. */
+    (attente || Promise.resolve()).then(function () { return RE.enregistrer(plan); }).then(apresEtat, function () { signatureEnvoyee = null; });
+  }
+  function apresEtat(etat) {
+    etatEmail = etat || {};
+    var p = O.profil();
+    /* Désinscrit depuis un email : la case du profil suit (elle ne se recoche que par l'utilisateur). */
+    if (p && p.rappelsEmail && etatEmail.desinscrit_le) { O.majProfil({ rappelsEmail: false }); return; }
+    demanderConfirmation();
+    rendreEmail();
+  }
+  function demanderConfirmation() {
+    var p = O.profil(), e = etatEmail, c = p ? String(p.emailContact || "").toLowerCase() : "";
+    if (!p || !p.rappelsEmail || !e || !c || c === connexion() || c === e.adresse_confirmee || confirmationDemandee === c) return;
+    if (c === e.confirmation_adresse && recent(e.confirmation_envoyee_le, 7)) return;
+    confirmationDemandee = c;
+    RE.confirmer().then(function (r) {
+      if (r && r.envoye) {
+        etatEmail.confirmation_adresse = c; etatEmail.confirmation_envoyee_le = new Date().toISOString();
+        O.toast("Email de confirmation envoyé à " + c + " : cliquez sur le lien qu'il contient.");
+      } else if (r && r.raison === "inactif" && !relanceFaite) {
+        /* Le profil (case cochée) n'était pas encore enregistré : un nouvel essai dans quelques secondes. */
+        relanceFaite = true; confirmationDemandee = ""; setTimeout(demanderConfirmation, 5000);
+      }
+      rendreEmail();
+    }, function () { confirmationDemandee = ""; });
+  }
+  function rendreEmail() {
+    var aide = $("p-rappels-email-aide"), p = O.profil(); if (!aide || !p) return;
+    var c = String(p.emailContact || "").toLowerCase(), e = etatEmail || {};
+    if (!p.rappelsEmail) aide.textContent = "Fin d'un crédit, réduction de taux, 31 décembre : un email à 12 h 30, seulement les jours où un rappel arrive, sans aucun montant.";
+    else if (c && c !== connexion() && c !== e.adresse_confirmee) aide.textContent = "Confirmez " + c + " : cliquez sur le lien de l'email envoyé à cette adresse (valable 7 jours). D'ici là, aucun rappel n'y part.";
+    else aide.textContent = "Activé : vos rappels partent à " + (c || connexion()) + " à 12 h 30, les jours où il y en a un, sans aucun montant.";
+  }
+  var caseEmail = $("p-rappels-email");
+  if (caseEmail && RE) caseEmail.addEventListener("change", function () {
+    signatureEnvoyee = null; relanceFaite = false;
+    /* Cochée par l'utilisateur : lève une désinscription faite depuis un email. Décochée : le plan est effacé. */
+    attente = (caseEmail.checked ? RE.reactiver() : RE.enregistrer([])).then(function (e) { etatEmail = e || {}; rendreEmail(); }, function () {});
+  });
+
   /* Rappels mis à jour à chaque changement du profil (et au démarrage), sans surcharger : une fois par seconde au plus. */
   var minuterie = null;
-  O.surProfil(function () { clearTimeout(minuterie); minuterie = setTimeout(envoyerRappels, 1000); });
+  O.surProfil(function () { clearTimeout(minuterie); minuterie = setTimeout(function () { envoyerRappels(); synchroniserEmail(); }, 1000); });
   doc.addEventListener("orbite:vue", function (e) { if (e.detail.vue === "compte") { majAppli(); rendreRappels(); } });
   majAppli();
 })();
