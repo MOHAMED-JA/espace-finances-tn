@@ -241,6 +241,28 @@
       mois: entier(r.mois, 1, 1, 12), annee: entier(r.annee, 0, 0, 2100) };
   }
 
+  /* Coordonnées facultatives. Email : forme simple vérifiée. Téléphone : 8 chiffres = Tunisie (+216), sinon +indicatif (8 à 15 chiffres). */
+  function lireEmail(v) {
+    var t = String(v == null ? "" : v).trim().toLowerCase();
+    if (!t) return { valide: true, valeur: "" };
+    return t.length <= 120 && /^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[a-z]{2,}$/.test(t) ? { valide: true, valeur: t } : { valide: false, valeur: "" };
+  }
+  function lireTelephone(v) {
+    var t = String(v == null ? "" : v).trim();
+    if (!t) return { valide: true, valeur: "" };
+    if (/[^\d\s().+-]/.test(t)) return { valide: false, valeur: "" };
+    var plus = /^(\+|00)/.test(t), d = t.replace(/^00/, "").replace(/\D/g, "");
+    if (!plus && d.length === 8 && /^[2-9]/.test(d)) return { valide: true, valeur: "+216" + d };
+    if (plus && d.indexOf("216") === 0) return d.length === 11 && /^[2-9]/.test(d.charAt(3)) ? { valide: true, valeur: "+" + d } : { valide: false, valeur: "" };
+    if (plus && d.length >= 8 && d.length <= 15 && d.charAt(0) !== "0") return { valide: true, valeur: "+" + d };
+    return { valide: false, valeur: "" };
+  }
+  function formatTelephone(v) {
+    if (!v) return "";
+    var m = /^\+216(\d{2})(\d{3})(\d{3})$/.exec(v);
+    return m ? "+216 " + m[1] + " " + m[2] + " " + m[3] : v;
+  }
+
   /* Profil nettoyé : tout champ inconnu ou hors bornes reprend sa valeur par défaut. */
   function normaliser(p0) {
     var d = profilParDefaut(), p = p0 || {};
@@ -248,6 +270,12 @@
     return {
       prenom: texte(p.prenom, 40),
       nom: texte(p.nom, 60),
+      emailContact: lireEmail(p.emailContact).valeur,
+      telephone: lireTelephone(p.telephone).valeur,
+      /* Accord pour être recontacté (visible par l'administrateur seulement s'il est donné) et rappels par email. */
+      contactOk: !!p.contactOk,
+      contactOkLe: p.contactOk && typeof p.contactOkLe === "string" && /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(p.contactOkLe) ? p.contactOkLe : "",
+      rappelsEmail: !!p.rappelsEmail,
       /* Date de naissance complète (âge au jour près) ; l'année seule reste lue pour les anciens profils. */
       dateNaissance: dateIso(p.dateNaissance, "1930-01-01", isoDecale(16)),
       dateEmbauche: dateIso(p.dateEmbauche, "1960-01-01", isoDecale(0)),
@@ -991,7 +1019,7 @@
   }
 
   return {
-    TMM: TMM, CREDITS_TYPES: CREDITS_TYPES, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, contratCommence: contratCommence, normaliserChangement: normaliserChangement, normaliserScenario: normaliserScenario, MAX_SCENARIOS: MAX_SCENARIOS, MAX_CHANGEMENTS: MAX_CHANGEMENTS, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
+    TMM: TMM, CREDITS_TYPES: CREDITS_TYPES, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, lireEmail: lireEmail, lireTelephone: lireTelephone, formatTelephone: formatTelephone, contratCommence: contratCommence, normaliserChangement: normaliserChangement, normaliserScenario: normaliserScenario, MAX_SCENARIOS: MAX_SCENARIOS, MAX_CHANGEMENTS: MAX_CHANGEMENTS, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
     profilParDefaut: profilParDefaut, normaliser: normaliser, age: age, etatSalaire: etatSalaire, entreeBrut: entreeBrut,
     tranche: tranche, salaire: salaire, augmentation: augmentation, calendrierPrimes: calendrierPrimes, impotRestantAnnee: impotRestantAnnee,
     capitalPourMensualite: capitalPourMensualite, mensualitePourCapital: mensualitePourCapital, capacite: capacite,

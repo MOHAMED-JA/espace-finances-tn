@@ -453,6 +453,16 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 quaterquadragies. Coordonnées facultatives et concurrent simulateur.tn (10 oct.)
+
+- **Concurrent simulateur.tn** : le réseau de l'environnement Claude refuse ce domaine (403) ; l'utilisateur peut l'ajouter dans Network access (Allowed domains) ou envoyer des captures. D'après la recherche web : « Simulateur Avantage Fiscal », gratuit, un seul calcul (économie d'impôt assurance vie / CEA, déduction jusqu'à 100 000 DT, réduction jusqu'à 55 %), signé par une experte en optimisation fiscale, email et téléphone de contact affichés (sert à être recontacté). Leurs atouts : simplicité, contact humain. Comparaison détaillée à faire dès que le site est accessible.
+- **Demande** : email et téléphone facultatifs comme chez le concurrent. **Choix de l'utilisateur** : usages = être recontacté + rappels par email + fiche ; dans Mon profil › Vous ; email prérempli (connexion) et modifiable ; téléphone Tunisie + étranger.
+- **Profil** (`orbite-calcul.js`) : `emailContact` (`lireEmail` : forme simple, minuscules, 120 car.), `telephone` (`lireTelephone` : 8 chiffres commençant par 2-9 ⇒ `+216…` ; `+216` / `00216` + 8 chiffres ; sinon `+indicatif` 8 à 15 chiffres ; `formatTelephone` → « +216 22 123 456 »), `contactOk` + `contactOkLe` (ISO, effacée sans accord), `rappelsEmail`. Vide = l'email de connexion (affiché, jamais recopié).
+- **Interface** : bloc `#contact-profil` en bas de « Vous » (champs `#p-email`, `#p-tel`, erreurs à la sortie du champ, interrupteurs `#p-contact-ok`, `#p-rappels-email`). « Recevoir mes rappels par email » est enregistré mais **l'envoi n'existe pas encore** (le texte le dit) : il faudra un service d'envoi (question posée à l'utilisateur).
+- **Admin** : migration `0010_contacts.sql` **appliquée** sur Supabase (`admin_contacts()`, security definer, `exiger_admin`, refusée à `anon`) : nom, email de contact (ou de connexion), téléphone, date d'accord, rappels souhaités, **uniquement si `contactOk = true`**. Section « Demandes de contact » (`#admin-contacts`) avec liens mailto / tel. `Espace.admin.contacts()`.
+- Confidentialité mise à jour (coordonnées facultatives, « Être recontacté »). L'Assistant ne reçoit jamais ces coordonnées (résumé construit champ par champ).
+- Tests : `tests/espace/contact.test.js` (3) ; unitaires 365 ; e2e 40/40 (email prérempli, erreurs, mise en forme, accord visible par l'admin puis retiré). Nouveautés « 2026-10-10h », SW `orbite-2026-10-10v`.
+
 ## 3 terquadragies. Lot 2 : « Et si… » (B2) et mode Expert (C2) (10 oct.)
 
 - **Maquette validée** : artifact privé https://claude.ai/artifact/BRFV4yY2v7u5Pih47Z1xQH (source dans le bloc-notes, `lot2/maquette/`, branchée sur le vrai moteur). **Choix de l'utilisateur** : scénarios dans Vie & impôts ; 4 types de changements (salaire / nouveau poste, nouveau crédit, épargne mensuelle, événements de vie : mariage, enfant, remboursement anticipé) ; interrupteur Expert dans Paramètres ; export Excel + CSV ; « Appliquer » comme proposé ; bilan **hors valeur du bien acheté** ; horizon **10 ans fixe**.

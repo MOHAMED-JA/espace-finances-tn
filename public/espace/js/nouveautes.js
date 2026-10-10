@@ -3,9 +3,10 @@
  * Changer « version » pour les montrer de nouveau ; 2 à 4 points courts, du point de vue de l'utilisateur.
  */
 window.ORBITE_NOUVEAUTES = {
-  version: "2026-10-10g",
+  version: "2026-10-10h",
   date: "10 octobre 2026",
   points: [
+    { titre: "Vos coordonnées, si vous le souhaitez.", texte: "Dans Mon profil › Vous : un email de contact et un téléphone (Tunisie ou étranger), facultatifs. Cochez « J'accepte d'être recontacté·e » pour que l'équipe Orbite puisse vous joindre ; décochez pour retirer votre accord à tout moment." },
     { titre: "Et si… : comparez jusqu'à 3 avenirs.", texte: "Dans Vie & impôts, créez des scénarios (nouveau poste, crédit, épargne, mariage, enfant, remboursement anticipé) et comparez-les à aujourd'hui sur 10 ans : reste par mois, marge de crédit, épargne, impôt. Orbite signale un crédit que la banque refuserait, et vous pouvez appliquer un scénario à votre profil." },
     { titre: "Mode Expert.", texte: "À activer dans Paramètres › Préférences : tableau d'amortissement de chaque crédit, paie de l'année mois par mois, Mon orbite mois par mois, exports CSV et « Tout exporter » en Excel." },
     { titre: "Votre salaire a augmenté ? Mettez-le à jour.", texte: "Dans Mon profil (ou depuis le module Salaire), indiquez le nouveau salaire et le mois où il s'applique. L'historique est gardé, l'impôt de l'année se calcule mois par mois, et une hausse annoncée s'applique toute seule à sa date, jusque dans Mon orbite." },

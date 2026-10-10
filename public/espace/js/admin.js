@@ -220,6 +220,24 @@
     var art = $("admin-fiche");
     art.hidden = false; art.focus();
   }
+  /* ---------- Demandes de contact (accord « J'accepte d'être recontacté·e », migration 0010) ---------- */
+  function rendreContacts(liste) {
+    var ul = $("admin-contacts");
+    ul.textContent = "";
+    $("admin-contacts-nb").textContent = liste.length ? String(liste.length) : "";
+    if (!liste.length) { ul.appendChild(cree("li", "admin__vide", "Personne n'a encore demandé à être recontacté.")); return; }
+    liste.forEach(function (c) {
+      var li = cree("li", "admin__contact");
+      li.appendChild(cree("strong", null, c.nom || c.nom_compte || "Sans nom"));
+      var liens = cree("span", "admin__contact-liens");
+      if (c.email) { var a = cree("a", null, c.email); a.href = "mailto:" + encodeURIComponent(c.email).replace(/%40/g, "@"); liens.appendChild(a); }
+      if (c.telephone) { var t = cree("a", null, window.OrbiteCalcul.formatTelephone(c.telephone)); t.href = "tel:" + c.telephone; liens.appendChild(t); }
+      li.appendChild(liens);
+      li.appendChild(cree("small", null, "Accord du " + dateCourte(c.accorde_le) + (c.rappels_email ? " · rappels par email souhaités" : "")));
+      ul.appendChild(li);
+    });
+  }
+  function chargerContacts() { return E.admin.contacts().then(function (l) { rendreContacts(l || []); }); }
   function chargerFiches() { return E.admin.fiches().then(function (l) { rendreFiches(l || []); }); }
   $("admin-fiches").addEventListener("click", function (e) {
     var b = e.target.closest("[data-fiche]");
@@ -235,7 +253,7 @@
     if (!estAdmin) return Promise.resolve();
     var zone = $("admin"), btn = $("admin-actualiser");
     zone.setAttribute("aria-busy", "true"); btn.disabled = true;
-    return Promise.all([E.admin.tableau(), E.admin.alertes(), chargerStatistiques(), chargerCodes(), chargerFiches()]).then(function (r) {
+    return Promise.all([E.admin.tableau(), E.admin.alertes(), chargerStatistiques(), chargerCodes(), chargerFiches(), chargerContacts()]).then(function (r) {
       donnees = r[0];
       rendreTableau(donnees);
       rendreAlertes(r[1] || []);

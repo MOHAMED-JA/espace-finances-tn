@@ -340,7 +340,7 @@
 
           <form id="form-profil-complet" class="profil" novalidate>
             <details class="depliant" id="sec-identite" open>
-              <summary><span class="depliant__icone"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg></span><span>Vous<small>Nom, prénom, date de naissance, situation de famille</small></span><svg class="chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
+              <summary><span class="depliant__icone"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg></span><span>Vous<small>Nom, prénom, date de naissance, situation de famille, coordonnées</small></span><svg class="chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
               <div class="depliant__corps grille-champs">
                 <div class="champ"><label for="p-nom">Nom</label><div class="saisie"><input id="p-nom" data-p="nom" type="text" maxlength="60" autocomplete="family-name"></div></div>
                 <div class="champ"><label for="p-prenom">Prénom</label><div class="saisie"><input id="p-prenom" data-p="prenom" type="text" maxlength="40" autocomplete="given-name"></div></div>
@@ -352,6 +352,15 @@
                   <div class="compteur-ligne"><span id="lp-etudiants">Dont étudiants (sans bourse)</span><span class="compteur" role="group" aria-labelledby="lp-etudiants"><button type="button" data-pp="etudiants" data-pas="-1" aria-label="Un étudiant de moins"><svg aria-hidden="true"><use href="/orbite/icones.svg#moins"/></svg></button><output data-po="etudiants">0</output><button type="button" data-pp="etudiants" data-pas="1" aria-label="Un étudiant de plus"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg></button></span></div>
                   <div class="compteur-ligne"><span id="lp-handicapes">Enfants handicapés</span><span class="compteur" role="group" aria-labelledby="lp-handicapes"><button type="button" data-pp="handicapes" data-pas="-1" aria-label="Un enfant de moins"><svg aria-hidden="true"><use href="/orbite/icones.svg#moins"/></svg></button><output data-po="handicapes">0</output><button type="button" data-pp="handicapes" data-pas="1" aria-label="Un enfant de plus"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg></button></span></div>
                   <div class="compteur-ligne"><span id="lp-parents">Parents à charge</span><span class="compteur" role="group" aria-labelledby="lp-parents"><button type="button" data-pp="parents" data-pas="-1" aria-label="Un parent de moins"><svg aria-hidden="true"><use href="/orbite/icones.svg#moins"/></svg></button><output data-po="parents">0</output><button type="button" data-pp="parents" data-pas="1" aria-label="Un parent de plus"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg></button></span></div>
+                </div>
+                <div class="contact-profil champ--large" id="contact-profil">
+                  <p class="contact-profil__titre">Vous joindre <span class="champ__facultatif">facultatif</span></p>
+                  <div class="grille-champs">
+                    <div class="champ"><label for="p-email">Email de contact</label><div class="saisie"><input id="p-email" data-p="emailContact" type="email" inputmode="email" autocomplete="email" maxlength="120" spellcheck="false" aria-describedby="p-email-aide p-email-err"></div><span class="champ__aide" id="p-email-aide">Repris de votre connexion ; mettez-en un autre si vous préférez.</span><span class="erreur-champ" id="p-email-err" hidden>Adresse email incomplète (exemple : nom@exemple.tn).</span></div>
+                    <div class="champ"><label for="p-tel">Téléphone</label><div class="saisie"><input id="p-tel" data-p="telephone" type="tel" inputmode="tel" autocomplete="tel" maxlength="22" placeholder="22 123 456" aria-describedby="p-tel-aide p-tel-err"></div><span class="champ__aide" id="p-tel-aide">8 chiffres en Tunisie ; à l'étranger, commencez par + et l'indicatif.</span><span class="erreur-champ" id="p-tel-err" hidden>Numéro non reconnu : 8 chiffres (22 123 456) ou +indicatif (+33 6 12 34 56 78).</span></div>
+                  </div>
+                  <label class="interrupteur"><span><strong>J'accepte d'être recontacté·e</strong><small>Par l'équipe Orbite, par email ou par téléphone, au sujet de mes calculs. Vous pouvez retirer cet accord à tout moment.</small></span><input type="checkbox" data-p="contactOk" id="p-contact-ok" role="switch"><span class="interrupteur__piste" aria-hidden="true"></span></label>
+                  <label class="interrupteur"><span><strong>Recevoir mes rappels par email</strong><small id="p-rappels-email-aide">Fin d'un crédit, réduction de taux, 31 décembre. L'envoi par email arrive bientôt : votre choix est déjà enregistré.</small></span><input type="checkbox" data-p="rappelsEmail" id="p-rappels-email" role="switch"><span class="interrupteur__piste" aria-hidden="true"></span></label>
                 </div>
               </div>
             </details>
@@ -935,6 +944,11 @@
                     <button type="submit" class="bouton bouton--plein bouton--petit">Enregistrer le code</button>
                   </form>
                 </details>
+              </section>
+              <section class="panneau admin__bloc" aria-labelledby="admin-t-contacts">
+                <div class="admin__tete"><h2 id="admin-t-contacts">Demandes de contact <span class="puce" id="admin-contacts-nb"></span></h2></div>
+                <p class="admin__note">Seuls les comptes qui ont coché « J'accepte d'être recontacté·e » dans Mon profil apparaissent ici. S'ils décochent, ils disparaissent aussitôt. Sans email de contact saisi, c'est l'email de connexion.</p>
+                <ul class="admin__contacts" id="admin-contacts"></ul>
               </section>
               <section class="panneau admin__bloc" aria-labelledby="admin-t-fiches">
                 <div class="admin__tete"><h2 id="admin-t-fiches">Fiches partagées</h2></div>

@@ -336,6 +336,12 @@ function creer() {
         par_formule: {}, revenus_total: 0, revenus_30j: 0, paiements_30j: 0, paiements_test: paiements.filter((p) => p.statut === "paye").length,
         essais_termines: 0, convertis: 0, desabonnes: 0, inscriptions_30j: [{ jour: new Date().toISOString().slice(0, 10), n }], utilisateurs: liste, alertes_non_lues: alertes.filter((a) => !a.lue).length });
     }
+    if (url.pathname === "/rest/v1/rpc/admin_contacts") {
+      return repondre(route, 200, [...comptes.values()].map((x) => x.user).filter((c) => ((c.user_metadata || {}).orbite || {}).contactOk === true).map((c) => {
+        const o = c.user_metadata.orbite;
+        return { id: c.id, nom: ((o.prenom || "") + " " + (o.nom || "")).trim(), nom_compte: c.user_metadata.nom || "", email: o.emailContact || c.email, telephone: o.telephone || null, accorde_le: o.contactOkLe || null, rappels_email: o.rappelsEmail === true };
+      }));
+    }
     if (url.pathname === "/rest/v1/rpc/admin_fiches") {
       return repondre(route, 200, [...partages.keys()].map((id) => { const c = compteParId(id).user, o = (c.user_metadata || {}).orbite || {};
         return { id, email: c.email, accorde_le: partages.get(id), nom: ((o.prenom || "") + " " + (o.nom || "")).trim(), nom_compte: (c.user_metadata || {}).nom || "" }; }));

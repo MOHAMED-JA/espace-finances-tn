@@ -36,6 +36,8 @@
       else if (el.type === "checkbox") el.checked = !!v;
       else if (el.tagName === "SELECT") el.value = v;
       else if (el.getAttribute("data-type") === "date") el.value = v || "";
+      else if (cle === "emailContact") el.value = v || emailConnexion();
+      else if (cle === "telephone") el.value = OC.formatTelephone(v);
       else el.value = cle === "anneeNaissance" ? String(v) : versTexte(el.getAttribute("data-type"), v);
     });
     form.querySelectorAll("[data-po]").forEach(function (o) {
@@ -118,9 +120,30 @@
   }
 
   /* ---------- Événements ---------- */
+  /* Coordonnées : enregistrées si valides ; l'erreur s'affiche quand on quitte le champ. */
+  function emailConnexion() { var u = O.utilisateur && O.utilisateur(); return (u && u.email) || ""; }
+  function controleContact(el, montrer) {
+    var cle = el.getAttribute("data-p"), r = cle === "telephone" ? OC.lireTelephone(el.value) : OC.lireEmail(el.value);
+    var err = $(cle === "telephone" ? "p-tel-err" : "p-email-err");
+    if (r.valide || montrer) { el.setAttribute("aria-invalid", r.valide ? "false" : "true"); err.hidden = r.valide; }
+    return r;
+  }
   function majDepuis(el) {
     var cle = el.getAttribute("data-p");
     var partiel = {};
+    if (cle === "emailContact" || cle === "telephone") {
+      var r = controleContact(el, doc.activeElement !== el);
+      if (!r.valide) return;
+      /* L'email de connexion affiché par défaut n'est pas recopié dans le profil. */
+      partiel[cle] = cle === "emailContact" && r.valeur === emailConnexion().toLowerCase() ? "" : r.valeur;
+      O.majProfil(partiel);
+      return;
+    }
+    if (cle === "contactOk") {
+      O.majProfil({ contactOk: el.checked, contactOkLe: el.checked ? new Date().toISOString() : "" });
+      O.toast(el.checked ? "Merci : l'équipe Orbite pourra vous recontacter. Retirable à tout moment ici." : "Accord retiré : l'équipe Orbite ne voit plus vos coordonnées.");
+      return;
+    }
     if (el.type === "radio") { if (!el.checked) return; partiel[cle] = el.value; }
     else if (el.type === "checkbox") partiel[cle] = el.checked;
     else if (el.tagName === "SELECT") partiel[cle] = el.value;
@@ -177,6 +200,10 @@
     if (el.hasAttribute && el.hasAttribute("data-p")) vider("p:" + el.getAttribute("data-p"));
     else if (el.hasAttribute && el.hasAttribute("data-c")) vider("l:" + el.closest("[data-liste]").getAttribute("data-liste"));
     else if (el.hasAttribute && el.hasAttribute("data-prime")) vider("primes");
+    if (el.id === "p-email" || el.id === "p-tel") {
+      var rc = controleContact(el, true);
+      if (rc.valide) el.value = el.id === "p-tel" ? OC.formatTelephone(rc.valeur) : rc.valeur || emailConnexion();
+    }
     if (el.getAttribute && el.getAttribute("data-type") === "montant") { var lu = F.lire(el.value); if (lu.valide && !lu.vide) el.value = F.saisie(lu.valeur); }
     enEdition = false;
   });
