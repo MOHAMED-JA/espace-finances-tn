@@ -453,6 +453,12 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 sexquadragies. Optimiseur fiscal : détail de l'impôt restant (10 oct.)
+
+- **Question de l'utilisateur** : pourquoi 4 443 DT d'« impôt restant à retenir » sur ses paies ? Reproduit au millime avec son profil : impôt annuel 16 910,276 DT (IRPP 16 614,688 + CSS 295,588) ; 3 paies × 844,547 + 1,5 salaire de prime (décembre, calendrier [0,0,1,0,0,1,0,0,1,5,0,0,1,5]) × 1 355,142 = 4 566,355 DT ; moins la part de l'assurance vie déjà déduite (456 DT/an = 2,7 % de l'impôt) ⇒ 4 443,219 DT. Son profil indique encore 875,894 DT à 2,25 % pour le crédit immobilier (à corriger par lui : 765,003 DT, début février 2023, 191 mois).
+- **Choix de l'utilisateur** : afficher le détail **et** demander si l'employeur déduit déjà l'assurance vie. Profil `avPaie` (oui par défaut). `OI.optimiseurFiscal` : `paie.detail` (`impotAn`, `impotMois`, `impotParVersement`, `avantPart`, `ecoActuelle`, `part`, `appliquee`, `contrats`, `moisParMois`) ; sans déduction de l'employeur, l'impôt restant est entier (4 566 DT). Interface : `#fi-paie-detail` (« Comment est calculé ce montant ? »), étapes `#fi-paie-calcul`, question `#fi-paie-employeur` (affichée s'il y a des contrats).
+- Tests : `tests/espace/impot-restant.test.js` (2) ; unitaires 374 ; e2e 42/42. Nouveautés « 2026-10-10j », SW `orbite-2026-10-10x`.
+
 ## 3 quinquadragies. Statut retraité (10 oct., livré)
 
 - **Demande** : idée reprise d'AgentPro (simulateur.tn), seule retenue par l'utilisateur ; dépôts : l'utilisateur passe en privé tous ses dépôts **sauf portail-rh** (GitHub Pages du calculateur public).
