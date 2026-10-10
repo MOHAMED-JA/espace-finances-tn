@@ -25,7 +25,8 @@
      =================================================================== */
   function entreeFiscale(sy, av, cea) {
     var p = sy.profil;
-    return { revenu: sy.salaire.revenuFiscal, chef: p.chefDeFamille, enfants: p.enfants, infirmes: p.handicapes,
+    /* Revenu de l'année civile : calculé mois par mois si le salaire change dans l'année. */
+    return { revenu: (sy.salaireAnnee || sy.salaire).revenuFiscal, chef: p.chefDeFamille, enfants: p.enfants, infirmes: p.handicapes,
       etudiants: p.etudiants, parents: p.parents, investissementAv: av, investissementCea: cea, leger: true };
   }
   function economie(sy, av, cea) { return MF.simuler(entreeFiscale(sy, av, cea)).economie; }
@@ -53,7 +54,7 @@
   function optimiseurFiscal(sy, options) {
     var o = options || {}, p = sy.profil, m = o.maintenant || sy.maintenant || new Date();
     var base = MF.simuler(entreeFiscale(sy, 0, 0));
-    var P = base.produits, revenu = sy.salaire.revenuFiscal;
+    var P = base.produits, revenu = (sy.salaireAnnee || sy.salaire).revenuFiscal;
     var plafAv = Math.min(isFinite(P.av.plafond) ? P.av.plafond : revenu, revenu);
     var plafCea = Math.min(isFinite(P.cea.plafond) ? P.cea.plafond : revenu, revenu);
     var ex = versementsAnnuels(p);
@@ -77,7 +78,7 @@
        net de l'avantage des contrats déjà pris en compte. Au-delà, l'économie se récupère par la déclaration annuelle. */
     var rest = OC.impotRestantAnnee ? OC.impotRestantAnnee(sy, m) : null;
     if (rest) {
-      var impotAn = Math.max(1, sy.salaire.irpp + sy.salaire.css);
+      var sAn = sy.salaireAnnee || sy.salaire, impotAn = Math.max(1, sAn.irpp + sAn.css);
       res.paie = { moisRestants: rest.moisRestants, primesRestantes: rest.primesRestantes,
         impotRestant: Math.max(0, rest.montant * (1 - ecoActuelle / impotAn)) };
     }
@@ -334,6 +335,14 @@
     L.push("Salaire : " + dt(p.montant) + " " + p.sens + " par " + (p.periode === "annuel" ? "an" : "mois") + ", " + p.nombreSalaires + " salaires par an. Net mensuel : " + dt(s.netMensuel) +
       " ; net moyen (année ÷ 12) : " + dt(s.netMoyen) + " ; brut annuel : " + dt(s.brutAnnuel) + " ; impôt sur le revenu : " + dt(s.irpp) + " par an (tranche à " + pc(s.tranche.taux) + ")." +
       (p.autresRevenus ? " Autres revenus : " + dt(p.autresRevenus) + " par mois." : ""));
+    var hi = sy.historique;
+    if (hi) {
+      var hl = [];
+      if (hi.depuis) hl.push("salaire actuel en vigueur depuis " + hi.depuis + (hi.hausse != null ? " (" + (hi.hausse >= 0 ? "+" : "") + pc(hi.hausse) + " de brut par rapport au précédent, " + dt(hi.brutPrecedent) + " brut par mois)" : ""));
+      hi.futurs.forEach(function (f) { hl.push("hausse prévue en " + f.date + " : " + dt(f.brutMensuel) + " brut, " + dt(f.netMensuel) + " net par mois"); });
+      if (sy.salaireAnnee) hl.push("impôt de l'année " + sy.salaireAnnee.annee + " calculé mois par mois : " + dt(sy.salaireAnnee.irpp) + " d'IRPP sur " + dt(sy.salaireAnnee.brutAnnuel) + " de brut");
+      if (hl.length) L.push("Historique du salaire : " + hl.join(" ; ") + ".");
+    }
     L.push("Banque : " + (p.banque || "non précisée") + ", prête jusqu'à " + pc(q) + " du " + b + " (revenu retenu : " + dt(cap.revenu) + " par mois, " +
       (p.revenuBanque === "annuel" ? "salaires et primes de l'année ÷ 12" : "salaire mensuel") + "). Endettement actuel : " + pc(cap.tauxEndettementActuel) + ". Nouvelle mensualité possible aujourd'hui : " + dt(cap.mensualiteMax) + ".");
     if (cap.mensualiteMax >= 1) L.push("Aujourd'hui, la banque peut prêter : " + cap.credits.filter(function (c) { return c.cle !== "immo25"; }).map(function (c) {

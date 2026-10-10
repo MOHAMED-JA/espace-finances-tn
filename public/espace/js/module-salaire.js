@@ -811,8 +811,17 @@
   }
 
   $("vers-profil").addEventListener("click", function () {
-    window.Orbite.majProfil(window.ModuleSalaire.versProfil(), { immediat: true });
-    window.Orbite.toast("Votre profil reprend ces valeurs : votre orbite est à jour.");
+    var O = window.Orbite, v = window.ModuleSalaire.versProfil(), p = O.profil();
+    /* Nouveau salaire alors qu'un salaire est déjà enregistré : on demande à partir de quel mois il s'applique
+       (historique du salaire) ; le reste (situation, primes…) est repris tout de suite. */
+    if (p && p.montant > 0 && v.montant > 0 && !window.OrbiteCalcul.memeSalaire(v, p)) {
+      var autres = Object.assign({}, v); delete autres.montant; delete autres.sens; delete autres.periode;
+      O.majProfil(autres, { immediat: true });
+      O.mettreAJourSalaire({ montant: v.montant, sens: v.sens, periode: v.periode });
+      return;
+    }
+    O.majProfil(v, { immediat: true });
+    O.toast("Votre profil reprend ces valeurs : votre orbite est à jour.");
   });
 
   majCompteurs();

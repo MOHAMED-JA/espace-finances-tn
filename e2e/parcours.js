@@ -858,6 +858,74 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(Number(dt.replace(/[^\d,]/g, "").replace(",", ".")) > 0, "montant converti : " + dt);
   });
 
+  await etape("historique du salaire : hausse datée, hausse prévue, retrait annulé, depuis le module Salaire", async () => {
+    await page.goto(base + "/espace/#profil");
+    await page.waitForSelector("#hs-maj", { state: "visible" });
+    const p0 = await page.evaluate(() => { const p = window.Orbite.profil(); return { montant: p.montant, sens: p.sens, n: p.historiqueSalaire.length }; });
+    assert(p0.n === 0 && (await page.isHidden("#hs-liste")), "historique vide au départ");
+    const auj = new Date(), Y = auj.getFullYear(), M = auj.getMonth() + 1;
+    const nouveau = Math.round(p0.montant * 1.1);
+    await page.click("#hs-maj");
+    await page.waitForSelector("#dlg-salaire[open]");
+    assert(await page.isVisible("#sal-avant-bloc"), "premier changement : salaire d'avant demandé");
+    assert(Number((await page.inputValue("#sal-avant")).replace(/[^\d,]/g, "").replace(",", ".")) === p0.montant, "salaire d'avant prérempli");
+    assert((await page.inputValue("#sal-mois")) === String(M) && (await page.inputValue("#sal-annee")) === String(Y), "mois et année du jour par défaut");
+    await page.click("#sal-valider");
+    assert(await page.isVisible("#sal-montant-err"), "montant obligatoire");
+    await page.fill("#sal-montant", String(nouveau));
+    await page.waitForFunction(() => /\+10\s%/.test(document.getElementById("sal-effet").textContent));
+    await page.click("#sal-valider");
+    await page.waitForFunction((v) => { const p = window.Orbite.profil(); return p.historiqueSalaire.length === 2 && p.montant === v; }, nouveau);
+    await page.waitForFunction(() => document.querySelectorAll("#hs-liste li").length === 2);
+    assert((await page.textContent("#hs-liste li:first-child")).includes("en vigueur"), "nouveau salaire en vigueur");
+    assert((await page.textContent("#hs-liste li:first-child")).replace(/\s/g, " ").includes("+10 %"), "variation affichée");
+    assert((await page.textContent("#hs-liste li:last-child")).startsWith("Avant "), "salaire d'avant conservé");
+    assert((await page.inputValue("#p-montant")).replace(/[^\d]/g, "") === String(nouveau), "champ du profil à jour");
+    /* Hausse annoncée pour janvier prochain : prévue, le salaire du jour ne change pas. */
+    const prevu = nouveau + 400;
+    await page.click("#hs-maj");
+    await page.waitForSelector("#dlg-salaire[open]");
+    assert(await page.isHidden("#sal-avant-bloc"), "historique existant : pas de salaire d'avant demandé");
+    await page.fill("#sal-montant", String(prevu));
+    await page.selectOption("#sal-mois", "1");
+    await page.fill("#sal-annee", String(Y + 1));
+    await page.waitForFunction(() => /prévue/.test(document.getElementById("sal-effet").textContent));
+    await page.click("#sal-valider");
+    await page.waitForFunction(() => window.Orbite.profil().historiqueSalaire.length === 3);
+    assert((await page.evaluate(() => window.Orbite.profil().montant)) === nouveau, "salaire du jour inchangé");
+    await page.waitForFunction(() => document.querySelectorAll("#hs-liste li").length === 3);
+    assert((await page.textContent("#hs-liste li:first-child")).includes("prévue"), "hausse marquée « prévue »");
+    const sy = await page.evaluate(() => { const s = window.Orbite.synthese(); return { futurs: s.historique.futurs.length, jalons: OrbiteSysteme.modele(s).jalons.filter((j) => j.genre === "salaire").length }; });
+    assert(sy.futurs === 1 && sy.jalons === 1, "hausse prévue dans Mon orbite : " + JSON.stringify(sy));
+    await page.screenshot({ path: path.join(CAPTURES, "historique-salaire.png") });
+    /* Retrait puis annulation. */
+    await page.click("#hs-liste li:first-child [data-hs-retirer]");
+    await page.waitForFunction(() => window.Orbite.profil().historiqueSalaire.length === 2);
+    /* L'« Annuler » d'un message plus ancien ne défait plus rien. */
+    await page.click('.toast:has-text("Hausse prévue") button:has-text("Annuler")');
+    await page.waitForSelector('.toast:has-text("Annulation impossible")');
+    assert((await page.evaluate(() => window.Orbite.profil().historiqueSalaire.length)) === 2, "ancien « Annuler » sans effet");
+    await page.click('.toast:has-text("retiré de l") button:has-text("Annuler")');
+    await page.waitForFunction(() => window.Orbite.profil().historiqueSalaire.length === 3);
+    /* Correction directe du montant : l'entrée en vigueur suit. */
+    await page.fill("#p-montant", String(nouveau + 1));
+    await page.locator("#p-montant").blur();
+    await page.waitForFunction((v) => window.Orbite.profil().historiqueSalaire.some((h) => h.montant === v), nouveau + 1);
+    await page.waitForTimeout(1600);
+    const meta = faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite;
+    assert(meta.historiqueSalaire.length === 3 && meta.montant === nouveau + 1, "historique enregistré : " + JSON.stringify(meta.historiqueSalaire));
+    /* Module Salaire : un autre salaire demande sa date d'effet. */
+    await page.goto(base + "/espace/#salaire");
+    await page.waitForSelector("#vers-profil", { state: "attached" });
+    await page.evaluate((v) => window.ModuleSalaire.charger("m=" + v), nouveau + 700);
+    await page.evaluate(() => document.getElementById("vers-profil").click());
+    await page.waitForSelector("#dlg-salaire[open]");
+    assert(Number((await page.inputValue("#sal-montant")).replace(/[^\d,]/g, "").replace(",", ".")) === nouveau + 700, "nouveau salaire prérempli");
+    await page.click('#dlg-salaire button[value="annuler"]');
+    await page.waitForSelector("#dlg-salaire:not([open])", { state: "attached" });
+    assert((await page.evaluate(() => window.Orbite.profil().historiqueSalaire.length)) === 3, "annulé : historique inchangé");
+  });
+
   await etape("déconnexion puis suppression définitive du compte", async () => {
     await page.goto(base + "/espace/#compte?onglet=donnees");
     await page.waitForSelector("#supprimer-compte");

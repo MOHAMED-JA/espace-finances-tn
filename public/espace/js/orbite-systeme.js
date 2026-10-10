@@ -3,7 +3,7 @@
  * À partir de la synthèse d'OrbiteCalcul : un satellite par crédit, contrat d'épargne et projet,
  * les jalons du voyage dans le temps (fin d'un crédit, durée fiscale d'un contrat, horizon d'un projet)
  * et l'état du système à un mois t donné (mensualités, capacité d'emprunt, capital restant, épargne).
- * Hypothèse : salaire constant. Capacité : celle du moteur à chaque fin de crédit (paliers), règle de la banque.
+ * Salaire : celui du profil, puis les hausses prévues de l'historique à leur mois. Capacité : celle du moteur à chaque fin de crédit (paliers), règle de la banque.
  */
 (function (racine, fabrique) {
   if (typeof module === "object" && module.exports) module.exports = fabrique(require("./orbite-calcul.js"));
@@ -61,6 +61,11 @@
     });
     if (!sy.projets.length) sats.push({ id: "projet-nouveau", genre: "vide", nom: "Un projet ?" });
 
+    /* Hausses de salaire prévues (historique du salaire) : le net change à leur mois. */
+    var hausses = sy.historique ? sy.historique.futurs : [];
+    hausses.forEach(function (f) {
+      jalons.push({ t: f.mois, sat: null, genre: "salaire", lib: "Hausse de salaire : " + String(Math.round(f.brutMensuel)).replace(/\B(?=(\d{3})+(?!\d))/g, "\u202f") + " DT brut par mois", net: f.netMensuel });
+    });
     jalons.sort(function (a, b) { return a.t - b.t; });
     var horizon = jalons.reduce(function (h, j) { return Math.max(h, j.t); }, 0);
     horizon = Math.min(HORIZON_MAX, horizon);
@@ -68,8 +73,8 @@
 
     /* Capacité d'emprunt : aujourd'hui, puis à chaque fin de crédit (paliers du moteur). */
     var immo0 = (cap.credits || []).filter(function (c) { return c.cle === "immo"; })[0];
-    var etapes = [{ mois: 0, mensualiteMax: cap.mensualiteMax, capitalImmo: immo0 ? immo0.capital : 0, dureeImmoMois: immo0 ? immo0.dureeMois : 240, tauxPct: immo0 ? immo0.tauxPct : sy.tauxImmo && sy.tauxImmo.tauxPct }]
-      .concat((cap.paliers || []).map(function (x) { return { mois: x.mois, mensualiteMax: x.mensualiteMax, capitalImmo: x.capitalImmo, dureeImmoMois: x.dureeImmoMois, tauxPct: x.tauxPct }; }));
+    var etapes = [{ mois: 0, revenu: cap.revenu, mensualiteMax: cap.mensualiteMax, capitalImmo: immo0 ? immo0.capital : 0, dureeImmoMois: immo0 ? immo0.dureeMois : 240, tauxPct: immo0 ? immo0.tauxPct : sy.tauxImmo && sy.tauxImmo.tauxPct }]
+      .concat((cap.paliers || []).map(function (x) { return { mois: x.mois, revenu: x.revenu || cap.revenu, mensualiteMax: x.mensualiteMax, capitalImmo: x.capitalImmo, dureeImmoMois: x.dureeImmoMois, tauxPct: x.tauxPct }; }));
 
     function capaciteAu(t) {
       var e = etapes[0];
@@ -105,8 +110,9 @@
           parSat[s.id] = { actif: true, verse: e.verse, capital: capital, gains: Math.max(0, capital - e.verse), fiscalAcquis: t >= s.tFiscal };
         } else parSat[s.id] = { actif: true };
       });
-      var c = capaciteAu(t);
-      return { t: t, date: dateTexte(debut, t), charges: charges, endettement: cap.revenu > 0 ? charges / cap.revenu : 0,
+      var c = capaciteAu(t), net = sy.salaire.netMensuel;
+      hausses.forEach(function (f) { if (f.mois <= t) net = f.netMensuel; });
+      return { t: t, date: dateTexte(debut, t), netMensuel: net, charges: charges, endettement: c.revenu > 0 ? charges / c.revenu : 0,
         capacite: c.mensualiteMax, capitalImmo: c.capitalImmo, dureeImmoMois: c.dureeImmoMois, tauxImmoPct: c.tauxPct, satellites: parSat };
     }
 
