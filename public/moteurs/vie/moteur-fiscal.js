@@ -16,10 +16,11 @@
 
   function largeur(tranche) { return tranche.max === Infinity ? Infinity : tranche.max - tranche.min; }
 
-  function detailDeductions(revenu, chefDeFamille, enfants, enfantsInfirmes, etudiants, parents, r) {
+  /* abattementTaux (retraités) : abattement forfaitaire sur la pension, sans plafond, à la place des frais professionnels. */
+  function detailDeductions(revenu, chefDeFamille, enfants, enfantsInfirmes, etudiants, parents, r, abattementTaux) {
     var d = (r || regles()).deductions;
     return {
-      fraisProfessionnels: Math.min(d.fraisProfessionnelsTaux * revenu, d.fraisProfessionnelsMax),
+      fraisProfessionnels: abattementTaux > 0 ? abattementTaux * revenu : Math.min(d.fraisProfessionnelsTaux * revenu, d.fraisProfessionnelsMax),
       chefDeFamille: chefDeFamille ? d.chefDeFamille : 0,
       enfants: Math.min(enfants * d.enfant, d.enfantsMax),
       enfantsInfirmes: enfantsInfirmes * d.enfantInfirme,
@@ -167,7 +168,7 @@
     var rg = regles(cle);
     var P = produits(rg);
     var revenu = entree.revenu || 0;
-    var det = detailDeductions(revenu, !!entree.chef, entree.enfants || 0, entree.infirmes || 0, entree.etudiants || 0, entree.parents || 0, rg);
+    var det = detailDeductions(revenu, !!entree.chef, entree.enfants || 0, entree.infirmes || 0, entree.etudiants || 0, entree.parents || 0, rg, entree.abattementTaux);
     var deductions = totalDeductions(det);
     var revenuNet = Math.max(revenu - deductions, 0);
     var avant = impotDetaille(revenuNet, rg);

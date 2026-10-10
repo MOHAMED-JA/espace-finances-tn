@@ -47,7 +47,7 @@
       </ul>
       <p class="rail__titre" id="rail-modules">Modules</p>
       <ul class="rail__liens" role="list" aria-labelledby="rail-modules">
-        <li><a href="#salaire" data-vue="salaire" data-module="salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#salaire"/></svg><span>Salaire</span></a></li>
+        <li><a href="#salaire" data-vue="salaire" data-module="salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#salaire"/></svg><span data-lib-salaire>Salaire</span></a></li>
         <li><a href="#epargne" data-vue="epargne" data-module="epargne"><svg aria-hidden="true"><use href="/orbite/icones.svg#epargne"/></svg><span>Épargne vie &amp; CEA</span></a></li>
         <li><a href="#credit" data-vue="credit" data-module="credit"><svg aria-hidden="true"><use href="/orbite/icones.svg#credit"/></svg><span>Crédit</span></a></li>
         <li><a href="#vie" data-vue="vie"><svg aria-hidden="true"><use href="/orbite/icones.svg#cible"/></svg><span>Vie &amp; impôts</span></a></li>
@@ -366,8 +366,9 @@
             </details>
 
             <details class="depliant" id="sec-salaire" open>
-              <summary><span class="depliant__icone icone--salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#salaire"/></svg></span><span>Votre emploi et votre salaire<small>Montant, nombre de salaires, primes, contrat</small></span><svg class="chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
+              <summary><span class="depliant__icone icone--salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#salaire"/></svg></span><span><span id="sec-salaire-titre">Votre emploi et votre salaire</span><small id="sec-salaire-sous">Montant, nombre de salaires, primes, contrat</small></span><svg class="chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
               <div class="depliant__corps grille-champs">
+                <div class="bascule champ--large" role="radiogroup" aria-label="Vous êtes"><label><input type="radio" name="p-activite" data-p="activite" value="salarie"><span>Salarié</span></label><label><input type="radio" name="p-activite" data-p="activite" value="retraite"><span>Retraité</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
                 <div class="champ champ--large"><label for="p-montant" id="p-montant-lib">Salaire brut par mois</label><div class="saisie saisie--grande"><input id="p-montant" data-p="montant" data-type="montant" type="text" inputmode="decimal" autocomplete="off"><span class="saisie__unite">DT</span></div></div>
                 <div class="champ champ--large historique-salaire" id="hs-bloc">
                   <div class="historique-salaire__tete"><span class="champ__lib">Historique de votre salaire</span><button type="button" class="bouton bouton--petit" id="hs-maj"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg>Mettre à jour mon salaire</button></div>
@@ -376,15 +377,17 @@
                 </div>
                 <div class="bascule" role="radiogroup" aria-label="Montant saisi"><label><input type="radio" name="p-sens" data-p="sens" value="brut"><span>Brut</span></label><label><input type="radio" name="p-sens" data-p="sens" value="net"><span>Net</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
                 <div class="bascule" role="radiogroup" aria-label="Période"><label><input type="radio" name="p-periode" data-p="periode" value="mensuel"><span>Par mois</span></label><label><input type="radio" name="p-periode" data-p="periode" value="annuel"><span>Par an</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
-                <div class="bascule champ--large" role="radiogroup" aria-label="Secteur"><label><input type="radio" name="p-secteur" data-p="secteur" value="prive"><span>Privé · CNSS</span></label><label><input type="radio" name="p-secteur" data-p="secteur" value="public"><span>Public · CNRPS</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
-                <div class="compteur-ligne champ--large"><span id="lp-salaires">Nombre de salaires par an<small id="p-aide-salaires">12 = sans 13ᵉ mois</small></span><span class="compteur" role="group" aria-labelledby="lp-salaires"><button type="button" data-pp="nombreSalaires" data-pas="-1" aria-label="Un salaire de moins"><svg aria-hidden="true"><use href="/orbite/icones.svg#moins"/></svg></button><output data-po="nombreSalaires">12</output><button type="button" data-pp="nombreSalaires" data-pas="1" aria-label="Un salaire de plus"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg></button></span></div>
-                <div class="champ champ--large p-primes" id="p-primes-bloc" hidden><span class="champ__lib" id="p-primes-lib">Mois de vos versements supplémentaires</span><div class="p-primes__grille" role="group" aria-labelledby="p-primes-lib"><label class="p-prime"><span aria-hidden="true">Jan</span><input data-prime="0" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en janvier"></label><label class="p-prime"><span aria-hidden="true">Fév</span><input data-prime="1" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en février"></label><label class="p-prime"><span aria-hidden="true">Mar</span><input data-prime="2" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en mars"></label><label class="p-prime"><span aria-hidden="true">Avr</span><input data-prime="3" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en avril"></label><label class="p-prime"><span aria-hidden="true">Mai</span><input data-prime="4" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en mai"></label><label class="p-prime"><span aria-hidden="true">Juin</span><input data-prime="5" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en juin"></label><label class="p-prime"><span aria-hidden="true">Juil</span><input data-prime="6" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en juillet"></label><label class="p-prime"><span aria-hidden="true">Août</span><input data-prime="7" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en août"></label><label class="p-prime"><span aria-hidden="true">Sep</span><input data-prime="8" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en septembre"></label><label class="p-prime"><span aria-hidden="true">Oct</span><input data-prime="9" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en octobre"></label><label class="p-prime"><span aria-hidden="true">Nov</span><input data-prime="10" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en novembre"></label><label class="p-prime"><span aria-hidden="true">Déc</span><input data-prime="11" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en décembre"></label></div><span class="champ__aide" id="p-primes-aide">En nombre de salaires, par pas de 0,5 (ex. 1,5 en décembre). Sert à calculer l'impôt qui reste à retenir sur vos paies.</span></div>
-                <div class="champ"><label for="p-primes">Primes imposables (par mois)</label><div class="saisie"><input id="p-primes" data-p="primesImposables" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
-                <div class="champ"><label for="p-nco">Primes non cotisables (par mois)</label><div class="saisie"><input id="p-nco" data-p="primesNonCotisables" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
-                <div class="champ"><label for="p-ava">Avantages en nature (par mois)</label><div class="saisie"><input id="p-ava" data-p="avantagesNature" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
-                <div class="champ"><label for="p-ind">Indemnités non imposables (par mois)</label><div class="saisie"><input id="p-ind" data-p="indemnitesNonImposables" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div><span class="champ__aide">Transport, panier… exonérés</span></div>
-                <div class="champ"><label for="p-statut">Type de contrat</label><div class="saisie"><select id="p-statut" data-p="statut"><option value="cdi">CDI</option><option value="fonctionnaire">Fonctionnaire titulaire</option><option value="cdd">CDD</option><option value="contractuel">Contractuel</option><option value="autre">Autre</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
-                <div class="champ"><label for="p-embauche">Date d'embauche</label><div class="saisie"><input id="p-embauche" data-p="dateEmbauche" data-type="date" type="date" min="1960-01-01" aria-describedby="p-anciennete-aide"></div><span class="champ__aide" id="p-anciennete-aide"></span></div>
+                <div class="bascule champ--large seul-salarie" role="radiogroup" aria-label="Secteur"><label><input type="radio" name="p-secteur" data-p="secteur" value="prive"><span>Privé · CNSS</span></label><label><input type="radio" name="p-secteur" data-p="secteur" value="public"><span>Public · CNRPS</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
+                <div class="champ seul-retraite"><label for="p-caisse">Caisse de retraite</label><div class="saisie"><select id="p-caisse" data-p="caissePension"><option value="cnss">CNSS (secteur privé)</option><option value="cnrps">CNRPS (fonction publique)</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
+                <label class="interrupteur seul-retraite"><span><strong>Pension venant de l'étranger</strong><small>Transférée en Tunisie : abattement de 80 % au lieu de 25 %.</small></span><input type="checkbox" data-p="pensionEtrangere" id="p-etranger" role="switch"><span class="interrupteur__piste" aria-hidden="true"></span></label>
+                <div class="compteur-ligne champ--large seul-salarie"><span id="lp-salaires">Nombre de salaires par an<small id="p-aide-salaires">12 = sans 13ᵉ mois</small></span><span class="compteur" role="group" aria-labelledby="lp-salaires"><button type="button" data-pp="nombreSalaires" data-pas="-1" aria-label="Un salaire de moins"><svg aria-hidden="true"><use href="/orbite/icones.svg#moins"/></svg></button><output data-po="nombreSalaires">12</output><button type="button" data-pp="nombreSalaires" data-pas="1" aria-label="Un salaire de plus"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg></button></span></div>
+                <div class="champ champ--large p-primes seul-salarie" id="p-primes-bloc" hidden><span class="champ__lib" id="p-primes-lib">Mois de vos versements supplémentaires</span><div class="p-primes__grille" role="group" aria-labelledby="p-primes-lib"><label class="p-prime"><span aria-hidden="true">Jan</span><input data-prime="0" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en janvier"></label><label class="p-prime"><span aria-hidden="true">Fév</span><input data-prime="1" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en février"></label><label class="p-prime"><span aria-hidden="true">Mar</span><input data-prime="2" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en mars"></label><label class="p-prime"><span aria-hidden="true">Avr</span><input data-prime="3" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en avril"></label><label class="p-prime"><span aria-hidden="true">Mai</span><input data-prime="4" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en mai"></label><label class="p-prime"><span aria-hidden="true">Juin</span><input data-prime="5" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en juin"></label><label class="p-prime"><span aria-hidden="true">Juil</span><input data-prime="6" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en juillet"></label><label class="p-prime"><span aria-hidden="true">Août</span><input data-prime="7" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en août"></label><label class="p-prime"><span aria-hidden="true">Sep</span><input data-prime="8" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en septembre"></label><label class="p-prime"><span aria-hidden="true">Oct</span><input data-prime="9" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en octobre"></label><label class="p-prime"><span aria-hidden="true">Nov</span><input data-prime="10" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en novembre"></label><label class="p-prime"><span aria-hidden="true">Déc</span><input data-prime="11" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Versements supplémentaires en décembre"></label></div><span class="champ__aide" id="p-primes-aide">En nombre de salaires, par pas de 0,5 (ex. 1,5 en décembre). Sert à calculer l'impôt qui reste à retenir sur vos paies.</span></div>
+                <div class="champ seul-salarie"><label for="p-primes">Primes imposables (par mois)</label><div class="saisie"><input id="p-primes" data-p="primesImposables" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
+                <div class="champ seul-salarie"><label for="p-nco">Primes non cotisables (par mois)</label><div class="saisie"><input id="p-nco" data-p="primesNonCotisables" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
+                <div class="champ seul-salarie"><label for="p-ava">Avantages en nature (par mois)</label><div class="saisie"><input id="p-ava" data-p="avantagesNature" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
+                <div class="champ seul-salarie"><label for="p-ind">Indemnités non imposables (par mois)</label><div class="saisie"><input id="p-ind" data-p="indemnitesNonImposables" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div><span class="champ__aide">Transport, panier… exonérés</span></div>
+                <div class="champ seul-salarie"><label for="p-statut">Type de contrat</label><div class="saisie"><select id="p-statut" data-p="statut"><option value="cdi">CDI</option><option value="fonctionnaire">Fonctionnaire titulaire</option><option value="cdd">CDD</option><option value="contractuel">Contractuel</option><option value="autre">Autre</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
+                <div class="champ seul-salarie"><label for="p-embauche">Date d'embauche</label><div class="saisie"><input id="p-embauche" data-p="dateEmbauche" data-type="date" type="date" min="1960-01-01" aria-describedby="p-anciennete-aide"></div><span class="champ__aide" id="p-anciennete-aide"></span></div>
                 <div class="champ"><label for="p-autres">Autres revenus réguliers (par mois)</label><div class="saisie"><input id="p-autres" data-p="autresRevenus" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div><span class="champ__aide">Loyer perçu, pension… pris en compte par la banque</span></div>
                 <p class="profil-resume champ--large" id="p-resume-salaire" aria-live="polite"></p>
                 <details class="expert-seul expert-bloc champ--large" id="p-paie">
@@ -463,8 +466,39 @@
         <section class="vue module module--salaire" id="vue-salaire" data-vue="salaire" aria-labelledby="titre-salaire" hidden>
           <header class="vue__tete module__tete">
             <span class="module__pastille" aria-hidden="true"><svg><use href="/orbite/icones.svg#salaire"/></svg></span>
-            <div><h1 id="titre-salaire">Salaire</h1><p class="vue__sous">Brut ⇄ net, tranche d'impôt, augmentation, coût employeur et offres. Barèmes <span data-annee>2026</span>.</p></div>
+            <div><h1 id="titre-salaire">Salaire</h1><p class="vue__sous" id="sous-salaire">Brut ⇄ net, tranche d'impôt, augmentation, coût employeur et offres. Barèmes <span data-annee>2026</span>.</p></div>
           </header>
+          <section class="pension-vue" id="pension-vue" aria-labelledby="pv-t" hidden>
+            <div class="panneau pension-vue__saisie">
+              <h2 id="pv-t">Votre pension</h2>
+              <div class="champ"><label for="pv-montant" id="pv-montant-lib">Pension brute par mois</label><div class="saisie saisie--grande"><input id="pv-montant" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"><span class="saisie__unite">DT</span></div><p class="erreur-champ" id="pv-erreur" role="alert" hidden></p></div>
+              <div class="bascule" role="radiogroup" aria-label="Montant saisi"><label><input type="radio" name="pv-sens" value="brut" checked><span>Brut</span></label><label><input type="radio" name="pv-sens" value="net"><span>Net</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
+              <p class="champ__aide" id="pv-situation"></p>
+              <div class="pension-vue__actions">
+                <button type="button" class="bouton bouton--plein" id="pv-profil" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg>Mettre à jour mon profil</button>
+                <a class="bouton bouton--fantome" href="#profil?section=salaire">Caisse, famille, pension étrangère</a>
+              </div>
+            </div>
+            <div class="pension-vue__resultats">
+              <section class="panneau" aria-labelledby="pv-t-net">
+                <h2 id="pv-t-net">Du brut au net</h2>
+                <p class="pension-vue__net"><b id="pv-net"></b><span id="pv-net-sous"></span></p>
+                <div class="tableau-cadre"><table class="tableau" id="pv-detail" aria-labelledby="pv-t-net"></table></div>
+              </section>
+              <section class="panneau" aria-labelledby="pv-t-lf" id="pv-lf-bloc">
+                <h2 id="pv-t-lf">La loi de finances 2026 augmente votre net</h2>
+                <p class="champ__aide">À pension brute égale, l'abattement passe de 25 % à 50 % en trois ans : votre impôt baisse chaque 1ᵉʳ janvier.</p>
+                <div class="pension-barres" id="pv-barres" role="img"></div>
+                <p class="pension-vue__note" id="pv-lf"></p>
+              </section>
+              <section class="panneau" aria-labelledby="pv-t-av">
+                <h2 id="pv-t-av">Assurance vie et CEA</h2>
+                <p id="pv-av"></p>
+                <a class="lien-action" href="#vie?onglet=fiscal">Voir l'optimiseur fiscal<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
+              </section>
+              <button type="button" class="bouton bouton--fantome pension-vue__salaire" id="pv-voir-salaire">Simuler un salaire quand même</button>
+            </div>
+          </section>
           <div class="scene-salaire">
             <form class="panneau saisie-salaire" id="formulaire" novalidate>
               <div class="champ">
@@ -1160,7 +1194,7 @@
     <a class="bulle-assistant" id="bulle-assistant" href="#assistant" aria-label="Ouvrir l'Assistant"><svg aria-hidden="true"><use href="/orbite/icones.svg#etoile"/></svg><span>Assistant</span></a>
     <nav class="onglets-bas" aria-label="Navigation">
       <a href="#orbite" data-vue="orbite"><svg aria-hidden="true"><use href="/orbite/icones.svg#orbite"/></svg><span translate="no">Orbite</span></a>
-      <a href="#salaire" data-vue="salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#salaire"/></svg><span>Salaire</span></a>
+      <a href="#salaire" data-vue="salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#salaire"/></svg><span data-lib-salaire>Salaire</span></a>
       <a href="#epargne" data-vue="epargne"><svg aria-hidden="true"><use href="/orbite/icones.svg#epargne"/></svg><span>Épargne</span></a>
       <a href="#credit" data-vue="credit"><svg aria-hidden="true"><use href="/orbite/icones.svg#credit"/></svg><span>Crédit</span></a>
       <a href="#profil" data-vue="profil" data-vues="profil simulations compte abonnement vie"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span>Moi</span></a>
@@ -1345,6 +1379,7 @@
   <script src="/moteurs/vie/moteur-fiscal.js"></script>
   <script src="/moteurs/vie/projection.js"></script>
   <script src="/moteurs/vie/scenario.js"></script>
+  <script src="/moteurs/salaire/pension.js"></script>
   <script src="/espace/js/orbite-calcul.js"></script>
   <script src="/espace/js/orbite-intelligence.js"></script>
   <script src="/espace/js/assistant-local.js"></script>
@@ -1354,6 +1389,7 @@
   <script src="/espace/js/vue-orbite.js"></script>
   <script src="/espace/js/vue-profil.js"></script>
   <script src="/espace/js/module-salaire.js"></script>
+  <script src="/espace/js/vue-pension.js"></script>
   <script src="/moteurs/vie/partage.js"></script>
   <script src="/moteurs/vie/rachat.js"></script>
   <script src="/moteurs/vie/prevoyance.js"></script>

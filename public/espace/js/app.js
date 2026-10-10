@@ -435,14 +435,16 @@
     o = o || {};
     var sens = o.sens || profil.sens, periode = o.periode || profil.periode, maint = new Date();
     var hist = profil.historiqueSalaire || [], ici = OC.salaireEnVigueur(profil, maint.getFullYear(), maint.getMonth());
-    $("sal-actuel").textContent = "Salaire actuel : " + libSalaire(profil) + (ici && ici.annee ? ", depuis " + MOIS_NOMS[ici.mois - 1] + " " + ici.annee : "") + ".";
-    $("sal-montant-lib").textContent = "Nouveau salaire " + sens + (periode === "annuel" ? " par an" : " par mois");
+    $("sal-actuel").textContent = (profil.activite === "retraite" ? "Pension actuelle : " : "Salaire actuel : ") + libSalaire(profil) + (ici && ici.annee ? ", depuis " + MOIS_NOMS[ici.mois - 1] + " " + ici.annee : "") + ".";
+    var ret = profil.activite === "retraite";
+    $("dlg-salaire-titre").textContent = ret ? "Mettre à jour ma pension" : "Mettre à jour mon salaire";
+    $("sal-montant-lib").textContent = (ret ? "Nouvelle pension " + (sens === "net" ? "nette" : "brute") : "Nouveau salaire " + sens) + (periode === "annuel" ? " par an" : " par mois");
     $("sal-montant").value = o.montant ? F.saisie(o.montant) : "";
     $("sal-mois").value = String(maint.getMonth() + 1);
     $("sal-annee").value = String(maint.getFullYear());
     /* Premier changement : le salaire d'avant est gardé (modifiable s'il avait déjà été remplacé à la main). */
     $("sal-avant-bloc").hidden = hist.length > 0;
-    $("sal-avant-lib").textContent = "Votre salaire " + profil.sens + " avant cette date" + (profil.periode === "annuel" ? " (par an)" : " (par mois)");
+    $("sal-avant-lib").textContent = (profil.activite === "retraite" ? "Votre pension " + (profil.sens === "net" ? "nette" : "brute") : "Votre salaire " + profil.sens) + " avant cette date" + (profil.periode === "annuel" ? " (par an)" : " (par mois)");
     $("sal-avant").value = F.saisie(profil.montant);
     ["sal-montant-err", "sal-annee-err"].forEach(function (id) { $(id).hidden = true; });
     var dlg = $("dlg-salaire");
@@ -488,7 +490,7 @@
       var ap = OC.appliquerHistorique(p2, maint).profil;
       majProfil({ historiqueSalaire: h2, montant: ap.montant, sens: ap.sens, periode: ap.periode }, { immediat: true });
       var futur = v.annee * 12 + v.mois - 1 > maint.getFullYear() * 12 + maint.getMonth();
-      E.toast((futur ? "Hausse prévue en " : "Nouveau salaire enregistré depuis ") + MOIS_NOMS[v.mois - 1] + " " + v.annee + " : " + F.saisie(v.montant) + " DT " + sens + ".",
+      E.toast((futur ? "Hausse prévue en " : (ret ? "Nouvelle pension enregistrée depuis " : "Nouveau salaire enregistré depuis ")) + MOIS_NOMS[v.mois - 1] + " " + v.annee + " : " + F.saisie(v.montant) + " DT " + sens + ".",
         { action: annulationSalaire(avant, "Historique du salaire revenu comme avant.") });
       vibrer(10);
     };
@@ -557,8 +559,10 @@
         var vues = (a.getAttribute("data-vues") || a.getAttribute("data-vue")).split(" ");
         if (vues.indexOf(r.vue) !== -1) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
       });
-      doc.title = TITRES[r.vue] + " — Orbite";
-      $("barre-titre").textContent = TITRES[r.vue];
+      /* Retraité : le module Salaire s'affiche comme « Ma pension ». */
+      var titre = r.vue === "salaire" && profil && profil.activite === "retraite" ? "Ma pension" : TITRES[r.vue];
+      doc.title = titre + " — Orbite";
+      $("barre-titre").textContent = titre;
       var mod = MODULES[r.vue];
       $("barre-actions").hidden = !mod;
       $("ajouter-profil").hidden = !(r.vue === "credit" || r.vue === "epargne");

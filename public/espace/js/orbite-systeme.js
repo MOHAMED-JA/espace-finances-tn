@@ -61,10 +61,12 @@
     });
     if (!sy.projets.length) sats.push({ id: "projet-nouveau", genre: "vide", nom: "Un projet ?" });
 
-    /* Hausses de salaire prévues (historique du salaire) : le net change à leur mois. */
-    var hausses = sy.historique ? sy.historique.futurs : [];
+    /* Revenus à venir : hausses de salaire prévues (historique) et, pour un retraité, hausse de l'abattement (loi de finances 2026). */
+    var hausses = sy.futursRevenu || [], retraite = p.activite === "retraite";
     hausses.forEach(function (f) {
-      jalons.push({ t: f.mois, sat: null, genre: "salaire", lib: "Hausse de salaire : " + String(Math.round(f.brutMensuel)).replace(/\B(?=(\d{3})+(?!\d))/g, "\u202f") + " DT brut par mois", net: f.netMensuel });
+      var lib = f.salaire ? (retraite ? "Hausse de pension : " : "Hausse de salaire : ") + String(Math.round(f.brutMensuel)).replace(/\B(?=(\d{3})+(?!\d))/g, "\u202f") + " DT brut par mois"
+        : "Loi de finances : abattement de " + Math.round(f.tauxAbattement * 100) + " % sur votre pension";
+      jalons.push({ t: f.mois, sat: null, genre: "salaire", lib: lib, net: f.netMensuel });
     });
     jalons.sort(function (a, b) { return a.t - b.t; });
     var horizon = jalons.reduce(function (h, j) { return Math.max(h, j.t); }, 0);

@@ -3,7 +3,7 @@
  * À partir d'un seul profil : salaire net, tranche d'impôt, effet d'une augmentation,
  * capacité d'emprunt (sur le net et sur le brut), suggestions d'épargne vie / CEA,
  * budget mensuel, faisabilité des projets et conseils d'orientation.
- * Dépend des moteurs : salaire (CalculSalaire, PARAMETRES_PAIE, EtatSimulation),
+ * Dépend des moteurs : salaire (CalculSalaire, PARAMETRES_PAIE, EtatSimulation), pension (CalculPension),
  * assurance vie (MoteurFiscal, Scenario). Aucune règle fiscale n'est dupliquée ici.
  */
 (function (racine, fabrique) {
@@ -11,12 +11,12 @@
     module.exports = fabrique(
       require("../../moteurs/salaire/calcul.js"), require("../../moteurs/salaire/parametres.js"),
       require("../../moteurs/salaire/etat.js"), require("../../moteurs/vie/moteur-fiscal.js"),
-      require("../../moteurs/vie/scenario.js")
+      require("../../moteurs/vie/scenario.js"), require("../../moteurs/salaire/pension.js")
     );
   } else {
-    racine.OrbiteCalcul = fabrique(racine.CalculSalaire, racine.PARAMETRES_PAIE, racine.EtatSimulation, racine.MoteurFiscal, racine.Scenario);
+    racine.OrbiteCalcul = fabrique(racine.CalculSalaire, racine.PARAMETRES_PAIE, racine.EtatSimulation, racine.MoteurFiscal, racine.Scenario, racine.CalculPension);
   }
-})(typeof self !== "undefined" ? self : this, function (C, P, E, MF, SC) {
+})(typeof self !== "undefined" ? self : this, function (C, P, E, MF, SC, CP) {
   "use strict";
 
   /* Hypothèses par défaut des crédits types (modifiables dans le module Crédit). */
@@ -48,6 +48,7 @@
     return {
       prenom: "", nom: "", dateNaissance: "", dateEmbauche: "", anneeNaissance: 1990, situation: "celibataire", statut: "cdi", anciennete: 3,
       montant: 2500, sens: "brut", periode: "mensuel", secteur: "prive", nombreSalaires: 12, calendrierPrimes: [],
+      activite: "salarie", caissePension: "cnss", pensionEtrangere: false,
       primesImposables: 0, primesNonCotisables: 0, avantagesNature: 0, indemnitesNonImposables: 0,
       chefDeFamille: false, enfants: 0, etudiants: 0, handicapes: 0, parents: 0,
       credits: [], contrats: [], projets: [], historiqueSalaire: [], scenarios: [], rappelsPerso: [],
@@ -288,6 +289,10 @@
       sens: p.sens === "net" ? "net" : "brut",
       periode: p.periode === "annuel" ? "annuel" : "mensuel",
       secteur: p.secteur === "public" ? "public" : "prive",
+      /* Salarié ou retraité : un retraité saisit sa pension (montant, sens) ; 12 versements, ni primes ni frais professionnels. */
+      activite: p.activite === "retraite" ? "retraite" : "salarie",
+      caissePension: p.caissePension === "cnrps" ? "cnrps" : "cnss",
+      pensionEtrangere: !!p.pensionEtrangere,
       nombreSalaires: entier(p.nombreSalaires, d.nombreSalaires, 12, 18),
       /* Versements supplémentaires par mois (janvier → décembre), en nombre de salaires, par pas de 0,5. Vide : tout en décembre. */
       calendrierPrimes: Array.isArray(p.calendrierPrimes) && p.calendrierPrimes.length === 12
@@ -394,7 +399,29 @@
     };
   }
 
-  function salaire(p) {
+  /* Pension de retraite, présentée comme un salaire (mêmes champs) pour que tous les calculs d'Orbite la lisent. */
+  function pension(p, annee) {
+    var e = { chefDeFamille: p.chefDeFamille, enfants: p.enfants, etudiants: p.etudiants, handicapes: p.handicapes, parents: p.parents,
+      etranger: p.pensionEtrangere, annee: annee || anneeCourante() };
+    var m = p.periode === "annuel" ? p.montant / 12 : p.montant;
+    var r = p.sens === "net" ? CP.calculerDepuisNet(Object.assign(e, { netMensuel: m })) : CP.calculerDepuisBrut(Object.assign(e, { brutMensuel: m }));
+    var a = r.annuel;
+    return {
+      retraite: true, pension: r, abattementTaux: a.tauxAbattement,
+      entree: { montant: r.mensuel.brut, nombreSalaires: 12 },
+      impotMois: a.irpp / 12, impotParVersement: 0,
+      resultat: { annuel: { brutTotal: a.brut, netAPayer: a.net, cotisations: a.cnam, irpp: a.irpp, css: 0, revenuImposable: a.imposable, coutEmployeur: 0 } },
+      versements: { nombre: 12, supplementaires: 0, netMensuel: r.mensuel.net, brutMensuel: r.mensuel.brut, netSupplementaire: 0, brutSupplementaire: 0, netAnnuel: a.net },
+      netMensuel: r.mensuel.net, netAnnuel: a.net, netMoyen: a.net / 12, brutMensuel: r.mensuel.brut, brutAnnuel: a.brut,
+      cotisations: a.cnam, irpp: a.irpp, css: 0, coutEmployeur: 0, revenuImposable: a.imposable,
+      /* Revenu de référence de l'assurance vie : pension après retenue maladie (l'abattement est appliqué par MoteurFiscal). */
+      revenuFiscal: a.apresRetenues,
+      tranche: tranche(a.imposable), tauxPrelevement: a.brut > 0 ? (a.cnam + a.irpp) / a.brut : 0, verifie: true
+    };
+  }
+
+  function salaire(p, annee) {
+    if (p.activite === "retraite") return pension(p, annee);
     var eb = entreeBrut(p);
     var av = C.calculerAvecVersements(eb.entree, P);
     var a = av.annee.annuel, mt = av.moisType.annuel, supp = av.versements.supplementaires;
@@ -432,7 +459,7 @@
     return r;
   }
   function memeSalaire(a, b) { return !!a && !!b && Math.abs(a.montant - b.montant) < 0.0005 && a.sens === b.sens && a.periode === b.periode; }
-  function salaireDe(p, h) { return salaire(Object.assign({}, p, { montant: h.montant, sens: h.sens, periode: h.periode })); }
+  function salaireDe(p, h, annee) { return salaire(Object.assign({}, p, { montant: h.montant, sens: h.sens, periode: h.periode }), annee); }
   /* Profil aligné sur le salaire en vigueur aujourd'hui (une hausse datée arrive à son mois). */
   function appliquerHistorique(p0, maintenant) {
     var m = maintenant || new Date(), h = salaireEnVigueur(p0, m.getFullYear(), m.getMonth());
@@ -454,6 +481,21 @@
     return { liste: hist, enVigueur: ici, depuis: ici && ici.annee ? MOIS[ici.mois - 1] + " " + ici.annee : null,
       precedent: prec, hausse: sPrec && sPrec.brutMensuel > 0 ? s.brutMensuel / sPrec.brutMensuel - 1 : null, brutPrecedent: sPrec ? sPrec.brutMensuel : null, futurs: futurs };
   }
+  /* Revenus à venir : hausses datées du salaire (historique) et, pour un retraité, hausse de l'abattement
+     de la loi de finances 2026 chaque 1er janvier (30 %, 40 %, 50 %). mois = décalage depuis aujourd'hui. */
+  function futursRevenu(p, maintenant) {
+    var m = maintenant || new Date(), Y = m.getFullYear(), cle0 = Y * 12 + m.getMonth(), genres = {};
+    (p.historiqueSalaire || []).forEach(function (h) { var k = cleHausse(h); if (k > cle0) genres[k - cle0] = { salaire: true }; });
+    if (p.activite === "retraite" && !p.pensionEtrangere) {
+      for (var y = Y + 1; y <= Y + 10; y++) if (CP.tauxAbattement(y) !== CP.tauxAbattement(y - 1)) { var k = y * 12 - cle0; genres[k] = Object.assign(genres[k] || {}, { loi: true }); }
+    }
+    return Object.keys(genres).map(Number).sort(function (a, b) { return a - b; }).map(function (t) {
+      var d = new Date(Y, m.getMonth() + t, 1), h = salaireEnVigueur(p, d.getFullYear(), d.getMonth()) || p, sf = salaireDe(p, h, d.getFullYear());
+      return { mois: t, date: MOIS[d.getMonth()] + " " + d.getFullYear(), salaire: !!genres[t].salaire, loi: !!genres[t].loi, tauxAbattement: sf.abattementTaux || null,
+        brutMensuel: sf.brutMensuel, netMensuel: sf.netMensuel, netAnnuel: sf.netAnnuel, brutAnnuel: sf.brutAnnuel };
+    });
+  }
+
   /* Salaire de l'année civile calculé mois par mois : chaque mois (et chaque prime) au salaire alors en vigueur.
      L'impôt annuel porte sur le total de l'année. Renvoie null si le salaire ne change pas dans l'année. */
   function salaireAnnee(p, maintenant) {
@@ -474,6 +516,7 @@
   }
 
   function calendrierPrimes(p) {
+    if (p.activite === "retraite") return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     var extra = Math.max(0, p.nombreSalaires - 12), c = p.calendrierPrimes || [];
     if (c.length === 12 && c.some(function (v) { return v > 0; })) return c.slice();
     var d = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; d[11] = extra; return d;
@@ -728,7 +771,7 @@
 
   function simFiscale(s, p, av, cea) {
     return MF.simuler({ revenu: s.revenuFiscal, chef: p.chefDeFamille, enfants: p.enfants, infirmes: p.handicapes,
-      etudiants: p.etudiants, parents: p.parents, investissementAv: av, investissementCea: cea });
+      etudiants: p.etudiants, parents: p.parents, investissementAv: av, investissementCea: cea, abattementTaux: s.abattementTaux });
   }
 
   /* Épargne : économie d'impôt supplémentaire et capital projeté pour un nouveau versement mensuel en assurance vie. */
@@ -985,6 +1028,7 @@
     sy.projets = p.projets.map(function (pr) { return projet(pr, capNet, p, s.netMensuel + p.autresRevenus); });
     sy.maintenant = maintenant || new Date();
     sy.historique = infoHistorique(p, s, sy.maintenant);
+    sy.futursRevenu = futursRevenu(p, sy.maintenant);
     sy.salaireAnnee = salaireAnnee(p, sy.maintenant);
     sy.tauxImmo = tauxImmo(p);
     sy.contrats = p.contrats.map(function (c) { return estimationContrat(c, sy.maintenant); });
@@ -1001,9 +1045,9 @@
     /* Capacité retrouvée à la fin des crédits qui dépassent la quotité (affichée quand elle est nulle aujourd'hui). */
     /* Hausses de salaire prévues : revenu retenu par la banque à partir de leur mois. */
     function haussesPour(b) {
-      return sy.historique ? sy.historique.futurs.map(function (f) {
+      return sy.futursRevenu.map(function (f) {
         return { mois: f.mois, revenu: (b === "net" ? (annuel ? f.netAnnuel / 12 : f.netMensuel) : (annuel ? f.brutAnnuel / 12 : f.brutMensuel)) + p.autresRevenus };
-      }) : [];
+      });
     }
     ["net", "brut"].forEach(function (b) {
       var c = sy.capacite[b], q = b === "net" ? p.quotiteNet : p.quotiteBrut;
@@ -1019,7 +1063,7 @@
   }
 
   return {
-    TMM: TMM, CREDITS_TYPES: CREDITS_TYPES, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, lireEmail: lireEmail, lireTelephone: lireTelephone, formatTelephone: formatTelephone, contratCommence: contratCommence, normaliserChangement: normaliserChangement, normaliserScenario: normaliserScenario, MAX_SCENARIOS: MAX_SCENARIOS, MAX_CHANGEMENTS: MAX_CHANGEMENTS, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
+    TMM: TMM, CREDITS_TYPES: CREDITS_TYPES, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, pension: pension, futursRevenu: futursRevenu, lireEmail: lireEmail, lireTelephone: lireTelephone, formatTelephone: formatTelephone, contratCommence: contratCommence, normaliserChangement: normaliserChangement, normaliserScenario: normaliserScenario, MAX_SCENARIOS: MAX_SCENARIOS, MAX_CHANGEMENTS: MAX_CHANGEMENTS, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
     profilParDefaut: profilParDefaut, normaliser: normaliser, age: age, etatSalaire: etatSalaire, entreeBrut: entreeBrut,
     tranche: tranche, salaire: salaire, augmentation: augmentation, calendrierPrimes: calendrierPrimes, impotRestantAnnee: impotRestantAnnee,
     capitalPourMensualite: capitalPourMensualite, mensualitePourCapital: mensualitePourCapital, capacite: capacite,
