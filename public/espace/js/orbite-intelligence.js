@@ -34,7 +34,7 @@
   /* Versements annuels déjà prévus : mensualités × 12 + versements libres de l'année. */
   function versementsAnnuels(p) {
     var av = 0, cea = 0;
-    p.contrats.forEach(function (c) { var an = c.versementMensuel * 12 + c.versementsLibresAn; if (c.type === "cea") cea += an; else av += an; });
+    p.contrats.forEach(function (c) { if (!OC.contratCommence(c)) return; var an = c.versementMensuel * 12 + c.versementsLibresAn; if (c.type === "cea") cea += an; else av += an; });
     return { av: av, cea: cea };
   }
 
@@ -300,7 +300,7 @@
     var taux = OC.tauxNouveaux(p);
     var cap = OC.capacite(revenu, q, charges, sy.age, taux);
     var netMoi = sy.salaire.netMoyen + p.autresRevenus, netConj = sc.netMoyen, net = netMoi + netConj;
-    var epargne = p.contrats.reduce(function (t, c) { return t + c.versementMensuel; }, 0);
+    var epargne = p.contrats.reduce(function (t, c) { return t + (OC.contratCommence(c, sy.maintenant) ? c.versementMensuel : 0); }, 0);
     var communes = p.loyer + p.chargesFixes;
     var partMoi = net > 0 ? netMoi / net : 1;
     return {

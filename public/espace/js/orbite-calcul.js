@@ -50,7 +50,7 @@
       montant: 2500, sens: "brut", periode: "mensuel", secteur: "prive", nombreSalaires: 12, calendrierPrimes: [],
       primesImposables: 0, primesNonCotisables: 0, avantagesNature: 0, indemnitesNonImposables: 0,
       chefDeFamille: false, enfants: 0, etudiants: 0, handicapes: 0, parents: 0,
-      credits: [], contrats: [], projets: [], historiqueSalaire: [],
+      credits: [], contrats: [], projets: [], historiqueSalaire: [], scenarios: [], rappelsPerso: [],
       loyer: 0, chargesFixes: 0, epargneDisponible: 0, autresRevenus: 0,
       quotiteNet: QUOTITE, quotiteBrut: QUOTITE
     };
@@ -201,6 +201,46 @@
     };
   }
 
+  /* Scénarios « Et si… » (calculés par scenarios-calcul.js) : 3 au plus, 8 changements datés chacun. */
+  var MAX_SCENARIOS = 3, MAX_CHANGEMENTS = 8;
+  var SC_TYPES = ["salaire", "credit", "epargne", "vie"], SC_EVENEMENTS = ["mariage", "enfant", "rembourser"];
+  function normaliserChangement(c) {
+    c = c || {};
+    var type = SC_TYPES.indexOf(c.type) !== -1 ? c.type : null;
+    if (!type) return null;
+    var x = { type: type, mois: Math.round(nombre(c.mois, 1, 1, 12)), annee: Math.round(nombre(c.annee, 2026, 1990, 2100)) };
+    if (type === "salaire") {
+      x.montant = nombre(c.montant, 0, 0, 1e6); x.sens = c.sens === "net" ? "net" : "brut"; x.periode = c.periode === "annuel" ? "annuel" : "mensuel";
+      if (!(x.montant > 0)) return null;
+    } else if (type === "credit") {
+      x.libelle = texte(c.libelle, 40) || "Nouveau crédit";
+      x.typeCredit = ["immo", "auto", "conso", "autre"].indexOf(c.typeCredit) !== -1 ? c.typeCredit : "conso";
+      x.capital = nombre(c.capital, 0, 0, 5e6); x.tauxPct = nombre(c.tauxPct, 0, 0, 30); x.dureeMois = Math.round(nombre(c.dureeMois, 0, 0, 360));
+      if (!(x.capital > 0 && x.dureeMois > 0)) return null;
+    } else if (type === "epargne") {
+      x.produit = c.produit === "cea" ? "cea" : "av"; x.versementMensuel = nombre(c.versementMensuel, 0, 0, 1e5);
+      if (!(x.versementMensuel > 0)) return null;
+    } else {
+      x.evenement = SC_EVENEMENTS.indexOf(c.evenement) !== -1 ? c.evenement : null;
+      if (!x.evenement) return null;
+      if (x.evenement === "rembourser") x.credit = Math.round(nombre(c.credit, -1, -1, 50));
+    }
+    return x;
+  }
+  function normaliserScenario(s, i) {
+    s = s || {};
+    return { id: texte(s.id, 20) || "s" + (i + 1), nom: texte(s.nom, 40) || "Scénario " + "ABC".charAt(i),
+      changements: (Array.isArray(s.changements) ? s.changements : []).map(normaliserChangement).filter(Boolean).slice(0, MAX_CHANGEMENTS) };
+  }
+
+  /* Rappels que l'utilisateur a programmés (par exemple « Appliquer à mon profil » d'un scénario) : affichés au mois choisi. */
+  function normaliserRappel(r) {
+    r = r || {};
+    var url = typeof r.url === "string" && /^\/espace\/#[a-z]+(\?[a-z0-9=&._-]*)?$/i.test(r.url) ? r.url : "/espace/#profil";
+    return { id: texte(r.id, 40).replace(/[^a-z0-9_-]/gi, "") || "perso", titre: texte(r.titre, 90), corps: texte(r.corps, 240), url: url,
+      mois: entier(r.mois, 1, 1, 12), annee: entier(r.annee, 0, 0, 2100) };
+  }
+
   /* Profil nettoyé : tout champ inconnu ou hors bornes reprend sa valeur par défaut. */
   function normaliser(p0) {
     var d = profilParDefaut(), p = p0 || {};
@@ -236,6 +276,8 @@
       credits: liste(p.credits, normaliserCredit, 12).map(function (c) { var e = echeancier(c); if (e) c.moisRestants = e.restantes; return c; }),
       contrats: liste(p.contrats, normaliserContrat, 12),
       projets: liste(p.projets, normaliserProjet, 8),
+      scenarios: liste(p.scenarios, normaliserScenario, MAX_SCENARIOS),
+      rappelsPerso: liste(p.rappelsPerso, normaliserRappel, 20).filter(function (r) { return r.titre && r.annee > 0; }),
       historiqueSalaire: liste(p.historiqueSalaire, normaliserHausse, 40).filter(function (h) { return h.montant > 0; }).sort(function (a, b) { return cleHausse(a) - cleHausse(b); }),
       loyer: nombre(p.loyer, 0, 0, 1e6),
       chargesFixes: nombre(p.chargesFixes, 0, 0, 1e6),
@@ -623,9 +665,11 @@
   }
 
   /* Versements de l'année (mensuels et libres) : ce sont eux qui ouvrent la déduction fiscale. */
+  /* Un contrat dont le premier versement est à venir (ajouté depuis un scénario « Et si… ») ne compte qu'à partir de sa date. */
+  function contratCommence(c, maintenant) { var m = maintenant || new Date(); return c.anneeDebut * 12 + c.moisDebut - 1 <= m.getFullYear() * 12 + m.getMonth(); }
   function versementsExistants(p) {
     var av = 0, cea = 0;
-    p.contrats.forEach(function (c) { var an = c.versementMensuel * 12 + c.versementsLibresAn; if (c.type === "cea") cea += an; else av += an; });
+    p.contrats.forEach(function (c) { if (!contratCommence(c)) return; var an = c.versementMensuel * 12 + c.versementsLibresAn; if (c.type === "cea") cea += an; else av += an; });
     return { av: av, cea: cea };
   }
 
@@ -897,7 +941,7 @@
     var capBrut = capacite((annuel ? s.brutAnnuel / 12 : s.brutMensuel) + p.autresRevenus, p.quotiteBrut, charges, ageActuel, tauxNouveaux(p));
     var ep = suggestionsEpargne(s, p);
     var epChoisie = ep.propositions.filter(function (x) { return x.cle === (ch.epargne || "equilibree"); })[0] || ep.propositions[0];
-    var epargneActuelle = p.contrats.reduce(function (t, c) { return t + c.versementMensuel; }, 0);
+    var epargneActuelle = p.contrats.reduce(function (t, c) { return t + (contratCommence(c, maintenant) ? c.versementMensuel : 0); }, 0);
     var sy = {
       profil: p,
       age: ageActuel,
@@ -947,7 +991,7 @@
   }
 
   return {
-    TMM: TMM, CREDITS_TYPES: CREDITS_TYPES, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
+    TMM: TMM, CREDITS_TYPES: CREDITS_TYPES, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, contratCommence: contratCommence, normaliserChangement: normaliserChangement, normaliserScenario: normaliserScenario, MAX_SCENARIOS: MAX_SCENARIOS, MAX_CHANGEMENTS: MAX_CHANGEMENTS, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
     profilParDefaut: profilParDefaut, normaliser: normaliser, age: age, etatSalaire: etatSalaire, entreeBrut: entreeBrut,
     tranche: tranche, salaire: salaire, augmentation: augmentation, calendrierPrimes: calendrierPrimes, impotRestantAnnee: impotRestantAnnee,
     capitalPourMensualite: capitalPourMensualite, mensualitePourCapital: mensualitePourCapital, capacite: capacite,

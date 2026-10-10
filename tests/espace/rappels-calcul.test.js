@@ -79,3 +79,20 @@ test('règle des 8 % : rappel un mois avant la prochaine réduction de taux, ou 
   assert.ok(/Depuis mars 2026/.test(r2[0].corps));
   assert.equal(RC.aAfficher(r2, {}, m).length, 1, 'affiché tout de suite');
 });
+
+test('rappels programmés par l\'utilisateur : au mois choisi, URL limitée à l\'application', () => {
+  const m = new Date(2026, 9, 10);
+  const p = O.normaliser(Object.assign({}, PROFIL, { rappelsPerso: [
+    { id: 'enfant 2028!', titre: 'Naissance prévue', corps: 'Ajoutez votre enfant au profil.', url: '/espace/#profil?section=identite', mois: 5, annee: 2028 },
+    { id: 'x', titre: 'Lien externe', url: 'https://exemple.com', mois: 1, annee: 2027 },
+    { id: 'vieux', titre: 'Passé', mois: 1, annee: 2025 },
+    { titre: '', mois: 1, annee: 2027 }] }));
+  assert.equal(p.rappelsPerso.length, 3, 'rappel sans titre écarté');
+  assert.equal(p.rappelsPerso[0].id, 'enfant2028');
+  assert.equal(p.rappelsPerso[1].url, '/espace/#profil', 'URL externe remplacée');
+  const r = R.rappels(O.synthese(p, {}, m), {}, null, m).filter((x) => x.id.indexOf('perso-') === 0);
+  assert.deepEqual(r.map((x) => x.id), ['perso-x', 'perso-enfant2028'], 'rappel expiré écarté');
+  assert.equal(new Date(r[1].quand).getFullYear(), 2028);
+  assert.equal(new Date(r[1].quand).getMonth(), 4);
+  assert.equal(R.aAfficher(r, {}, m).length, 0, 'pas encore échus');
+});

@@ -1,5 +1,5 @@
 /*
- * Orbite — « Vie & impôts » (route #vie, onglet par #vie?onglet=vie|fiscal).
+ * Orbite — « Vie & impôts » (route #vie, onglet par #vie?onglet=vie|fiscal|scenarios ; « Et si… » : vue-scenarios.js).
  * Simulateur de vie : événements ajoutés à une copie du profil, comparaison avant / après (OrbiteIntelligence).
  * Optimiseur fiscal : meilleure répartition assurance vie / CEA, montant utile avant le 31 décembre.
  * Rien n'est modifié dans le profil sans action explicite (« C'est fait : mettre mon profil à jour »), annulable.
@@ -19,15 +19,17 @@
 
   /* ---------- Onglets ---------- */
   function ouvrirOnglet(cle, focus) {
-    if (cle !== "fiscal") cle = "vie";
-    ["vie", "fiscal"].forEach(function (c) {
+    if (ONGLETS.indexOf(cle) === -1) cle = "vie";
+    ONGLETS.forEach(function (c) {
       var t = $("vie-tab-" + c), on = c === cle;
       t.setAttribute("aria-selected", on ? "true" : "false"); t.tabIndex = on ? 0 : -1;
       $("vie-panneau-" + c).hidden = !on;
     });
     if (focus) $("vie-tab-" + cle).focus();
-    if (cle === "fiscal") rendreFiscal(); else calculer();
+    if (cle === "fiscal") rendreFiscal(); else if (cle === "vie") calculer();
+    else doc.dispatchEvent(new CustomEvent("orbite:etsi"));
   }
+  var ONGLETS = ["vie", "fiscal", "scenarios"];
   var tabs = doc.querySelector(".vie-onglets");
   tabs.addEventListener("click", function (e) {
     var b = e.target.closest("[data-onglet]"); if (!b) return;
@@ -37,7 +39,8 @@
   tabs.addEventListener("keydown", function (e) {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
     e.preventDefault();
-    var cle = doc.activeElement && doc.activeElement.getAttribute("data-onglet") === "vie" ? "fiscal" : "vie";
+    var i = ONGLETS.indexOf(doc.activeElement && doc.activeElement.getAttribute("data-onglet"));
+    var cle = ONGLETS[(Math.max(0, i) + (e.key === "ArrowRight" ? 1 : ONGLETS.length - 1)) % ONGLETS.length];
     history.replaceState(null, "", "#vie?onglet=" + cle);
     ouvrirOnglet(cle, true);
   });
@@ -271,10 +274,10 @@
   /* ---------- Navigation ---------- */
   doc.addEventListener("orbite:vue", function (e) {
     if (e.detail.vue !== "vie") return;
-    ouvrirOnglet(e.detail.params.get("onglet") || (!$("vie-panneau-fiscal").hidden ? "fiscal" : "vie"));
+    ouvrirOnglet(e.detail.params.get("onglet") || ONGLETS.filter(function (c) { return !$("vie-panneau-" + c).hidden; })[0] || "vie");
   });
   O.surProfil(function () {
     if ($("vue-vie").hidden) return;
-    if (!$("vie-panneau-fiscal").hidden) rendreFiscal(); else calculer();
+    if (!$("vie-panneau-fiscal").hidden) rendreFiscal(); else if (!$("vie-panneau-vie").hidden) calculer();
   });
 })();
