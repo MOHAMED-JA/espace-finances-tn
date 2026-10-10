@@ -508,7 +508,7 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 
 ## 3 duodequadragies. Programme « créativité » en 8 lots (10 oct.)
 
-> **Avancement** : lot 1 livré (PR #58) ; hors programme, livrés aussi : règle des 8 % (#60), simulations → profil et remboursements anticipés (#61), historique du salaire (#62). lot 2 livré (« Et si… » + mode Expert, section 3 terquadragies). **Suivant : lot 3 (B6 historique et carrière + C3 objectifs), maquette d'abord.**
+> **Avancement** : lot 1 livré (PR #58) ; hors programme, livrés aussi : règle des 8 % (#60), simulations → profil et remboursements anticipés (#61), historique du salaire (#62). Lot 2 livré (« Et si… » + mode Expert, section 3 terquadragies). **Suivant : lot 3 (B6 historique et carrière + C3 objectifs), maquette d'abord.**
 
 - **Demande de l'utilisateur** : une créativité énorme (design, fonctionnalités, options avancées), un travail sans faute, des propositions **avant** toute modification, et des questions en cas de doute.
 - **Retenues** : A1, A2, A3, A4, B1, B2, B5, B6, C2, C3, C4. Design « spectaculaire mais sobre ». Interface en français seulement. **Une maquette validée avant chaque fonctionnalité**.
