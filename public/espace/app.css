@@ -777,3 +777,27 @@ dialog.dialogue--large { width: min(620px, calc(100vw - 24px)); }
 .ajout-profil__option small { font-size: 12.5px; color: var(--encre-3); line-height: 1.4; }
 .ajout-profil__option--inactif { opacity: .6; cursor: not-allowed; }
 #dlg-enregistrer .interrupteur { margin-top: 4px; }
+
+/* ---------- Historique du salaire (profil) ---------- */
+.historique-salaire { display: grid; gap: 10px; }
+.historique-salaire__tete { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.historique-salaire__liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border: 1px solid var(--filet); border-radius: 14px; overflow: hidden; }
+.historique-salaire__item { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; column-gap: 10px; row-gap: 2px; padding: 10px 8px 10px 26px; background: var(--surface); }
+.historique-salaire__item + .historique-salaire__item { border-top: 1px solid var(--filet); }
+/* Fil du temps : un point par salaire, plein pour celui en vigueur, cerclé pour une hausse prévue. */
+.historique-salaire__item::before { content: ""; position: absolute; left: 11px; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: var(--filet-fort); }
+.historique-salaire__item--actuel::before { background: var(--salaire); box-shadow: 0 0 0 4px var(--salaire-doux); }
+.historique-salaire__item--prevue::before { background: transparent; border: 2px solid var(--salaire); width: 9px; height: 9px; margin-top: -4.5px; left: 10.5px; }
+.historique-salaire__item--actuel { background: color-mix(in srgb, var(--salaire-doux) 35%, var(--surface)); }
+.historique-salaire__date { grid-column: 1; font-size: 12.5px; color: var(--encre-3); }
+.historique-salaire__montant { grid-column: 1; font-size: 14.5px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.historique-salaire__variation { grid-row: 1 / span 2; grid-column: 2; font-size: 13px; font-weight: 650; color: var(--salaire-t); font-variant-numeric: tabular-nums; }
+.historique-salaire__variation--baisse { color: var(--erreur); }
+.historique-salaire__item .puce { grid-row: 1 / span 2; grid-column: 3; }
+.historique-salaire__retirer { grid-row: 1 / span 2; grid-column: 4; }
+#sal-actuel { background: var(--salaire-doux); color: var(--salaire-t); }
+@media (max-width: 480px) {
+  .historique-salaire__item { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .historique-salaire__item .puce { grid-row: 3; grid-column: 1; justify-self: start; margin-top: 4px; }
+  .historique-salaire__retirer { grid-column: 3; }
+}

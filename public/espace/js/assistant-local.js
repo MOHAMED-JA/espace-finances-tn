@@ -66,10 +66,12 @@
     if (D) {
       if (cr.length) t.push("ki yekmel " + liste(cr, " w "));
       if (rd.length) t.push("ki yon9ess el taux mta3 " + liste(rd, " w "));
+      if (x.hausse) t.push("ki yzid salaire mte3ek");
       return t.join(" w ");
     }
     if (cr.length) t.push("à la fin de " + (cr.length > 1 ? "vos " : "votre ") + liste(cr, " et "));
     if (rd.length) t.push("après la réduction de taux de " + (rd.length > 1 ? "vos " : "votre ") + liste(rd, " et "));
+    if (x.hausse) t.push("avec votre hausse de salaire");
     return t.join(" et ");
   }
   /* « après la fin de mon crédit auto » : l'étape du calendrier où ce crédit se termine. */

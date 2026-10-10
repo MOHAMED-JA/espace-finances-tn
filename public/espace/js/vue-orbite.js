@@ -60,8 +60,8 @@
     if (!depuisCurseur) curseur.value = String(t);
     if (t > ancien) modele.jalons.forEach(function (j) {
       if (ancien < j.t && j.t <= t) {
-        if (j.genre === "credit") scene.liberer(j.sat); else if (j.genre === "reduction") scene.pulser();
-        annoncer(majuscule(modele.dateTexte(j.t)) + " · " + j.lib + (j.genre === "credit" ? " : +" + dt0(j.gain) + " de marge" : j.genre === "reduction" ? " (−" + dt0(j.gain) + " par mois)" : ""));
+        if (j.genre === "credit") scene.liberer(j.sat); else if (j.genre === "reduction" || j.genre === "salaire") scene.pulser();
+        annoncer(majuscule(modele.dateTexte(j.t)) + " · " + j.lib + (j.genre === "credit" ? " : +" + dt0(j.gain) + " de marge" : j.genre === "reduction" ? " (−" + dt0(j.gain) + " par mois)" : j.genre === "salaire" ? " (" + dt0(j.net) + " net par mois)" : ""));
         vibrer([10, 40, 10]);
       }
     });
@@ -145,7 +145,10 @@
     if (!modele) return;
     var e = modele.etat(T), o = { instantane: instant };
     $("ciel-date").textContent = majuscule(modele.dateTexte(T));
-    $("ciel-ecart").textContent = modele.ecart(T) + (T ? ", à salaire constant" : "");
+    var hausses = modele.jalons.some(function (x) { return x.genre === "salaire"; });
+    $("ciel-ecart").textContent = modele.ecart(T) + (T ? (hausses ? ", avec vos hausses de salaire prévues" : ", à salaire constant") : "");
+    /* Le noyau suit le net du mois affiché (hausses de salaire prévues). */
+    if (hausses) O.animerNombre($("noyau-val"), e.netMensuel, function (v) { return F.dt0(v) + " DT"; }, o);
     O.animerNombre($("ciel-capa-val"), e.capacite, function (v) { return F.dt0(v) + " DT / mois"; }, o);
     var sous;
     if (e.capacite >= 1) sous = "soit " + dt0(e.capitalImmo) + " sur " + ansTxt(e.dureeImmoMois) + " à " + tauxTxt(e.tauxImmoPct);
@@ -159,7 +162,7 @@
     bAuj.disabled = T === 0;
     var j = modele.jalons.filter(function (x) { return x.t > T; })[0];
     $("voyage-prochain-txt").textContent = j ? "Prochain jalon : " + modele.dateTexte(j.t) + " · " + j.lib : "Fin du voyage · revenir à aujourd'hui";
-    $("voyage-prochain-point").style.background = j ? scene.couleur(j.sat) || "#F2F4F8" : "var(--salaire-lum)";
+    $("voyage-prochain-point").style.background = j && j.sat ? scene.couleur(j.sat) || "#F2F4F8" : "var(--salaire-lum)";
     doc.querySelectorAll("#fiche-orbite [data-v]").forEach(function (el) {
       var cle = el.getAttribute("data-v");
       if (el.hasAttribute("data-montant")) { var v = valeurNum(cle, e); O.animerNombre(el, v.n, v.f, o); }

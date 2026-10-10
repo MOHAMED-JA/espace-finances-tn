@@ -348,6 +348,11 @@
               <summary><span class="depliant__icone icone--salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#salaire"/></svg></span><span>Votre emploi et votre salaire<small>Montant, nombre de salaires, primes, contrat</small></span><svg class="chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
               <div class="depliant__corps grille-champs">
                 <div class="champ champ--large"><label for="p-montant" id="p-montant-lib">Salaire brut par mois</label><div class="saisie saisie--grande"><input id="p-montant" data-p="montant" data-type="montant" type="text" inputmode="decimal" autocomplete="off"><span class="saisie__unite">DT</span></div></div>
+                <div class="champ champ--large historique-salaire" id="hs-bloc">
+                  <div class="historique-salaire__tete"><span class="champ__lib">Historique de votre salaire</span><button type="button" class="bouton bouton--petit" id="hs-maj"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg>Mettre à jour mon salaire</button></div>
+                  <ol class="historique-salaire__liste" id="hs-liste" hidden></ol>
+                  <p class="champ__aide" id="hs-aide">Une augmentation ? Indiquez le nouveau salaire et le mois où il s'applique : l'impôt de l'année se calcule mois par mois, et une hausse annoncée s'applique toute seule à sa date.</p>
+                </div>
                 <div class="bascule" role="radiogroup" aria-label="Montant saisi"><label><input type="radio" name="p-sens" data-p="sens" value="brut"><span>Brut</span></label><label><input type="radio" name="p-sens" data-p="sens" value="net"><span>Net</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
                 <div class="bascule" role="radiogroup" aria-label="Période"><label><input type="radio" name="p-periode" data-p="periode" value="mensuel"><span>Par mois</span></label><label><input type="radio" name="p-periode" data-p="periode" value="annuel"><span>Par an</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
                 <div class="bascule champ--large" role="radiogroup" aria-label="Secteur"><label><input type="radio" name="p-secteur" data-p="secteur" value="prive"><span>Privé · CNSS</span></label><label><input type="radio" name="p-secteur" data-p="secteur" value="public"><span>Public · CNRPS</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
@@ -1158,6 +1163,26 @@
       <div class="dialogue__pied">
         <button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Annuler</button>
         <button type="submit" class="bouton bouton--plein" value="ok">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialogue" id="dlg-salaire" aria-labelledby="dlg-salaire-titre">
+    <form method="dialog" id="form-salaire" novalidate>
+      <div class="dialogue__tete"><h2 id="dlg-salaire-titre">Mettre à jour mon salaire</h2></div>
+      <div class="dialogue__corps ajout-profil">
+        <p class="ajout-profil__resume" id="sal-actuel"></p>
+        <div class="champ"><label for="sal-montant" id="sal-montant-lib">Nouveau salaire brut par mois</label><div class="saisie saisie--grande"><input id="sal-montant" type="text" inputmode="decimal" autocomplete="off"><span class="saisie__unite">DT</span></div><span class="erreur-champ" id="sal-montant-err" hidden></span></div>
+        <div class="grille-champs">
+          <div class="champ"><label for="sal-mois">À partir du mois de</label><div class="saisie"><select id="sal-mois"><option value="1">Janvier</option><option value="2">Février</option><option value="3">Mars</option><option value="4">Avril</option><option value="5">Mai</option><option value="6">Juin</option><option value="7">Juillet</option><option value="8">Août</option><option value="9">Septembre</option><option value="10">Octobre</option><option value="11">Novembre</option><option value="12">Décembre</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
+          <div class="champ"><label for="sal-annee">Année</label><div class="saisie"><input id="sal-annee" type="text" inputmode="numeric" maxlength="4" autocomplete="off"></div><span class="erreur-champ" id="sal-annee-err" hidden></span></div>
+        </div>
+        <div class="champ" id="sal-avant-bloc" hidden><label for="sal-avant" id="sal-avant-lib">Votre salaire avant cette date</label><div class="saisie"><input id="sal-avant" type="text" inputmode="decimal" autocomplete="off"><span class="saisie__unite">DT</span></div><span class="champ__aide">Conservé dans l'historique pour les mois d'avant.</span></div>
+        <p class="note" id="sal-effet" aria-live="polite"></p>
+      </div>
+      <div class="dialogue__pied">
+        <button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Annuler</button>
+        <button type="submit" class="bouton bouton--plein" value="ok" id="sal-valider">Enregistrer</button>
       </div>
     </form>
   </dialog>

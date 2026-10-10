@@ -137,6 +137,15 @@
   /* Enregistre le profil (avec un court délai pour regrouper les frappes). */
   function majProfil(partiel, options) {
     var o = options || {};
+    /* Salaire corrigé à la main alors qu'un historique existe : l'entrée en vigueur suit la correction
+       (sinon l'historique remettrait l'ancien montant). */
+    if (!partiel.historiqueSalaire && profil && profil.historiqueSalaire && profil.historiqueSalaire.length && ("montant" in partiel || "sens" in partiel || "periode" in partiel)) {
+      var mt = new Date(), ici = OC.salaireEnVigueur(profil, mt.getFullYear(), mt.getMonth());
+      if (ici) {
+        var hist = profil.historiqueSalaire.map(function (h) { return h === ici ? Object.assign({}, h, { montant: "montant" in partiel ? partiel.montant : h.montant, sens: partiel.sens || h.sens, periode: partiel.periode || h.periode }) : h; });
+        partiel = Object.assign({}, partiel, { historiqueSalaire: hist });
+      }
+    }
     profil = OC.normaliser(Object.assign({}, profil, partiel));
     profilVierge = false;
     recalculer();
@@ -394,6 +403,92 @@
   }
   $("ajouter-profil").addEventListener("click", ajouterAuProfil);
 
+  /* ---------- Historique du salaire : nouveau salaire et mois d'effet ---------- */
+  /* « Annuler » d'un changement de salaire : seulement si l'historique n'a pas bougé depuis (les messages s'empilent). */
+  function annulationSalaire(avant, message) {
+    var apres = JSON.stringify(profil.historiqueSalaire);
+    return { libelle: "Annuler", fn: function () {
+      if (JSON.stringify(profil.historiqueSalaire) !== apres) { E.toast("Annulation impossible : l'historique du salaire a changé depuis."); return; }
+      majProfil(avant, { immediat: true }); if (message) E.toast(message);
+    } };
+  }
+  function libSalaire(h) { return F.saisie(h.montant) + " DT " + h.sens + (h.periode === "annuel" ? " par an" : " par mois"); }
+  /* o : { montant, sens, periode } proposés (module Salaire), sinon le salaire actuel du profil. */
+  function mettreAJourSalaire(o) {
+    if (!profil) return;
+    o = o || {};
+    var sens = o.sens || profil.sens, periode = o.periode || profil.periode, maint = new Date();
+    var hist = profil.historiqueSalaire || [], ici = OC.salaireEnVigueur(profil, maint.getFullYear(), maint.getMonth());
+    $("sal-actuel").textContent = "Salaire actuel : " + libSalaire(profil) + (ici && ici.annee ? ", depuis " + MOIS_NOMS[ici.mois - 1] + " " + ici.annee : "") + ".";
+    $("sal-montant-lib").textContent = "Nouveau salaire " + sens + (periode === "annuel" ? " par an" : " par mois");
+    $("sal-montant").value = o.montant ? F.saisie(o.montant) : "";
+    $("sal-mois").value = String(maint.getMonth() + 1);
+    $("sal-annee").value = String(maint.getFullYear());
+    /* Premier changement : le salaire d'avant est gardé (modifiable s'il avait déjà été remplacé à la main). */
+    $("sal-avant-bloc").hidden = hist.length > 0;
+    $("sal-avant-lib").textContent = "Votre salaire " + profil.sens + " avant cette date" + (profil.periode === "annuel" ? " (par an)" : " (par mois)");
+    $("sal-avant").value = F.saisie(profil.montant);
+    ["sal-montant-err", "sal-annee-err"].forEach(function (id) { $(id).hidden = true; });
+    var dlg = $("dlg-salaire");
+    function lire() {
+      var m = F.lire($("sal-montant").value), an = parseInt($("sal-annee").value, 10), mo = +$("sal-mois").value, av = F.lire($("sal-avant").value);
+      return { montant: m.valide && !m.vide ? m.valeur : null, annee: an, mois: mo, avant: av.valide && !av.vide ? av.valeur : profil.montant };
+    }
+    function effet() {
+      var v = lire(), out = $("sal-effet");
+      if (!(v.montant > 0)) { out.textContent = ""; return; }
+      try {
+        var sN = OC.salaireDe(profil, { montant: v.montant, sens: sens, periode: periode });
+        /* Comparaison avec le salaire en vigueur le mois d'avant la date choisie. */
+        var hAv = $("sal-avant-bloc").hidden ? (OC.salaireEnVigueur(profil, v.annee, v.mois - 2) || profil) : { montant: v.avant, sens: profil.sens, periode: profil.periode };
+        var sA = OC.salaireDe(profil, hAv);
+        var d = sA.brutMensuel > 0 ? sN.brutMensuel / sA.brutMensuel - 1 : 0, futur = v.annee * 12 + v.mois - 1 > maint.getFullYear() * 12 + maint.getMonth();
+        out.textContent = (d >= 0 ? "+" : "−") + F.pct(Math.abs(d), 1) + " de brut : votre net passe de " + F.dt3(sA.netMensuel) + " à " + F.dt3(sN.netMensuel) + " DT par mois" +
+          (futur ? ". Hausse prévue : elle s'appliquera toute seule en " + MOIS_NOMS[v.mois - 1] + " " + v.annee + "." : ".");
+      } catch (e) { out.textContent = ""; }
+    }
+    dlg.oninput = effet; dlg.onchange = effet; effet();
+    dlg.returnValue = "";
+    dlg.showModal();
+    $("sal-montant").focus();
+    $("form-salaire").onsubmit = function (ev) {
+      if (ev.submitter && ev.submitter.value !== "ok") return;
+      var v = lire(), ok = true;
+      $("sal-montant-err").hidden = v.montant > 0; if (!(v.montant > 0)) { $("sal-montant-err").textContent = "Indiquez le nouveau salaire."; ok = false; }
+      var anOk = v.annee >= 1990 && v.annee <= 2100;
+      $("sal-annee-err").hidden = anOk; if (!anOk) { $("sal-annee-err").textContent = "Année entre 1990 et 2100."; ok = false; }
+      if (!ok) { ev.preventDefault(); return; }
+    };
+    dlg.onclose = function () {
+      dlg.onclose = null;
+      if (dlg.returnValue !== "ok") return;
+      var v = lire(); if (!(v.montant > 0)) return;
+      var avant = { historiqueSalaire: hist.slice(), montant: profil.montant, sens: profil.sens, periode: profil.periode };
+      var h2 = hist.slice();
+      if (!h2.length) h2.push({ montant: v.avant, sens: profil.sens, periode: profil.periode, mois: 0, annee: 0 });
+      h2 = h2.filter(function (h) { return !(h.mois === v.mois && h.annee === v.annee); });
+      h2.push({ montant: v.montant, sens: sens, periode: periode, mois: v.mois, annee: v.annee });
+      var p2 = OC.normaliser(Object.assign({}, profil, { historiqueSalaire: h2 }));
+      var ap = OC.appliquerHistorique(p2, maint).profil;
+      majProfil({ historiqueSalaire: h2, montant: ap.montant, sens: ap.sens, periode: ap.periode }, { immediat: true });
+      var futur = v.annee * 12 + v.mois - 1 > maint.getFullYear() * 12 + maint.getMonth();
+      E.toast((futur ? "Hausse prévue en " : "Nouveau salaire enregistré depuis ") + MOIS_NOMS[v.mois - 1] + " " + v.annee + " : " + F.saisie(v.montant) + " DT " + sens + ".",
+        { action: annulationSalaire(avant, "Historique du salaire revenu comme avant.") });
+      vibrer(10);
+    };
+  }
+  /* Retire une entrée de l'historique ; le salaire en vigueur est recalculé. */
+  function retirerSalaire(i) {
+    var hist = (profil.historiqueSalaire || []).slice(), retiree = hist[i]; if (!retiree) return;
+    var avant = { historiqueSalaire: profil.historiqueSalaire.slice(), montant: profil.montant, sens: profil.sens, periode: profil.periode };
+    hist.splice(i, 1);
+    var partiel;
+    if (hist.length === 1 && OC.cleHausse(hist[0]) < 0) partiel = { historiqueSalaire: [], montant: hist[0].montant, sens: hist[0].sens, periode: hist[0].periode };
+    else { var ap = OC.appliquerHistorique(OC.normaliser(Object.assign({}, profil, { historiqueSalaire: hist })), new Date()).profil; partiel = { historiqueSalaire: hist, montant: ap.montant, sens: ap.sens, periode: ap.periode }; }
+    majProfil(partiel, { immediat: true });
+    E.toast("Salaire de " + (retiree.annee ? MOIS_NOMS[retiree.mois - 1] + " " + retiree.annee : "départ") + " retiré de l'historique.", { action: annulationSalaire(avant) });
+  }
+
   /* Ouvre une simulation enregistrée dans son module. */
   function ouvrirSimulation(s) {
     var vue = OUTIL_VERS_VUE[s.outil]; if (!vue) return;
@@ -554,6 +649,8 @@
     toast: function (t, o) { return E.toast(t, o); },
     mouvementReduit: mouvementReduit,
     animerNombre: animerNombre,
+    mettreAJourSalaire: mettreAJourSalaire,
+    retirerSalaire: retirerSalaire,
     rouler: rouler,
     vibrer: vibrer,
     puceVolante: puceVolante,
@@ -585,6 +682,12 @@
     var p = metaProfil(u);
     profilVierge = !p;
     profil = OC.normaliser(p || {});
+    /* Hausse de salaire datée arrivée à son mois : le profil passe au nouveau salaire. */
+    var hs = OC.appliquerHistorique(profil, new Date());
+    if (p && hs.change) {
+      profil = OC.normaliser(hs.profil);
+      setTimeout(function () { sauverProfil(); E.toast("Votre salaire de " + F.saisie(hs.entree.montant) + " DT " + hs.entree.sens + " s'applique depuis " + MOIS_NOMS[hs.entree.mois - 1] + " " + hs.entree.annee + " : Orbite est à jour."); }, 800);
+    }
     recalculer();
     remplirUtilisateur();
     rafraichirAvatar();

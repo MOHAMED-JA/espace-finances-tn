@@ -221,6 +221,50 @@
     }
   });
 
+  /* ---------- Historique du salaire : du plus récent au plus ancien ---------- */
+  function rendreHistorique(sy, p) {
+    var ol = $("hs-liste"), h = sy.historique, liste = (h && h.liste) || [];
+    ol.textContent = "";
+    ol.hidden = !liste.length;
+    $("hs-aide").hidden = !!liste.length;
+    if (!liste.length) return;
+    var maint = sy.maintenant || new Date(), cle = maint.getFullYear() * 12 + maint.getMonth();
+    var bruts = liste.map(function (x) { return OC.salaireDe(p, x).brutMensuel; });
+    for (var i = liste.length - 1; i >= 0; i--) {
+      var x = liste[i], futur = OC.cleHausse(x) > cle, ici = x === h.enVigueur, suiv = liste[i + 1];
+      var li = doc.createElement("li");
+      li.className = "historique-salaire__item" + (ici ? " historique-salaire__item--actuel" : "") + (futur ? " historique-salaire__item--prevue" : "");
+      var quand = doc.createElement("span"); quand.className = "historique-salaire__date";
+      quand.textContent = !x.annee ? (suiv && suiv.annee ? "Avant " + OC.MOIS[suiv.mois - 1] + " " + suiv.annee : "Au départ")
+        : (futur ? "À partir de " : "Depuis ") + OC.MOIS[x.mois - 1] + " " + x.annee;
+      var mt = doc.createElement("strong"); mt.className = "historique-salaire__montant";
+      mt.textContent = F.saisie(x.montant) + " DT " + x.sens + (x.periode === "annuel" ? " par an" : " par mois");
+      li.appendChild(quand); li.appendChild(mt);
+      if (i > 0 && bruts[i - 1] > 0) {
+        var d = bruts[i] / bruts[i - 1] - 1;
+        if (Math.abs(d) >= 0.0005) {
+          var v = doc.createElement("span"); v.className = "historique-salaire__variation" + (d < 0 ? " historique-salaire__variation--baisse" : "");
+          v.textContent = (d > 0 ? "+" : "−") + F.pct(Math.abs(d), 1); li.appendChild(v);
+        }
+      }
+      if (ici || futur) {
+        var badge = doc.createElement("span"); badge.className = "puce " + (futur ? "puce--salaire" : "puce--succes");
+        badge.textContent = futur ? "prévue" : "en vigueur"; li.appendChild(badge);
+      }
+      var bt = doc.createElement("button"); bt.type = "button"; bt.className = "bouton bouton--fantome bouton--icone bouton--petit historique-salaire__retirer";
+      bt.setAttribute("data-hs-retirer", String(i));
+      bt.setAttribute("aria-label", "Retirer le salaire " + quand.textContent.charAt(0).toLowerCase() + quand.textContent.slice(1));
+      bt.innerHTML = '<svg aria-hidden="true"><use href="/orbite/icones.svg#poubelle"/></svg>';
+      li.appendChild(bt);
+      ol.appendChild(li);
+    }
+  }
+  $("hs-maj").addEventListener("click", function () { O.mettreAJourSalaire(); });
+  $("hs-liste").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-hs-retirer]");
+    if (b) O.retirerSalaire(Number(b.getAttribute("data-hs-retirer")));
+  });
+
   /* ---------- Résumés et progression ---------- */
   function progression(p) {
     var points = 0, total = 8;
@@ -249,6 +293,7 @@
     r.appendChild(doc.createTextNode("Net à payer : "));
     var b1 = doc.createElement("strong"); b1.textContent = F.dt3(s.netMensuel) + " DT par mois"; r.appendChild(b1);
     r.appendChild(doc.createTextNode(" · brut " + F.dt0(s.brutMensuel) + " DT · tranche d'impôt à " + F.pct(s.tranche.taux, 0) + "."));
+    rendreHistorique(sy, p);
     var nc = p.credits.length, nk = p.contrats.length, np = p.projets.length;
     $("sec-credits-sous").textContent = nc ? nc + " crédit" + (nc > 1 ? "s" : "") + " · " + F.dt0(sy.chargesCredits) + " DT par mois" : "Aucun crédit déclaré";
     $("sec-contrats-sous").textContent = nk ? nk + " contrat" + (nk > 1 ? "s" : "") + " · " + F.dt0(sy.epargne.economieContrats) + " DT d'impôt économisé par an" : "Aucun contrat déclaré";

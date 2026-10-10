@@ -50,7 +50,7 @@
       montant: 2500, sens: "brut", periode: "mensuel", secteur: "prive", nombreSalaires: 12, calendrierPrimes: [],
       primesImposables: 0, primesNonCotisables: 0, avantagesNature: 0, indemnitesNonImposables: 0,
       chefDeFamille: false, enfants: 0, etudiants: 0, handicapes: 0, parents: 0,
-      credits: [], contrats: [], projets: [],
+      credits: [], contrats: [], projets: [], historiqueSalaire: [],
       loyer: 0, chargesFixes: 0, epargneDisponible: 0, autresRevenus: 0,
       quotiteNet: QUOTITE, quotiteBrut: QUOTITE
     };
@@ -183,6 +183,14 @@
       versementsLibresAn: nombre(c.versementsLibresAn, 0, 0, 1e7)
     };
   }
+  /* Historique du salaire : chaque entrée est un salaire et le mois à partir duquel il s'applique.
+     mois = 0 et annee = 0 : le salaire d'avant la première date connue. */
+  function normaliserHausse(h) {
+    h = h || {};
+    return { montant: nombre(h.montant, 0, 0, 1e7), sens: choix(h.sens, ["brut", "net"], "brut"), periode: choix(h.periode, ["mensuel", "annuel"], "mensuel"),
+      mois: entier(h.mois, 0, 0, 12), annee: entier(h.annee, 0, 0, 2100) };
+  }
+  function cleHausse(h) { return h.annee > 0 && h.mois > 0 ? h.annee * 12 + h.mois - 1 : -1e9; }
   function normaliserProjet(c) {
     c = c || {};
     return {
@@ -228,6 +236,7 @@
       credits: liste(p.credits, normaliserCredit, 12).map(function (c) { var e = echeancier(c); if (e) c.moisRestants = e.restantes; return c; }),
       contrats: liste(p.contrats, normaliserContrat, 12),
       projets: liste(p.projets, normaliserProjet, 8),
+      historiqueSalaire: liste(p.historiqueSalaire, normaliserHausse, 40).filter(function (h) { return h.montant > 0; }).sort(function (a, b) { return cleHausse(a) - cleHausse(b); }),
       loyer: nombre(p.loyer, 0, 0, 1e6),
       chargesFixes: nombre(p.chargesFixes, 0, 0, 1e6),
       epargneDisponible: nombre(p.epargneDisponible, 0, 0, 1e9),
@@ -345,6 +354,55 @@
   }
 
   /* Calendrier des versements supplémentaires : celui du profil, sinon tous en décembre. */
+  /* ---------- Historique du salaire ---------- */
+  /* Salaire en vigueur un mois donné (mois0 : 0 à 11) : la dernière entrée dont la date est passée, sinon null. */
+  function salaireEnVigueur(p, annee, mois0) {
+    var cible = annee * 12 + mois0, r = null;
+    (p.historiqueSalaire || []).forEach(function (h) { if (cleHausse(h) <= cible) r = h; });
+    return r;
+  }
+  function memeSalaire(a, b) { return !!a && !!b && Math.abs(a.montant - b.montant) < 0.0005 && a.sens === b.sens && a.periode === b.periode; }
+  function salaireDe(p, h) { return salaire(Object.assign({}, p, { montant: h.montant, sens: h.sens, periode: h.periode })); }
+  /* Profil aligné sur le salaire en vigueur aujourd'hui (une hausse datée arrive à son mois). */
+  function appliquerHistorique(p0, maintenant) {
+    var m = maintenant || new Date(), h = salaireEnVigueur(p0, m.getFullYear(), m.getMonth());
+    if (!h || memeSalaire(h, p0)) return { profil: p0, change: false, entree: h };
+    return { profil: Object.assign({}, p0, { montant: h.montant, sens: h.sens, periode: h.periode }), change: true, entree: h };
+  }
+  /* Où en est le salaire : en vigueur, précédent (hausse en %), prochaine hausse prévue. */
+  function infoHistorique(p, s, maintenant) {
+    var hist = p.historiqueSalaire || [];
+    if (!hist.length) return null;
+    var m = maintenant || new Date(), cle = m.getFullYear() * 12 + m.getMonth();
+    var ici = salaireEnVigueur(p, m.getFullYear(), m.getMonth()), i = ici ? hist.indexOf(ici) : -1, prec = null;
+    for (var k = i - 1; k >= 0; k--) if (!memeSalaire(hist[k], ici)) { prec = hist[k]; break; }
+    var sPrec = prec ? salaireDe(p, prec) : null;
+    var futurs = hist.filter(function (h) { return cleHausse(h) > cle; }).map(function (h) {
+      var sf = salaireDe(p, h);
+      return { entree: h, mois: cleHausse(h) - cle, date: MOIS[h.mois - 1] + " " + h.annee, brutMensuel: sf.brutMensuel, netMensuel: sf.netMensuel, netAnnuel: sf.netAnnuel, brutAnnuel: sf.brutAnnuel };
+    });
+    return { liste: hist, enVigueur: ici, depuis: ici && ici.annee ? MOIS[ici.mois - 1] + " " + ici.annee : null,
+      precedent: prec, hausse: sPrec && sPrec.brutMensuel > 0 ? s.brutMensuel / sPrec.brutMensuel - 1 : null, brutPrecedent: sPrec ? sPrec.brutMensuel : null, futurs: futurs };
+  }
+  /* Salaire de l'année civile calculé mois par mois : chaque mois (et chaque prime) au salaire alors en vigueur.
+     L'impôt annuel porte sur le total de l'année. Renvoie null si le salaire ne change pas dans l'année. */
+  function salaireAnnee(p, maintenant) {
+    if (!(p.historiqueSalaire || []).length) return null;
+    var Y = (maintenant || new Date()).getFullYear(), cal = calendrierPrimes(p), cache = {}, parMois = [], brutAn = 0, ids = {};
+    for (var k = 0; k < 12; k++) {
+      var h = salaireEnVigueur(p, Y, k) || { montant: p.montant, sens: p.sens, periode: p.periode };
+      var id = h.montant + "|" + h.sens + "|" + h.periode, S = cache[id] || (cache[id] = salaireDe(p, h));
+      ids[id] = true;
+      parMois.push({ mois: k, brutMensuel: S.brutMensuel, primes: cal[k], retenue: S.impotMois + cal[k] * S.impotParVersement, salaire: h });
+      brutAn += S.brutMensuel * (1 + cal[k]);
+    }
+    if (Object.keys(ids).length < 2) return null;
+    var n = 12 + cal.reduce(function (a, b) { return a + b; }, 0);
+    var sA = salaire(Object.assign({}, p, { sens: "brut", periode: "mensuel", montant: brutAn / n, nombreSalaires: n }));
+    sA.parMois = parMois; sA.annee = Y; sA.varie = true;
+    return sA;
+  }
+
   function calendrierPrimes(p) {
     var extra = Math.max(0, p.nombreSalaires - 12), c = p.calendrierPrimes || [];
     if (c.length === 12 && c.some(function (v) { return v > 0; })) return c.slice();
@@ -358,6 +416,12 @@
     var cal = calendrierPrimes(sy.profil), primes = 0;
     for (var k = mois; k < 12; k++) primes += cal[k];
     var moisRestants = 12 - mois;
+    /* Salaire qui change dans l'année : chaque paie restante retient l'impôt au salaire de son mois. */
+    var sa = sy.salaireAnnee;
+    if (sa && sa.parMois && sa.annee === m.getFullYear()) {
+      var mt = 0; for (var j = mois; j < 12; j++) mt += sa.parMois[j].retenue;
+      return { moisRestants: moisRestants, primesRestantes: primes, calendrier: cal, montant: mt, moisParMois: true };
+    }
     return { moisRestants: moisRestants, primesRestantes: primes, calendrier: cal,
       montant: moisRestants * s.impotMois + primes * s.impotParVersement };
   }
@@ -448,6 +512,16 @@
     ev.forEach(function (e) { var g = groupes[groupes.length - 1]; if (!g || g.mois !== e.mois) groupes.push(g = { mois: e.mois, ev: [] }); g.ev.push(e); });
     return groupes;
   }
+  /* Ajoute aux groupes les hausses de salaire prévues : { mois, revenu } (revenu retenu par la banque à partir de ce mois). */
+  function avecHausses(groupes, hausses) {
+    (hausses || []).forEach(function (h) {
+      if (!(h.mois > 0)) return;
+      var g = groupes.filter(function (x) { return x.mois === h.mois; })[0];
+      if (!g) { g = { mois: h.mois, ev: [] }; groupes.push(g); }
+      g.revenu = h.revenu;
+    });
+    return groupes.sort(function (a, b) { return a.mois - b.mois; });
+  }
   function chargesActuelles(p) {
     var m = {};
     p.credits.forEach(function (c, i) { if (c.mensualite > 0) m[i] = c.mensualite; });
@@ -456,20 +530,21 @@
   function total(m) { return Object.keys(m).reduce(function (t, k) { return t + m[k]; }, 0); }
 
   /* À quelle date l'endettement repasse sous la quotité, au fil de la fin des crédits en cours (et des réductions de taux) ? */
-  function sortieEndettement(p, revenuMensuel, quotite) {
+  function sortieEndettement(p, revenuMensuel, quotite, hausses) {
     var actifs = p.credits.filter(function (c) { return c.mensualite > 0; });
     var m = chargesActuelles(p), charges = total(m);
     if (!(revenuMensuel > 0) || charges <= revenuMensuel * quotite) return null;
     if (actifs.some(function (c) { return !(c.moisRestants > 0); })) return null;
-    var finis = [], reduits = [], groupes = evolutionCharges(p);
+    var finis = [], reduits = [], groupes = avecHausses(evolutionCharges(p), hausses), hausse = false;
     for (var g = 0; g < groupes.length; g++) {
+      if (groupes[g].revenu != null) { revenuMensuel = groupes[g].revenu; hausse = true; }
       groupes[g].ev.forEach(function (e) {
         if (e.mensualite > 0) m[e.i] = e.mensualite; else delete m[e.i];
         if (e.reduction) { if (reduits.indexOf(e.libelle) === -1) reduits.push(e.libelle); } else finis.push(e.libelle);
       });
       charges = total(m);
       if (charges <= revenuMensuel * quotite + 1e-9) {
-        return { mois: groupes[g].mois, credits: finis.slice(), reduits: reduits.filter(function (l) { return finis.indexOf(l) === -1; }), charges: Math.max(0, charges), taux: Math.max(0, charges) / revenuMensuel,
+        return { mois: groupes[g].mois, credits: finis.slice(), reduits: reduits.filter(function (l) { return finis.indexOf(l) === -1; }), hausse: hausse, revenu: revenuMensuel, charges: Math.max(0, charges), taux: Math.max(0, charges) / revenuMensuel,
           mensualiteLiberee: Math.max(0, revenuMensuel * quotite - charges) };
       }
     }
@@ -477,11 +552,12 @@
   }
 
   /* Étapes de la marge d'emprunt : à chaque fin de crédit (ou réduction de taux d'un crédit à taux fixe), la mensualité possible augmente. */
-  function paliersMarge(p, revenu, quotite, ageActuel, maintenant) {
+  function paliersMarge(p, revenu, quotite, ageActuel, maintenant, hausses) {
     var mt = maintenant || new Date();
     var m = chargesActuelles(p), charges = total(m);
-    var res = [], avant = Math.max(0, revenu * quotite - charges), finis = [], reduits = [], taux = tauxNouveaux(p), t = taux.immo.tauxPct;
-    evolutionCharges(p).forEach(function (g) {
+    var res = [], avant = Math.max(0, revenu * quotite - charges), finis = [], reduits = [], hausse = false, taux = tauxNouveaux(p), t = taux.immo.tauxPct;
+    avecHausses(evolutionCharges(p), hausses).forEach(function (g) {
+      if (g.revenu != null) { revenu = g.revenu; hausse = true; }
       g.ev.forEach(function (e) {
         if (e.mensualite > 0) m[e.i] = e.mensualite; else delete m[e.i];
         if (e.reduction) { if (reduits.indexOf(e.libelle) === -1) reduits.push(e.libelle); } else finis.push(e.libelle);
@@ -498,9 +574,9 @@
           var ty = CREDITS_TYPES.filter(function (x) { return x.cle === cle; })[0], nn = Math.min(ty.dureeMois, moisAge), tx = tauxDe(taux, cle);
           return { cle: cle, libelle: ty.court, dureeMois: nn, tauxPct: tx, capital: capitalPourMensualite(marge, tx, nn), source: taux[cle].source };
         });
-        res.push({ mois: mois, date: MOIS[d.getMonth()] + " " + d.getFullYear(), credits: finis, reduits: reduits.filter(function (l) { return finis.indexOf(l) === -1; }), charges: Math.max(0, charges),
+        res.push({ mois: mois, date: MOIS[d.getMonth()] + " " + d.getFullYear(), credits: finis, reduits: reduits.filter(function (l) { return finis.indexOf(l) === -1; }), hausse: hausse, revenu: revenu, charges: Math.max(0, charges),
           mensualiteMax: marge, capitalImmo: capitalPourMensualite(marge, t, n), dureeImmoMois: n, tauxPct: t, offres: offres });
-        finis = []; reduits = [];
+        finis = []; reduits = []; hausse = false;
       }
       avant = marge;
     });
@@ -512,10 +588,12 @@
     function liste(l, et) { l = l.map(function (c) { return c.charAt(0).toLowerCase() + c.slice(1); }); return l.length > 1 ? l.slice(0, -1).join(", ") + et + l[l.length - 1] : l[0]; }
     var morceaux = [], cr = x.credits || [], rd = x.reduits || [];
     if (darija) {
+      if (x.hausse) morceaux.push("ki yzid salaire mte3ek");
       if (cr.length) morceaux.push("ki yekmel " + liste(cr, " w "));
       if (rd.length) morceaux.push("ki yon9ess el taux mta3 " + liste(rd, " w "));
       return morceaux.join(" w ");
     }
+    if (x.hausse) morceaux.push("hausse de salaire");
     if (cr.length) morceaux.push("fin " + (cr.length > 1 ? "des crédits " : "du crédit ") + liste(cr.map(function (c) { return c.replace(/^crédit /i, ""); }), " et "));
     if (rd.length) morceaux.push("réduction de taux " + (rd.length > 1 ? "des crédits " : "du crédit ") + liste(rd.map(function (c) { return c.replace(/^crédit /i, ""); }), " et "));
     return morceaux.join(" et ");
@@ -807,7 +885,8 @@
 
   /* Synthèse complète du profil, recalculée à chaque modification. */
   function synthese(p0, choix0, maintenant) {
-    var p = appliquerEcheanciers(normaliser(p0), maintenant);
+    /* Le salaire en vigueur aujourd'hui (historique) sert à tous les calculs. */
+    var p = appliquerEcheanciers(appliquerHistorique(normaliser(p0), maintenant).profil, maintenant);
     var ch = choix0 || {};
     var ageActuel = age(p, maintenant);
     var s = salaire(p);
@@ -833,6 +912,8 @@
     };
     sy.projets = p.projets.map(function (pr) { return projet(pr, capNet, p, s.netMensuel + p.autresRevenus); });
     sy.maintenant = maintenant || new Date();
+    sy.historique = infoHistorique(p, s, sy.maintenant);
+    sy.salaireAnnee = salaireAnnee(p, sy.maintenant);
     sy.tauxImmo = tauxImmo(p);
     sy.contrats = p.contrats.map(function (c) { return estimationContrat(c, sy.maintenant); });
     sy.credits = p.credits.map(function (c) {
@@ -846,21 +927,27 @@
     if (sy.budget.alerte !== "deficit") sy.budget.alerte = capBanque.tauxEndettementActuel > qBanque ? "endettement" : null;
     sy.budget.endettementBanque = capBanque.tauxEndettementActuel;
     /* Capacité retrouvée à la fin des crédits qui dépassent la quotité (affichée quand elle est nulle aujourd'hui). */
+    /* Hausses de salaire prévues : revenu retenu par la banque à partir de leur mois. */
+    function haussesPour(b) {
+      return sy.historique ? sy.historique.futurs.map(function (f) {
+        return { mois: f.mois, revenu: (b === "net" ? (annuel ? f.netAnnuel / 12 : f.netMensuel) : (annuel ? f.brutAnnuel / 12 : f.brutMensuel)) + p.autresRevenus };
+      }) : [];
+    }
     ["net", "brut"].forEach(function (b) {
       var c = sy.capacite[b], q = b === "net" ? p.quotiteNet : p.quotiteBrut;
-      c.paliers = paliersMarge(p, c.revenu, q, ageActuel, sy.maintenant);
+      c.paliers = paliersMarge(p, c.revenu, q, ageActuel, sy.maintenant, haussesPour(b));
       if (c.mensualiteMax >= 1) return;
-      var so = sortieEndettement(p, c.revenu, q);
+      var so = sortieEndettement(p, c.revenu, q, haussesPour(b));
       if (!so) return;
       var d = new Date(sy.maintenant.getFullYear(), sy.maintenant.getMonth() + so.mois, 1);
-      c.futur = { mois: so.mois, date: MOIS[d.getMonth()] + " " + d.getFullYear(), capacite: capacite(c.revenu, q, so.charges, ageActuel + Math.ceil(so.mois / 12), tauxNouveaux(p)) };
+      c.futur = { mois: so.mois, date: MOIS[d.getMonth()] + " " + d.getFullYear(), capacite: capacite(so.revenu || c.revenu, q, so.charges, ageActuel + Math.ceil(so.mois / 12), tauxNouveaux(p)) };
     });
     sy.conseils = conseils(sy);
     return sy;
   }
 
   return {
-    TMM: TMM, CREDITS_TYPES: CREDITS_TYPES, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
+    TMM: TMM, CREDITS_TYPES: CREDITS_TYPES, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
     profilParDefaut: profilParDefaut, normaliser: normaliser, age: age, etatSalaire: etatSalaire, entreeBrut: entreeBrut,
     tranche: tranche, salaire: salaire, augmentation: augmentation, calendrierPrimes: calendrierPrimes, impotRestantAnnee: impotRestantAnnee,
     capitalPourMensualite: capitalPourMensualite, mensualitePourCapital: mensualitePourCapital, capacite: capacite,

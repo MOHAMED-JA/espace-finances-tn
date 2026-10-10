@@ -453,6 +453,20 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 duoquadragies. Historique du salaire : date d'effet, impôt mois par mois, hausses prévues (10 oct.)
+
+- **Demande** : mettre à jour le salaire brut quand il augmente, en indiquant le mois et l'année. **Choix de l'utilisateur** : accès depuis le profil **et** le module Salaire ; hausses futures permises, appliquées à leur date ; impôt de l'année calculé mois par mois, primes comprises ; la courbe de carrière et l'inflation restent au lot 3.
+- **Données** : `profil.historiqueSalaire` = liste triée (40 au plus) de `{ montant, sens, periode, mois, annee }` ; `mois = annee = 0` = « avant » (salaire de départ, gardé au premier changement). `montant/sens/periode` du profil = le salaire **en vigueur aujourd'hui** (tous les anciens calculs le lisent toujours).
+- **Moteur** (`orbite-calcul.js`) : `cleHausse`, `salaireEnVigueur(p, annee, mois0)`, `salaireDe(p, h)`, `memeSalaire`, `appliquerHistorique(p, maintenant)` (appliqué dans `synthese` et au chargement : une hausse prévue arrivée à son mois devient le salaire du profil, avec un message), `infoHistorique` → `sy.historique` (`enVigueur`, `depuis`, `hausse`, `futurs[]` avec `mois` = décalage depuis aujourd'hui, net et brut), `salaireAnnee` → `sy.salaireAnnee` (12 mois au salaire alors en vigueur, chaque prime au salaire de son mois ; `parMois[k].retenue`), null si le salaire ne change pas dans l'année. `impotRestantAnnee`, l'optimiseur fiscal et `entreeFiscale` utilisent `sy.salaireAnnee || sy.salaire`. Capacité : `paliersMarge` / `sortieEndettement` changent le revenu au mois de chaque hausse prévue (champs `hausse`, `revenu`) ; `evenementEtape` → « hausse de salaire ».
+- **Interface** :
+  - Profil, sous le salaire : bloc `#hs-bloc`, bouton « Mettre à jour mon salaire » (`#hs-maj`), liste `#hs-liste` du plus récent au plus ancien (Depuis / À partir de … prévue / Avant …, variation du brut en %, puces « en vigueur » / « prévue », retrait annulable). Styles `.historique-salaire*` dans `app.css`.
+  - Fenêtre `#dlg-salaire` (`Orbite.mettreAJourSalaire(o)` dans `app.js`) : nouveau montant, mois, année (par défaut le mois du jour), salaire d'avant au premier changement, effet en direct (variation, net avant → après, « hausse prévue »). Même date ⇒ l'entrée est remplacée. `Orbite.retirerSalaire(i)`.
+  - « Annuler » des messages : seulement si l'historique n'a pas changé depuis (`annulationSalaire`), car les messages s'empilent.
+  - `majProfil` : une correction directe de `montant/sens/periode` (champ du profil) met à jour l'entrée en vigueur.
+  - Module Salaire, « Mettre à jour mon profil » : si le salaire diffère de celui du profil, les autres champs sont repris et la fenêtre s'ouvre, préremplie, pour choisir la date d'effet.
+  - Mon orbite : jalons `genre: "salaire"` (`sat: null`), le noyau suit le net du mois affiché, « avec vos hausses de salaire prévues », endettement calculé sur le revenu du mois ; Assistant (« avec votre hausse de salaire » / « ki yzid salaire mte3ek ») et résumé IA (« Historique du salaire »).
+- Tests : `tests/espace/historique-salaire.test.js` (4) ; unitaires 352 ; e2e 37/37 (hausse datée, hausse prévue, ancien « Annuler » sans effet, correction directe, module Salaire). Nouveautés « 2026-10-10f », SW `orbite-2026-10-10t`.
+
 ## 3 unquadragies. Simulations → profil, remboursements anticipés par date, corrections Salaire (10 oct.)
 
 - **Simulation → profil** (choix de l'utilisateur) : bouton « Ajouter à mon profil » (`#ajouter-profil`, barre du haut de Crédit et Épargne) **et** case dans « Enregistrer » (`#enr-profil`). Fenêtre `#dlg-profil` construite dans `app.js` (`ajouterAuProfil`), annulable par le message (« Annuler » remet crédits, projets et contrats comme avant).
