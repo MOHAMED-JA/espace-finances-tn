@@ -493,6 +493,16 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     /* Le pointeur resté sur un message le met en pause : on l'écarte et on attend que les messages se ferment. */
     await pm.mouse.move(5, 5);
     await pm.waitForFunction(() => !document.querySelector(".toasts .toast"), null, { timeout: 10000 });
+    /* L'Assistant reste à portée de pouce sur téléphone (bouton flottant), Vie & impôts est dans « Moi ». */
+    assert(await pm.isVisible("#bulle-assistant"), "bouton Assistant visible sur téléphone");
+    await pm.tap("#bulle-assistant");
+    await pm.waitForSelector("#vue-assistant:not([hidden])");
+    assert(!(await pm.isVisible("#bulle-assistant")), "bouton masqué dans l'Assistant");
+    await pm.tap('.onglets-bas a[data-vue="profil"]');
+    await pm.waitForSelector("#vue-profil:not([hidden])");
+    await pm.tap('#vue-profil .sous-nav a[href="#vie"]');
+    await pm.waitForSelector("#vue-vie:not([hidden])");
+    assert(await pm.$eval('.onglets-bas a[data-vue="profil"]', (a) => a.getAttribute("aria-current") === "page"), "« Moi » reste actif dans Vie & impôts");
     for (const vue of ["orbite", "salaire", "epargne", "credit", "profil"]) {
       await pm.tap('.onglets-bas a[data-vue="' + vue + '"]');
       await pm.waitForSelector("#vue-" + vue + ":not([hidden])");

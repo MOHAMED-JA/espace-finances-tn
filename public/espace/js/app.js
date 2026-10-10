@@ -291,6 +291,7 @@
     var r = lireRoute();
     var changer = function () {
       doc.querySelectorAll("section.vue").forEach(function (s) { s.hidden = s.getAttribute("data-vue") !== r.vue; });
+      doc.body.setAttribute("data-vue-active", r.vue);
       if (r.vue !== vueAffichee) {
         var entree = doc.querySelector('section.vue[data-vue="' + r.vue + '"]');
         if (entree) { entree.classList.add("vue--entree"); setTimeout(function () { entree.classList.remove("vue--entree"); }, 900); }

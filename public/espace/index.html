@@ -315,6 +315,7 @@
             <h1 id="titre-profil">Mon profil</h1>
             <p class="vue__sous">Plus votre profil est précis, plus vos conseils le sont. Tout est enregistré automatiquement, et visible par vous seul.</p>
             <nav class="sous-nav" aria-label="Mon espace">
+              <a class="bouton bouton--petit" href="#vie"><svg aria-hidden="true"><use href="/orbite/icones.svg#cible"/></svg>Vie &amp; impôts</a>
               <a class="bouton bouton--petit" href="#simulations"><svg aria-hidden="true"><use href="/orbite/icones.svg#liste"/></svg>Mes simulations</a>
               <a class="bouton bouton--petit" href="#compte"><svg aria-hidden="true"><use href="/orbite/icones.svg#compte"/></svg>Compte</a>
             </nav>
@@ -1054,12 +1055,14 @@
     </div>
 
     <!-- ============ Onglets du bas (téléphone) ============ -->
+    <!-- Téléphone : l'Assistant reste à portée de pouce, sur toutes les pages -->
+    <a class="bulle-assistant" id="bulle-assistant" href="#assistant" aria-label="Ouvrir l'Assistant"><svg aria-hidden="true"><use href="/orbite/icones.svg#etoile"/></svg><span>Assistant</span></a>
     <nav class="onglets-bas" aria-label="Navigation">
       <a href="#orbite" data-vue="orbite"><svg aria-hidden="true"><use href="/orbite/icones.svg#orbite"/></svg><span translate="no">Orbite</span></a>
       <a href="#salaire" data-vue="salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#salaire"/></svg><span>Salaire</span></a>
       <a href="#epargne" data-vue="epargne"><svg aria-hidden="true"><use href="/orbite/icones.svg#epargne"/></svg><span>Épargne</span></a>
       <a href="#credit" data-vue="credit"><svg aria-hidden="true"><use href="/orbite/icones.svg#credit"/></svg><span>Crédit</span></a>
-      <a href="#profil" data-vue="profil" data-vues="profil simulations compte abonnement"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span>Moi</span></a>
+      <a href="#profil" data-vue="profil" data-vues="profil simulations compte abonnement vie"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span>Moi</span></a>
     </nav>
   </div>
 
