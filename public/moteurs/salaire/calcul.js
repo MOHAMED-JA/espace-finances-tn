@@ -532,6 +532,7 @@
     calculerDepuisBrut: calculerDepuisBrut,
     calculerDepuisNet: calculerDepuisNet,
     calculerImpotBareme: calculerImpotBareme,
+    calculerDeductions: calculerDeductions,
     versMensuel: versMensuel,
     arrondiMillime: arrondiMillime
   };
