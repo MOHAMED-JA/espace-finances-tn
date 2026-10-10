@@ -103,8 +103,8 @@
         <!-- ======== Mon orbite ======== -->
         <section class="vue" id="vue-orbite" data-vue="orbite" aria-labelledby="titre-orbite">
           <header class="vue__tete">
-            <h1 id="titre-orbite"><span id="salutation">Bonjour</span></h1>
-            <p class="vue__sous" id="phrase-orbite">Votre salaire au centre, et tout le reste en orbite.</p>
+            <h1 id="titre-orbite"><span id="salutation" data-sq>Bonjour</span></h1>
+            <p class="vue__sous" id="phrase-orbite" data-sq>Votre salaire au centre, et tout le reste en orbite.</p>
           </header>
 
           <!-- Premier pas : profil minimal -->
@@ -136,55 +136,65 @@
           </section>
 
           <div class="orbite-grille" id="orbite-contenu">
-            <!-- Scène orbitale -->
+            <!-- Scène orbitale : planète (le net) et satellites (crédits, contrats, projets) -->
             <section class="cosmos scene" aria-labelledby="titre-scene">
               <h2 class="cache" id="titre-scene">Votre orbite</h2>
-              <div class="scene__visuel" aria-hidden="true">
-                <svg class="scene__svg" id="scene-svg" viewBox="-200 -200 400 400">
-                  <defs>
-                    <radialGradient id="noyau-lum" r="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".35" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
-                  </defs>
-                  <circle class="scene__halo" r="120" fill="url(#noyau-lum)"/>
-                  <g id="orbites"></g>
-                  <g class="noyau" id="noyau"><circle class="noyau__pulse" r="64"/><circle class="noyau__disque" r="64"/></g>
-                </svg>
-                <div class="noyau__texte"><span id="noyau-lib">Net par mois</span><strong id="noyau-val">—</strong><span id="noyau-sous"></span></div>
-                <a class="satellite satellite--salaire" id="sat-salaire" href="#salaire" tabindex="-1"><span class="satellite__lib">Tranche d'impôt</span><strong id="sat-salaire-val">—</strong></a>
-                <a class="satellite satellite--credit" id="sat-credit" href="#credit" tabindex="-1"><span class="satellite__lib" id="sat-credit-lib">Mensualité possible</span><strong id="sat-credit-val">—</strong></a>
-                <a class="satellite satellite--epargne" id="sat-epargne" href="#epargne" tabindex="-1"><span class="satellite__lib">Impôt économisable</span><strong id="sat-epargne-val">—</strong></a>
+              <div class="ciel" id="ciel">
+                <canvas class="ciel__toile" id="ciel-toile" aria-hidden="true"></canvas>
+                <div class="ciel__haut">
+                  <div class="ciel__quand"><strong id="ciel-date" data-sq>—</strong><span id="ciel-ecart">Aujourd'hui</span></div>
+                  <p class="ciel__astuce">Glissez pour tourner. Touchez un satellite pour sa fiche.</p>
+                </div>
+                <p class="ciel__annonce" id="ciel-annonce" role="status"></p>
+                <div class="noyau__texte"><span id="noyau-lib">Net par mois</span><strong id="noyau-val" data-sq>—</strong><span id="noyau-sous"></span></div>
+                <div class="ciel__satellites" id="ciel-satellites"></div>
+                <div class="ciel__capa"><span id="ciel-capa-lib">La banque peut vous prêter</span><strong id="ciel-capa-val" data-sq>—</strong><small id="ciel-capa-sous"></small></div>
               </div>
-              <ul class="scene__liste" aria-label="Vos trois repères">
-                <li><a href="#salaire"><span class="point point--salaire"></span><span>Salaire</span><strong id="liste-salaire">—</strong></a></li>
-                <li><a href="#credit"><span class="point point--credit"></span><span>Crédit</span><strong id="liste-credit">—</strong></a></li>
-                <li><a href="#epargne"><span class="point point--epargne"></span><span>Épargne</span><strong id="liste-epargne">—</strong></a></li>
-              </ul>
+              <div class="voyage" id="voyage" hidden>
+                <div class="voyage__ligne">
+                  <button class="voyage__jouer" id="voyage-jouer" type="button" aria-label="Lancer le voyage dans le temps"><svg viewBox="0 0 16 16" aria-hidden="true"><path id="voyage-icone" d="M4 2.5v11l9-5.5z"/></svg></button>
+                  <div class="voyage__piste">
+                    <label class="cache" for="voyage-curseur">Voyage dans le temps</label>
+                    <input type="range" id="voyage-curseur" min="0" max="12" step="1" value="0">
+                    <div class="voyage__jalons" id="voyage-jalons" aria-hidden="true"></div>
+                    <div class="voyage__annees" id="voyage-annees" aria-hidden="true"></div>
+                  </div>
+                  <button class="voyage__auj" id="voyage-auj" type="button" disabled>Aujourd'hui</button>
+                </div>
+                <button class="voyage__prochain" id="voyage-prochain" type="button"><i id="voyage-prochain-point"></i><span id="voyage-prochain-txt"></span></button>
+              </div>
             </section>
 
-            <!-- Budget orbital -->
-            <section class="panneau budget" aria-labelledby="titre-budget">
-              <div class="panneau__tete">
-                <div><h2 class="panneau__titre" id="titre-budget">Votre net, partagé</h2><p class="panneau__sous" id="budget-sous">Chaque mois, où va votre salaire.</p></div>
-              </div>
-              <div class="budget__corps">
-                <svg class="anneau" id="anneau" viewBox="0 0 120 120" aria-hidden="true">
-                  <circle class="anneau__fond" cx="60" cy="60" r="48"/>
-                  <circle class="anneau__arc arc--credits" id="arc-credits" cx="60" cy="60" r="48" pathLength="100"/>
-                  <circle class="anneau__arc arc--logement" id="arc-logement" cx="60" cy="60" r="48" pathLength="100"/>
-                  <circle class="anneau__arc arc--epargne" id="arc-epargne" cx="60" cy="60" r="48" pathLength="100"/>
-                  <circle class="anneau__arc arc--reste" id="arc-reste" cx="60" cy="60" r="48" pathLength="100"/>
-                </svg>
-                <div class="anneau__centre"><span>Reste à vivre</span><strong id="budget-reste">—</strong></div>
-                <ul class="budget__legende">
-                  <li><i class="arc--credits"></i><span>Crédits en cours</span><strong id="budget-credits">—</strong></li>
-                  <li><i class="arc--logement"></i><span>Logement et charges</span><strong id="budget-logement">—</strong></li>
-                  <li><i class="arc--epargne"></i><span>Épargne</span><strong id="budget-epargne">—</strong></li>
-                  <li><i class="arc--reste"></i><span>Reste à vivre</span><strong id="budget-reste-2">—</strong></li>
-                </ul>
-              </div>
-              <p class="encart encart--alerte" id="budget-alerte" hidden></p>
-              <a class="lien-action" href="#profil?section=budget">Compléter mon budget<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
-            </section>
+            <!-- Fiche : vue d'ensemble (alternative textuelle de la scène) ou satellite choisi -->
+            <aside class="panneau fiche-orbite" aria-label="Fiche de votre orbite">
+              <div class="fiche-orbite__contenu" id="fiche-orbite" aria-live="polite"></div>
+            </aside>
           </div>
+
+          <!-- Budget orbital -->
+          <section class="panneau budget" aria-labelledby="titre-budget">
+            <div class="panneau__tete">
+              <div><h2 class="panneau__titre" id="titre-budget">Votre net, partagé</h2><p class="panneau__sous" id="budget-sous">Chaque mois, où va votre salaire.</p></div>
+            </div>
+            <div class="budget__corps">
+              <svg class="anneau" id="anneau" viewBox="0 0 120 120" aria-hidden="true">
+                <circle class="anneau__fond" cx="60" cy="60" r="48"/>
+                <circle class="anneau__arc arc--credits" id="arc-credits" cx="60" cy="60" r="48" pathLength="100"/>
+                <circle class="anneau__arc arc--logement" id="arc-logement" cx="60" cy="60" r="48" pathLength="100"/>
+                <circle class="anneau__arc arc--epargne" id="arc-epargne" cx="60" cy="60" r="48" pathLength="100"/>
+                <circle class="anneau__arc arc--reste" id="arc-reste" cx="60" cy="60" r="48" pathLength="100"/>
+              </svg>
+              <div class="anneau__centre"><span>Reste à vivre</span><strong id="budget-reste" data-sq>—</strong></div>
+              <ul class="budget__legende">
+                <li><i class="arc--credits"></i><span>Crédits en cours</span><strong id="budget-credits" data-sq>—</strong></li>
+                <li><i class="arc--logement"></i><span>Logement et charges</span><strong id="budget-logement" data-sq>—</strong></li>
+                <li><i class="arc--epargne"></i><span>Épargne</span><strong id="budget-epargne" data-sq>—</strong></li>
+                <li><i class="arc--reste"></i><span>Reste à vivre</span><strong id="budget-reste-2" data-sq>—</strong></li>
+              </ul>
+            </div>
+            <p class="encart encart--alerte" id="budget-alerte" hidden></p>
+            <a class="lien-action" href="#profil?section=budget">Compléter mon budget<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
+          </section>
 
           <!-- Foyer (mode couple) -->
           <section class="bloc-orbite foyer" id="foyer" aria-labelledby="titre-foyer" hidden>
@@ -217,7 +227,7 @@
               <div class="panneau sante__score">
                 <div class="sante__jauge" id="sante-jauge" role="img" aria-label="Score">
                   <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="sante__fond" cx="60" cy="60" r="50" pathLength="100"/><circle class="sante__arc" id="sante-arc" cx="60" cy="60" r="50" pathLength="100"/></svg>
-                  <div class="sante__centre"><strong class="chiffre" id="sante-score">—</strong><span>sur 100</span></div>
+                  <div class="sante__centre"><strong class="chiffre" id="sante-score" data-sq>—</strong><span>sur 100</span></div>
                 </div>
                 <p class="sante__niveau" id="sante-niveau"></p>
               </div>
@@ -250,7 +260,7 @@
             <div class="capacite" id="capacite" data-requiert-naissance>
               <div class="capacite__tete panneau">
                 <span id="cap-tete-lib">Mensualité maximale</span>
-                <strong id="cap-mensualite">—</strong>
+                <strong id="cap-mensualite" data-sq>—</strong>
                 <span id="cap-revenu" class="capacite__note"></span>
               </div>
               <ul class="capacite__liste" id="cap-liste"></ul>
@@ -921,10 +931,11 @@
             </div>
             <div class="param-panneau reglages" role="tabpanel" id="onglet-preferences" data-onglet="preferences" aria-labelledby="tab-preferences" hidden>
             <section class="panneau reglage" aria-labelledby="r-theme">
-              <div class="reglage__texte"><h2 id="r-theme">Apparence</h2><p>Clair, sombre, ou comme votre appareil.</p></div>
+              <div class="reglage__texte"><h2 id="r-theme">Apparence</h2><p id="theme-aide">Comme votre appareil, clair, sombre, ou « Soleil » : clair le jour, sombre après le coucher du soleil à Tunis.</p></div>
               <div class="reglage__controle">
                 <div class="bascule" id="choix-theme" role="radiogroup" aria-label="Thème">
-                  <label><input type="radio" name="theme" value=""><span>Automatique</span></label>
+                  <label><input type="radio" name="theme" value=""><span>Appareil</span></label>
+                  <label><input type="radio" name="theme" value="heure"><span>Soleil</span></label>
                   <label><input type="radio" name="theme" value="light"><span>Clair</span></label>
                   <label><input type="radio" name="theme" value="dark"><span>Sombre</span></label>
                   <i class="bascule__pastille" aria-hidden="true"></i>
@@ -937,6 +948,16 @@
                 <div class="bascule" id="choix-mouvement" role="radiogroup" aria-label="Animations">
                   <label><input type="radio" name="mouvement" value=""><span>Selon l'appareil</span></label>
                   <label><input type="radio" name="mouvement" value="reduit"><span>Réduites</span></label>
+                  <i class="bascule__pastille" aria-hidden="true"></i>
+                </div>
+              </div>
+            </section>
+            <section class="panneau reglage" aria-labelledby="r-vibrations">
+              <div class="reglage__texte"><h2 id="r-vibrations">Vibrations</h2><p>Une vibration brève quand vous touchez un satellite ou passez un jalon. Sur Android : Safari sur iPhone ne le permet pas aux sites.</p></div>
+              <div class="reglage__controle">
+                <div class="bascule" id="choix-vibrations" role="radiogroup" aria-label="Vibrations">
+                  <label><input type="radio" name="vibrations" value=""><span>Activées</span></label>
+                  <label><input type="radio" name="vibrations" value="non"><span>Désactivées</span></label>
                   <i class="bascule__pastille" aria-hidden="true"></i>
                 </div>
               </div>
@@ -1180,6 +1201,8 @@
   <script src="/espace/js/orbite-intelligence.js"></script>
   <script src="/espace/js/assistant-local.js"></script>
   <script src="/espace/js/app.js"></script>
+  <script src="/espace/js/orbite-systeme.js"></script>
+  <script src="/espace/js/scene-orbite.js"></script>
   <script src="/espace/js/vue-orbite.js"></script>
   <script src="/espace/js/vue-profil.js"></script>
   <script src="/espace/js/module-salaire.js"></script>

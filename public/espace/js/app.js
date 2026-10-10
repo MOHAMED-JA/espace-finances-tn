@@ -54,23 +54,38 @@
   });
   window.addEventListener("resize", function () { placerPastilles(); });
 
-  /* ---------- Chiffres animés ---------- */
+  /* ---------- Chiffres qui roulent ---------- */
+  /* Chaque chiffre est une colonne 0-9 qui roule jusqu'à sa valeur (pseudo-élément : le texte de l'élément reste
+     le montant exact, lu par les lecteurs d'écran et les tests). Jamais pendant la frappe (option instantane). */
   var tweens = new WeakMap();
+  function rouler(el, txt, instant) {
+    var forme = txt.replace(/\d/g, "0"), vis = el.lastChild;
+    var neuf = !vis || !vis.classList || !vis.classList.contains("roule") || el.getAttribute("data-forme") !== forme;
+    if (neuf) {
+      el.textContent = "";
+      var sr = doc.createElement("span"); sr.className = "cache";
+      vis = doc.createElement("span"); vis.className = "roule"; vis.setAttribute("aria-hidden", "true");
+      for (var i = 0; i < txt.length; i++) {
+        var c = txt.charAt(i), sp = doc.createElement("span");
+        if (/\d/.test(c)) sp.className = "roule__c"; else { sp.className = "roule__s"; sp.setAttribute("data-c", c); }
+        vis.appendChild(sp);
+      }
+      el.appendChild(sr); el.appendChild(vis); el.setAttribute("data-forme", forme);
+      if (!instant) void vis.offsetWidth;
+    }
+    el.firstChild.textContent = txt;
+    var cols = vis.children;
+    if (instant) vis.classList.add("roule--fixe");
+    for (var k = 0; k < txt.length; k++) { var ch = txt.charAt(k); if (/\d/.test(ch)) cols[k].style.setProperty("--d", ch); }
+    if (instant) { void vis.offsetWidth; vis.classList.remove("roule--fixe"); }
+  }
   function animerNombre(el, valeur, format, options) {
     var o = options || {};
     var avant = tweens.has(el) ? tweens.get(el).valeur : null;
     tweens.set(el, { valeur: valeur });
-    if (avant === null || mouvementReduit.matches || o.instantane || Math.abs(avant - valeur) < 1e-9) { el.textContent = format(valeur); return; }
-    var debut = performance.now(), duree = o.duree || 460, id = {};
-    tweens.get(el).id = id;
-    (function pas(t) {
-      if (tweens.get(el).id !== id) return;
-      var p = Math.min(1, (t - debut) / duree);
-      var e = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
-      el.textContent = format(avant + (valeur - avant) * e);
-      if (p < 1) requestAnimationFrame(pas);
-    })(debut);
-    if (o.ecart && Math.abs(valeur - avant) > 0.0005) montrerEcart(o.ecart, valeur - avant, o.formatEcart || format);
+    var instant = avant === null || mouvementReduit.matches || o.instantane || Math.abs(avant - valeur) < 1e-9;
+    rouler(el, format(valeur), instant);
+    if (!instant && o.ecart && Math.abs(valeur - avant) > 0.0005) montrerEcart(o.ecart, valeur - avant, o.formatEcart || format);
   }
   function montrerEcart(el, d, format) {
     el.textContent = (d > 0 ? "+" : "−") + format(Math.abs(d));
@@ -79,6 +94,13 @@
     el.classList.add("visible");
     clearTimeout(el._t);
     el._t = setTimeout(function () { el.classList.remove("visible"); }, 2200);
+  }
+
+  /* ---------- Retour haptique ---------- */
+  /* Vibration brève (Android ; Safari sur iPhone ne le permet pas aux sites), désactivable dans les paramètres. */
+  function vibrer(motif) {
+    try { if (localStorage.getItem("ef-vibrations") === "non") return false; } catch (e) {}
+    try { return !!(navigator.vibrate && navigator.vibrate(motif)); } catch (e) { return false; }
   }
 
   /* ---------- Puce qui vole jusqu'à sa destination ---------- */
@@ -314,8 +336,14 @@
     doc.querySelectorAll('meta[name="theme-color"]').forEach(function (m) { m.setAttribute("content", sombre ? "#07090F" : "#F3F4F8"); });
     var r = doc.querySelector('#choix-theme input[value="' + (E.themeActuel() || "") + '"]');
     if (r) { r.checked = true; placerPastille($("choix-theme"), false); }
+    var aide = $("theme-aide"), so = window.EFTheme && window.EFTheme.soleil && window.EFTheme.soleil();
+    if (aide && so) {
+      var hm = function (m) { m = Math.round(m); return Math.floor(m / 60) + " h " + String(m % 60).padStart(2, "0"); };
+      aide.textContent = "Comme votre appareil, clair, sombre, ou « Soleil » : aujourd'hui à Tunis, clair de " + hm(so.lever) + " à " + hm(so.coucher) + ", sombre ensuite.";
+    }
     doc.dispatchEvent(new CustomEvent("orbite:theme"));
   }
+  doc.addEventListener("ef:theme", majTheme);
   function changerTheme(t) {
     var appliquer = function () { E.appliquerTheme(t); majTheme(); };
     if (doc.startViewTransition && !mouvementReduit.matches) doc.startViewTransition(appliquer); else appliquer();
@@ -378,6 +406,8 @@
     toast: function (t, o) { return E.toast(t, o); },
     mouvementReduit: mouvementReduit,
     animerNombre: animerNombre,
+    rouler: rouler,
+    vibrer: vibrer,
     puceVolante: puceVolante,
     placerPastilles: placerPastilles,
     profil: function () { return profil; },

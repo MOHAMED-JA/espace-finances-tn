@@ -25,7 +25,7 @@ let reussis = 0, echecs = 0;
 
 async function etape(nom, fn) {
   try { await fn(); reussis++; console.log("ok - " + nom); }
-  catch (e) { echecs++; console.log("not ok - " + nom + "\n    " + String(e && e.stack || e).split("\n").slice(0, 4).join("\n    ")); }
+  catch (e) { echecs++; console.log("not ok - " + nom + "\n    " + String(e && e.stack || e).split("\n").slice(0, Number(process.env.LIGNES || 4)).join("\n    ")); }
 }
 function assert(cond, msg) { if (!cond) throw new Error(msg || "assertion"); }
 const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, "").replace(",", "."));
@@ -130,11 +130,13 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(CAPTURES, "visite-orbite.png") });
     await page.keyboard.press("ArrowRight");
+    assert(/Votre fiche/.test(await page.textContent("#visite-titre")), "étape de la fiche");
+    await page.keyboard.press("ArrowRight");
     await page.keyboard.press("ArrowRight");
     assert(/Mon profil/.test(await page.textContent("#visite-titre")), "navigation au clavier");
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(CAPTURES, "visite-profil.png") });
-    for (let i = 3; i < total - 1; i++) await page.click("#visite-suiv");
+    for (let i = 4; i < total - 1; i++) await page.click("#visite-suiv");
     assert(/Terminer/.test(await page.textContent("#visite-suiv")), "dernière étape");
     await page.click("#visite-suiv");
     await page.waitForSelector(".visite", { state: "detached" });
@@ -187,6 +189,47 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert((await page.textContent("#sec-credits-sous")).includes("300"), "crédit relu");
     assert(/Profil complété à \d+ %/.test(await page.textContent("#profil-progression-texte")), "progression");
     await page.screenshot({ path: path.join(CAPTURES, "03-profil.png"), fullPage: true });
+  });
+
+  await etape("Mon orbite : satellites, fiche et voyage dans le temps", async () => {
+    await page.goto(base + "/espace/#orbite");
+    await page.waitForFunction(() => document.querySelectorAll("#ciel-satellites .satellite").length === 3);
+    assert(await page.$eval("#noyau-val", (e) => !!e.querySelector(".roule") && /DT$/.test(e.textContent.trim())), "net en chiffres qui roulent, texte exact");
+    assert((await page.$$("#fiche-orbite [data-choisir]")).length === 3, "fiche : crédit, contrat et projet listés");
+    assert(/Tranche d'impôt/.test(await page.textContent("#fiche-orbite .reperes")), "les trois repères dans la vue d'ensemble");
+    await page.click('#fiche-orbite [data-choisir="contrat-0"]');
+    await page.waitForFunction(() => /Assurance vie/.test(document.querySelector("#fiche-orbite .fiche-orbite__titre").textContent));
+    assert(await page.$eval('.satellite[data-genre="vie"]', (b) => b.getAttribute("aria-pressed") === "true"), "satellite choisi");
+    await page.click('#fiche-orbite [data-action="retour"]');
+    await page.waitForSelector('#fiche-orbite [data-choisir="credit-0"]');
+    await page.$eval('.satellite[data-genre="credit"]', (b) => b.click());
+    await page.waitForFunction(() => /Voiture/.test(document.querySelector("#fiche-orbite .fiche-orbite__titre").textContent));
+    assert(/durée restante/i.test(await page.textContent("#fiche-orbite")), "crédit sans durée : invitation à la préciser");
+    await page.keyboard.press("Escape");
+    await page.waitForSelector('#fiche-orbite [data-choisir="credit-0"]');
+    assert(await page.isVisible("#voyage"), "voyage dans le temps proposé");
+    assert((await page.textContent("#ciel-ecart")) === "Aujourd'hui");
+    await page.click("#voyage-prochain");
+    await page.waitForFunction(() => document.getElementById("ciel-annonce").classList.contains("visible"));
+    assert(/Horizon|avantage fiscal/.test(await page.textContent("#ciel-annonce")), "jalon annoncé : " + await page.textContent("#ciel-annonce"));
+    assert(/^Dans /.test(await page.textContent("#ciel-ecart")), "date future");
+    await page.click("#voyage-auj");
+    await page.waitForFunction(() => document.getElementById("ciel-ecart").textContent === "Aujourd'hui");
+    await page.screenshot({ path: path.join(CAPTURES, "orbite-vivante.png") });
+  });
+
+  await etape("paramètres : thème selon l'heure (soleil à Tunis) et vibrations", async () => {
+    await page.goto(base + "/espace/#compte?onglet=preferences");
+    await page.waitForSelector("#choix-theme", { state: "visible" });
+    await page.click('#choix-theme label:has(input[value="heure"])');
+    await page.waitForFunction(() => localStorage.getItem("ef-theme") === "heure");
+    assert(await page.evaluate(() => document.documentElement.getAttribute("data-theme") === window.EFTheme.effectif()), "thème appliqué selon l'heure");
+    assert(/clair de \d+ h \d\d à \d+ h \d\d/.test(await page.textContent("#theme-aide")), "heures du soleil affichées");
+    await page.click('#choix-vibrations label:has(input[value="non"])');
+    assert(await page.evaluate(() => localStorage.getItem("ef-vibrations") === "non" && window.Orbite.vibrer(10) === false), "vibrations désactivées");
+    await page.click('#choix-vibrations label:has(input[value=""])');
+    await page.click('#choix-theme label:has(input[value=""])');
+    await page.waitForFunction(() => localStorage.getItem("ef-theme") === null);
   });
 
   await etape("capacité : taux du futur crédit à la consommation modifiable", async () => {
@@ -447,6 +490,9 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await pm.screenshot({ path: path.join(CAPTURES, "visite-mobile.png") });
     await pm.keyboard.press("Escape");
     await pm.waitForSelector(".visite", { state: "detached" });
+    /* Le pointeur resté sur un message le met en pause : on l'écarte et on attend que les messages se ferment. */
+    await pm.mouse.move(5, 5);
+    await pm.waitForFunction(() => !document.querySelector(".toasts .toast"), null, { timeout: 10000 });
     for (const vue of ["orbite", "salaire", "epargne", "credit", "profil"]) {
       await pm.tap('.onglets-bas a[data-vue="' + vue + '"]');
       await pm.waitForSelector("#vue-" + vue + ":not([hidden])");
