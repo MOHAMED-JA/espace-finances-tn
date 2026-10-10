@@ -371,7 +371,7 @@
   function rendreScene(sy, baseSeule) {
     var s = sy.salaire, p = sy.profil;
     O.animerNombre($("noyau-val"), s.netMensuel, function (v) { return F.dt0(v) + " DT"; });
-    $("noyau-lib").textContent = "Net par mois";
+    $("noyau-lib").textContent = p.activite === "retraite" ? "Pension nette par mois" : "Net par mois";
     $("noyau-sous").textContent = "sur " + F.dt0(s.brutMensuel) + " DT brut" + (s.versements.nombre > 12 ? " · " + s.versements.nombre + " salaires" : "");
     var opt = sy.epargne.propositions[sy.epargne.propositions.length - 1];
     repere = { net: s.netMensuel, tranche: F.pct(s.tranche.taux, 0), eco: F.dt0(opt ? opt.economieAnnuelle : 0) + " DT / an" };

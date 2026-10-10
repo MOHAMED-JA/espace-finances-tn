@@ -206,10 +206,11 @@
     ligne(dl, "Date de naissance", p.dateNaissance ? dateCourte(p.dateNaissance) + (sy ? " (" + sy.age + " ans)" : "") : "Non renseignée");
     ligne(dl, "Date d'embauche", p.dateEmbauche ? dateCourte(p.dateEmbauche) + " (" + p.anciennete + " an" + (p.anciennete > 1 ? "s" : "") + ")" : p.anciennete + " an" + (p.anciennete > 1 ? "s" : "") + " d'ancienneté");
     ligne(dl, "Famille", (SITUATIONS[p.situation] || p.situation) + (p.chefDeFamille ? ", chef de famille" : "") + " · " + p.enfants + " enfant" + (p.enfants > 1 ? "s" : "") + " à charge");
-    ligne(dl, "Secteur", (p.secteur === "public" ? "Public (CNRPS)" : "Privé (CNSS)") + " · " + p.nombreSalaires + " salaires par an");
+    if (p.activite === "retraite") ligne(dl, "Statut", "Retraité · " + (p.caissePension === "cnrps" ? "CNRPS" : "CNSS") + (p.pensionEtrangere ? " · pension venant de l'étranger" : ""));
+    else ligne(dl, "Secteur", (p.secteur === "public" ? "Public (CNRPS)" : "Privé (CNSS)") + " · " + p.nombreSalaires + " salaires par an");
     if (s) {
-      ligne(dl, "Salaire brut", F.dt0(s.brutMensuel) + " DT par mois · " + F.dt0(s.brutAnnuel) + " DT par an");
-      ligne(dl, "Salaire net", F.dt0(s.netMensuel) + " DT par mois · " + F.dt0(s.netAnnuel) + " DT par an");
+      ligne(dl, p.activite === "retraite" ? "Pension brute" : "Salaire brut", F.dt0(s.brutMensuel) + " DT par mois · " + F.dt0(s.brutAnnuel) + " DT par an");
+      ligne(dl, p.activite === "retraite" ? "Pension nette" : "Salaire net", F.dt0(s.netMensuel) + " DT par mois · " + F.dt0(s.netAnnuel) + " DT par an");
     }
     var cr = p.credits || [];
     ligne(dl, "Crédits en cours", cr.length ? cr.map(function (c) { return (c.libelle || "Crédit") + " : " + F.dt0(c.mensualite) + " DT par mois"; }).join(" · ") : "Aucun");

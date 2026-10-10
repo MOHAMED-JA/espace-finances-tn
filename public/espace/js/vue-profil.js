@@ -312,14 +312,28 @@
     $("p-age").textContent = p.dateNaissance ? sy.age + " ans" : "Obligatoire : la banque en tient compte pour la durée du crédit.";
     $("p-naissance").setAttribute("aria-invalid", p.dateNaissance ? "false" : "true");
     $("p-anciennete-aide").textContent = p.dateEmbauche ? p.anciennete + " an" + (p.anciennete > 1 ? "s" : "") + " d'ancienneté" : "Facultatif : sert au calcul de votre ancienneté.";
-    $("p-montant-lib").textContent = "Salaire " + (p.sens === "net" ? "net" : "brut") + (p.periode === "annuel" ? " par an" : " par mois");
+    var retraite = p.activite === "retraite";
+    form.classList.toggle("profil--retraite", retraite);
+    $("sec-salaire-titre").textContent = retraite ? "Votre retraite et votre pension" : "Votre emploi et votre salaire";
+    $("sec-salaire-sous").textContent = retraite ? "Pension, caisse, pension venant de l'étranger" : "Montant, nombre de salaires, primes, contrat";
+    $("p-montant-lib").textContent = (retraite ? "Pension " + (p.sens === "net" ? "nette" : "brute") : "Salaire " + (p.sens === "net" ? "net" : "brut")) + (p.periode === "annuel" ? " par an" : " par mois");
+    var hsLib = doc.querySelector("#hs-bloc .historique-salaire__tete .champ__lib"); if (hsLib) hsLib.textContent = retraite ? "Historique de votre pension" : "Historique de votre salaire";
+    $("hs-maj").lastChild.textContent = retraite ? "Mettre à jour ma pension" : "Mettre à jour mon salaire";
+    $("hs-aide").textContent = retraite ? "Une revalorisation ? Indiquez la nouvelle pension et le mois où elle s'applique : l'impôt de l'année se calcule mois par mois, et une hausse annoncée s'applique toute seule à sa date."
+      : "Une augmentation ? Indiquez le nouveau salaire et le mois où il s'applique : l'impôt de l'année se calcule mois par mois, et une hausse annoncée s'applique toute seule à sa date.";
     var n = p.nombreSalaires;
     $("p-aide-salaires").textContent = n === 12 ? "12 = sans 13ᵉ mois" : n === 13 ? "13 = avec un 13ᵉ mois" : "dont " + (n - 12) + " versements en plus";
     $("p-resume-salaire").innerHTML = "";
     var r = $("p-resume-salaire");
     r.appendChild(doc.createTextNode("Net à payer : "));
     var b1 = doc.createElement("strong"); b1.textContent = F.dt3(s.netMensuel) + " DT par mois"; r.appendChild(b1);
-    r.appendChild(doc.createTextNode(" · brut " + F.dt0(s.brutMensuel) + " DT · tranche d'impôt à " + F.pct(s.tranche.taux, 0) + "."));
+    if (retraite) {
+      r.firstChild.textContent = "Pension nette : ";
+      var fut = (sy.futursRevenu || []).filter(function (f) { return f.loi; });
+      r.appendChild(doc.createTextNode(" · brut " + F.dt0(s.brutMensuel) + " DT · retenue maladie 4 % · abattement de " + F.pct(s.abattementTaux, 0) +
+        (fut.length ? " (" + fut.map(function (f) { return F.pct(f.tauxAbattement, 0) + " en " + f.date.split(" ")[1]; }).join(", ") + " : loi de finances 2026)" : "") +
+        " · tranche d'impôt à " + F.pct(s.tranche.taux, 0) + "."));
+    } else r.appendChild(doc.createTextNode(" · brut " + F.dt0(s.brutMensuel) + " DT · tranche d'impôt à " + F.pct(s.tranche.taux, 0) + "."));
     rendreHistorique(sy, p);
     var nc = p.credits.length, nk = p.contrats.length, np = p.projets.length;
     $("sec-credits-sous").textContent = nc ? nc + " crédit" + (nc > 1 ? "s" : "") + " · " + F.dt0(sy.chargesCredits) + " DT par mois" : "Aucun crédit déclaré";

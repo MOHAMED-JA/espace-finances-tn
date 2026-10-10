@@ -1046,6 +1046,42 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => /Personne n'a encore demandé/.test(document.getElementById("admin-contacts").textContent));
   });
 
+  await etape("statut retraité : profil, « Ma pension », loi de finances 2026, retour au statut salarié", async () => {
+    await page.goto(base + "/espace/#profil?section=salaire");
+    await page.waitForSelector("#sec-salaire", { state: "visible" });
+    const avant = await page.evaluate(() => { const p = window.Orbite.profil(); return { montant: p.montant, sens: p.sens, periode: p.periode, historiqueSalaire: p.historiqueSalaire }; });
+    assert(await page.isHidden(".seul-retraite >> nth=0"), "champs retraité cachés pour un salarié");
+    await page.click('#sec-salaire label:has(input[value="retraite"])');
+    await page.waitForFunction(() => window.Orbite.profil().activite === "retraite");
+    assert(await page.isHidden("#p-embauche"), "date d'embauche cachée");
+    assert(await page.isVisible("label[for=\"p-caisse\"]"), "caisse de retraite affichée");
+    assert((await page.textContent("#sec-salaire-titre")) === "Votre retraite et votre pension", "titre de la section");
+    await page.evaluate(() => window.Orbite.majProfil({ montant: 2000, sens: "brut", periode: "mensuel", historiqueSalaire: [] }, { immediat: true }));
+    await page.waitForFunction(() => /Pension nette/.test(document.getElementById("p-resume-salaire").textContent));
+    assert((await page.textContent("#p-resume-salaire")).includes("abattement de 25"), "abattement affiché");
+    await page.goto(base + "/espace/#salaire");
+    await page.waitForSelector("#pension-vue:not([hidden])");
+    assert((await page.textContent("#titre-salaire")) === "Ma pension", "module renommé");
+    assert((await page.textContent("#barre-titre")) === "Ma pension", "barre du haut");
+    assert(await page.isHidden("#barre-actions"), "actions du simulateur de salaire cachées");
+    const attendu = await page.evaluate(() => { const p = window.Orbite.profil(); return window.CalculPension.calculerDepuisBrut({ brutMensuel: 2000, chefDeFamille: p.chefDeFamille, enfants: p.enfants, etudiants: p.etudiants, handicapes: p.handicapes, parents: p.parents, annee: new Date().getFullYear() }).mensuel.net; });
+    await page.waitForFunction((v) => document.getElementById("pv-net").textContent.replace(/[^\d,]/g, "").replace(",", ".") === v.toFixed(3), attendu);
+    assert((await page.$$("#pv-barres .pension-barre")).length >= 2, "hausse du net 2026-2029 affichée");
+    /* Bascule net : même pension, montant converti. */
+    await page.click('#pension-vue label:has(input[value="net"])');
+    await page.waitForFunction((v) => Math.abs(Number(document.getElementById("pv-montant").value.replace(/[^\d,]/g, "").replace(",", ".")) - v) < 0.002, attendu);
+    assert(await page.isHidden("#pv-profil"), "même pension : pas de mise à jour proposée");
+    await page.screenshot({ path: path.join(CAPTURES, "ma-pension.png"), fullPage: true });
+    await page.goto(base + "/espace/#orbite");
+    await page.waitForFunction(() => document.getElementById("noyau-lib").textContent === "Pension nette par mois");
+    /* Retour au statut salarié et au salaire d'avant. */
+    await page.goto(base + "/espace/#profil?section=salaire");
+    await page.click('#sec-salaire label:has(input[value="salarie"])');
+    await page.waitForFunction(() => window.Orbite.profil().activite === "salarie");
+    await page.evaluate((a) => window.Orbite.majProfil(a, { immediat: true }), avant);
+    assert(await page.isVisible("#p-embauche"), "date d'embauche de retour");
+  });
+
   await etape("déconnexion puis suppression définitive du compte", async () => {
     await page.goto(base + "/espace/#compte?onglet=donnees");
     await page.waitForSelector("#supprimer-compte");

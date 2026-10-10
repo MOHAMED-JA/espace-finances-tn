@@ -333,7 +333,9 @@
     L.push("Date du jour : " + m.getDate() + " " + MOIS_NOMS[m.getMonth()] + " " + m.getFullYear() + ".");
     L.push("Personne : " + sy.age + " ans, " + (SITUATIONS[p.situation] || p.situation) + (p.chefDeFamille ? ", chef de famille" : "") +
       ", " + p.enfants + " enfant(s) à charge" + (p.etudiants ? " dont " + p.etudiants + " étudiant(s)" : "") + ". Contrat : " + p.statut + ", secteur " + (p.secteur === "public" ? "public (CNRPS)" : "privé (CNSS)") + ".");
-    L.push("Salaire : " + dt(p.montant) + " " + p.sens + " par " + (p.periode === "annuel" ? "an" : "mois") + ", " + p.nombreSalaires + " salaires par an. Net mensuel : " + dt(s.netMensuel) +
+    if (p.activite === "retraite") L.push("Statut : retraité (" + (p.caissePension === "cnrps" ? "CNRPS" : "CNSS") + (p.pensionEtrangere ? ", pension venant de l'étranger" : "") +
+      "). Pension : retenue maladie 4 %, abattement de " + pc(s.abattementTaux) + " (loi de finances 2026 : 30 % en 2027, 40 % en 2028, 50 % en 2029), pas de CSS.");
+    L.push((p.activite === "retraite" ? "Pension : " : "Salaire : ") + dt(p.montant) + " " + p.sens + " par " + (p.periode === "annuel" ? "an" : "mois") + ", " + (p.activite === "retraite" ? 12 : p.nombreSalaires) + (p.activite === "retraite" ? " versements" : " salaires") + " par an. Net mensuel : " + dt(s.netMensuel) +
       " ; net moyen (année ÷ 12) : " + dt(s.netMoyen) + " ; brut annuel : " + dt(s.brutAnnuel) + " ; impôt sur le revenu : " + dt(s.irpp) + " par an (tranche à " + pc(s.tranche.taux) + ")." +
       (p.autresRevenus ? " Autres revenus : " + dt(p.autresRevenus) + " par mois." : ""));
     var hi = sy.historique;
