@@ -1,6 +1,7 @@
 /*
  * Orbite — rappels datés (pur, testé sous Node) : fin de l'essai, fin de l'abonnement,
- * dernière échéance d'un crédit, réduction de taux à demander (règle des 8 %), échéance fiscale de fin d'année.
+ * dernière échéance d'un crédit, réduction de taux à demander (règle des 8 %), échéance fiscale de fin d'année,
+ * rappels programmés par l'utilisateur (profil.rappelsPerso).
  * Chaque rappel : { id (unique, stable), titre, corps, url, quand (ISO : à partir de quand l'afficher), jusqua (ISO, facultatif) }.
  * Aucun montant précis du profil n'est mis dans les rappels transmis au service worker au-delà de ce que l'utilisateur voit déjà.
  */
@@ -61,6 +62,14 @@
         liste.push({ id: "reduction-" + i + "-" + d.getFullYear() + "-" + (d.getMonth() + 1), titre: "Réduction de taux le mois prochain : " + nomCr,
           corps: "En " + MOIS[d.getMonth()] + " " + d.getFullYear() + ", la règle des 8 % divise votre taux par deux (" + pc(r.tauxAvant) + " → " + pc(r.tauxPct) + "). Pensez à la demander à votre banque.",
           url: "/espace/#orbite", quand: iso(Math.max(avant.getTime(), t)), jusqua: iso(fin) });
+      });
+    }
+    /* Rappels programmés par l'utilisateur : le 1er du mois choisi à 9 h, visibles 45 jours. */
+    if (sy && sy.profil) {
+      (sy.profil.rappelsPerso || []).forEach(function (r) {
+        var d = new Date(r.annee, r.mois - 1, 1, 9, 0, 0), fin = d.getTime() + 45 * JOUR;
+        if (fin < t) return;
+        liste.push({ id: "perso-" + r.id, titre: r.titre, corps: r.corps, url: r.url, quand: iso(Math.max(d.getTime(), t)), jusqua: iso(fin) });
       });
     }
     if (fiscal && fiscal.statut === "a_optimiser" && fiscal.gainPossible > 20) {

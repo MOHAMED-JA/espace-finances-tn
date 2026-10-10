@@ -50,7 +50,7 @@
       montant: 2500, sens: "brut", periode: "mensuel", secteur: "prive", nombreSalaires: 12, calendrierPrimes: [],
       primesImposables: 0, primesNonCotisables: 0, avantagesNature: 0, indemnitesNonImposables: 0,
       chefDeFamille: false, enfants: 0, etudiants: 0, handicapes: 0, parents: 0,
-      credits: [], contrats: [], projets: [], historiqueSalaire: [], scenarios: [],
+      credits: [], contrats: [], projets: [], historiqueSalaire: [], scenarios: [], rappelsPerso: [],
       loyer: 0, chargesFixes: 0, epargneDisponible: 0, autresRevenus: 0,
       quotiteNet: QUOTITE, quotiteBrut: QUOTITE
     };
@@ -233,6 +233,14 @@
       changements: (Array.isArray(s.changements) ? s.changements : []).map(normaliserChangement).filter(Boolean).slice(0, MAX_CHANGEMENTS) };
   }
 
+  /* Rappels que l'utilisateur a programmés (par exemple « Appliquer à mon profil » d'un scénario) : affichés au mois choisi. */
+  function normaliserRappel(r) {
+    r = r || {};
+    var url = typeof r.url === "string" && /^\/espace\/#[a-z]+(\?[a-z0-9=&._-]*)?$/i.test(r.url) ? r.url : "/espace/#profil";
+    return { id: texte(r.id, 40).replace(/[^a-z0-9_-]/gi, "") || "perso", titre: texte(r.titre, 90), corps: texte(r.corps, 240), url: url,
+      mois: entier(r.mois, 1, 1, 12), annee: entier(r.annee, 0, 0, 2100) };
+  }
+
   /* Profil nettoyé : tout champ inconnu ou hors bornes reprend sa valeur par défaut. */
   function normaliser(p0) {
     var d = profilParDefaut(), p = p0 || {};
@@ -269,6 +277,7 @@
       contrats: liste(p.contrats, normaliserContrat, 12),
       projets: liste(p.projets, normaliserProjet, 8),
       scenarios: liste(p.scenarios, normaliserScenario, MAX_SCENARIOS),
+      rappelsPerso: liste(p.rappelsPerso, normaliserRappel, 20).filter(function (r) { return r.titre && r.annee > 0; }),
       historiqueSalaire: liste(p.historiqueSalaire, normaliserHausse, 40).filter(function (h) { return h.montant > 0; }).sort(function (a, b) { return cleHausse(a) - cleHausse(b); }),
       loyer: nombre(p.loyer, 0, 0, 1e6),
       chargesFixes: nombre(p.chargesFixes, 0, 0, 1e6),
