@@ -476,6 +476,8 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
   - Module Salaire, « Mettre à jour mon profil » : si le salaire diffère de celui du profil, les autres champs sont repris et la fenêtre s'ouvre, préremplie, pour choisir la date d'effet.
   - Mon orbite : jalons `genre: "salaire"` (`sat: null`), le noyau suit le net du mois affiché, « avec vos hausses de salaire prévues », endettement calculé sur le revenu du mois ; Assistant (« avec votre hausse de salaire » / « ki yzid salaire mte3ek ») et résumé IA (« Historique du salaire »).
 - Tests : `tests/espace/historique-salaire.test.js` (4) ; unitaires 352 ; e2e 37/37 (hausse datée, hausse prévue, ancien « Annuler » sans effet, correction directe, module Salaire). Nouveautés « 2026-10-10f », SW `orbite-2026-10-10t`.
+- **Livré** : PR #62 fusionnée (squash) le 10 oct. Captures vérifiées : ordinateur (sombre) et téléphone (clair).
+- **Suite du programme** : lot 2 (B2 scénarios côte à côte + C2 mode Expert). Questions posées à l'utilisateur, puis maquette à valider avant tout code.
 
 ## 3 unquadragies. Simulations → profil, remboursements anticipés par date, corrections Salaire (10 oct.)
 
@@ -505,6 +507,8 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - Choix de l'utilisateur : bouton flottant « Assistant » (`#bulle-assistant`, au-dessus des onglets, masqué sur ordinateur, pendant le chargement et dans l'Assistant) ; Vie & impôts dans « Moi » (lien dans `.sous-nav` du profil, `data-vues` de « Moi » inclut `vie`). `body[data-vue-active]` posé par `afficher()`. Visite : cibles téléphone ajoutées. SW `orbite-2026-10-10q`. e2e : bouton, ouverture, Vie & impôts depuis « Moi ».
 
 ## 3 duodequadragies. Programme « créativité » en 8 lots (10 oct.)
+
+> **Avancement** : lot 1 livré (PR #58) ; hors programme, livrés aussi : règle des 8 % (#60), simulations → profil et remboursements anticipés (#61), historique du salaire (#62). **En cours : lot 2.**
 
 - **Demande de l'utilisateur** : une créativité énorme (design, fonctionnalités, options avancées), un travail sans faute, des propositions **avant** toute modification, et des questions en cas de doute.
 - **Retenues** : A1, A2, A3, A4, B1, B2, B5, B6, C2, C3, C4. Design « spectaculaire mais sobre ». Interface en français seulement. **Une maquette validée avant chaque fonctionnalité**.
@@ -747,8 +751,8 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 
 1. Vérifier le site en ligne après chaque déploiement (Cloudflare se déploie depuis `main`).
 2. Idées de valeur ajoutée :
-   - historique du net (évolution du salaire) ;
-   - alertes sur la date de la réduction de taux de crédit ;
+   - ~~historique du net (évolution du salaire)~~ : base faite (3 duoquadragies) ; courbe et inflation au lot 3 ;
+   - ~~alertes sur la date de la réduction de taux de crédit~~ : fait (règle des 8 %, rappels `reduction-*`) ;
    - comparaison de banques sur le brut ;
    - mode « simulation de vie » (mariage, enfant, achat) qui met tout le profil à jour d'un coup.
 4. `docs/MISE-EN-LIGNE.md` et `docs/SECURITE.md` parlent encore des « outils » : à mettre à jour un jour.
