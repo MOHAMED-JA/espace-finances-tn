@@ -453,6 +453,11 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 undequadragies. Assistant et Vie & impôts sur téléphone (10 oct.)
+
+- Cause : la barre du bas (5 onglets : Orbite, Salaire, Épargne, Crédit, Moi) ne contenait ni l'Assistant ni Vie & impôts, présents seulement dans la barre latérale (ordinateur).
+- Choix de l'utilisateur : bouton flottant « Assistant » (`#bulle-assistant`, au-dessus des onglets, masqué sur ordinateur, pendant le chargement et dans l'Assistant) ; Vie & impôts dans « Moi » (lien dans `.sous-nav` du profil, `data-vues` de « Moi » inclut `vie`). `body[data-vue-active]` posé par `afficher()`. Visite : cibles téléphone ajoutées. SW `orbite-2026-10-10q`. e2e : bouton, ouverture, Vie & impôts depuis « Moi ».
+
 ## 3 duodequadragies. Programme « créativité » en 8 lots (10 oct.)
 
 - **Demande de l'utilisateur** : une créativité énorme (design, fonctionnalités, options avancées), un travail sans faute, des propositions **avant** toute modification, et des questions en cas de doute.
