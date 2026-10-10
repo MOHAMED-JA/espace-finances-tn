@@ -197,13 +197,13 @@ body.attente .onglets-bas a, body.attente .rail__liens a { pointer-events: none;
 .fiche-orbite__retour svg { width: 14px; height: 14px; transform: scaleX(-1); }
 .fiche-orbite__texte { margin: 0; color: var(--encre-2); }
 .fiche-orbite__actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.reperes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.repere { height: 100%; display: grid; align-content: start; gap: 4px; padding: 12px; border-radius: 14px; background: var(--surface-2); color: var(--encre); text-decoration: none; transition: background-color 160ms ease, transform 160ms var(--sortie); }
-.repere:hover { background: color-mix(in srgb, var(--surface-2) 70%, var(--filet)); }
-.repere:active { transform: scale(.97); }
-.repere__lib { font-size: 12px; font-weight: 600; line-height: 1.25; color: var(--encre-3); }
-.repere__val { font-size: 15px; font-weight: 720; line-height: 1.2; }
-.repere .point { width: 8px; height: 8px; }
+.orbite-reperes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.orbite-repere { height: 100%; display: grid; align-content: start; gap: 4px; padding: 12px; border-radius: 14px; background: var(--surface-2); color: var(--encre); text-decoration: none; transition: background-color 160ms ease, transform 160ms var(--sortie); }
+.orbite-repere:hover { background: color-mix(in srgb, var(--surface-2) 70%, var(--filet)); }
+.orbite-repere:active { transform: scale(.97); }
+.orbite-repere__lib { font-size: 12px; font-weight: 600; line-height: 1.25; color: var(--encre-3); }
+.orbite-repere__val { font-size: 15px; font-weight: 720; line-height: 1.2; }
+.orbite-repere .point { width: 8px; height: 8px; }
 .fiche-orbite .encart { display: block; margin: 0; font-size: 14px; line-height: 1.5; }
 .fiche-orbite .encart--succes { background: var(--salaire-doux); color: var(--encre); }
 .fiche-orbite .encart--succes b { color: var(--salaire-t); }
@@ -758,3 +758,22 @@ body.attente .bulle-assistant { opacity: 0; pointer-events: none; }
 body[data-vue-active="assistant"] .bulle-assistant { visibility: hidden; }
 .ligne-liste__info + .ligne-liste__info { margin-top: -4px; }
 .ligne-liste__info--alerte { background: var(--alerte-doux); color: var(--alerte); }
+
+/* ---------- Ajouter une simulation à mon profil ---------- */
+dialog.dialogue--large { width: min(620px, calc(100vw - 24px)); }
+.ajout-profil { display: grid; gap: 18px; }
+.ajout-profil__bloc { display: grid; gap: 14px; }
+.ajout-profil__bloc + .ajout-profil__bloc { padding-top: 16px; border-top: 1px solid var(--filet); }
+.ajout-profil__titre { margin: 0; font-family: var(--affiche); font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+.ajout-profil__resume { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--credit-doux); color: var(--credit-t); font-size: 13.5px; font-weight: 600; line-height: 1.5; }
+.ajout-profil__choix { margin: 0; padding: 0; border: 0; display: grid; gap: 6px; min-width: 0; }
+.ajout-profil__choix legend { padding: 0; margin-bottom: 6px; }
+.ajout-profil__option { display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: start; gap: 10px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--filet); background: var(--surface); cursor: pointer; transition: border-color 160ms ease, background-color 160ms ease; }
+.ajout-profil__option:hover { border-color: var(--filet-fort); }
+.ajout-profil__option:has(input:checked) { border-color: var(--encre); background: var(--surface-2); }
+.ajout-profil__option input { width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--encre); }
+.ajout-profil__option span { display: grid; gap: 2px; min-width: 0; }
+.ajout-profil__option strong { font-size: 14.5px; font-weight: 650; }
+.ajout-profil__option small { font-size: 12.5px; color: var(--encre-3); line-height: 1.4; }
+.ajout-profil__option--inactif { opacity: .6; cursor: not-allowed; }
+#dlg-enregistrer .interrupteur { margin-top: 4px; }

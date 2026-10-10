@@ -223,6 +223,10 @@
       return;
     }
     var dlg = $("dlg-enregistrer"), champ = $("enr-nom");
+    var versP = !!obj.versProfil;
+    $("enr-profil-ligne").hidden = !versP;
+    $("enr-profil").checked = false;
+    $("enr-profil-lib").textContent = vue === "credit" ? "Ajouter aussi à mes crédits ou mes projets" : "Ajouter aussi à mes contrats";
     apercuResume(resume);
     champ.value = obj.nomParDefaut();
     dlg.returnValue = "";
@@ -239,6 +243,7 @@
         E.toast("« " + s.nom + " » enregistrée dans vos simulations.");
         puceVolante($("enregistrer"), doc.querySelector('.rail a[data-vue="simulations"]') || doc.querySelector('.onglets-bas a[data-vue="profil"]'), "+1", mod.couleur);
         window.OrbiteSimulations && window.OrbiteSimulations.recharger();
+        if (versP && $("enr-profil").checked) setTimeout(ajouterAuProfil, 250);
       }).catch(function (err) { E.toast(M.messageErreur(err), { erreur: true }); });
     });
   }
@@ -247,6 +252,147 @@
     var vue = moduleCourant(), obj = vue && MODULES[vue].objet();
     if (obj && obj.depuisProfil) { obj.depuisProfil(profil); simulationOuverte[vue] = null; $("enregistrer-lib").textContent = "Enregistrer"; E.toast("Valeurs de votre profil reprises."); }
   });
+
+  /* ---------- Simulation → profil : crédits en cours, projets, contrats d'épargne ---------- */
+  var MOIS_NOMS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+  function el(tag, classe, texte, attrs) {
+    var e = doc.createElement(tag);
+    if (classe) e.className = classe;
+    if (texte != null) e.textContent = texte;
+    if (attrs) Object.keys(attrs).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+    return e;
+  }
+  function champTexte(id, lib, valeur, unite) {
+    var c = el("div", "champ"), l = el("label", null, lib, { "for": id }), sa = el("div", "saisie");
+    var i = el("input", null, null, { id: id, type: "text", autocomplete: "off", maxlength: "60" }); i.value = valeur == null ? "" : String(valeur);
+    if (unite) { i.setAttribute("inputmode", "decimal"); sa.appendChild(i); sa.appendChild(el("span", "saisie__unite", unite)); } else sa.appendChild(i);
+    c.appendChild(l); c.appendChild(sa); return c;
+  }
+  function champChoix(id, lib, options, valeur) {
+    var c = el("div", "champ"), l = el("label", null, lib, { "for": id }), sa = el("div", "saisie"), se = el("select", null, null, { id: id });
+    options.forEach(function (o) { var op = el("option", null, o[1], { value: String(o[0]) }); se.appendChild(op); });
+    se.value = String(valeur);
+    var u = doc.createElementNS("http://www.w3.org/2000/svg", "svg"); u.setAttribute("class", "saisie__chevron"); u.setAttribute("aria-hidden", "true");
+    var us = doc.createElementNS("http://www.w3.org/2000/svg", "use"); us.setAttribute("href", "/orbite/icones.svg#chevron"); u.appendChild(us);
+    sa.appendChild(se); sa.appendChild(u); c.appendChild(l); c.appendChild(sa); return c;
+  }
+  /* Groupe de choix : [[valeur, titre, détail]], le premier coché par défaut (ou « defaut »). */
+  function groupeRadios(nom, legende, choix, defaut) {
+    var fs = el("fieldset", "ajout-profil__choix"), lg = el("legend", "champ__lib", legende);
+    fs.appendChild(lg);
+    choix.forEach(function (c, i) {
+      var lab = el("label", "ajout-profil__option" + (c[3] ? " ajout-profil__option--inactif" : ""));
+      var r = el("input", null, null, { type: "radio", name: nom, value: String(c[0]) });
+      r.checked = defaut != null ? String(defaut) === String(c[0]) : i === 0;
+      if (c[3]) r.disabled = true;
+      var t = el("span"); t.appendChild(el("strong", null, c[1])); if (c[2]) t.appendChild(el("small", null, c[2]));
+      lab.appendChild(r); lab.appendChild(t); fs.appendChild(lab);
+    });
+    return fs;
+  }
+  function valeurRadio(nom) { var r = doc.querySelector('#profil-corps input[name="' + nom + '"]:checked'); return r ? r.value : null; }
+  function nombreLu(id) { var v = F.lire($(id).value); return v.valide && !v.vide ? v.valeur : null; }
+  function pcTxt(x) { return String(Math.round(x * 10000) / 10000).replace(".", ",") + " %"; }
+
+  function ajouterAuProfil() {
+    var vue = moduleCourant(); if (vue !== "credit" && vue !== "epargne") return;
+    var obj = MODULES[vue].objet(); if (!obj || !obj.versProfil || !profil) return;
+    var d = obj.versProfil();
+    if (!d) return;
+    if (d.erreur) { E.toast(d.erreur, { erreur: true }); return; }
+    var corps = $("profil-corps"), maintenant = new Date(), appliquer;
+    corps.textContent = "";
+    if (d.genre === "credit") {
+      $("dlg-profil-titre").textContent = "Ajouter ce crédit à mon profil";
+      var c = d.credit, sit = d.situation;
+      corps.appendChild(groupeRadios("ap-statut", "Ce crédit est", [
+        ["signe", "Déjà signé", c ? "Il rejoint vos crédits en cours et compte dans votre endettement." : d.motif, !c],
+        ["projet", "En projet", "Il rejoint vos projets : Orbite vous dit à partir de quand il devient possible."]
+      ], c && !sit.avenir ? "signe" : "projet"));
+      /* Déjà signé : situation du jour tirée du tableau simulé */
+      var bS = el("div", "ajout-profil__bloc", null, { "data-pour": "signe" });
+      if (c) {
+        bS.appendChild(champTexte("ap-nom-credit", "Nom du crédit", c.libelle));
+        var res = el("p", "ajout-profil__resume");
+        res.textContent = (sit.avenir ? "Première échéance à venir. " : "Situation en " + MOIS_NOMS[maintenant.getMonth()] + " " + maintenant.getFullYear() + " : ") +
+          "mensualité " + F.dt3(c.mensualite) + " DT hors assurance · taux " + pcTxt(c.tauxPct) + (c.tauxType === "fixe" ? " fixe" : " variable") +
+          " · " + sit.restantes + " échéance" + (sit.restantes > 1 ? "s" : "") + " restante" + (sit.restantes > 1 ? "s" : "") + " (dernière en " + sit.fin + ")" +
+          (c.reductionAnnee ? " · taux divisé par deux en " + MOIS_NOMS[c.reductionMois - 1] + " " + c.reductionAnnee : "") + ".";
+        bS.appendChild(res);
+        var cands = profil.credits.map(function (x, i) { return [i, x]; });
+        var proche = cands.filter(function (x) { return x[1].type === c.type && (x[1].libelle === c.libelle || Math.abs(x[1].mensualite - c.mensualite) <= c.mensualite * 0.15); })[0];
+        bS.appendChild(groupeRadios("ap-dest-credit", "Dans vos crédits", [["nouveau", "Ajouter un nouveau crédit", null]].concat(cands.map(function (x) {
+          return ["maj-" + x[0], "Mettre à jour « " + x[1].libelle + " »", F.dt3(x[1].mensualite) + " DT par mois aujourd'hui"]; })), proche ? "maj-" + proche[0] : "nouveau"));
+      }
+      corps.appendChild(bS);
+      /* En projet */
+      var pr = d.projet, bP = el("div", "ajout-profil__bloc", null, { "data-pour": "projet" });
+      bP.appendChild(champTexte("ap-nom-projet", "Nom du projet", pr.libelle));
+      var ligne = el("div", "grille-champs");
+      ligne.appendChild(champTexte("ap-montant-projet", "Montant du projet", F.saisie(pr.montant), "DT"));
+      var hz = []; for (var a = 0; a <= 15; a++) hz.push([a, a === 0 ? "Cette année" : "Dans " + a + " an" + (a > 1 ? "s" : "")]);
+      ligne.appendChild(champChoix("ap-horizon", "Quand ?", hz, 1));
+      bP.appendChild(ligne);
+      var candP = profil.projets.map(function (x, i) { return [i, x]; }).filter(function (x) { return x[1].type === pr.type; });
+      bP.appendChild(groupeRadios("ap-dest-projet", "Dans vos projets", [["nouveau", "Ajouter un nouveau projet", null]].concat(candP.map(function (x) {
+        return ["maj-" + x[0], "Mettre à jour « " + (x[1].libelle || "Projet") + " »", F.dt0(x[1].montant) + " DT"]; }))));
+      corps.appendChild(bP);
+      var basculer = function () { var st = valeurRadio("ap-statut"); corps.querySelectorAll("[data-pour]").forEach(function (b) { b.hidden = b.getAttribute("data-pour") !== st; }); };
+      corps.addEventListener("change", basculer); basculer();
+      appliquer = function () {
+        var st = valeurRadio("ap-statut");
+        if (st === "signe" && c) {
+          var nc = Object.assign({}, c, { libelle: ($("ap-nom-credit").value || c.libelle).trim().slice(0, 60), capitalRestant: 0, moisRestants: 0 });
+          var dest = valeurRadio("ap-dest-credit"), liste = profil.credits.slice();
+          if (dest && dest.indexOf("maj-") === 0) liste[+dest.slice(4)] = Object.assign({}, liste[+dest.slice(4)], nc); else liste.push(nc);
+          return { partiel: { credits: liste }, texte: "« " + nc.libelle + " » " + (dest && dest.indexOf("maj-") === 0 ? "mis à jour dans" : "ajouté à") + " vos crédits en cours." };
+        }
+        var np = { type: pr.type, libelle: ($("ap-nom-projet").value || pr.libelle).trim().slice(0, 60), montant: nombreLu("ap-montant-projet") || pr.montant, horizonAns: +$("ap-horizon").value };
+        var dP = valeurRadio("ap-dest-projet"), lp = profil.projets.slice();
+        if (dP && dP.indexOf("maj-") === 0) lp[+dP.slice(4)] = Object.assign({}, lp[+dP.slice(4)], np); else lp.push(np);
+        return { partiel: { projets: lp }, texte: "« " + np.libelle + " » " + (dP && dP.indexOf("maj-") === 0 ? "mis à jour dans" : "ajouté à") + " vos projets." };
+      };
+    } else {
+      $("dlg-profil-titre").textContent = "Ajouter à mes contrats d'épargne";
+      if (d.motif) { E.toast(d.motif, { erreur: true }); return; }
+      var mois = MOIS_NOMS.map(function (m, i) { return [i + 1, m.charAt(0).toUpperCase() + m.slice(1)]; });
+      d.contrats.forEach(function (k, j) {
+        var b = el("div", "ajout-profil__bloc");
+        b.appendChild(el("h3", "ajout-profil__titre", (k.type === "cea" ? "CEA" : "Assurance vie") + " · " + F.dt3(k.versementMensuel) + " DT par mois"));
+        var lg = el("div", "grille-champs");
+        lg.appendChild(champChoix("ap-mois-" + j, "Début : mois", mois, maintenant.getMonth() + 1));
+        lg.appendChild(champTexte("ap-annee-" + j, "Début : année", maintenant.getFullYear()));
+        b.appendChild(lg);
+        var cand = profil.contrats.map(function (x, i) { return [i, x]; }).filter(function (x) { return x[1].type === k.type; });
+        b.appendChild(groupeRadios("ap-dest-" + j, "Dans vos contrats", [["nouveau", "Ouvrir un nouveau contrat", "À partir du mois indiqué ci-dessus."]].concat(cand.map(function (x) {
+          return ["maj-" + x[0], "Mettre à jour « " + (x[1].libelle || "Contrat") + " »", "Versement actuel : " + F.dt3(x[1].versementMensuel) + " DT par mois ; sa date d'ouverture est conservée."]; })), cand.length === 1 ? "maj-" + cand[0][0] : "nouveau"));
+        corps.appendChild(b);
+      });
+      appliquer = function () {
+        var lc = profil.contrats.slice(), noms = [];
+        d.contrats.forEach(function (k, j) {
+          var dest = valeurRadio("ap-dest-" + j), an = parseInt($("ap-annee-" + j).value, 10);
+          if (dest && dest.indexOf("maj-") === 0) { var i = +dest.slice(4); lc[i] = Object.assign({}, lc[i], { versementMensuel: k.versementMensuel }); noms.push((lc[i].libelle || "Contrat") + " mis à jour"); }
+          else { lc.push({ type: k.type, libelle: k.libelle, versementMensuel: k.versementMensuel, moisDebut: +$("ap-mois-" + j).value, anneeDebut: an >= 1970 && an <= 2100 ? an : maintenant.getFullYear() }); noms.push(k.libelle + " ajouté"); }
+        });
+        return { partiel: { contrats: lc }, texte: noms.join(", ") + " dans vos contrats." };
+      };
+    }
+    var dlg = $("dlg-profil");
+    dlg.returnValue = "";
+    dlg.showModal();
+    dlg.addEventListener("close", function fin() {
+      dlg.removeEventListener("close", fin);
+      if (dlg.returnValue !== "ok") return;
+      var plan = appliquer();
+      var avant = { credits: profil.credits.slice(), projets: profil.projets.slice(), contrats: profil.contrats.slice() };
+      majProfil(plan.partiel, { immediat: true });
+      E.toast(plan.texte, { action: { libelle: "Annuler", fn: function () { majProfil(avant, { immediat: true }); E.toast("Ajout annulé : votre profil est revenu comme avant."); } } });
+      puceVolante($("ajouter-profil").hidden ? $("enregistrer") : $("ajouter-profil"), doc.querySelector('.rail a[data-vue="profil"]') || doc.querySelector('.onglets-bas a[data-vue="profil"]'), "+1", MODULES[vue].couleur);
+      vibrer(10);
+    });
+  }
+  $("ajouter-profil").addEventListener("click", ajouterAuProfil);
 
   /* Ouvre une simulation enregistrée dans son module. */
   function ouvrirSimulation(s) {
@@ -304,6 +450,7 @@
       $("barre-titre").textContent = TITRES[r.vue];
       var mod = MODULES[r.vue];
       $("barre-actions").hidden = !mod;
+      $("ajouter-profil").hidden = !(r.vue === "credit" || r.vue === "epargne");
       if (mod) {
         $("enregistrer-lib").textContent = simulationOuverte[r.vue] ? "Mettre à jour" : "Enregistrer";
         var obj = mod.objet();

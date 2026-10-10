@@ -84,6 +84,7 @@
         <a class="pastille-acces" id="pastille-acces" href="#abonnement" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#couronne"/></svg><span id="pastille-acces-lib"></span></a>
         <div class="barre__actions" id="barre-actions" hidden>
           <button type="button" class="bouton bouton--petit" id="reprendre-profil"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span class="bouton__lib">Reprendre mon profil</span></button>
+          <button type="button" class="bouton bouton--petit" id="ajouter-profil" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg><span class="bouton__lib">Ajouter à mon profil</span></button>
           <button type="button" class="bouton bouton--plein bouton--petit" id="enregistrer"><svg aria-hidden="true"><use href="/orbite/icones.svg#enregistrer"/></svg><span class="bouton__lib" id="enregistrer-lib">Enregistrer</span></button>
         </div>
       </header>
@@ -460,8 +461,7 @@
                   <label class="ligne"><span class="ligne__txt"><strong>Indemnités non imposables</strong><small>par mois</small></span><span class="petit-montant"><input id="indemnites" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><span>DT</span></span></label>
                   <label class="ligne"><span class="ligne__txt"><strong>Taux accidents du travail</strong><small>selon l'activité</small></span><span class="petit-montant"><input id="taux-at" type="text" inputmode="decimal" autocomplete="off"><span>%</span></span></label>
                   <label class="ligne interrupteur"><span class="ligne__txt"><strong>Industrie manufacturière</strong><small>TFP réduite à 1 %</small></span><input type="checkbox" id="industrie" role="switch"><span class="interrupteur__piste" aria-hidden="true"></span></label>
-                  <label class="ligne"><span class="ligne__txt"><strong>Autres charges de l'entreprise</strong><small>assurance groupe, retraite complémentaire… en % du brut</small></span><span class="petit-montant"><input id="autres-pct" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><span>%</span></span></label>
-                  <label class="ligne"><span class="ligne__txt"><strong>Autres charges, montant fixe</strong><small>payé par l'employeur, par mois</small></span><span class="petit-montant"><input id="autres-dt" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><span>DT</span></span></label>
+                  <label class="ligne"><span class="ligne__txt"><strong>Autres charges de l'entreprise</strong><small>assurance groupe, retraite complémentaire… payées par l'employeur, <span id="autres-periode">par mois</span></small></span><span class="petit-montant"><input id="autres-dt" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><span>DT</span></span></label>
                 </div>
               </details>
             </form>
@@ -1153,10 +1153,22 @@
       <div class="dialogue__corps">
         <div class="apercu-sim" id="enr-apercu"></div>
         <div class="champ"><label for="enr-nom">Nom</label><div class="saisie"><input id="enr-nom" type="text" maxlength="120" required spellcheck="false"></div></div>
+        <label class="interrupteur" id="enr-profil-ligne" hidden><span><strong id="enr-profil-lib">Ajouter aussi à mon profil</strong><small>Vous choisissez ensuite où l'ajouter.</small></span><input type="checkbox" id="enr-profil" role="switch"><span class="interrupteur__piste" aria-hidden="true"></span></label>
       </div>
       <div class="dialogue__pied">
         <button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Annuler</button>
         <button type="submit" class="bouton bouton--plein" value="ok">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialogue dialogue--large" id="dlg-profil" aria-labelledby="dlg-profil-titre">
+    <form method="dialog" id="form-profil" novalidate>
+      <div class="dialogue__tete"><h2 id="dlg-profil-titre">Ajouter à mon profil</h2></div>
+      <div class="dialogue__corps ajout-profil" id="profil-corps"></div>
+      <div class="dialogue__pied">
+        <button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Annuler</button>
+        <button type="submit" class="bouton bouton--plein" value="ok" id="profil-valider">Ajouter à mon profil</button>
       </div>
     </form>
   </dialog>

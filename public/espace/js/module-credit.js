@@ -173,7 +173,12 @@
       e.frais = { dossierPct: f.dossierPct || 0, dossierFixe: f.dossierFixe || 0, garantie: f.garantie || 0, autres: f.autres || 0 };
     if (sc.apport.on && sc.apport.prix > 0 && sc.apport.apport >= 0 && sc.apport.apport < sc.apport.prix) e.apport = { prix: sc.apport.prix, apport: sc.apport.apport };
     e.ras = sc.ras.filter(function (x) { return x.apres >= 1 && x.apres < N && (x.total || x.montant > 0); }).slice(0, 10)
-      .map(function (x) { return { apres: x.apres, total: !!x.total, montant: x.total ? null : x.montant }; });
+      .map(function (x) {
+        var o = { apres: x.apres, total: !!x.total, montant: x.total ? null : x.montant };
+        if (!x.total && (x.mode === "duree" || x.mode === "mensualite")) o.mode = x.mode;
+        if (!x.total && x.mode === "nouvelle" && x.nouvelleDuree >= 1) { o.mode = "nouvelle"; o.nouvelleDuree = Math.round(x.nouvelleDuree); }
+        return o;
+      });
     var vs = sc.versement;
     if (vs.on && vs.montant > 0 && vs.des >= 1 && vs.des < N) e.versement = { montant: vs.montant, frequence: vs.frequence, des: vs.des };
     if (avecEmprunteur && S.emp.net > 0) e.emprunteur = { age: S.emp.age, revenus: S.emp.net, charges: S.emp.charges };
@@ -196,7 +201,9 @@
     if (v.assurance) sc.assurance = { on: true, taux: v.assurance.taux, base: v.assurance.base };
     if (v.frais) sc.frais = { on: true, dossierPct: v.frais.dossierPct || 0, dossierFixe: v.frais.dossierFixe || 0, garantie: v.frais.garantie || 0, autres: v.frais.autres || 0 };
     if (v.apport) sc.apport = { on: true, prix: v.apport.prix, apport: v.apport.apport };
-    sc.ras = (v.ras || []).map(function (x) { return { apres: x.apres, total: !!x.total, montant: x.total ? 0 : x.montant }; });
+    sc.ras = (v.ras || []).map(function (x) {
+      return { apres: x.apres, total: !!x.total, montant: x.total ? 0 : x.montant, mode: x.mode || v.raMode || "duree", nouvelleDuree: x.nouvelleDuree || Math.max(1, v.mois / (v.periodicite || 1) - x.apres) };
+    });
     if (v.versement) sc.versement = { on: true, montant: v.versement.montant, frequence: v.versement.frequence, des: v.versement.des };
     sc.indemnite = v.indemnite || 0; sc.raMode = v.raMode || "duree"; sc.reduction = !!v.reduction;
     return sc;
@@ -297,7 +304,7 @@
           champ({ id: "cr-f-autres", k: "frais.autres", lib: "Autres frais", unite: "DT", min: 0, max: 1e6 }) +
         '</div><p class="cr-texte" id="cr-frais-total" data-si="frais.on"></p>') +
       option("ra", "fleche", "Remboursements anticipés",
-        '<p class="cr-texte">Rembourser une partie du capital plus tôt fait baisser les intérêts. Ajoutez un versement ponctuel ou régulier.</p>' +
+        '<p class="cr-texte">Rembourser une partie du capital plus tôt fait baisser les intérêts. Indiquez le mois de chaque remboursement et ce que la banque a fait ensuite : le tableau d\'amortissement se met à jour.</p>' +
         '<ul class="cr-ras" id="cr-ras"></ul>' +
         '<button type="button" class="bouton bouton--petit" id="cr-ra-ajouter">' + ico("plus") + 'Ajouter un remboursement</button>' +
         '<div class="cr-sous-bloc">' +
@@ -310,8 +317,8 @@
         '<div class="cr-grille-champs">' +
           champ({ id: "cr-indem", k: "indemnite", t: "taux", lib: "Indemnité de remboursement anticipé", unite: "%", min: 0, max: 20, aide: "Pénalité de la banque, en % du montant remboursé." }) +
         '</div>' +
-        '<div class="champ"><span class="champ__lib" id="cr-ramode-lib">Après le remboursement</span>' +
-          bascule({ lib: "Après le remboursement", k: "raMode", options: [["duree", "Réduire la durée"], ["mensualite", "Réduire l'échéance"]] }) + '</div>' +
+        '<div class="champ" data-si="versement.on"><span class="champ__lib" id="cr-ramode-lib">Après chaque versement régulier</span>' +
+          bascule({ lib: "Après chaque versement régulier", k: "raMode", options: [["duree", "Réduire la durée"], ["mensualite", "Réduire l'échéance"]] }) + '</div>' +
         '<div id="cr-ra-bilan" class="cr-bilan" aria-live="polite"></div>') +
       option("reduction", "cible", "Réduction de taux (règle des 8 %)",
         '<p class="cr-texte"><strong>La règle :</strong> pour un crédit de plus de 7 ans (84 mois), si les intérêts payés sur les 3 dernières années dépassent 8 % du capital qu\'il vous reste à rembourser, la banque doit diviser votre taux par deux (loi n° 2024-41 du 2 août 2024). Le contrôle se fait dès la 37<sup>e</sup> mensualité, puis chaque mois tant que la condition n\'est pas remplie ; après une réduction, le contrôle suivant a lieu 3 ans plus tard.</p>' +
@@ -552,6 +559,18 @@
     if (!r.ok) return;
     var sc = sc0(), v = r.v;
     if (k === "type") { appliquerType(sc, v); ecrireEditeur(); calculer(true); signalerModif(); return; }
+    var mr = /^ras\.(\d+)\.(mois|annee|mode)$/.exec(k);
+    if (mr) {
+      var ix = +mr[1], ra = sc.ras[ix]; if (!ra) return;
+      if (mr[2] === "mode") { ra.mode = v; if (v === "nouvelle" && !(ra.nouvelleDuree >= 1)) ra.nouvelleDuree = Math.max(1, nbEcheances(sc) - ra.apres); rendreRas(); calculer(true); signalerModif(); return; }
+      var mEl = $("cr-ra-mois-" + ix), aEl = $("cr-ra-an-" + ix);
+      var lu = lireChamp(aEl); if (!lu.ok) return;
+      var k1 = echeanceDuMois(parseInt(mEl.value, 10), lu.v), N1 = nbEcheances(sc);
+      if (!(k1 >= 1 && k1 < N1)) { marquer(aEl, "Entre " + moisAn(dateEcheance(1)) + " et " + moisAn(dateEcheance(N1 - 1)) + "."); return; }
+      marquer(aEl, null);
+      ra.apres = k1; majDatesRas(); calculer(discret); signalerModif();
+      return;
+    }
     if (k === "annees" || k === "moisSup") {
       var a = k === "annees" ? v : Math.floor(sc.mois / 12), m = k === "moisSup" ? v : sc.mois % 12;
       var tot = borne(a * 12 + m, 1, 300);
@@ -617,14 +636,32 @@
       return '<li class="cr-ra">' +
         '<div class="cr-ra__tete"><strong>Remboursement ' + (i + 1) + '</strong><button type="button" class="bouton bouton--fantome bouton--icone bouton--petit" data-ra-retirer="' + i + '" aria-label="Retirer le remboursement ' + (i + 1) + '">' + ico("poubelle") + '</button></div>' +
         '<div class="cr-grille-champs">' +
-          champ({ id: "cr-ra-ap-" + i, k: "ras." + i + ".apres", t: "entier", lib: "Après l'échéance n°", min: 1, valeur: x.apres, aide: '<span data-ra-date="' + i + '"></span>' }) +
+          selection({ id: "cr-ra-mois-" + i, k: "ras." + i + ".mois", t: "entier", lib: "Mois", options: [["1","Janvier"],["2","Février"],["3","Mars"],["4","Avril"],["5","Mai"],["6","Juin"],["7","Juillet"],["8","Août"],["9","Septembre"],["10","Octobre"],["11","Novembre"],["12","Décembre"]] }) +
+          champ({ id: "cr-ra-an-" + i, k: "ras." + i + ".annee", t: "entier", lib: "Année", min: 1990, max: 2100, aide: '<span data-ra-date="' + i + '"></span>' }) +
           (x.total ? '<div class="champ"><span class="champ__lib">Montant</span><p class="cr-ra__solde">Solde de tout le capital restant</p></div>' :
             champ({ id: "cr-ra-mt-" + i, k: "ras." + i + ".montant", lib: "Montant remboursé", unite: "DT", min: 1, max: 1e8, valeur: saisieNb(x.montant) })) +
         '</div>' +
         interrupteur({ lib: "Solder tout le crédit", k: "ras." + i + ".total", coche: x.total, cls: "cr-interrupteur-petit" }) +
+        (x.total ? "" : '<div class="cr-grille-champs">' +
+          selection({ id: "cr-ra-mode-" + i, k: "ras." + i + ".mode", lib: "Ensuite, la banque", options: [["duree", "Réduit la durée"], ["mensualite", "Réduit l'échéance"], ["nouvelle", "Nouvelle durée"]] }) +
+          (x.mode === "nouvelle" ? champ({ id: "cr-ra-nd-" + i, k: "ras." + i + ".nouvelleDuree", t: "entier", lib: "Nouvelle durée restante", unite: "mois", min: 1, max: 360, valeur: x.nouvelleDuree, aide: "Nombre d'échéances après ce remboursement (voir le tableau envoyé par la banque)." }) : "") +
+        '</div>') +
       '</li>';
     }).join("");
+    sc.ras.forEach(function (x, i) {
+      var d = dateEcheance(x.apres), m = $("cr-ra-mois-" + i), an = $("cr-ra-an-" + i), mo = $("cr-ra-mode-" + i);
+      if (d && m) m.value = String(d.getMonth() + 1);
+      if (d && an) an.value = String(d.getFullYear());
+      if (mo) mo.value = x.mode || "duree";
+    });
     majDatesRas();
+  }
+  /* Mois et année d'un remboursement → échéance après laquelle il a lieu (celle du même mois). */
+  function echeanceDuMois(mois, annee) {
+    var sc = sc0(), d = MC.lireDate(sc.dateDebut);
+    if (!d || !(mois >= 1) || !(annee >= 1990)) return null;
+    var ecart = (annee * 12 + mois - 1) - (d.getFullYear() * 12 + d.getMonth());
+    return Math.floor(ecart / sc.periodicite) + 1;
   }
   function dateEcheance(k) {
     var sc = sc0(), d = MC.lireDate(sc.dateDebut);
@@ -633,7 +670,7 @@
   function majDatesRas() {
     $$("[data-ra-date]").forEach(function (el) {
       var x = sc0().ras[+el.getAttribute("data-ra-date")];
-      el.textContent = x && dateEcheance(x.apres) ? "Après l'échéance de " + moisAn(dateEcheance(x.apres)) + "." : "";
+      el.textContent = x && dateEcheance(x.apres) ? "Après l'échéance n° " + x.apres + " (" + moisAn(dateEcheance(x.apres)) + ")." : "";
     });
     var vd = $("cr-var-date"), sc = sc0();
     if (vd) vd.textContent = dateEcheance(sc.variation.des) ? "Soit " + moisAn(dateEcheance(sc.variation.des)) + "." : "Échéance 2 au plus tôt.";
@@ -1846,7 +1883,8 @@
         var sc = sc0(), N = nbEcheances(sc);
         if (sc.ras.length >= 10) { toast("Dix remboursements au maximum."); return; }
         var der = sc.ras.length ? sc.ras[sc.ras.length - 1].apres : 0;
-        sc.ras.push({ apres: Math.min(N - 1, der + Math.max(1, Math.round(12 / sc.periodicite)) * (der ? 1 : 2)), total: false, montant: Math.round(sc.capital * 0.1 / 100) * 100 || 1000 });
+        var ap0 = Math.min(N - 1, der + Math.max(1, Math.round(12 / sc.periodicite)) * (der ? 1 : 2));
+        sc.ras.push({ apres: ap0, total: false, montant: Math.round(sc.capital * 0.1 / 100) * 100 || 1000, mode: sc.raMode || "duree", nouvelleDuree: Math.max(1, N - ap0) });
         rendreRas(); calculer(true); signalerModif();
         var champs = $$("#cr-ras input"); if (champs.length) champs[champs.length - 2 >= 0 ? champs.length - 2 : 0].focus();
       }
@@ -2057,6 +2095,37 @@
       };
     },
     nomParDefaut: function () { return nomScenario(sc0()); },
+    /* Ce que la simulation apporte au profil : un crédit en cours (situation du jour, tirée du tableau simulé,
+       remboursements anticipés et réductions de taux compris) et un projet (crédit pas encore signé). */
+    versProfil: function () {
+      var sc = sc0();
+      if (!valide(sc)) return { erreur: "Complétez la simulation avant de l'ajouter à votre profil." };
+      var d0 = MC.lireDate(sc.dateDebut);
+      var t0 = (TYPES[sc.type] ? sc.type : "libre"), typeP = t0 === "libre" ? "autre" : t0;
+      var projet = { type: { immo: "logement", auto: "voiture", conso: "travaux" }[typeP] || "autre", libelle: TYPES[t0].long,
+        montant: sc.apport.on && sc.apport.prix > sc.capital ? sc.apport.prix : sc.capital, horizonAns: 1 };
+      var res = { genre: "credit", nom: TYPES[t0].long, projet: projet, credit: null, motif: null };
+      if (sc.periodicite !== 1) { res.motif = "Seuls les crédits à échéances mensuelles peuvent être ajoutés à vos crédits en cours."; return res; }
+      if (sc.amort !== "constant") { res.motif = "Seuls les crédits à échéances constantes peuvent être ajoutés à vos crédits en cours."; return res; }
+      if (!d0) { res.motif = "Indiquez la date de la première échéance."; return res; }
+      var e = entree(sc, false), r = MC.echeancier(e), L = r.lignes, maint = new Date(), mN = maint.getFullYear() * 12 + maint.getMonth();
+      var payees = L.filter(function (l) { return l.date && l.date.getFullYear() * 12 + l.date.getMonth() <= mN; }).length;
+      if (payees >= L.length) { res.motif = "D'après ce tableau, le crédit est déjà entièrement remboursé."; return res; }
+      /* Échéance de référence : la prochaine (hors différé ; la dernière, souvent arrondie, se lit sur la précédente). */
+      var k = payees;
+      while (k < L.length - 1 && L[k].differe) k++;
+      if (k === L.length - 1 && k > 0 && !L[k - 1].differe) k--;
+      var ref = L[k], avant = k > 0 ? (L[k - 1].ra ? L[k - 1].ra.reste : L[k - 1].reste) : r.C;
+      var taux = avant > 0 && ref.interet > 0 ? Math.round(ref.interet / avant * 1200 * 10000) / 10000 : e.taux;
+      var reds = r.reductions.filter(function (x) { return x.mois <= payees; }), der = reds[reds.length - 1];
+      var debut = new Date(d0.getFullYear(), d0.getMonth() - 1, 1);
+      res.credit = { libelle: TYPES[t0].long, type: typeP, mensualite: arr(ref.paiement), tauxPct: taux, tauxType: sc.mode === "tmm" ? "variable" : "fixe",
+        moisDebut: debut.getMonth() + 1, anneeDebut: debut.getFullYear(), dureeMois: L.length,
+        reductionMois: der && der.date ? der.date.getMonth() + 1 : 0, reductionAnnee: der && der.date ? der.date.getFullYear() : 0 };
+      res.situation = { payees: payees, restantes: L.length - payees, capital: arr(payees ? (L[payees - 1].ra ? L[payees - 1].ra.reste : L[payees - 1].reste) : r.C),
+        fin: moisAn(L[L.length - 1].date), avenir: payees === 0 };
+      return res;
+    },
     charger: function (texte) {
       var v = null;
       try { v = MC.decoderLien(String(texte || "")); } catch (e) { v = null; }

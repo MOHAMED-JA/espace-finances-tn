@@ -91,7 +91,7 @@
       indemnitesNonImposables: m("indemnites"),
       tauxAccidentTravailPct: at.vide || !at.valide || Math.abs(at.valeur - P.employeur.accidentTravail.tauxParDefaut * 100) < 1e-9 ? null : Math.min(at.valeur, P.employeur.accidentTravail.tauxMax * 100),
       industrieManufacturiere: $("industrie").checked,
-      autresChargesPct: m("autres-pct"),
+      autresChargesPct: 0,
       autresChargesMontant: m("autres-dt")
     };
   }
@@ -111,8 +111,17 @@
     texte("indemnites", e.indemnitesNonImposables);
     $("taux-at").value = nbsp(fSaisie.format(e.tauxAccidentTravailPct == null ? P.employeur.accidentTravail.tauxParDefaut * 100 : e.tauxAccidentTravailPct));
     $("industrie").checked = !!e.industrieManufacturiere;
-    texte("autres-pct", e.autresChargesPct);
-    texte("autres-dt", e.autresChargesMontant);
+    /* Les autres charges se saisissent en DT : une ancienne simulation en % du brut est convertie en montant équivalent. */
+    var autres = e.autresChargesMontant || 0;
+    if (e.autresChargesPct > 0) {
+      try {
+        var cv = calculerEtat(Object.assign({}, e, { autresChargesPct: 0, autresChargesMontant: 0 }));
+        var parAn = cv.r.annuel.brutTotal * e.autresChargesPct / 100;
+        autres = C.arrondiMillime(autres + (e.periode === "annuel" ? parAn : parAn / 12));
+      } catch (x) { /* calcul impossible : on garde le montant seul */ }
+    }
+    texte("autres-dt", autres);
+    $("autres-periode").textContent = e.periode === "annuel" ? "par an" : "par mois";
     if (e.etudiants || e.handicapes || e.parents || e.primesImposables || e.primesNonCotisables || e.avantagesNature || e.indemnitesNonImposables || e.tauxAccidentTravailPct != null || e.industrieManufacturiere || e.autresChargesPct || e.autresChargesMontant) $("plus").open = true;
     majCompteurs();
   }
@@ -617,7 +626,7 @@
     var lu = lireMontant(this.value);
     if (lu.valide && !lu.vide) this.value = nbsp(fSaisie.format(lu.valeur));
   });
-  ["primes", "non-cotisables", "avantages", "indemnites", "taux-at", "autres-pct", "autres-dt"].forEach(function (id) {
+  ["primes", "non-cotisables", "avantages", "indemnites", "taux-at", "autres-dt"].forEach(function (id) {
     $(id).addEventListener("input", function () { clearTimeout(frappe); frappe = setTimeout(function () { calculer(false); }, 160); });
   });
   $("industrie").addEventListener("change", function () { calculer(true); });
@@ -650,6 +659,7 @@
           var x = lireMontant($(id).value);
           if (x.valide && !x.vide && x.valeur > 0) $(id).value = nbsp(fSaisie.format(C.arrondiMillime(x.valeur * (vers === "annuel" ? 12 : 1 / 12))));
         });
+        $("autres-periode").textContent = vers === "annuel" ? "par an" : "par mois";
       }
       majCompteurs();
       calculer(true);
