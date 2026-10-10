@@ -61,3 +61,21 @@ test('à afficher : échus, non expirés, pas encore vus ; liste triée', () => 
   const tous = R.rappels(sy, { etat: 'essai', essai_fin: '2026-10-11T10:00:00.000Z' }, I.optimiseurFiscal(sy, { maintenant: M }), M);
   for (let i = 1; i < tous.length; i++) assert.ok(Date.parse(tous[i - 1].quand) <= Date.parse(tous[i].quand));
 });
+
+test('règle des 8 % : rappel un mois avant la prochaine réduction de taux, ou tout de suite si elle est déjà possible', () => {
+  const OC = require('../../public/espace/js/orbite-calcul.js');
+  const RC = require('../../public/espace/js/rappels-calcul.js');
+  const m = new Date(2026, 9, 9);
+  const immo = { libelle: 'Crédit immobilier', type: 'immo', mensualite: 765.003, tauxPct: 2.25, moisDebut: 2, anneeDebut: 2023, dureeMois: 191, tauxType: 'fixe', reductionMois: 3, reductionAnnee: 2026 };
+  const sy = OC.synthese(Object.assign(OC.profilParDefaut(), { montant: 4000, credits: [immo] }), {}, m);
+  const r = RC.rappels(sy, {}, null, m).filter((x) => x.id.indexOf('reduction-') === 0);
+  assert.equal(r.length, 1);
+  assert.equal(r[0].titre, 'Réduction de taux le mois prochain : crédit immobilier');
+  assert.ok(/septembre 2031/.test(r[0].corps) && /2,25 % → 1,125 %/.test(r[0].corps), r[0].corps);
+  assert.equal(new Date(r[0].quand).getMonth(), 7, 'rappel en août 2031');
+  const sy2 = OC.synthese(Object.assign(OC.profilParDefaut(), { montant: 4000, credits: [{ ...immo, mensualite: 875.894, tauxPct: 4.5, reductionMois: 0, reductionAnnee: 0 }] }), {}, m);
+  const r2 = RC.rappels(sy2, {}, null, m).filter((x) => x.id.indexOf('reduction-') === 0);
+  assert.equal(r2[0].titre, 'Réduction de taux à demander : crédit immobilier');
+  assert.ok(/Depuis mars 2026/.test(r2[0].corps));
+  assert.equal(RC.aAfficher(r2, {}, m).length, 1, 'affiché tout de suite');
+});

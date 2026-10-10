@@ -15,13 +15,15 @@
   function vibrer(motif) { if (O.vibrer) O.vibrer(motif); }
   function dt0(v) { return F.dt0(v) + " DT"; }
   function majuscule(t) { return t.charAt(0).toUpperCase() + t.slice(1); }
-  function tauxTxt(x) { return String(Math.round(x * 100) / 100).replace(".", ",") + " %"; }
+  function tauxTxt(x) { return String(Math.round(x * 10000) / 10000).replace(".", ",") + " %"; }
+  function ratioTxt(x) { return (x * 100).toFixed(2).replace(".", ",") + " %"; }
   function ansTxt(n) { var a = Math.round(n / 12); return a + (a > 1 ? " ans" : " an"); }
   function etatSat(id) { return modele ? modele.etat(T).satellites[id] || {} : {}; }
-  function jalonDe(id) { return modele ? modele.jalons.filter(function (j) { return j.sat === id; })[0] : null; }
+  /* Jalon principal d'un satellite (fin du crédit, durée fiscale, horizon), hors réductions de taux. */
+  function jalonDe(id) { return modele ? modele.jalons.filter(function (j) { return j.sat === id && j.genre !== "reduction"; })[0] : null; }
 
   function texteTag(s, e) {
-    if (s.genre === "credit") return e.actif === false ? "Remboursé" : dt0(s.mensualite) + " par mois";
+    if (s.genre === "credit") return e.actif === false ? "Remboursé" : dt0(e.mensualite || s.mensualite) + " par mois";
     if (s.genre === "vie" || s.genre === "cea") return dt0(e.capital || 0) + (s.capitalSaisi && !T ? "" : " estimés");
     if (s.genre === "projet") return s.horizon ? "Objectif " + s.horizon : dt0(s.montant);
     return "Ajouter";
@@ -58,8 +60,8 @@
     if (!depuisCurseur) curseur.value = String(t);
     if (t > ancien) modele.jalons.forEach(function (j) {
       if (ancien < j.t && j.t <= t) {
-        if (j.genre === "credit") scene.liberer(j.sat);
-        annoncer(majuscule(modele.dateTexte(j.t)) + " · " + j.lib + (j.gain ? " : +" + dt0(j.gain) + " de marge" : ""));
+        if (j.genre === "credit") scene.liberer(j.sat); else if (j.genre === "reduction") scene.pulser();
+        annoncer(majuscule(modele.dateTexte(j.t)) + " · " + j.lib + (j.genre === "credit" ? " : +" + dt0(j.gain) + " de marge" : j.genre === "reduction" ? " (−" + dt0(j.gain) + " par mois)" : ""));
         vibrer([10, 40, 10]);
       }
     });
@@ -179,6 +181,7 @@
       case "endet": return { n: e.endettement, f: function (v) { return F.pct(v, 1); } };
       case "capa": return { n: e.capacite, f: function (v) { return F.dt0(v) + " DT / mois"; } };
       case "kres": return { n: x.capitalRestant || 0, f: DT0 };
+      case "mensualite": return { n: x.mensualite || 0, f: DT3 };
       case "interets": return { n: x.interets || 0, f: DT0 };
       case "restantes": return { n: x.restantes || 0, f: function (v) { v = Math.round(v); return v ? v + " échéance" + (v > 1 ? "s" : "") : "Aucune"; } };
       case "capital": return { n: x.capital || 0, f: DT0 };
@@ -198,6 +201,8 @@
         if (s.genre === "projet") return dt0(s.montant) + (s.horizon ? " · " + s.horizon : "");
         return "Voiture, logement, travaux…";
       case "statut": return x.actif === false ? "Remboursé en " + s.fin : "En cours";
+      case "taux": return tauxTxt(x.tauxPct || s.tauxPct) + (s.tauxType === "fixe" ? " fixe" : s.tauxType === "variable" ? " variable" : "");
+      case "prochaine": return x.prochaine ? x.prochaine.date + " : " + tauxTxt(x.prochaine.tauxPct) + ", " + F.dt3(x.prochaine.mensualite) + " DT" : "Aucune d'ici la fin";
       case "fiscal": return x.fiscalAcquis ? (s.tFiscal > 0 ? "Acquis depuis " + s.dateFiscale : "Acquis") : "Acquis en " + s.dateFiscale + " (" + s.dureeFiscale + " ans)";
       case "voyage": var j = jalonDe(p[1]); return j && T < j.t ? "Voyager jusqu'en " + modele.dateTexte(j.t) : "Revenir à aujourd'hui";
     }
@@ -258,8 +263,9 @@
   }
   function ficheCredit(f, s) {
     tete(s.id, "Crédit en cours", s.nom).forEach(function (n) { f.appendChild(n); });
-    var g = el("div", "fiche-orbite__grand", F.dt3(s.mensualite) + " DT"); g.appendChild(el("small", null, "par mois")); f.appendChild(g);
-    var items = [["Statut", "", { "data-v": "statut:" + s.id }], ["Taux", tauxTxt(s.tauxPct)]];
+    var g = el("div", "fiche-orbite__grand"); g.appendChild(el("span", null, "", { "data-v": "mensualite:" + s.id, "data-montant": "" })); g.appendChild(el("small", null, "par mois")); f.appendChild(g);
+    var items = [["Statut", "", { "data-v": "statut:" + s.id }], ["Taux", "", { "data-v": "taux:" + s.id }]];
+    if (s.regle8 && s.regle8.applicable) items.push(["Prochaine réduction de taux", "", { "data-v": "prochaine:" + s.id }]);
     if (s.restantes) items.push(["Échéances restantes", "", { "data-v": "restantes:" + s.id, "data-montant": "" }], ["Dernière échéance", s.derniere],
       ["Capital restant estimé", "", { "data-v": "kres:" + s.id, "data-montant": "" }], ["Intérêts encore à payer", "", { "data-v": "interets:" + s.id, "data-montant": "" }]);
     f.appendChild(lignes(items));
@@ -274,8 +280,34 @@
       f.appendChild(p);
       act.appendChild(boutonVoyage(s.id));
     } else f.appendChild(el("p", "encart encart--alerte", "Indiquez la durée restante de ce crédit dans Mon profil : Orbite calculera sa fin et la marge qu'il vous rendra."));
+    var r8 = encartRegle8(s);
+    if (r8) f.appendChild(r8);
     act.appendChild(lien("#profil?section=credits", "Modifier dans Mon profil"));
     f.appendChild(act);
+  }
+  /* Règle des 8 % (loi n° 2024-41 du 2 août 2024) dans la fiche d'un crédit. */
+  function encartRegle8(s) {
+    var rt = s.regle8; if (!rt) return null;
+    function pc(x) { return String(Math.round(x * 10000) / 10000).replace(".", ",") + " %"; }
+    var p = el("p", "encart");
+    if (rt.motif === "type") { p.className = "encart encart--alerte"; p.textContent = "Taux fixe ou variable ? Pour un crédit à taux fixe de plus de 7 ans, la règle des 8 % peut diviser votre taux par deux. Précisez-le dans Mon profil."; return p; }
+    if (rt.motif === "dates") { p.className = "encart encart--alerte"; p.textContent = "Indiquez la date de début et la durée totale de ce crédit dans Mon profil : Orbite calculera quand demander une réduction de taux (règle des 8 %)."; return p; }
+    if (!rt.applicable) return null;
+    if (rt.possibleDepuis) {
+      p.className = "encart encart--alerte";
+      p.appendChild(el("b", null, "Réduction de taux possible depuis " + rt.possibleDepuis.date + ". "));
+      p.appendChild(doc.createTextNode("Les intérêts des 3 dernières années atteignent " + ratioTxt(rt.possibleDepuis.ratio) + " du capital restant (seuil : 8 %). Demandez à votre banque de diviser votre taux par deux ; si c'est déjà fait, indiquez sa date dans Mon profil."));
+      return p;
+    }
+    var r = rt.reductions[0];
+    p.className = "encart encart--succes";
+    if (!r) { p.textContent = "Règle des 8 % : aucune nouvelle réduction de taux d'ici la fin de ce crédit."; return p; }
+    p.appendChild(doc.createTextNode("Règle des 8 % : en " + r.date + ", votre taux passe de " + pc(r.tauxAvant) + " à "));
+    p.appendChild(el("b", null, pc(r.tauxPct)));
+    p.appendChild(doc.createTextNode(", et la mensualité à "));
+    p.appendChild(el("b", null, F.dt3(r.mensualite) + " DT"));
+    p.appendChild(doc.createTextNode(" (même date de fin)." + (rt.prochainControle && !rt.prochainControle.ok ? " Premier contrôle en " + rt.prochainControle.date + " : " + ratioTxt(rt.prochainControle.ratio) + ", encore sous le seuil de 8 %." : "") + " La banque l'accorde sur demande : Orbite vous le rappellera un mois avant."));
+    return p;
   }
   function ficheContrat(f, s) {
     tete(s.id, "Contrat d'épargne", s.nom).forEach(function (n) { f.appendChild(n); });
@@ -490,7 +522,8 @@
       var li = cree("li", "palier");
       var tete = cree("div", "palier__tete");
       tete.appendChild(cree("span", "palier__date", x.date.charAt(0).toUpperCase() + x.date.slice(1)));
-      tete.appendChild(cree("span", "palier__fin", "Fin " + (x.credits.length > 1 ? "des crédits " : "du crédit ") + x.credits.map(function (c) { return c.toLowerCase().replace(/^crédit /, ""); }).join(" et ")));
+      var ev = OC.evenementEtape(x);
+      tete.appendChild(cree("span", "palier__fin", ev.charAt(0).toUpperCase() + ev.slice(1)));
       li.appendChild(tete);
       var corps = cree("div", "palier__corps");
       corps.appendChild(cree("strong", "palier__mensualite chiffre", F.dt0(x.mensualiteMax) + " DT par mois"));
