@@ -237,7 +237,8 @@
     alertesLues: function () { return client.rpc("admin_alertes_lues").then(verifier); },
     statistiques: function (jours) { return client.rpc("admin_statistiques", { p_jours: jours || 30 }).then(verifier); },
     fiches: function () { return client.rpc("admin_fiches").then(verifier); },
-    fiche: function (id) { return client.rpc("admin_fiche", { p_user: id }).then(verifier); }
+    fiche: function (id) { return client.rpc("admin_fiche", { p_user: id }).then(verifier); },
+    contacts: function () { return client.rpc("admin_contacts").then(verifier); }
   };
   /* Accord de l'utilisateur pour que l'administrateur consulte sa fiche (révocable à tout moment). */
   var partage = {

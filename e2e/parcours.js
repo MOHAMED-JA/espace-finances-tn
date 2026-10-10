@@ -1009,6 +1009,43 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => !document.body.classList.contains("expert"));
   });
 
+  await etape("coordonnées facultatives : email prérempli, téléphone, erreurs, accord visible par l'admin seulement", async () => {
+    await page.goto(base + "/espace/#profil");
+    await page.waitForSelector("#p-email", { state: "visible" });
+    assert((await page.inputValue("#p-email")) === "aziz@exemple.tn", "email de connexion prérempli");
+    await page.fill("#p-email", "aziz@");
+    await page.locator("#p-email").blur();
+    assert(await page.isVisible("#p-email-err"), "email incomplet signalé");
+    await page.fill("#p-email", "Aziz.Pro@Exemple.tn");
+    await page.locator("#p-email").blur();
+    await page.waitForFunction(() => window.Orbite.profil().emailContact === "aziz.pro@exemple.tn");
+    assert(await page.isHidden("#p-email-err"), "erreur effacée");
+    await page.fill("#p-tel", "123");
+    await page.locator("#p-tel").blur();
+    assert(await page.isVisible("#p-tel-err"), "numéro invalide signalé");
+    await page.fill("#p-tel", "22 123 456");
+    await page.locator("#p-tel").blur();
+    await page.waitForFunction(() => window.Orbite.profil().telephone === "+21622123456");
+    assert((await page.inputValue("#p-tel")) === "+216 22 123 456", "numéro mis en forme");
+    await page.click("#contact-profil label:has(#p-contact-ok)");
+    await page.waitForFunction(() => window.Orbite.profil().contactOk === true && !!window.Orbite.profil().contactOkLe);
+    await page.waitForTimeout(1600);
+    const meta = faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite;
+    assert(meta.telephone === "+21622123456" && meta.contactOk === true, "coordonnées enregistrées");
+    await page.goto(base + "/espace/#admin");
+    await page.waitForSelector("#admin-corps:not([hidden])");
+    await page.waitForFunction(() => /aziz\.pro@exemple\.tn/.test(document.getElementById("admin-contacts").textContent));
+    assert((await page.textContent("#admin-contacts")).includes("+216 22 123 456"), "téléphone visible avec l'accord");
+    await page.goto(base + "/espace/#profil");
+    await page.waitForSelector("#p-contact-ok", { state: "attached" });
+    await page.click("#contact-profil label:has(#p-contact-ok)");
+    await page.waitForFunction(() => window.Orbite.profil().contactOk === false && window.Orbite.profil().contactOkLe === "");
+    await page.waitForTimeout(1600);
+    await page.goto(base + "/espace/#admin");
+    await page.waitForSelector("#admin-corps:not([hidden])");
+    await page.waitForFunction(() => /Personne n'a encore demandé/.test(document.getElementById("admin-contacts").textContent));
+  });
+
   await etape("déconnexion puis suppression définitive du compte", async () => {
     await page.goto(base + "/espace/#compte?onglet=donnees");
     await page.waitForSelector("#supprimer-compte");
