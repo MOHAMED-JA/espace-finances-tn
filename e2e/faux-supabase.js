@@ -34,6 +34,15 @@ function creer() {
   let dernierAssistant = null, assistantBientot = false, dernierAuth = null;
   const alertes = [];
   const usage = new Map();  // "type:cle" -> nombre
+  /* Rappels par email (migration 0011) : plan, désinscription par jeton, confirmations demandées. */
+  const rappelsEmail = new Map();  // user id -> { plan, jeton, desinscrit_le, adresse_confirmee, confirmation_adresse, confirmation_envoyee_le, confirmation_jeton }
+  const confirmationsEnvoyees = [];
+  function ligneRappels(id) {
+    if (!rappelsEmail.has(id)) rappelsEmail.set(id, { plan: [], jeton: crypto.randomUUID(), desinscrit_le: null, adresse_confirmee: null, confirmation_adresse: null, confirmation_envoyee_le: null, confirmation_jeton: null });
+    return rappelsEmail.get(id);
+  }
+  const etatRappels = (r) => ({ desinscrit_le: r.desinscrit_le, adresse_confirmee: r.adresse_confirmee, confirmation_adresse: r.confirmation_adresse, confirmation_envoyee_le: r.confirmation_envoyee_le });
+  function metaRappels(id, v) { const c = compteParId(id); if (c && c.user.user_metadata && c.user.user_metadata.orbite) c.user.user_metadata.orbite.rappelsEmail = v; }
   /* Codes promo et parrainage (migration 0007) : même règles que prix_formule / activer_paiement. */
   const codes = new Map();       // code -> { code, libelle, remise_pct, formules, fin, max_utilisations, utilisations, automatique, actif }
   const parrains = new Map();    // user id -> code
@@ -220,6 +229,18 @@ function creer() {
       return repondre(route, 404, { message: "Route de stockage inconnue : " + methode + " " + url.pathname });
     }
 
+    /* ---------- Liens des emails de rappel (sans connexion, par jeton) ---------- */
+    if (url.pathname === "/rest/v1/rpc/rappels_desinscrire" || url.pathname === "/rest/v1/rpc/rappels_reabonner" || url.pathname === "/rest/v1/rpc/rappels_confirmer_adresse") {
+      const nom = url.pathname.split("/").pop();
+      const ent = [...rappelsEmail.entries()].find(([, r]) => (nom === "rappels_confirmer_adresse" ? r.confirmation_jeton : r.jeton) === corps.p_jeton);
+      if (!ent) return repondre(route, 200, { ok: false });
+      const [id, r] = ent;
+      if (nom === "rappels_desinscrire") { r.desinscrit_le = r.desinscrit_le || new Date().toISOString(); metaRappels(id, false); const o = (compteParId(id).user.user_metadata || {}).orbite || {}; return repondre(route, 200, { ok: true, prenom: o.prenom || "" }); }
+      if (nom === "rappels_reabonner") { r.desinscrit_le = null; metaRappels(id, true); return repondre(route, 200, { ok: true }); }
+      r.adresse_confirmee = r.confirmation_adresse; r.confirmation_adresse = null; r.confirmation_jeton = null;
+      return repondre(route, 200, { ok: true, adresse: r.adresse_confirmee });
+    }
+
     /* ---------- Formules (lecture publique) ---------- */
     if (url.pathname === "/rest/v1/formules") return repondre(route, 200, FORMULES);
 
@@ -234,6 +255,17 @@ function creer() {
       if (assistantBientot) return repondre(route, 200, { erreur: "L'Assistant Orbite arrive très bientôt.", code: "bientot" });
       if (!corps || !corps.question || corps.question.length < 2) return repondre(route, 400, { erreur: "Posez votre question.", code: "invalide" });
       return repondre(route, 200, { reponse: "Oui, à partir de **mars 2032** :\n- mensualité possible : 893 DT\n- endettement sous 40 %", refus: false, restantes: 29 });
+    }
+    if (url.pathname === "/functions/v1/rappels-email") {
+      if (!u) return repondre(route, 401, { erreur: "Connexion requise" });
+      if (corps.action !== "confirmation") return repondre(route, 400, { erreur: "Action inconnue" });
+      const o = ((compteParId(u.id).user.user_metadata || {}).orbite) || {}, r = ligneRappels(u.id), c = String(o.emailContact || "").toLowerCase();
+      if (!o.rappelsEmail || r.desinscrit_le) return repondre(route, 200, { envoye: false, raison: "inactif" });
+      if (!c || c === u.email.toLowerCase() || c === r.adresse_confirmee) return repondre(route, 200, { envoye: false, raison: "deja" });
+      if (r.confirmation_envoyee_le && Date.now() - Date.parse(r.confirmation_envoyee_le) < 3600000) return repondre(route, 200, { envoye: false, raison: "limite", adresse: c });
+      Object.assign(r, { confirmation_adresse: c, confirmation_jeton: crypto.randomUUID(), confirmation_envoyee_le: new Date().toISOString() });
+      confirmationsEnvoyees.push({ user: u.id, adresse: c, jeton: r.confirmation_jeton });
+      return repondre(route, 200, { envoye: true, raison: null, adresse: c });
     }
     if (url.pathname === "/functions/v1/paiement") {
       if (!u) return repondre(route, 401, { erreur: "Connexion requise" });
@@ -300,6 +332,12 @@ function creer() {
       if (methode === "PATCH") { Object.assign(p, { nom_affiche: corps.nom_affiche }); return repondre(route, 204); }
     }
     if (url.pathname === "/rest/v1/rpc/mon_acces") return repondre(route, 200, acces(u.id));
+    if (url.pathname === "/rest/v1/rpc/rappels_plan_enregistrer") {
+      if (!Array.isArray(corps.p_plan) || corps.p_plan.length > 40) return repondre(route, 400, { code: "22023", message: "Plan de rappels invalide" });
+      const r = ligneRappels(u.id); r.plan = corps.p_plan; r.plan_maj = new Date().toISOString(); return repondre(route, 200, etatRappels(r));
+    }
+    if (url.pathname === "/rest/v1/rpc/rappels_mon_etat") return repondre(route, 200, rappelsEmail.has(u.id) ? etatRappels(rappelsEmail.get(u.id)) : {});
+    if (url.pathname === "/rest/v1/rpc/rappels_reactiver") { const r = ligneRappels(u.id); r.desinscrit_le = null; return repondre(route, 200, etatRappels(r)); }
     if (url.pathname === "/rest/v1/rpc/est_admin") return repondre(route, 200, admins.has(u.id));
     if (url.pathname === "/rest/v1/rpc/offres_en_cours") return repondre(route, 200, FORMULES.map((f) => prixFormule(f.cle, corps.p_code)));
     if (url.pathname === "/rest/v1/rpc/verifier_code") {
@@ -403,6 +441,8 @@ function creer() {
     usage() { return new Map(usage); },
     marquerTesteur(email) { abonnementDe(comptes.get(email).user.id).testeur = true; },
     expirerEssai(email) { abonnementDe(comptes.get(email).user.id).essai_fin = new Date(Date.now() - 60000).toISOString(); },
+    rappelsEmailDe(email) { return rappelsEmail.get(comptes.get(email).user.id) || null; },
+    confirmationsEnvoyees: () => confirmationsEnvoyees,
     comptes,
     journal,
     jetonPour(email) { return jeton(comptes.get(email).user); }

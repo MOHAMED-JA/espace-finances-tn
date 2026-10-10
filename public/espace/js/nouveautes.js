@@ -3,12 +3,12 @@
  * Changer « version » pour les montrer de nouveau ; 2 à 4 points courts, du point de vue de l'utilisateur.
  */
 window.ORBITE_NOUVEAUTES = {
-  version: "2026-10-10j",
+  version: "2026-10-10k",
   date: "10 octobre 2026",
   points: [
+    { titre: "Vos rappels, aussi par email.", texte: "Dans Mon profil › Vous, activez « Recevoir mes rappels par email » : un email à 12 h 30, seulement les jours où un rappel arrive (réduction de taux, fin d'un crédit, 31 décembre…), sans aucun montant. Une autre adresse de contact se confirme en un clic ; désinscription en un clic depuis chaque email." },
     { titre: "Impôt restant : le calcul détaillé.", texte: "Dans Vie & impôts › Optimiseur fiscal, touchez « Comment est calculé ce montant ? » : paies et primes restantes, part déjà couverte par votre assurance vie. Indiquez si votre employeur déduit déjà votre assurance vie : le montant s'ajuste." },
     { titre: "Orbite pour les retraités.", texte: "Dans Mon profil, choisissez « Retraité » et saisissez votre pension (brute ou nette). Orbite calcule la retenue maladie, l'abattement, l'impôt et le net, et vous montre combien la loi de finances 2026 augmentera votre pension nette en 2027, 2028 et 2029. Le module Salaire devient « Ma pension »." },
-    { titre: "Vos coordonnées, si vous le souhaitez.", texte: "Dans Mon profil › Vous : un email de contact et un téléphone (Tunisie ou étranger), facultatifs. Cochez « J'accepte d'être recontacté·e » pour que l'équipe Orbite puisse vous joindre ; décochez pour retirer votre accord à tout moment." },
-    { titre: "Et si… : comparez jusqu'à 3 avenirs.", texte: "Dans Vie & impôts, créez des scénarios (nouveau poste, crédit, épargne, mariage, enfant, remboursement anticipé) et comparez-les à aujourd'hui sur 10 ans : reste par mois, marge de crédit, épargne, impôt. Orbite signale un crédit que la banque refuserait, et vous pouvez appliquer un scénario à votre profil." }
+    { titre: "Vos coordonnées, si vous le souhaitez.", texte: "Dans Mon profil › Vous : un email de contact et un téléphone (Tunisie ou étranger), facultatifs. Cochez « J'accepte d'être recontacté·e » pour que l'équipe Orbite puisse vous joindre ; décochez pour retirer votre accord à tout moment." }
   ]
 };
