@@ -26,8 +26,9 @@
   function entreeFiscale(sy, av, cea) {
     var p = sy.profil;
     /* Revenu de l'année civile : calculé mois par mois si le salaire change dans l'année. */
-    return { revenu: (sy.salaireAnnee || sy.salaire).revenuFiscal, chef: p.chefDeFamille, enfants: p.enfants, infirmes: p.handicapes,
-      etudiants: p.etudiants, parents: p.parents, investissementAv: av, investissementCea: cea, leger: true };
+    var s = sy.salaireAnnee || sy.salaire;
+    return { revenu: s.revenuFiscal, chef: p.chefDeFamille, enfants: p.enfants, infirmes: p.handicapes,
+      etudiants: p.etudiants, parents: p.parents, investissementAv: av, investissementCea: cea, leger: true, abattementTaux: sy.salaire.abattementTaux };
   }
   function economie(sy, av, cea) { return MF.simuler(entreeFiscale(sy, av, cea)).economie; }
 

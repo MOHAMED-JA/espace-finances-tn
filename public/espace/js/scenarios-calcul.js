@@ -73,8 +73,10 @@
     function salaireAu(t) {
       var d = new Date(m.getFullYear(), m.getMonth() + t, 1);
       var h = OC.salaireEnVigueur(pH, d.getFullYear(), d.getMonth()) || p, f = familleAu(Math.max(0, t));
-      var cle = [h.montant, h.sens, h.periode, f.situation, f.chefDeFamille, f.enfants].join("|");
-      return cache[cle] || (cache[cle] = OC.salaire(Object.assign({}, p, { montant: h.montant, sens: h.sens, periode: h.periode }, f)));
+      /* Retraité : l'abattement dépend de l'année (loi de finances 2026). */
+      var an = p.activite === "retraite" ? d.getFullYear() : 0;
+      var cle = [h.montant, h.sens, h.periode, f.situation, f.chefDeFamille, f.enfants, an].join("|");
+      return cache[cle] || (cache[cle] = OC.salaire(Object.assign({}, p, { montant: h.montant, sens: h.sens, periode: h.periode }, f), an || undefined));
     }
 
     /* Crédits : ceux du profil (modèle de Mon orbite), moins ceux remboursés par anticipation, plus les nouveaux. */
@@ -130,10 +132,10 @@
     /* Années civiles : impôt retenu (mois par mois, primes comprises), avantage fiscal AV / CEA à la déclaration. */
     var annees = [], Y0 = m.getFullYear(), Yfin = new Date(m.getFullYear(), m.getMonth() + H, 1).getFullYear();
     for (var Y = Y0; Y <= Yfin; Y++) {
-      var retenu = 0, revenuFiscal = 0, av = 0, cea = 0;
+      var retenu = 0, revenuFiscal = 0, av = 0, cea = 0, abattement;
       for (var k = 0; k < 12; k++) {
         var tk = (Y - Y0) * 12 + k - m.getMonth(), Sk = salaireAu(tk);
-        retenu += (Sk.irpp + Sk.css) / 12; revenuFiscal += Sk.revenuFiscal / 12;
+        retenu += (Sk.irpp + Sk.css) / 12; revenuFiscal += Sk.revenuFiscal / 12; abattement = Sk.abattementTaux;
       }
       p.contrats.forEach(function (c) {
         var debut = c.anneeDebut * 12 + c.moisDebut - 1, nb = 0;
@@ -148,7 +150,7 @@
       });
       var f = familleAu(Math.max(0, (Y - Y0) * 12 - m.getMonth()));
       var eco = av + cea > 0 ? MF.simuler({ revenu: revenuFiscal, chef: f.chefDeFamille, enfants: f.enfants, infirmes: p.handicapes,
-        etudiants: p.etudiants, parents: p.parents, investissementAv: av, investissementCea: cea }).economie : 0;
+        etudiants: p.etudiants, parents: p.parents, investissementAv: av, investissementCea: cea, abattementTaux: abattement }).economie : 0;
       annees.push({ annee: Y, impotRetenu: retenu, avantageFiscal: eco, impotNet: Math.max(0, retenu - eco), versementsAv: av, versementsCea: cea });
     }
 
