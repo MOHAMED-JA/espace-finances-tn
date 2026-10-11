@@ -645,7 +645,8 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector("#admin-corps:not([hidden])");
     await page.waitForFunction(() => /Aucun compte n'a encore partagé/.test(document.getElementById("admin-fiches").textContent));
     await page.goto(base + "/espace/#compte?onglet=donnees");
-    await page.waitForSelector("#partage-admin:not([disabled])", { state: "attached" });
+    await page.waitForSelector("#onglet-donnees:not([hidden]) #partage-etat:not([hidden])");
+    await page.waitForTimeout(300);
     assert(!(await page.isChecked("#partage-admin")), "partage désactivé par défaut");
     await page.click('label:has(#partage-admin)');
     await page.waitForFunction(() => /Partage activé/.test(document.getElementById("partage-etat").textContent));
@@ -660,7 +661,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.goto(base + "/espace/#compte?onglet=donnees");
     await page.waitForFunction(() => /Consultée 1 fois/.test(document.getElementById("partage-etat").textContent));
     await page.click('label:has(#partage-admin)');
-    await page.waitForFunction(() => /Non partagée/.test(document.getElementById("partage-etat").textContent));
+    await page.waitForFunction(() => /non partagée/i.test(document.getElementById("partage-etat").textContent));
     assert(!faux.partageDe("aziz@exemple.tn").accorde, "accord retiré");
     await page.goto(base + "/espace/#admin");
     await page.waitForFunction(() => /Aucun compte n'a encore partagé/.test(document.getElementById("admin-fiches").textContent));
@@ -1306,6 +1307,38 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector("#pr-vide:not([hidden])");
     assert(/Ma pension/.test(await page.textContent("#pr-vide")), "retraité : renvoi vers Ma pension");
     await page.evaluate(() => window.Orbite.majProfil({ activite: "salarie" }, { immediat: true }));
+  });
+
+  await etape("crédit : alerte au-dessus de la capacité, retour à la capacité, montant qui suit la capacité selon le type", async () => {
+    await page.goto(base + "/espace/#credit");
+    await page.waitForSelector("#cr-capital");
+    await page.click('label:has(input[name="cr-type"][value="immo"])');
+    await page.fill("#cr-capital", "900 000");
+    await page.press("#cr-capital", "Tab");
+    await page.waitForSelector("#cr-capacite-alerte:not([hidden]) [data-ramener]");
+    assert(/au-dessus de votre capacité/.test(await page.textContent("#cr-capacite-alerte")), "alerte de dépassement");
+    await page.click("#cr-capacite-alerte [data-ramener]");
+    await page.waitForFunction(() => /suit votre capacité/.test(document.getElementById("cr-capital-aide-txt").textContent));
+    assert(await page.isHidden("#cr-capacite-alerte"), "plus d'alerte après le retour à la capacité");
+    const immo = Number((await page.inputValue("#cr-capital")).replace(/\D/g, ""));
+    await page.click('label:has(input[name="cr-type"][value="auto"])');
+    await page.waitForFunction((v) => Number(document.getElementById("cr-capital").value.replace(/\D/g, "")) !== v, immo);
+    const auto = Number((await page.inputValue("#cr-capital")).replace(/\D/g, ""));
+    assert(auto > 0 && auto < immo, "montant auto recalculé à la capacité (" + auto + " < " + immo + ")");
+    assert(await page.isHidden("#cr-capacite-alerte"), "échéance auto dans la capacité");
+    const lignes = await page.$$eval("#cr-capacites-liste .cr-capacites__ligne", (b) => b.map((x) => [x.getAttribute("data-capacite-type"), x.classList.contains("cr-capacites__ligne--actif"), x.querySelector("strong").textContent]));
+    assert(lignes.length === 3 && lignes.find((l) => l[0] === "auto")[1], "capacité par type, auto en cours : " + JSON.stringify(lignes));
+    assert(Number(lignes.find((l) => l[0] === "auto")[2].replace(/\D/g, "")) === auto, "même montant que la liste");
+    await page.click('[data-capacite-type="immo"]');
+    await page.waitForFunction(() => document.querySelector('input[name="cr-type"][value="immo"]').checked);
+    await page.waitForFunction((v) => Number(document.getElementById("cr-capital").value.replace(/\D/g, "")) === v, immo);
+    await page.screenshot({ path: path.join(CAPTURES, "credit-capacite.png") });
+    /* Paramètres : carte de partage avec l'heure en français. */
+    await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.waitForSelector("#onglet-donnees:not([hidden]) #partage-etat:not([hidden])");
+    await page.waitForTimeout(300);
+    assert(!/\b(AM|PM)\b/.test(await page.textContent("#partage-etat")), "heure au format français");
+    await page.screenshot({ path: path.join(CAPTURES, "parametres-donnees.png") });
   });
 
   await etape("déconnexion puis suppression définitive du compte", async () => {

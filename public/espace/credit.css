@@ -402,3 +402,22 @@
 .module--credit .cr-accord__demande { margin: 0; font-size: 14px; font-weight: 650; }
 .module--credit .cr-accord--ok .cr-accord__demande { color: var(--succes); }
 .module--credit .cr-accord--alerte .cr-accord__demande { color: var(--alerte); }
+
+/* Échéance au-dessus de la capacité : alerte et retour à la capacité */
+.cr-capacite-alerte { display: grid; gap: 10px; margin-top: -4px; padding: 12px 14px; border-radius: var(--r-int); background: var(--alerte-doux); color: var(--encre); font-size: 14px; }
+.cr-capacite-alerte[hidden] { display: none; }
+.cr-capacite-alerte p { margin: 0; font-weight: 600; }
+.cr-capacite-alerte .bouton { justify-self: start; }
+/* Ce que l'on peut emprunter pour chaque type, à échéance égale */
+.cr-capacites { display: grid; gap: 8px; }
+.cr-capacites[hidden] { display: none; }
+.cr-capacites__titre { margin: 0; font-size: 13px; font-weight: 650; color: var(--encre-3); }
+.cr-capacites ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.cr-capacites__ligne { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--filet); background: var(--surface); color: var(--encre); font: inherit; font-size: 14px; text-align: left; cursor: pointer; transition: border-color 160ms ease, background-color 160ms ease, transform 140ms ease-out; }
+.cr-capacites__ligne:hover { border-color: var(--filet-fort); }
+.cr-capacites__ligne:active { transform: scale(var(--appui)); }
+.cr-capacites__ligne span { display: grid; font-weight: 650; }
+.cr-capacites__ligne small { font-weight: 500; font-size: 12.5px; color: var(--encre-3); }
+.cr-capacites__ligne strong { font-weight: 600; white-space: nowrap; }
+.cr-capacites__ligne--actif { border-color: var(--credit); background: var(--credit-doux); }
+.cr-capacites__ligne--actif strong { color: var(--credit-t); }
