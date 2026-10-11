@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="/espace/epargne.css">
   <link rel="stylesheet" href="/espace/abonnement.css">
   <link rel="stylesheet" href="/espace/progression.css">
+  <link rel="stylesheet" href="/espace/annee.css">
   <link rel="stylesheet" href="/orbite/signature.css">
   <script src="/commun/config.js"></script>
   <script src="/commun/garde.js"></script>
@@ -137,6 +138,13 @@
               <label class="interrupteur"><span>Je suis chef de famille</span><input type="checkbox" id="d-chef" role="switch"><span class="interrupteur__piste" aria-hidden="true"></span></label>
               <button type="submit" class="bouton bouton--plein">Mettre mon orbite en mouvement<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></button>
             </form>
+          </section>
+
+          <!-- Rendez-vous de fin d'année (15 décembre – 31 janvier) : « Mon année en orbite » -->
+          <section class="annee-rdv cosmos" id="annee-rdv" aria-labelledby="annee-rdv-titre" hidden>
+            <span class="annee-rdv__orbe" aria-hidden="true"><i></i><i></i></span>
+            <div class="annee-rdv__texte"><p class="annee-rdv__sur" id="annee-rdv-sur">Votre bilan</p><h2 id="annee-rdv-titre">Votre année est prête</h2><p id="annee-rdv-sous">Salaire, impôt, crédits, épargne : ce que votre argent a fait cette année.</p></div>
+            <button type="button" class="bouton bouton--plein" data-ouvrir-annee>Voir mon année<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></button>
           </section>
 
           <div class="orbite-grille" id="orbite-contenu">
@@ -1213,6 +1221,7 @@
             <div>
               <h1 id="titre-progression">Ma progression</h1>
               <p class="vue__sous">Votre salaire face aux prix, votre carrière dans 10 ans, et vos objectifs suivis mois après mois.</p>
+              <button type="button" class="annee-bouton" id="btn-annee" data-ouvrir-annee hidden><span class="annee-bouton__orbe" aria-hidden="true"><i></i></span><span id="btn-annee-lib">Mon année en orbite</span><svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></button>
             </div>
             <div class="pg-onglets" role="tablist" aria-label="Ma progression" data-o="carriere">
               <i aria-hidden="true"></i>
@@ -1450,6 +1459,32 @@
     <button type="button" role="menuitem" data-action="supprimer" class="danger">Supprimer</button>
   </div>
 
+  <!-- « Mon année en orbite » (vue-annee.js) : histoire en cartes, plein écran. -->
+  <dialog class="annee" id="dlg-annee" aria-labelledby="annee-titre" aria-roledescription="histoire">
+    <div class="annee__scene" id="annee-scene" tabindex="-1" autofocus>
+      <div class="annee__barres" id="annee-barres" aria-hidden="true"></div>
+      <div class="annee__haut">
+        <h2 class="annee__titre" id="annee-titre">Mon année en orbite</h2>
+        <button type="button" class="annee__pause" id="annee-pause" aria-pressed="false" aria-label="Mettre en pause"><svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>
+        <button type="button" class="annee__fermer" id="annee-fermer" aria-label="Fermer"><svg aria-hidden="true"><use href="/orbite/icones.svg#fermer"/></svg></button>
+      </div>
+      <button type="button" class="annee__zone annee__zone--g" id="annee-prec" aria-label="Carte précédente"></button>
+      <button type="button" class="annee__zone annee__zone--d" id="annee-suiv" aria-label="Carte suivante"></button>
+      <div class="annee__cartes" id="annee-cartes" aria-live="polite"></div>
+    </div>
+    <div class="annee__partage" id="annee-partage" hidden>
+      <div class="annee__partage-boite" role="group" aria-labelledby="annee-partage-titre">
+        <h3 id="annee-partage-titre">Votre image, sans aucun montant</h3>
+        <img id="annee-image" alt="Image de partage : mon année en orbite, sans montant." width="1080" height="1350">
+        <div class="annee__partage-actions">
+          <button type="button" class="bouton bouton--plein" id="annee-partager">Partager</button>
+          <a class="bouton" id="annee-telecharger" download="mon-annee-orbite.png" href="#">Télécharger</a>
+          <button type="button" class="bouton bouton--fantome" id="annee-partage-fermer">Retour</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
   <!-- Acceptation obligatoire de la politique et des CGV (commun/consentement.js) : impossible à fermer sans accepter. -->
   <dialog class="dialogue dialogue--consentement" id="dlg-consentement" aria-labelledby="consentement-titre" aria-describedby="consentement-texte">
     <div class="consentement" tabindex="-1" autofocus>
@@ -1637,6 +1672,8 @@
   <script src="/espace/js/progression-calcul.js"></script>
   <script src="/espace/js/retraite-calcul.js"></script>
   <script src="/espace/js/vue-progression.js"></script>
+  <script src="/espace/js/annee-calcul.js"></script>
+  <script src="/espace/js/vue-annee.js"></script>
   <script src="/espace/js/rappels-calcul.js"></script>
   <script src="/espace/js/nouveautes.js"></script>
   <script src="/espace/js/appli.js"></script>

@@ -1,0 +1,141 @@
+/* Orbite — « Mon année en orbite » (lot 6) : histoire en cartes sur le cosmos, plein écran sur téléphone,
+   au format téléphone centré sur ordinateur. Styles posés en CSS ; valeurs variables (--h, --w, --d) par CSSOM. */
+
+/* ---------- Accès ---------- */
+.annee-bouton { margin-top: 14px; display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 16px 6px 6px; border-radius: 999px; border: 1px solid var(--filet); background: var(--surface); color: var(--encre); font: inherit; font-weight: 700; font-size: 14.5px; cursor: pointer; transition: transform 140ms var(--sortie), border-color 150ms ease; }
+.annee-bouton:hover { border-color: var(--filet-fort); }
+.annee-bouton:active { transform: scale(var(--appui)); }
+.annee-bouton svg { width: 16px; height: 16px; color: var(--encre-3); }
+.annee-bouton__orbe { width: 32px; height: 32px; border-radius: 50%; background: var(--cosmos); position: relative; flex: none; }
+.annee-bouton__orbe::before { content: ""; position: absolute; inset: 9px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #86EFAC, #12B76A 65%); }
+.annee-bouton__orbe i { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: var(--credit-lum); top: 3px; left: 13px; transform-origin: 3px 13px; }
+@media (prefers-reduced-motion: no-preference) { .annee-bouton__orbe i { animation: annee-tour 6s linear infinite; } }
+@keyframes annee-tour { to { transform: rotate(1turn); } }
+
+.annee-rdv { position: relative; overflow: hidden; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px 18px; align-items: center; padding: 20px 22px; border-radius: var(--r-panneau); color: var(--cosmos-encre); margin-bottom: 18px; }
+.annee-rdv .bouton { grid-column: 1 / -1; justify-self: start; background: var(--cosmos-encre); color: var(--cosmos); border-color: var(--cosmos-encre); }
+@media (min-width: 760px) { .annee-rdv { grid-template-columns: auto minmax(0, 1fr) auto; } .annee-rdv .bouton { grid-column: auto; } }
+.annee-rdv__orbe { width: 56px; height: 56px; border-radius: 50%; position: relative; }
+.annee-rdv__orbe i:first-child { position: absolute; inset: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #86EFAC, #12B76A 60%, #065F46); box-shadow: 0 0 24px rgba(74, 222, 128, .35); }
+.annee-rdv__orbe i:last-child { position: absolute; inset: 0; border-radius: 50%; border: 1.5px dashed rgba(255, 255, 255, .22); }
+.annee-rdv__sur { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--salaire-lum); }
+.annee-rdv h2 { font-family: var(--affiche); font-size: 22px; font-weight: 780; letter-spacing: -.02em; margin: 2px 0 4px; }
+.annee-rdv p { color: color-mix(in srgb, var(--cosmos-encre) 72%, transparent); font-size: 14.5px; }
+
+/* ---------- Histoire ---------- */
+dialog.annee { border: 0; padding: 0; margin: auto; max-width: none; max-height: none; width: 100vw; height: 100dvh; background: transparent; overflow: hidden; }
+dialog.annee::backdrop { background: rgba(4, 6, 12, .82); backdrop-filter: blur(8px); }
+@media (min-width: 640px) { dialog.annee { width: min(420px, 100vw - 32px); height: min(860px, 100dvh - 32px); border-radius: 34px; box-shadow: 0 40px 100px -30px rgba(0, 0, 0, .8); } }
+.annee__scene { position: relative; height: 100%; overflow: hidden; background: var(--cosmos); color: var(--cosmos-encre); isolation: isolate; outline: none; user-select: none; -webkit-user-select: none; touch-action: manipulation; --teinte: rgba(74, 222, 128, .18); }
+.annee__scene::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(120% 60% at 50% 0%, var(--teinte), transparent 62%); transition: background 500ms ease; }
+.annee__scene[data-accent="credit"] { --teinte: rgba(126, 162, 255, .2); --accent: var(--credit-lum); }
+.annee__scene[data-accent="epargne"] { --teinte: rgba(167, 139, 250, .2); --accent: var(--epargne-lum); }
+.annee__scene[data-accent="ambre"] { --teinte: rgba(245, 183, 10, .16); --accent: #F5B70A; }
+.annee__scene[data-accent="salaire"] { --accent: var(--salaire-lum); }
+.annee__barres { position: absolute; top: max(14px, env(safe-area-inset-top)); left: 14px; right: 14px; display: flex; gap: 4px; z-index: 3; }
+.annee__barres i { flex: 1; height: 3px; border-radius: 3px; background: rgba(255, 255, 255, .16); overflow: hidden; }
+.annee__barres b { display: block; height: 100%; width: 0; background: var(--cosmos-encre); }
+.annee__barres i.fait b { width: 100%; }
+.annee__barres i.encours b { animation: annee-barre 7s linear forwards; }
+.annee__scene.en-pause .annee__barres i.encours b { animation-play-state: paused; }
+@keyframes annee-barre { to { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .annee__barres i.encours b { animation: none; width: 100%; } }
+.annee__haut { position: absolute; top: calc(max(14px, env(safe-area-inset-top)) + 10px); left: 12px; right: 8px; display: flex; align-items: center; gap: 4px; z-index: 4; }
+.annee__titre { flex: 1; min-width: 0; font-family: var(--texte); font-size: 13px; font-weight: 600; color: color-mix(in srgb, var(--cosmos-encre) 60%, transparent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.annee__pause, .annee__fermer { width: 40px; height: 40px; border: 0; border-radius: 50%; background: transparent; color: var(--cosmos-encre); display: grid; place-items: center; cursor: pointer; }
+.annee__pause:hover, .annee__fermer:hover { background: rgba(255, 255, 255, .08); }
+.annee__pause svg, .annee__fermer svg { width: 18px; height: 18px; }
+.annee__pause[aria-pressed="true"] { background: rgba(255, 255, 255, .12); }
+.annee__pause:focus-visible, .annee__fermer:focus-visible, .annee__zone:focus-visible { outline: 3px solid var(--credit-lum); outline-offset: -3px; }
+.annee__zone { position: absolute; top: 70px; bottom: 0; z-index: 2; border: 0; padding: 0; background: transparent; cursor: pointer; }
+.annee__zone--g { left: 0; width: 32%; } .annee__zone--d { right: 0; width: 68%; }
+.annee__zone:disabled { cursor: default; pointer-events: none; }
+
+.annee__cartes { position: absolute; inset: 0; pointer-events: none; }
+.annee-carte { position: absolute; inset: 0; padding: calc(max(14px, env(safe-area-inset-top)) + 66px) 26px calc(26px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+.annee-carte[hidden] { display: none; }
+.annee-carte > * { flex: none; }
+.annee-carte .annee-pied, .annee-carte button { pointer-events: auto; position: relative; z-index: 5; }
+@media (prefers-reduced-motion: no-preference) {
+  .annee-carte:not([hidden]) > * { animation: annee-monte 600ms var(--sortie) both; }
+  .annee-carte:not([hidden]) > *:nth-child(2) { animation-delay: 80ms; } .annee-carte:not([hidden]) > *:nth-child(3) { animation-delay: 160ms; }
+  .annee-carte:not([hidden]) > *:nth-child(4) { animation-delay: 240ms; } .annee-carte:not([hidden]) > *:nth-child(n+5) { animation-delay: 320ms; }
+}
+@keyframes annee-monte { from { opacity: 0; transform: translateY(14px); filter: blur(4px); } }
+.annee-sur { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent, var(--salaire-lum)); }
+.annee-h { font-family: var(--affiche); font-size: 29px; font-weight: 780; letter-spacing: -.025em; line-height: 1.08; text-wrap: balance; }
+.annee-gros { font-family: var(--affiche); font-size: clamp(46px, 14vw, 58px); font-weight: 800; letter-spacing: -.045em; line-height: 1; font-variant-numeric: tabular-nums; }
+.annee-gros small { font-size: .36em; letter-spacing: 0; color: color-mix(in srgb, var(--cosmos-encre) 70%, transparent); }
+.annee-txt { font-size: 15.5px; color: color-mix(in srgb, var(--cosmos-encre) 76%, transparent); text-wrap: pretty; }
+.annee-txt b { color: var(--cosmos-encre); font-variant-numeric: tabular-nums; }
+.annee-esti { margin-top: auto; font-size: 12px; color: color-mix(in srgb, var(--cosmos-encre) 50%, transparent); }
+.annee-leg { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: color-mix(in srgb, var(--cosmos-encre) 76%, transparent); font-variant-numeric: tabular-nums; }
+.annee-leg span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 6px; background: var(--k); }
+.annee-leg__vous { --k: var(--salaire-lum); } .annee-leg__caisse { --k: #3B82F6; } .annee-leg__impot { --k: #7C3AED; }
+.annee-leg__capital { --k: var(--credit-lum); } .annee-leg__interets { --k: rgba(126, 162, 255, .35); }
+
+/* Visuels */
+.annee-planete { width: 180px; height: 180px; margin: 14px auto 6px; position: relative; }
+.annee-planete i { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid rgba(255, 255, 255, .1); }
+.annee-planete i:nth-child(2) { inset: 24px; border-color: rgba(126, 162, 255, .35); transform: rotate(-24deg) scaleY(.38); }
+.annee-planete i:nth-child(3) { inset: 54px; border: 0; background: radial-gradient(circle at 35% 30%, #86EFAC, #12B76A 60%, #065F46); box-shadow: 0 0 44px rgba(74, 222, 128, .35); }
+.annee-planete b { position: absolute; width: 11px; height: 11px; border-radius: 50%; top: 50%; left: 50%; margin: -5.5px; }
+.annee-planete b:nth-of-type(1) { background: var(--credit-lum); transform: translateX(84px); } .annee-planete b:nth-of-type(2) { background: var(--epargne-lum); transform: translateX(-70px); }
+@media (prefers-reduced-motion: no-preference) {
+  .annee-planete b:nth-of-type(1) { --r: 84px; animation: annee-orbite 8s linear infinite; }
+  .annee-planete b:nth-of-type(2) { --r: 70px; animation: annee-orbite 11s linear infinite reverse; }
+}
+@keyframes annee-orbite { from { transform: rotate(0) translateX(var(--r)) rotate(0); } to { transform: rotate(360deg) translateX(var(--r)) rotate(-360deg); } }
+.annee-mois { display: flex; gap: 4px; align-items: flex-end; height: 112px; }
+.annee-mois i { flex: 1; border-radius: 4px 4px 2px 2px; background: var(--salaire-lum); opacity: .5; height: calc(var(--h, .8) * 100%); transform-origin: bottom; }
+.annee-mois i.h { opacity: 1; }
+.annee-mois i.a { outline: 2px solid var(--cosmos-encre); outline-offset: 2px; }
+.annee-cent { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; max-width: 300px; }
+.annee-cent i { aspect-ratio: 1; border-radius: 3px; background: var(--salaire-lum); }
+.annee-cent i.c { background: #3B82F6; } .annee-cent i.p { background: #7C3AED; }
+.annee-duel { display: grid; gap: 12px; }
+.annee-duel > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; font-size: 13.5px; color: color-mix(in srgb, var(--cosmos-encre) 76%, transparent); }
+.annee-duel i { grid-column: 1 / -1; display: block; height: 14px; border-radius: 999px; width: calc(var(--w, 1) * 100%); transform-origin: left; }
+.annee-duel b { grid-row: 1; grid-column: 2; color: var(--cosmos-encre); font-variant-numeric: tabular-nums; }
+.annee-duel__salaire i { background: var(--salaire-lum); } .annee-duel__prix i { background: #F5B70A; }
+.annee-fond { height: 18px; border-radius: 999px; background: rgba(255, 255, 255, .1); overflow: hidden; display: flex; }
+.annee-fond i { display: block; height: 100%; width: calc(var(--w, 0) * 100%); background: var(--credit-lum); transform-origin: left; }
+.annee-fond i + i { background: rgba(126, 162, 255, .35); }
+.annee-badge { align-self: flex-start; padding: 8px 12px; border-radius: 999px; background: rgba(74, 222, 128, .14); color: var(--salaire-lum); font-weight: 700; font-size: 14px; }
+.annee-jauge { height: 14px; border-radius: 999px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+.annee-jauge i { display: block; height: 100%; width: calc(var(--w, 0) * 100%); border-radius: inherit; background: var(--epargne-lum); transform-origin: left; }
+.annee-serie { display: flex; gap: 5px; }
+.annee-serie i { flex: 1; height: 24px; border-radius: 6px; background: rgba(255, 255, 255, .08); }
+.annee-serie i.ok { background: var(--epargne-lum); }
+@media (prefers-reduced-motion: no-preference) {
+  .annee-carte:not([hidden]) .annee-mois i { animation: annee-pousse 700ms var(--ressort) both; animation-delay: var(--d, 0ms); }
+  .annee-carte:not([hidden]) .annee-cent i, .annee-carte:not([hidden]) .annee-serie i.ok { animation: annee-pop 380ms var(--ressort) both; animation-delay: var(--d, 0ms); }
+  .annee-carte:not([hidden]) .annee-duel i, .annee-carte:not([hidden]) .annee-fond i, .annee-carte:not([hidden]) .annee-jauge i { animation: annee-tire 1000ms var(--sortie) both 300ms; }
+}
+@keyframes annee-pousse { from { transform: scaleY(0); } }
+@keyframes annee-pop { from { transform: scale(0); } }
+@keyframes annee-tire { from { transform: scaleX(0); } }
+.annee-faits { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.annee-fait { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 16px; background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .1); font-size: 14.5px; }
+.annee-fait > i { width: 10px; height: 10px; border-radius: 50%; flex: none; background: var(--salaire-lum); }
+.annee-fait b { font-variant-numeric: tabular-nums; }
+.annee-fait--credit > i, .annee-fait--credit-fin > i, .annee-fait--capacite > i { background: var(--credit-lum); }
+.annee-fait--pouvoir > i { background: #F5B70A; }
+.annee-fait--objectif > i, .annee-fait--impot > i, .annee-fait--impot-jours > i { background: var(--epargne-lum); }
+.annee-pied { margin-top: auto; display: grid; gap: 8px; }
+.annee-action { font: inherit; font-weight: 700; font-size: 15px; min-height: 48px; padding: 0 18px; border-radius: 999px; border: 0; cursor: pointer; background: transparent; color: var(--cosmos-encre); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16); transition: transform 140ms var(--sortie); }
+.annee-action--plein { background: var(--cosmos-encre); color: var(--cosmos); box-shadow: none; }
+.annee-action:active { transform: scale(var(--appui)); }
+.annee-action:focus-visible { outline: 3px solid var(--credit-lum); outline-offset: 2px; }
+
+/* Partage */
+.annee__partage { position: absolute; inset: 0; z-index: 10; background: rgba(4, 6, 12, .9); display: grid; place-items: center; padding: 18px; }
+.annee__partage[hidden] { display: none; }
+.annee__partage-boite { width: 100%; max-width: 360px; display: grid; gap: 14px; color: var(--cosmos-encre); }
+.annee__partage-boite h3 { font-family: var(--affiche); font-size: 21px; font-weight: 760; text-align: center; }
+.annee__partage-boite img { width: 100%; height: auto; border-radius: 18px; box-shadow: 0 20px 50px -20px rgba(0, 0, 0, .8); background: var(--cosmos); }
+.annee__partage-actions { display: grid; gap: 8px; }
+.annee__partage-actions .bouton { justify-content: center; width: 100%; }
+.annee__partage-actions .bouton--plein { background: var(--cosmos-encre); color: var(--cosmos); border-color: var(--cosmos-encre); }
+.annee__partage-actions .bouton:not(.bouton--plein) { background: transparent; color: var(--cosmos-encre); border-color: rgba(255, 255, 255, .2); }
+@media print { dialog.annee { display: none !important; } }

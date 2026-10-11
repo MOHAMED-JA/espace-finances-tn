@@ -1373,6 +1373,32 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.evaluate(() => document.documentElement.removeAttribute("data-theme"));
   });
 
+  await etape("Mon année en orbite : bouton de Ma progression, cartes calculées, navigation au clavier, image sans montant", async () => {
+    await page.goto(base + "/espace/#progression");
+    await page.waitForSelector("#btn-annee:not([hidden])");
+    assert(/^Mon année \d{4}( jusqu'ici)?$/.test((await page.textContent("#btn-annee-lib")).trim()), "libellé du bouton");
+    await page.click("#btn-annee");
+    await page.waitForSelector("#dlg-annee[open]");
+    const n = await page.$$eval("#annee-cartes .annee-carte", (c) => c.length);
+    assert(n >= 5 && n <= 8, "cartes : " + n);
+    const attendu = await page.evaluate(() => Annee.bilan(Orbite.profil(), { objectifs: OrbiteProgression.objectifs(), versements: OrbiteProgression.versements() }, new Date()));
+    assert(attendu.cartes.length === n, "autant de cartes que le bilan");
+    await page.click("#annee-suiv");
+    const net = await page.textContent("#annee-cartes .annee-carte:not([hidden]) .annee-gros");
+    assert(chiffre(net) === Math.round(attendu.cartes[1].salaire.net), "net de l'année = moteur : " + net);
+    for (let k = 1; k < n; k++) await page.keyboard.press("ArrowRight");
+    await page.waitForSelector("#annee-ouvrir-partage");
+    const faits = await page.$$eval(".annee-faits--synthese li", (l) => l.map((x) => x.textContent));
+    assert(faits.length >= 1 && faits.every((t) => !/DT|\d{3}/.test(t)), "faits sans montant : " + faits.join(" | "));
+    await page.click("#annee-ouvrir-partage");
+    await page.waitForSelector("#annee-partage:not([hidden])");
+    await page.waitForFunction(() => /^blob:/.test(document.getElementById("annee-image").src) && document.getElementById("annee-image").naturalWidth === 1080);
+    await page.screenshot({ path: path.join(CAPTURES, "annee-partage.png") });
+    await page.click("#annee-partage-fermer");
+    await page.keyboard.press("Escape");
+    await page.waitForSelector("#dlg-annee", { state: "hidden" });
+  });
+
   await etape("retraite : CNSS (plafond, départ anticipé), objectif « Retraite » créé puis mis à jour, CNRPS, téléphone", async () => {
     await page.goto(base + "/espace/#profil?section=salaire");
     await page.waitForSelector("#sec-salaire", { state: "visible" });
