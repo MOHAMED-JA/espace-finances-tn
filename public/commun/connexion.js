@@ -134,6 +134,18 @@
     $(id).addEventListener("input", function () { if ($(id).getAttribute("aria-invalid") === "true") erreurChamp(id, ""); });
   });
   $("cgu").addEventListener("change", function () { erreurChamp("cgu", ""); });
+  /* Politique de confidentialité et CGV : message, secousse de la case, données d'inscription (version acceptée). */
+  var MSG_ACCORD = "Cochez la case pour accepter la politique de confidentialité et les conditions générales de vente.";
+  function secouerAccord() {
+    var c = document.querySelector(".case--accord");
+    if (!c) return;
+    c.classList.remove("secoue"); void c.offsetWidth; c.classList.add("secoue");
+  }
+  function donneesInscription(v) {
+    var d = v.nom ? { full_name: v.nom } : {};
+    if (window.EFConsentement) { d.orbite_consentement = window.EFConsentement.VERSION; window.EFConsentement.memoriserLocal(); }
+    return d;
+  }
 
   $("mdp").addEventListener("input", function () {
     $("jauge").setAttribute("data-niveau", String(M.forceMotDePasse(this.value)));
@@ -156,7 +168,7 @@
       else if (M.forceMotDePasse(mdp) < 3) echec("mdp", "Trop prévisible : ajoutez majuscules, chiffres ou symboles, ou allongez-le.");
       if (mdp2 !== mdp) echec("mdp2", "Les deux mots de passe ne correspondent pas.");
     }
-    if (mode === "inscription" && !$("cgu").checked) echec("cgu", "Acceptez la politique de confidentialité pour continuer.");
+    if (mode === "inscription" && !$("cgu").checked) { echec("cgu", MSG_ACCORD); secouerAccord(); }
     if (premier) { var el = $(premier); if (el) el.focus(); return null; }
     return { email: email, mdp: mdp, nom: $("nom").value.trim().slice(0, 80) };
   }
@@ -198,7 +210,7 @@
     } else if (mode === "inscription") {
       action = client.auth.signUp({
         email: v.email, password: v.mdp,
-        options: Object.assign({ emailRedirectTo: origine + "/connexion.html?confirme=1&suite=" + encodeURIComponent(suite), data: v.nom ? { full_name: v.nom } : {} }, capt)
+        options: Object.assign({ emailRedirectTo: origine + "/connexion.html?confirme=1&suite=" + encodeURIComponent(suite), data: donneesInscription(v) }, capt)
       }).then(function (r) {
         if (r.error) throw r.error;
         if (r.data.session) { entrer(r.data.user); return; }
@@ -224,6 +236,11 @@
 
   $("google").addEventListener("click", function () {
     var b = this;
+    /* Création de compte : la politique et les CGV doivent être acceptées avant de partir chez Google. */
+    if (mode === "inscription") {
+      if (!$("cgu").checked) { erreurChamp("cgu", MSG_ACCORD); secouerAccord(); $("cgu").focus(); return; }
+      if (window.EFConsentement) window.EFConsentement.memoriserLocal();
+    }
     occupe(b, true);
     client.auth.signInWithOAuth({
       provider: "google",

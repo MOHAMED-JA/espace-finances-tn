@@ -454,6 +454,17 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 sexagies. Acceptation obligatoire de la politique de confidentialité et des CGV (11 oct., livré)
+
+- **Demande** : « l'acceptation de la politique de confidentialité doit être obligatoire pour se connecter ». **Constat** : case seulement à l'inscription par e-mail ; **Google passait sans case** ; acceptation jamais enregistrée ; comptes existants jamais consultés.
+- **Choix de l'utilisateur** : **une fois puis mémorisée** (redemandée si la politique change) ; **confidentialité + CGV** ; **écran à la prochaine visite** pour les comptes existants. Maquette validée : https://claude.ai/artifact/1Jq9EvaARQhxPBNUmufDU6.
+- **Base** (`0013_consentements.sql`, **appliquée en production le 11 oct.** en petits morceaux, `apply_migration` expirait) : table `consentements` (user_id, version AAAA-MM-JJ, documents, accepte_le), unique (user_id, version), RLS lecture/ajout de ses lignes seulement, droits `select, insert` (ni modification ni suppression : preuve ; cascade à la suppression du compte), déclencheur `consentements_controler` (date **posée par le serveur**, 50 lignes max), export `exporter_mes_donnees` complété. Vérifié par un essai annulé : date falsifiée remplacée, propriétaire voit 1, autre compte 0.
+- **Code** : `public/commun/consentement.js` (`VERSION` = date de la politique, **à changer à chaque mise à jour de la politique** — un test vérifie qu'elle correspond à « Dernière mise à jour » de confidentialite.html ; `decider` ok/auto/ecran, `accordLocal` 24 h, `garantir`). Appelé par `session.js › exigerConnexion` (Espace et paiement-test) : déjà acceptée → rien ; case cochée à l'inscription (user_metadata `orbite_consentement` ou accord local après Google) → enregistrée sans écran ; sinon `<dialog id="dlg-consentement">` impossible à fermer (Échap bloqué), « Accepter et continuer » / « Se déconnecter » ; hors connexion → ouverture sans blocage, vérification au prochain chargement.
+- **Connexion** : case « J'accepte la politique de confidentialité et les CGV » **au-dessus de Google et du formulaire** (onglet Créer un compte), Google et e-mail refusés sans elle (secousse + message). Onglet Se connecter : pas de case, l'écran prend le relais.
+- **Paramètres › Vos données** : carte « Documents acceptés » (« Acceptées le … à … h … (version du …) »). Politique de confidentialité : nouvelle donnée décrite. SW `orbite-2026-10-11k`.
+- Tests : unitaires 439 (`consentement.test.js` 7) ; e2e 48/48 (Google bloqué sans case, accord auto à l'inscription, écran pour un compte existant + Échap sans effet, accord sans écran pour un compte inscrit ailleurs, trace dans Paramètres).
+- **À savoir** : à votre prochaine ouverture d'Orbite (et pour votre femme), l'écran s'affichera une fois.
+
 ## 3 novoquinquagies. Pages publiques par recherche (11 oct., livré)
 
 - **Demande** : suite du référencement ; choix « lien portail-rh puis pages », les **4 pages**, contenu **mini-calcul + explications**. Maquette validée : https://claude.ai/artifact/V1iMpzRax1MMMC6NE9BPd1.

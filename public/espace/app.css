@@ -1051,3 +1051,30 @@ body.pension-active[data-vue-active="salaire"] #barre-actions { display: none !i
 .theme-etat svg { color: var(--epargne-t); margin-top: 0; }
 .theme-etat--jour { background: var(--ambre-doux); }
 .theme-etat--jour svg { color: var(--ambre-t); }
+
+/* ---------- Acceptation obligatoire de la politique et des CGV (dlg-consentement) ---------- */
+dialog.dialogue--consentement { width: min(460px, calc(100vw - 24px)); }
+dialog.dialogue--consentement::backdrop { background: rgba(7, 9, 15, .62); backdrop-filter: blur(6px); }
+.consentement { display: grid; gap: 14px; padding: 24px; }
+.consentement:focus { outline: none; }
+.consentement__ico { width: 46px; height: 46px; border-radius: 14px; border: 1px solid var(--filet); background: var(--cosmos); color: var(--salaire-lum); display: grid; place-items: center; }
+.consentement__ico svg { width: 22px; height: 22px; }
+.consentement h2 { font-family: var(--affiche); font-size: 25px; font-weight: 780; letter-spacing: -.02em; }
+.consentement p { color: var(--encre-2); font-size: 15px; }
+.consentement .consentement__maj { color: var(--encre); font-weight: 600; padding: 10px 12px; border-radius: var(--r-champ); background: var(--alerte-doux); }
+.consentement__docs { display: grid; gap: 8px; }
+.consentement__doc { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--r-int); border: 1px solid var(--filet); text-decoration: none; color: var(--encre); transition: border-color 150ms ease; }
+.consentement__doc:hover { border-color: var(--filet-fort); }
+.consentement__doc b { display: block; font-size: 15px; }
+.consentement__doc small { color: var(--encre-3); font-size: 13px; }
+.consentement__doc svg { width: 16px; height: 16px; color: var(--encre-3); flex: none; }
+.accord { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 12px; align-items: start; padding: 14px; border-radius: var(--r-int); border: 1.5px solid var(--filet-fort); background: var(--surface-2); cursor: pointer; font-size: 14.5px; font-weight: 600; color: var(--encre); transition: border-color 160ms ease, background-color 160ms ease; }
+.accord:has(input:checked) { border-color: var(--succes); background: var(--succes-doux); }
+.accord input { appearance: none; margin: 1px 0 0; width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--filet-fort); background: var(--surface); display: grid; place-items: center; cursor: pointer; transition: background-color 150ms ease, border-color 150ms ease; }
+.accord input:checked { background: var(--succes); border-color: var(--succes); }
+.accord input:checked::after { content: ""; width: 6px; height: 11px; border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: translateY(-1px) rotate(45deg); }
+.accord input:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.consentement__actions { display: grid; gap: 6px; }
+.consentement__actions .bouton { width: 100%; justify-content: center; }
+.consentement__actions .bouton[aria-busy="true"] { opacity: .6; }
+@media (prefers-reduced-motion: reduce) { .accord, .accord input { transition: none; } }

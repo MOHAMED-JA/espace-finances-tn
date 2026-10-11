@@ -108,7 +108,17 @@
     $("param-accueil").value = m.orbite_accueil || "orbite";
     var der = u && u.last_sign_in_at;
     $("param-connexion").textContent = (der ? "Dernière connexion : " + dateHeure(new Date(der)) + ". " : "") + "Fermez Orbite sur tous vos appareils, par exemple après avoir utilisé un ordinateur partagé.";
+    etatAccord();
     etatPhoto();
+  }
+  /* Politique de confidentialité et CGV : date et version de l'acceptation enregistrée (table consentements). */
+  function etatAccord() {
+    var c = E.consentements && E.consentements.actuel(), el = $("accord-etat");
+    if (!el) return;
+    if (!c || !c.accepte_le) { el.textContent = "Acceptation enregistrée à votre prochaine connexion."; return; }
+    var d = new Date(c.accepte_le), v = /^(\d{4})-(\d{2})-(\d{2})$/.exec(c.version || "");
+    el.textContent = "Acceptées le " + DATE.format(d) + " à " + d.getHours() + " h " + String(d.getMinutes()).padStart(2, "0") +
+      (v ? " (version du " + DATE.format(new Date(+v[1], +v[2] - 1, +v[3])) + ")." : ".");
   }
   $("form-identite").addEventListener("submit", function (e) {
     e.preventDefault();

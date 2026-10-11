@@ -139,6 +139,16 @@ body { background: var(--canvas); overflow-x: hidden; }
 .lien-discret:hover { color: var(--ink); }
 .case { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--ink-2); cursor: pointer; }
 .case input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--c-net); flex: none; }
+/* Acceptation de la politique et des CGV : au-dessus de Google et du formulaire, secouée si on essaie de passer outre. */
+.case--accord { padding: 13px 14px; border-radius: var(--r-field); border: 1.5px solid var(--control-border); background: color-mix(in srgb, var(--ink) 3%, transparent); transition: border-color 160ms ease, background-color 160ms ease; }
+.case--accord:has(input:checked) { border-color: var(--c-net); background: color-mix(in srgb, var(--c-net) 9%, transparent); }
+.case--accord > span { display: grid; gap: 3px; color: var(--ink); font-weight: 560; }
+.case--accord small { font-size: 12.5px; font-weight: 500; color: var(--ink-3); }
+.case--accord a { color: inherit; text-underline-offset: 3px; }
+.case--accord:has(input[aria-invalid="true"]) { border-color: var(--danger); }
+.case--accord.secoue { animation: secoue-accord 380ms cubic-bezier(.16, 1, .3, 1); }
+@keyframes secoue-accord { 20% { transform: translateX(-6px); } 45% { transform: translateX(5px); } 70% { transform: translateX(-3px); } }
+@media (prefers-reduced-motion: reduce) { .case--accord.secoue { animation: none; } }
 
 /* Bouton principal : lueur et reflet au survol */
 .bouton-envoi { position: relative; overflow: hidden; min-height: 54px; font-size: 16px; font-weight: 720; margin-top: 4px; border-radius: var(--r-pill); transition: transform 120ms ease, box-shadow 260ms ease, background-color 160ms ease; }

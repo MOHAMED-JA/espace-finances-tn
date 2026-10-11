@@ -61,6 +61,13 @@
           <p class="invitation" id="invitation" hidden>Vous êtes invité par un proche : <strong>un mois offert</strong> pour vous deux à votre premier abonnement.</p>
           <div id="message" class="message" role="alert" hidden></div>
 
+          <!-- Acceptation obligatoire avant toute création de compte (Google ou e-mail) ; enregistrée sur le compte (commun/consentement.js). -->
+          <label class="case case--accord" data-champ="cgu" hidden>
+            <input type="checkbox" id="cgu" name="cgu" aria-describedby="cgu-aide cgu-erreur">
+            <span><span>J'accepte la <a href="/confidentialite.html" target="_blank" rel="noopener">politique de confidentialité<span class="visuellement-cache"> (nouvel onglet)</span></a> et les <a href="/cgv.html" target="_blank" rel="noopener">conditions générales de vente<span class="visuellement-cache"> (nouvel onglet)</span></a>.</span><small id="cgu-aide">Obligatoire pour créer un compte, avec Google ou par e-mail.</small></span>
+          </label>
+          <p class="erreur" id="cgu-erreur" hidden></p>
+
           <button type="button" class="bouton bouton--contour bouton--plein bouton-google" id="google" data-groupe="identifiants">
             <svg viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.72A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.72V4.95H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>
             Continuer avec Google
@@ -99,11 +106,6 @@
               </div>
               <p class="erreur" id="mdp2-erreur" hidden></p>
             </div>
-            <label class="case" data-champ="cgu" hidden>
-              <input type="checkbox" id="cgu" name="cgu">
-              <span>J'accepte la <a href="/confidentialite.html" target="_blank" rel="noopener">politique de confidentialité<span class="visuellement-cache"> (nouvel onglet)</span></a>.</span>
-            </label>
-            <p class="erreur" id="cgu-erreur" hidden></p>
             <div class="turnstile" id="anti-robots" hidden></div>
             <button type="submit" class="bouton bouton--principal bouton--plein bouton-envoi" id="envoyer">Se connecter</button>
           </form>
@@ -122,6 +124,7 @@
   <script src="/commun/vendor/supabase.js"></script>
   <script src="/commun/config.js"></script>
   <script src="/commun/modele.js"></script>
+  <script src="/commun/consentement.js"></script>
   <script src="/commun/session.js"></script>
   <script src="/commun/fuites.js"></script>
   <script src="/commun/turnstile.js"></script>
