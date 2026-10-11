@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="/espace/abonnement.css">
   <link rel="stylesheet" href="/espace/progression.css">
   <link rel="stylesheet" href="/espace/annee.css">
+  <link rel="stylesheet" href="/espace/fiche.css">
   <link rel="stylesheet" href="/orbite/signature.css">
   <script src="/commun/config.js"></script>
   <script src="/commun/garde.js"></script>
@@ -381,6 +382,11 @@
               <summary><span class="depliant__icone icone--salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#salaire"/></svg></span><span><span id="sec-salaire-titre">Votre emploi et votre salaire</span><small id="sec-salaire-sous">Montant, nombre de salaires, primes, contrat</small></span><svg class="chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></summary>
               <div class="depliant__corps grille-champs">
                 <div class="bascule champ--large" role="radiogroup" aria-label="Vous êtes"><label><input type="radio" name="p-activite" data-p="activite" value="salarie"><span>Salarié</span></label><label><input type="radio" name="p-activite" data-p="activite" value="retraite"><span>Retraité</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
+                <div class="fiche-entree champ--large seul-salarie" id="fiche-entree-profil">
+                  <span class="fiche-entree__ico" aria-hidden="true"><svg><use href="/orbite/icones.svg#fiche"/></svg></span>
+                  <span class="fiche-entree__txt"><b>Votre fiche de paie sous la main ?</b><small>Orbite la lit sur votre appareil et remplit le salaire, les primes, la caisse et la date d'embauche.</small></span>
+                  <button type="button" class="bouton bouton--petit" id="fiche-remplir">Remplir avec ma fiche de paie</button>
+                </div>
                 <div class="champ champ--large"><label for="p-montant" id="p-montant-lib">Salaire brut par mois</label><div class="saisie saisie--grande"><input id="p-montant" data-p="montant" data-type="montant" type="text" inputmode="decimal" autocomplete="off"><span class="saisie__unite">DT</span></div></div>
                 <div class="champ champ--large historique-salaire" id="hs-bloc">
                   <div class="historique-salaire__tete"><span class="champ__lib">Historique de votre salaire</span><button type="button" class="bouton bouton--petit" id="hs-maj"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg>Mettre à jour mon salaire</button></div>
@@ -481,6 +487,7 @@
           <header class="vue__tete module__tete">
             <span class="module__pastille" aria-hidden="true"><svg><use href="/orbite/icones.svg#salaire"/></svg></span>
             <div><h1 id="titre-salaire">Salaire</h1><p class="vue__sous" id="sous-salaire">Brut ⇄ net, tranche d'impôt, augmentation, coût employeur et offres. Barèmes <span data-annee>2026</span>.</p></div>
+            <button type="button" class="bouton bouton--petit module__action" id="fiche-controle"><svg aria-hidden="true"><use href="/orbite/icones.svg#fiche"/></svg>Contrôler ma fiche de paie</button>
           </header>
           <section class="pension-vue" id="pension-vue" aria-labelledby="pv-t" hidden>
             <div class="panneau pension-vue__saisie">
@@ -1543,6 +1550,68 @@
     </form>
   </dialog>
 
+  <!-- Lot 7 : fiche de paie lue sur l'appareil (déposer, lecture, vérifier, contrôle) -->
+  <dialog class="dialogue fiche" id="dlg-fiche" aria-labelledby="fiche-titre">
+    <div class="dialogue__tete">
+      <h2 id="fiche-titre" tabindex="-1">Ma fiche de paie</h2>
+      <button type="button" class="bouton bouton--icone bouton--petit bouton--fantome" id="fiche-fermer" aria-label="Fermer"><svg aria-hidden="true"><use href="/orbite/icones.svg#fermer"/></svg></button>
+    </div>
+    <div class="fiche__etapes" id="fiche-etapes" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="dialogue__corps fiche__corps">
+      <section class="fiche__ecran" data-ecran="depot">
+        <div class="fiche-depot" id="fiche-depot">
+          <span class="fiche-depot__ico" aria-hidden="true"><svg><use href="/orbite/icones.svg#fiche"/></svg></span>
+          <b class="fiche-depot__t">Déposez votre fiche ici</b>
+          <p class="fiche-depot__s">Photo (JPG, PNG) ou PDF · une page</p>
+          <div class="fiche-depot__boutons">
+            <label class="bouton bouton--plein fiche-fichier" id="fiche-photo-lib" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#photo"/></svg>Prendre une photo<input type="file" id="fiche-photo" accept="image/*" capture="environment" class="cache-fichier"></label>
+            <label class="bouton fiche-fichier" id="fiche-fichier-lib"><svg aria-hidden="true"><use href="/orbite/icones.svg#fiche"/></svg>Choisir un fichier<input type="file" id="fiche-fichier" accept="application/pdf,.pdf,image/jpeg,image/png,image/webp,image/heic,image/heif" class="cache-fichier"></label>
+          </div>
+        </div>
+        <p class="fiche-priv"><svg aria-hidden="true"><use href="/orbite/icones.svg#bouclier"/></svg><span><b>Lue sur votre appareil.</b> La fiche n'est ni envoyée ni enregistrée : seules les valeurs que vous validez vont dans votre profil.</span></p>
+        <ul class="fiche-conseils">
+          <li>PDF de votre employeur : lecture la plus fiable.</li>
+          <li>Photo : à plat, bien éclairée, toute la fiche dans le cadre.</li>
+          <li>Première lecture d'une photo : l'outil de lecture (environ 5 Mo) est téléchargé une seule fois.</li>
+        </ul>
+        <button type="button" class="lien-action fiche-main" id="fiche-main">Pas de fichier sous la main ? Saisir les montants moi-même<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></button>
+      </section>
+      <section class="fiche__ecran" data-ecran="lecture" hidden>
+        <div class="fiche-feuille" id="fiche-feuille" aria-hidden="true"><div class="fiche-feuille__contenu" id="fiche-feuille-contenu"></div><span class="fiche-balayage"></span></div>
+        <div class="fiche-prog" id="fiche-prog">
+          <div class="fiche-prog__barre"><i id="fiche-prog-barre"></i></div>
+          <div class="fiche-prog__txt"><span id="fiche-prog-etape">Ouverture de la fiche</span><span id="fiche-prog-pct" aria-hidden="true">0 %</span></div>
+        </div>
+        <p class="fiche-aide" id="fiche-prog-aide">Un PDF est lu en une seconde ; une photo, en 5 à 15 secondes selon le téléphone.</p>
+        <div class="fiche-erreur" id="fiche-erreur" role="alert" hidden>
+          <span class="fiche-erreur__ico" aria-hidden="true"><svg><use href="/orbite/icones.svg#alerte"/></svg></span>
+          <div><b id="fiche-erreur-t">Lecture impossible</b><p id="fiche-erreur-d"></p></div>
+        </div>
+      </section>
+      <section class="fiche__ecran" data-ecran="verifier" hidden>
+        <p class="fiche-intro" id="fiche-verif-intro">Chaque valeur montre le texte d'où elle vient. Corrigez directement dans la case, et décochez ce que vous ne voulez pas reprendre dans votre profil.</p>
+        <p class="fiche-alerte" id="fiche-verif-alerte" role="status" hidden></p>
+        <div class="fiche-champs" id="fiche-champs"></div>
+      </section>
+      <section class="fiche__ecran" data-ecran="controle" hidden>
+        <div class="fiche-verdict" id="fiche-verdict"><span class="fiche-verdict__ico" aria-hidden="true"></span><span><b id="fiche-verdict-t"></b><span id="fiche-verdict-d"></span></span></div>
+        <div class="tableau-cadre fiche-tableau"><table class="tableau" id="fiche-table" aria-label="Comparaison de la fiche et du calcul d'Orbite">
+          <thead><tr><th scope="col">Ligne</th><th scope="col">Fiche</th><th scope="col">Orbite</th><th scope="col">Écart</th></tr></thead>
+          <tbody id="fiche-table-corps"></tbody>
+        </table></div>
+        <ul class="fiche-pistes" id="fiche-pistes"></ul>
+        <p class="fiche-aide" id="fiche-hypotheses"></p>
+        <button type="button" class="lien-action fiche-main" id="fiche-corriger">Une valeur mal lue ? Corriger les valeurs<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></button>
+      </section>
+    </div>
+    <div class="dialogue__pied fiche__pied" id="fiche-pied">
+      <button type="button" class="bouton bouton--fantome" id="fiche-retour" hidden>Recommencer</button>
+      <button type="button" class="bouton bouton--fantome" id="fiche-fermer-sans" hidden>Fermer sans rien changer</button>
+      <button type="button" class="bouton bouton--plein" id="fiche-controler" hidden>Contrôler ma fiche</button>
+      <button type="button" class="bouton bouton--plein" id="fiche-maj" hidden>Mettre à jour mon profil</button>
+    </div>
+  </dialog>
+
   <dialog class="dialogue dialogue--large" id="dlg-profil" aria-labelledby="dlg-profil-titre">
     <form method="dialog" id="form-profil" novalidate>
       <div class="dialogue__tete"><h2 id="dlg-profil-titre">Ajouter à mon profil</h2></div>
@@ -1674,6 +1743,9 @@
   <script src="/espace/js/vue-progression.js"></script>
   <script src="/espace/js/annee-calcul.js"></script>
   <script src="/espace/js/vue-annee.js"></script>
+  <script src="/espace/js/fiche-lecture.js"></script>
+  <script src="/espace/js/fiche-calcul.js"></script>
+  <script src="/espace/js/vue-fiche.js"></script>
   <script src="/espace/js/rappels-calcul.js"></script>
   <script src="/espace/js/nouveautes.js"></script>
   <script src="/espace/js/appli.js"></script>

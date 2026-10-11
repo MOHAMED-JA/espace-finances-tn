@@ -11,7 +11,7 @@ const path = require("node:path");
 
 const RACINE = path.join(__dirname, "..", "public");
 const TYPES = {
-  ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
+  ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
   ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".woff2": "font/woff2", ".json": "application/json",
   ".webmanifest": "application/manifest+json", ".pdf": "application/pdf", ".txt": "text/plain; charset=utf-8", ".ico": "image/x-icon"
 };

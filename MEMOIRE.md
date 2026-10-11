@@ -454,6 +454,48 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 duosexagies. Lot 7 « Lire ma fiche de paie » (11 oct., livré)
+
+- **Demande** : passer au lot 7 (**lot 8 abandonné par l'utilisateur** : « pas important pour moi »). Choix de l'utilisateur :
+  - lecture **sur l'appareil seulement** (gratuit, rien d'envoyé) ;
+  - champs : brut et net, retenues (CNSS/CNRPS, IRPP, CSS), mois et date d'embauche, primes et avantages ;
+  - **contrôle face au calcul d'Orbite**.
+  - Maquette validée : https://claude.ai/artifact/WQCFfT84XcAst8zQFN4Xjo.
+- **Outils auto-hébergés** (chargés au premier usage, jamais par un site tiers ; licences Apache 2.0 incluses) :
+  - `public/commun/vendor/pdfjs-4.10.38/` : `pdf.min.mjs` + worker (version « legacy », chargée par `import()`) ;
+  - `tesseract-7.0.0/` : `tesseract.min.js`, `worker.min.js` ; `core/` : les 3 variantes LSTM (SIMD relâché, SIMD, simple) du cœur **7.0.0** (intégrité vérifiée avec npm) ; `lang/fra.traineddata.gz` (4.0.0_best_int, 707 Ko).
+  - **Dossiers versionnés** → `Cache-Control: immutable` un an dans `_headers`. **Changer de version = renommer le dossier** et mettre à jour `fiche-lecture.js`.
+  - Le service worker ignore ces dossiers (plusieurs Mo). Tesseract garde les données françaises dans IndexedDB.
+  - **CSP : pas besoin de `wasm-unsafe-eval`.** Le worker de Tesseract est servi par `/commun/vendor/` (chemin sans en-tête CSP) : son WebAssembly se compile dans le worker. Vérifié dans Chromium sous la vraie CSP de l'Espace.
+  - **Piège** : tesseract.js 7 cherche `tesseract-core-relaxedsimd-lstm.wasm.js`, qui n'existe que dans le cœur 7 (404 sur Chrome avec le cœur 6).
+- **Module de lecture `public/espace/js/fiche-lecture.js`** (`window.FicheLecture.lire(fichier, {progres})`) :
+  - **PDF** : texte lu par pdf.js (3 pages au plus, `isEvalSupported: false`), lignes reconstruites d'après la position verticale, cellules séparées par un grand espace horizontal.
+  - **PDF scanné** : la page est dessinée sur un canevas puis lue comme une photo.
+  - **Photo** : orientation EXIF, redimensionnée entre 1 400 et 3 000 px, niveaux de gris avec un léger contraste ; Tesseract en `fra`, PSM 6, `workerBlobURL: false`, worker arrêté après usage.
+  - **Une ligne de Tesseract = une ligne de la fiche** : il redresse lui-même une photo un peu de travers ; un regroupement par hauteur mélangerait les lignes.
+  - Confiance par cellule. Erreurs en clair : PDF protégé par mot de passe, HEIC, plus de 15 Mo.
+- **Module pur `public/espace/js/fiche-calcul.js`** (`window.FicheCalcul`, testé : `tests/espace/fiche.test.js`, 13 tests) :
+  - `montant` (formats tunisiens) : un seul séparateur suivi de 1 à 3 chiffres = millimes ; le même séparateur répété = milliers ; « 18 261 » doit être bien groupé ; % écartés ; O lu pour 0 ; **≥ 100 000 sans millimes → ÷ 1000** (virgule perdue, « 3000000 »).
+  - `analyser` :
+    - mois (nom du mois, « Période du… » ou « 09/2026 ») ; brut, salaire de base, net, IRPP, CSS, imposable, date d'entrée ;
+    - **cotisations = somme des lignes salariales** (CNSS, perte d'emploi, CNRPS, CNAM, capital décès), lignes patronales exclues ; montant retenu = base × plus petit taux, sinon le dernier ;
+    - primes réparties dans les 4 catégories du profil (imposables, non cotisables, avantages en nature, non imposables) ; avances et prêts → « autres retenues » ;
+    - **le brut fait foi** : ce qui manque entre la base et le brut devient « Autres éléments du brut » (marqué « calculé ») ;
+    - **total qui tombe juste** : brut − retenues − avantages + non imposables = net, à 1 DT près. Si oui, les chiffres peu nets sont confirmés (« lu ») ; sinon « à vérifier » et une alerte ;
+    - retenues présentes seulement dans « Total retenues » : récupérées.
+  - `controle` : mois habituel (même brut, même caisse, situation de famille du profil, `nombreSalaires: 12`) ; lignes cotisations, IRPP, CSS et net (net corrigé des autres retenues) ; écart signalé au-delà de 1 DT ; verdict « cohérente » / « Un écart sur … » / « **incomplet** » (aucune retenue saisie : jamais « cohérente ») ; pistes (enfants ou chef de famille différents entre fiche et profil, employeur non informé, régularisation, taux de cotisation comparé).
+  - `appliquer` : salaire de base + primes (sauf si décochées), caisse, date d'embauche ; **entrée d'historique au mois de la fiche** (même logique que `mettreAJourSalaire`) puis `appliquerHistorique` ; **même salaire de base déjà en vigueur ce mois-là → pas d'entrée en double**.
+- **Interface** (`vue-fiche.js`, `fiche.css`, `<dialog id="dlg-fiche">`), 4 écrans comme la maquette :
+  1. **Déposer** : glisser-déposer, « Choisir un fichier », « Prendre une photo » sur écran tactile seulement (`capture`) ; mention de confidentialité ; lien « Saisir les montants moi-même ».
+  2. **Lecture** : la photo s'affiche avec une barre de balayage ; progression par étape. À la fin, les lignes lues apparaissent sur la feuille et **celles d'où viennent les valeurs sont surlignées**.
+  3. **Vérifier** : groupe « À reprendre dans votre profil » (mois, brut, primes avec « Salaire de base : … », caisse, date d'embauche ; cases cochées par défaut) et groupe « Pour le contrôle · non enregistré » (cotisations, IRPP, CSS, net). Chaque valeur montre son texte d'origine et son état (lu / à vérifier / calculé / non lu / corrigé) et se corrige sur place.
+  4. **Contrôle** : verdict, tableau Fiche/Orbite/Écart, pistes, hypothèses (« personne seule, sans enfant à charge (votre profil) »), lien « Une valeur mal lue ? Corriger les valeurs » ; boutons « Fermer sans rien changer » et « Mettre à jour mon profil » (désactivé si rien ne change : « Profil déjà à jour » ; message avec résumé et « Annuler »).
+  - Entrées : carte « Votre fiche de paie sous la main ? » + « Remplir avec ma fiche de paie » en haut de Mon profil › Salaire (salariés seulement) ; bouton « Contrôler ma fiche de paie » dans l'en-tête du module Salaire (masqué en vue pension). Nouvelles icônes `fiche` et `photo`.
+- **Fiches de test** (fictives) : `e2e/fixtures/fiche-paie.html`, d'où `e2e/fiche-fixture.js` tire `fiche-paie.pdf` et `fiche-paie.jpg` (photo tournée de 1,2°, floue). Des photos plus difficiles (4,5° + perspective) ont été essayées : bien lues après les corrections.
+- `e2e/serveur.js` sert `.mjs` comme JavaScript. Nouveautés `2026-10-11e` ; SW `orbite-2026-10-11m`.
+- **Pièges** : la classe globale `.ecart` d'`orbite.css` (pastille à `opacity: 0`) masquait les cellules d'écart → classes `fiche-ok` / `fiche-ecart`. Un `flex-wrap` sur tous les `.module__tete` renvoyait le titre sous la pastille sur téléphone → limité à `#vue-salaire`, texte en `flex: 1 1 260px`.
+- **Tests** : unitaires 460 ; e2e **50/50**. Nouvelle étape : valeurs lues dans le PDF, écart d'IRPP de 19,999 DT, rien d'envoyé, « Corriger les valeurs », profil mis à jour puis annulé, photo depuis le module Salaire avec l'outil servi par Orbite, « Fermer sans rien changer », saisie manuelle jugée cohérente, téléphone sans débordement. Un passage a échoué une fois sur une transition de vue de « Mon orbite » (aléa de la machine : `main` puis la branche passent ensuite).
+
 ## 3 unsexagies. Lot 6 « Mon année en orbite » (11 oct., livré)
 
 - **Choix de l'utilisateur** : histoire en cartes ; disponible toute l'année + rendez-vous du 15 décembre au 31 janvier ; image de partage **sans montants** ; données déjà dans Orbite (rien à saisir). Maquette validée : https://claude.ai/artifact/StuAv9XJad5Cn75izGTnQw.

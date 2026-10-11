@@ -2,13 +2,14 @@
  * Orbite — service worker : application installable et utilisable hors connexion, rappels.
  * - Pages (navigation) : réseau d'abord, copie locale si le réseau manque (l'application reste consultable).
  * - Fichiers du site (scripts, styles, icônes, polices) : copie locale servie tout de suite, mise à jour en arrière-plan.
+ * - Outils de lecture de la fiche de paie (/commun/vendor/tesseract-*, pdfjs-*) : laissés au cache du navigateur.
  * - Jamais mis en cache : les autres domaines (Supabase, etc.), les requêtes autres que GET, les paramètres de paiement.
  *   Les données personnelles ne passent donc jamais par ce cache : elles restent dans la session Supabase de l'appareil.
  * - Rappels : la page dépose une courte liste de rappels datés (/__orbite/rappels.json, dans le cache) ;
  *   la synchronisation périodique (application installée) les affiche même quand Orbite est fermée.
  */
 "use strict";
-var VERSION = "orbite-2026-10-11l";
+var VERSION = "orbite-2026-10-11m";
 var CACHE = VERSION + "-site";
 var RAPPELS = "/__orbite/rappels.json";
 var DEJA = "/__orbite/rappels-vus.json";
@@ -71,6 +72,8 @@ self.addEventListener("fetch", function (e) {
     return;
   }
   if (!/\.(?:js|css|svg|png|woff2|webmanifest)$/.test(url.pathname)) return;
+  /* Outils de lecture de la fiche de paie (plusieurs Mo, chargés à la demande) : laissés au cache du navigateur. */
+  if (url.pathname.indexOf("/commun/vendor/tesseract-") === 0 || url.pathname.indexOf("/commun/vendor/pdfjs-") === 0) return;
   /* Polices et images : le cache d'abord (elles ne changent pas). */
   if (/\.(?:woff2|png)$/.test(url.pathname)) {
     e.respondWith(caches.open(CACHE).then(function (c) {
