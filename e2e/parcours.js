@@ -459,6 +459,10 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     const pm = await m.newPage();
     suivre(pm);
     await pm.goto(base + "/connexion.html");
+    /* Connexion vivante : planète, trois satellites étiquetés, pas de débordement sur téléphone. */
+    assert(await pm.isVisible("#planete-connexion"), "planète de la page de connexion");
+    assert((await pm.$$(".etiquette-sat")).length === 3, "satellites Crédit, Épargne, Impôt");
+    assert((await pm.evaluate(() => document.documentElement.scrollWidth)) <= 390, "connexion sans défilement horizontal");
     await pm.fill("#email", "aziz@exemple.tn");
     await pm.fill("#mdp", "Tunis-2026-solide");
     await pm.click("#envoyer");

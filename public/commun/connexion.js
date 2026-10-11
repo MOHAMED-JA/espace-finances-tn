@@ -36,6 +36,20 @@
     msg.setAttribute("role", type === "erreur" ? "alert" : "status");
     msg.textContent = texte;
     msg.hidden = false;
+    /* Erreur : la carte tremble brièvement (rien si l'appareil demande moins de mouvement, voir connexion.css). */
+    if (type === "erreur") { var c = document.querySelector(".carte-auth"); c.classList.remove("secoue"); void c.offsetWidth; c.classList.add("secoue"); }
+  }
+
+  /* Connexion réussie : courte transition (planète, éclat, « Bienvenue Prénom »), puis l'espace s'ouvre. */
+  function prenomDe(u) {
+    var m = (u && u.user_metadata) || {}, o = m.orbite || {};
+    return String(o.prenom || (m.full_name || m.name || "").split(" ")[0] || "").slice(0, 40);
+  }
+  function entrer(u) {
+    var S = window.OrbiteConnexion;
+    var fin = function () { location.replace(suite); };
+    if (!S) { fin(); return; }
+    S.decoller(prenomDe(u)).then(fin, fin);
   }
 
   function erreurChamp(id, texte) {
@@ -179,7 +193,7 @@
     if (mode === "connexion") {
       action = client.auth.signInWithPassword({ email: v.email, password: v.mdp, options: capt }).then(function (r) {
         if (r.error) throw r.error;
-        location.replace(suite);
+        entrer(r.data && r.data.user);
       });
     } else if (mode === "inscription") {
       action = client.auth.signUp({
@@ -187,7 +201,7 @@
         options: Object.assign({ emailRedirectTo: origine + "/connexion.html?confirme=1&suite=" + encodeURIComponent(suite), data: v.nom ? { full_name: v.nom } : {} }, capt)
       }).then(function (r) {
         if (r.error) throw r.error;
-        if (r.data.session) { location.replace(suite); return; }
+        if (r.data.session) { entrer(r.data.user); return; }
         form.reset();
         $("jauge").setAttribute("data-niveau", "0");
         message("Compte créé. Ouvrez le lien de confirmation envoyé à " + v.email + " pour activer votre espace (pensez aux courriers indésirables).", "succes");
@@ -240,7 +254,7 @@
   changerMode(TEXTES[modeDemande] ? modeDemande : "connexion", { sansAnimation: true });
   verifierGoogle();
   if (erreurUrl) message(/expired|invalid/i.test(erreurUrl) ? "Ce lien a expiré ou a déjà été utilisé. Demandez-en un nouveau." : M.messageErreur({ message: erreurUrl }), "erreur");
-  else if (params.get("au-revoir")) message("Vous êtes déconnecté. À bientôt.", "succes");
+  else if (params.get("au-revoir")) message("À bientôt ! Vous êtes bien déconnecté.", "succes");
   else if (params.get("confirme")) message("Adresse confirmée. Bienvenue !", "succes");
 
   client.auth.onAuthStateChange(function (evt) {
@@ -249,7 +263,10 @@
 
   if (modeDemande !== "reinitialiser") {
     client.auth.getSession().then(function (r) {
-      if (r.data && r.data.session) location.replace(suite);
+      if (!(r.data && r.data.session)) return;
+      /* Retour de Google ou d'un lien de confirmation : transition de bienvenue ; session déjà ouverte : ouverture directe. */
+      if (params.get("code") || /access_token=/.test(location.hash) || params.get("confirme")) entrer(r.data.session.user);
+      else location.replace(suite);
     });
   }
 })();
