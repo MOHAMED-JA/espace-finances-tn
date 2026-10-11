@@ -83,6 +83,13 @@ test('fiche calculée par Orbite : jugée cohérente, à moins de 1 DT près', (
   proche(k.orbite.net, s.netMensuel, 0.001);
 });
 
+test('contrôle sans retenue ni net : « rien à comparer », jamais « cohérente »', () => {
+  const k = FC.controle({ brut: 2500, primesImposables: 0 }, OC.profilParDefaut(), {});
+  assert.equal(k.etat, 'incomplet');
+  assert.equal(k.lignes.length, 0);
+  assert.equal(FC.controle({}, OC.profilParDefaut(), {}).possible, false);
+});
+
 test('secteur public : CNRPS sur trois lignes additionnées, colonnes patronales ignorées', () => {
   const p = Object.assign(OC.profilParDefaut(), { secteur: 'public', montant: 2000, primesImposables: 400 });
   const a = OC.salaire(OC.normaliser(p)).resultat.annuel, m = (v) => (v / 12).toFixed(3).replace('.', ',');
@@ -159,6 +166,16 @@ test('appliquer : salaire de base et primes, entrée d\'historique au mois de la
   /* Le profil mis à jour retrouve le brut et les retenues de la fiche. */
   const s = OC.salaire(OC.normaliser(Object.assign({}, profil, a.partiel)));
   proche(s.brutMensuel, 3000); proche(s.cotisations / 12, 290.4);
+  /* Primes décochées : le salaire de base change, les primes du profil restent. */
+  const sansPrimes = FC.appliquer(v, { salaire: true, primes: false }, Object.assign({}, profil, { primesImposables: 120 }), OCT);
+  assert.equal(sansPrimes.partiel.montant, 2700);
+  assert.equal('primesImposables' in sansPrimes.partiel, false);
+  assert.deepEqual(sansPrimes.resume, ['salaire de base 2 700,000 DT brut depuis octobre 2026']);
+  /* Même salaire de base déjà en vigueur ce mois-là : pas d'entrée d'historique en double. */
+  const pareil = OC.normaliser(Object.assign({}, profil, { montant: 2700, primesImposables: 300 }));
+  const rien = FC.appliquer(v, { salaire: true }, pareil, OCT);
+  assert.equal('historiqueSalaire' in rien.partiel, false);
+  assert.deepEqual(rien.resume, []);
   /* Rien de coché : rien ne change. */
   assert.equal(FC.appliquer(v, {}, profil, OCT).vide, true);
   /* Fiche d'un mois passé : l'historique garde le salaire plus récent en vigueur. */

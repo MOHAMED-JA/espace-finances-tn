@@ -1,0 +1,146 @@
+/* Orbite — lot 7 « Ma fiche de paie » (maquette validée le 11 oct. 2026) : déposer, lecture, vérifier, contrôle.
+   Aucun style en ligne (CSP) : largeur de la barre et délais d'apparition passent par des variables CSS posées en JS. */
+
+dialog.fiche { width: min(600px, calc(100vw - 24px)); }
+dialog.fiche[open] { display: flex; flex-direction: column; }
+.fiche .dialogue__tete h2:focus { outline: none; }
+.fiche__corps { flex: 1; min-height: 0; display: grid; align-content: start; }
+.fiche__ecran { display: grid; gap: 14px; animation: fiche-entre 280ms var(--sortie); }
+.fiche__ecran[hidden] { display: none; }
+@keyframes fiche-entre { from { opacity: 0; transform: translateY(6px); } }
+
+/* Trois traits d'avancement (déposer, lecture, vérifier) ; masqués au contrôle. */
+.fiche__etapes { display: flex; gap: 6px; padding: 2px 22px 10px; }
+.fiche__etapes[hidden] { display: none; }
+.fiche__etapes i { flex: 1; height: 4px; border-radius: 4px; background: var(--filet); transition: background-color 320ms var(--sortie); }
+.fiche__etapes i.on { background: var(--salaire); }
+
+.fiche__pied { flex-wrap: wrap; }
+.fiche__pied[hidden] { display: none; }
+.fiche__pied #fiche-retour { margin-right: auto; }
+
+/* ---------- 1. Déposer ---------- */
+.fiche-depot { display: grid; justify-items: center; gap: 10px; padding: 28px 18px; text-align: center; border: 2px dashed var(--filet-fort); border-radius: 20px; background: var(--surface-2);
+  transition: border-color 160ms ease, background-color 160ms ease, transform 200ms var(--sortie); }
+.fiche-depot.survol { border-color: var(--salaire); background: color-mix(in srgb, var(--salaire-doux) 70%, var(--surface-2)); transform: scale(1.01); }
+.fiche-depot__ico { width: 56px; height: 56px; border-radius: 16px; background: var(--salaire-doux); color: var(--salaire-t); display: grid; place-items: center; }
+.fiche-depot__ico svg { width: 28px; height: 28px; }
+.fiche-depot__t { font-size: 16px; }
+.fiche-depot__s { margin: 0; color: var(--encre-3); font-size: 14px; }
+.fiche-depot__boutons { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 2px; }
+.fiche-fichier { position: relative; cursor: pointer; }
+.fiche-fichier[hidden] { display: none; }
+.fiche-fichier:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
+.fiche-priv { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding: 12px 14px; border-radius: 14px; background: var(--salaire-doux); font-size: 13.5px; }
+.fiche-priv svg { width: 18px; height: 18px; flex: none; color: var(--salaire-t); margin-top: 1px; }
+.fiche-conseils { margin: 0; padding-left: 18px; color: var(--encre-2); font-size: 13.5px; display: grid; gap: 4px; }
+.fiche-main { justify-self: start; font-size: 14px; color: var(--encre-2); }
+
+/* ---------- 2. Lecture ---------- */
+.fiche-feuille { position: relative; height: 250px; overflow: hidden; border-radius: 14px; border: 1px solid var(--filet); background: #FBFAF6; color: #2A2D35; }
+:root[data-theme="dark"] .fiche-feuille { background: #E9E6DD; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fiche-feuille { background: #E9E6DD; } }
+.fiche-feuille__contenu { height: 100%; padding: 14px 16px; font-family: var(--mono); font-size: 10.5px; line-height: 1.75; }
+.fiche-feuille__contenu img { display: block; width: calc(100% + 32px); height: calc(100% + 28px); margin: -14px -16px; object-fit: cover; object-position: top center; }
+.fiche-feuille__l { display: flex; justify-content: space-between; gap: 12px; padding: 0 4px; border-radius: 3px; white-space: nowrap; animation: fiche-ligne 360ms var(--sortie) both; animation-delay: calc(var(--i, 0) * 45ms); }
+.fiche-feuille__l span:first-child { overflow: hidden; text-overflow: ellipsis; }
+.fiche-feuille__l span:last-child { flex: none; font-variant-numeric: tabular-nums; }
+.fiche-feuille__l.surl { background: rgba(18, 183, 106, .2); font-weight: 600; }
+@keyframes fiche-ligne { from { opacity: 0; transform: translateY(4px); } }
+.fiche-feuille__vide { display: grid; gap: 9px; padding-top: 4px; }
+.fiche-feuille__vide i { display: block; height: 8px; border-radius: 4px; background: rgba(42, 45, 53, .1); }
+.fiche-feuille__vide i:nth-child(3n) { width: 62%; }
+.fiche-feuille__vide i:nth-child(3n + 1) { width: 88%; }
+.fiche-feuille__vide i:nth-child(3n + 2) { width: 74%; }
+.fiche-balayage { position: absolute; left: 0; right: 0; top: 0; height: 46px; pointer-events: none; opacity: 0; border-bottom: 2px solid #12B76A;
+  background: linear-gradient(180deg, rgba(18, 183, 106, 0), rgba(18, 183, 106, .22) 70%, rgba(18, 183, 106, .6)); }
+.fiche-feuille.lit .fiche-balayage { opacity: 1; animation: fiche-balaye 2.4s var(--sortie) infinite; }
+@keyframes fiche-balaye { from { transform: translateY(-50px); } to { transform: translateY(260px); } }
+.fiche-prog { display: grid; gap: 6px; }
+.fiche-prog[hidden] { display: none; }
+.fiche-prog__barre { height: 8px; overflow: hidden; border-radius: 999px; background: var(--surface-2); }
+.fiche-prog__barre i { display: block; height: 100%; border-radius: inherit; background: var(--salaire); transform: scaleX(var(--p, 0)); transform-origin: left center; transition: transform 320ms var(--sortie); }
+.fiche-prog__txt { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px; color: var(--encre-2); }
+.fiche-prog__txt span:last-child { font-variant-numeric: tabular-nums; }
+.fiche-aide { margin: 0; font-size: 13px; color: var(--encre-3); }
+.fiche-aide[hidden] { display: none; }
+.fiche-erreur { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border-radius: 16px; background: var(--erreur-doux); }
+.fiche-erreur[hidden] { display: none; }
+.fiche-erreur__ico { width: 36px; height: 36px; flex: none; border-radius: 11px; display: grid; place-items: center; background: var(--erreur); color: #fff; }
+.fiche-erreur__ico svg { width: 18px; height: 18px; }
+.fiche-erreur b { display: block; font-size: 15px; }
+.fiche-erreur p { margin: 2px 0 0; font-size: 13.5px; color: var(--encre-2); }
+
+/* ---------- 3. Vérifier ---------- */
+.fiche-intro { margin: 0; font-size: 13.5px; color: var(--encre-2); }
+.fiche-alerte { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--alerte-doux); color: var(--encre); font-size: 13.5px; }
+.fiche-alerte[hidden] { display: none; }
+.fiche-champs { display: grid; gap: 8px; }
+.fiche-groupe { margin: 6px 0 0; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--encre-3); }
+.fiche-groupe:first-child { margin-top: 0; }
+.fiche-champ { display: grid; grid-template-columns: 22px minmax(0, 1fr) minmax(132px, 156px); gap: 4px 10px; align-items: center; padding: 9px 12px; border-radius: 14px; background: var(--surface-2); }
+.fiche-champ input[type="checkbox"] { width: 18px; height: 18px; margin: 0; accent-color: #12B76A; cursor: pointer; }
+.fiche-champ input[type="checkbox"]:disabled { cursor: not-allowed; }
+.fiche-champ__lib { display: grid; gap: 1px; min-width: 0; }
+.fiche-champ__lib b { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 14px; }
+.fiche-champ__lib small { font-size: 12px; color: var(--encre-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fiche-champ__lib small.fiche-base { color: var(--encre-2); }
+.fiche-val { width: 100%; height: 38px; padding: 0 10px; border-radius: 10px; border: 1.5px solid var(--filet); background: var(--surface); color: var(--encre);
+  font: inherit; font-weight: 650; font-size: 15px; text-align: right; font-variant-numeric: tabular-nums; transition: border-color 160ms ease; }
+select.fiche-val { appearance: none; cursor: pointer; text-align: left; padding-right: 30px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--encre-3) 50%), linear-gradient(135deg, var(--encre-3) 50%, transparent 50%);
+  background-position: calc(100% - 15px) 16px, calc(100% - 10px) 16px; background-size: 5px 5px; background-repeat: no-repeat; }
+.fiche-val:focus { outline: none; border-color: var(--focus); }
+.fiche-val::placeholder { color: var(--encre-3); font-weight: 500; }
+.fiche-champ--doute .fiche-val { border-color: var(--alerte); }
+.fiche-champ--faux .fiche-val { border-color: var(--erreur); }
+.fiche-etat { font-size: 11.5px; font-weight: 700; padding: 1px 8px; border-radius: 999px; line-height: 1.6; }
+.fiche-etat--lu { background: var(--salaire-doux); color: var(--salaire-t); }
+.fiche-etat--verifier { background: var(--alerte-doux); color: var(--alerte); }
+.fiche-etat--calcule { background: var(--credit-doux); color: var(--credit-t); }
+.fiche-etat--absent, .fiche-etat--corrige { background: var(--surface-3); color: var(--encre-2); }
+@media (max-width: 479px) {
+  .fiche-champ { grid-template-columns: 22px minmax(0, 1fr); }
+  .fiche-val { grid-column: 2; }
+}
+
+/* ---------- 4. Contrôle ---------- */
+.fiche-verdict { display: flex; gap: 12px; align-items: center; padding: 14px; border-radius: 16px; background: var(--alerte-doux); }
+.fiche-verdict__ico { width: 40px; height: 40px; flex: none; border-radius: 12px; display: grid; place-items: center; background: var(--alerte); color: #fff; font-weight: 800; font-size: 18px; }
+.fiche-verdict--ok { background: var(--salaire-doux); }
+.fiche-verdict--ok .fiche-verdict__ico { background: var(--salaire); color: #04140C; }
+.fiche-verdict--neutre { background: var(--surface-2); }
+.fiche-verdict--neutre .fiche-verdict__ico { background: var(--encre-3); }
+.fiche-verdict b { display: block; font-size: 15.5px; }
+.fiche-tableau[hidden] { display: none; }
+.fiche-verdict span > span { font-size: 13.5px; color: var(--encre-2); }
+.fiche-tableau { max-height: none; }
+.fiche-tableau td.fiche-ok { color: var(--salaire-t); font-weight: 700; }
+.fiche-tableau td.fiche-ecart { color: var(--alerte); font-weight: 700; }
+.fiche-tableau tr.net td { font-weight: 700; }
+.fiche-pistes { margin: 0; padding-left: 18px; color: var(--encre-2); font-size: 13.5px; display: grid; gap: 4px; }
+.fiche-pistes:empty { display: none; }
+
+/* ---------- Points d'entrée ---------- */
+.fiche-entree { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--r-int);
+  background: color-mix(in srgb, var(--salaire-doux) 55%, transparent); border: 1px solid color-mix(in srgb, var(--salaire) 22%, transparent); }
+.fiche-entree__ico { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: var(--surface); color: var(--salaire-t); }
+.fiche-entree__ico svg { width: 20px; height: 20px; }
+.fiche-entree__txt { display: grid; gap: 1px; min-width: 0; }
+.fiche-entree__txt b { font-size: 14.5px; }
+.fiche-entree__txt small { font-size: 13px; color: var(--encre-2); }
+@media (max-width: 599px) {
+  .fiche-entree { grid-template-columns: auto minmax(0, 1fr); }
+  .fiche-entree .bouton { grid-column: 1 / -1; justify-self: start; }
+}
+/* En-tête du module Salaire : pastille et titre sur la même ligne, le bouton passe dessous s'il manque de place. */
+#vue-salaire .module__tete { flex-wrap: wrap; }
+#vue-salaire .module__tete > div { flex: 1 1 260px; min-width: 0; }
+.module__action { margin-left: auto; }
+#vue-salaire.module--pension .module__action { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fiche__ecran, .fiche-feuille__l { animation: none; }
+  .fiche-feuille.lit .fiche-balayage { animation: none; transform: translateY(100px); }
+  .fiche-depot.survol { transform: none; }
+}

@@ -71,3 +71,10 @@
   Cache-Control: public, max-age=31536000, immutable
 /orbite/polices/*
   Cache-Control: public, max-age=31536000, immutable
+
+# --- Outils de lecture de la fiche de paie (dossiers versionnés : contenu immuable) ---
+# Aucune CSP ici : le moteur de lecture compile son WebAssembly dans son propre worker.
+/commun/vendor/tesseract-7.0.0/*
+  Cache-Control: public, max-age=31536000, immutable
+/commun/vendor/pdfjs-4.10.38/*
+  Cache-Control: public, max-age=31536000, immutable

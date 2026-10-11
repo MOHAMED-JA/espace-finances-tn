@@ -315,6 +315,12 @@
     var res = { possible: true, lignes: lignes, orbite: orbite, profil: p, pistes: [], baremes: P.annee };
     if (v.mois && v.mois.annee && v.mois.annee !== P.annee) res.pistes.push("Fiche de " + v.mois.annee + " : Orbite la compare aux barèmes " + P.annee + ", qui ont pu changer depuis.");
     var ecarts = lignes.filter(function (l) { return !l.ok; });
+    if (!lignes.length) {
+      res.etat = "incomplet";
+      res.titre = "Rien à comparer pour l'instant";
+      res.texte = "Ajoutez au moins le net à payer ou l'impôt de la fiche : Orbite les comparera à son calcul.";
+      return res;
+    }
     if (!ecarts.length) {
       res.etat = "coherent";
       res.titre = "Votre fiche est cohérente";
@@ -358,19 +364,26 @@
     if (ch.salaire && v.brut > 0) {
       var pc = profilDeControle(v, pr);
       var mo = v.mois && v.mois.mois ? v.mois.mois : m.getMonth() + 1, an = v.mois && v.mois.annee ? v.mois.annee : m.getFullYear();
-      var hist = (pr.historiqueSalaire || []).slice();
-      if (!hist.length) hist.push({ montant: pr.montant, sens: pr.sens, periode: pr.periode, mois: 0, annee: 0 });
-      hist = hist.filter(function (h) { return !(h.mois === mo && h.annee === an); });
-      hist.push({ montant: Math.round(pc.montant * 1000) / 1000, sens: "brut", periode: "mensuel", mois: mo, annee: an });
-      var p2 = OC.normaliser(Object.assign({}, pr, {
-        historiqueSalaire: hist, primesImposables: pc.primesImposables, primesNonCotisables: pc.primesNonCotisables,
-        avantagesNature: pc.avantagesNature, indemnitesNonImposables: pc.indemnitesNonImposables
-      }));
-      var ap = OC.appliquerHistorique(p2, m).profil;
-      Object.assign(partiel, { historiqueSalaire: p2.historiqueSalaire, montant: ap.montant, sens: ap.sens, periode: ap.periode,
-        primesImposables: pc.primesImposables, primesNonCotisables: pc.primesNonCotisables, avantagesNature: pc.avantagesNature, indemnitesNonImposables: pc.indemnitesNonImposables });
-      resume.push("salaire de base " + dt(pc.montant) + " DT brut depuis " + MOIS[mo - 1] + " " + an);
-      if (pc.primesImposables + pc.primesNonCotisables + pc.avantagesNature > 0) resume.push("primes " + dt(pc.primesImposables + pc.primesNonCotisables + pc.avantagesNature) + " DT par mois");
+      var hist = (pr.historiqueSalaire || []).slice(), base = Math.round(pc.montant * 1000) / 1000;
+      /* Salaire déjà en vigueur ce mois-là (même montant brut mensuel) : l'historique ne change pas. */
+      var enVigueur = hist.length ? OC.salaireEnVigueur(pr, an, mo - 1) : { montant: pr.montant, sens: pr.sens, periode: pr.periode };
+      var deja = !!enVigueur && Math.abs(enVigueur.montant - base) < 0.0005 && enVigueur.sens === "brut" && enVigueur.periode === "mensuel";
+      /* Primes décochées : celles du profil restent telles quelles. */
+      var primes = ch.primes === false ? {} : { primesImposables: pc.primesImposables, primesNonCotisables: pc.primesNonCotisables,
+        avantagesNature: pc.avantagesNature, indemnitesNonImposables: pc.indemnitesNonImposables };
+      Object.assign(partiel, primes);
+      if (!deja) {
+        if (!hist.length) hist.push({ montant: pr.montant, sens: pr.sens, periode: pr.periode, mois: 0, annee: 0 });
+        hist = hist.filter(function (h) { return !(h.mois === mo && h.annee === an); });
+        hist.push({ montant: base, sens: "brut", periode: "mensuel", mois: mo, annee: an });
+        var p2 = OC.normaliser(Object.assign({}, pr, primes, { historiqueSalaire: hist }));
+        var ap = OC.appliquerHistorique(p2, m).profil;
+        Object.assign(partiel, { historiqueSalaire: p2.historiqueSalaire, montant: ap.montant, sens: ap.sens, periode: ap.periode });
+        resume.push("salaire de base " + dt(base) + " DT brut depuis " + MOIS[mo - 1] + " " + an);
+      }
+      var tot = pc.primesImposables + pc.primesNonCotisables + pc.avantagesNature;
+      var primesChangent = ch.primes !== false && ["primesImposables", "primesNonCotisables", "avantagesNature", "indemnitesNonImposables"].some(function (k) { return Math.abs((pr[k] || 0) - pc[k]) >= 0.0005; });
+      if (primesChangent) resume.push(tot > 0 ? "primes " + dt(tot) + " DT par mois" : "primes retirées");
     }
     if (ch.caisse && (v.secteur === "public" || v.secteur === "prive") && v.secteur !== pr.secteur) {
       partiel.secteur = v.secteur;

@@ -42,4 +42,6 @@
   <symbol id="recherche" viewBox="0 0 24 24"><g class="t"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></g></symbol>
   <symbol id="horloge" viewBox="0 0 24 24"><g class="t"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></g></symbol>
   <symbol id="bouclier" viewBox="0 0 24 24"><g class="t"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6Z"/><path d="m9 12 2 2 4-4"/></g></symbol>
+  <symbol id="fiche" viewBox="0 0 24 24"><g class="t"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></g></symbol>
+  <symbol id="photo" viewBox="0 0 24 24"><g class="t"><path d="M4 8h3l2-3h6l2 3h3v11H4Z"/><circle cx="12" cy="13" r="3.5"/></g></symbol>
 </svg>

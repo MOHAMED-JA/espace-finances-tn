@@ -52,8 +52,8 @@
   var promessePdf = null, promesseTess = null;
   function pdfjs() {
     if (!promessePdf) {
-      promessePdf = import(VENDOR + "pdfjs/pdf.min.mjs").then(function (lib) {
-        lib.GlobalWorkerOptions.workerSrc = VENDOR + "pdfjs/pdf.worker.min.mjs";
+      promessePdf = import(VENDOR + "pdfjs-4.10.38/pdf.min.mjs").then(function (lib) {
+        lib.GlobalWorkerOptions.workerSrc = VENDOR + "pdfjs-4.10.38/pdf.worker.min.mjs";
         return lib;
       }, function (e) { promessePdf = null; throw erreur("outil", "Le lecteur de PDF n'a pas pu être chargé. " + (e && e.message || "")); });
     }
@@ -64,7 +64,7 @@
     if (!promesseTess) {
       promesseTess = new Promise(function (ok, ko) {
         var s = document.createElement("script");
-        s.src = VENDOR + "tesseract/tesseract.min.js";
+        s.src = VENDOR + "tesseract-7.0.0/tesseract.min.js";
         s.onload = function () { racine.Tesseract ? ok(racine.Tesseract) : ko(new Error("Tesseract absent")); };
         s.onerror = function () { promesseTess = null; ko(erreur("outil", "Le lecteur de photo n'a pas pu être chargé.")); };
         document.head.appendChild(s);
@@ -160,9 +160,9 @@
     return tesseract().then(function (T) {
       progres("outil", 0.15);
       return T.createWorker("fra", 1, {
-        workerPath: VENDOR + "tesseract/worker.min.js",
-        corePath: VENDOR + "tesseract/core",
-        langPath: VENDOR + "tesseract/lang",
+        workerPath: VENDOR + "tesseract-7.0.0/worker.min.js",
+        corePath: VENDOR + "tesseract-7.0.0/core",
+        langPath: VENDOR + "tesseract-7.0.0/lang",
         workerBlobURL: false,
         gzip: true,
         cachePath: "orbite-lecture",

@@ -454,6 +454,73 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 duosexagies. Lot 7 « Lire ma fiche de paie » (11 oct., livré)
+
+- **Request**: lot 7 next (**lot 8 dropped by the user**: "not important to me"). User choices:
+  - reading **on the device only** (free, nothing sent);
+  - fields: gross and net, deductions (CNSS/CNRPS, IRPP, CSS), month and hire date, bonuses and benefits;
+  - **check against Orbite's calculation**.
+  - Validated mockup: https://claude.ai/artifact/WQCFfT84XcAst8zQFN4Xjo.
+- **Self-hosted tools**: loaded only on first use, never by a third-party site. All three are Apache 2.0, licences included.
+  - `public/commun/vendor/pdfjs-4.10.38/`: `pdf.min.mjs` + worker, legacy build, loaded with `import()`.
+  - `tesseract-7.0.0/`: `tesseract.min.js`, `worker.min.js`.
+  - `core/`: the 3 LSTM variants (relaxed SIMD, SIMD, plain) of core **7.0.0**, integrity checked against npm.
+  - `lang/fra.traineddata.gz`: 4.0.0_best_int, 707 KB.
+  - **Versioned folders** → `Cache-Control: immutable` for one year in `_headers`. **On a version change, rename the folder** and update `fiche-lecture.js`.
+  - The service worker ignores these folders (several MB). The French data is kept by Tesseract in IndexedDB.
+  - **CSP: no `wasm-unsafe-eval` needed.** The Tesseract worker loads from `/commun/vendor/`, a path without a CSP header, so its WebAssembly compiles inside the worker. Checked in Chromium under the real Espace CSP.
+  - Pitfall: tesseract.js 7 looks for `tesseract-core-relaxedsimd-lstm.wasm.js`, which only exists in core 7. With core 6 it returns a 404 on Chrome.
+- **Reading module `public/espace/js/fiche-lecture.js`** (`window.FicheLecture.lire(file, {progres})`):
+  - **PDF**: text read with pdf.js (3 pages at most, `isEvalSupported: false`). Lines rebuilt from vertical position; cells split by a large horizontal gap.
+  - **Scanned PDF**: the page is drawn on a canvas, then read like a photo.
+  - **Photo**: EXIF orientation, resized to 1400–3000 px, greyscale with slight contrast. Tesseract runs with `fra`, PSM 6, `workerBlobURL: false`, and the worker is terminated after use.
+  - **One Tesseract line = one payslip line**: it straightens a slightly skewed photo on its own; regrouping by height would mix the rows.
+  - Per-cell confidence. Errors with plain-language messages: password-protected PDF, HEIC, over 15 MB.
+- **Pure module `public/espace/js/fiche-calcul.js`** (`window.FicheCalcul`, tested: `tests/espace/fiche.test.js`, 13 tests):
+  - `montant` (Tunisian formats):
+    - one separator followed by 1–3 digits = millimes; the same separator repeated = thousands;
+    - "18 261" must be validly grouped;
+    - % excluded; O read as 0;
+    - **≥ 100,000 with no millimes → ÷1000** (lost comma, "3000000").
+  - `analyser`:
+    - month (month name or "Période du…" / "09/2026");
+    - gross, base salary, net, IRPP, CSS, taxable, entry date;
+    - **contributions = sum of the employee lines** (CNSS, job loss, CNRPS, CNAM, death benefit). Employer lines are excluded; the amount kept is base × lowest rate, otherwise the last one.
+    - Bonuses are sorted into the 4 profile categories (taxable, non-contributory, benefits in kind, non-taxable). Advances and loans go to "other deductions".
+    - **Gross is authoritative**: what is missing between base and gross becomes "Autres éléments du brut" (marked "calculé").
+    - **Totals check**: gross − deductions − benefits + non-taxable = net, ±1 DT. If it holds, low-confidence figures are confirmed ("lu"); otherwise "à vérifier" plus an alert.
+    - Deductions present only in the "Total retenues" line are recovered.
+  - `controle`:
+    - normal month: same gross and same fund, family situation from the profile, `nombreSalaires: 12`;
+    - lines for contributions, IRPP, CSS and net (net adjusted for other deductions); a gap is flagged above 1 DT;
+    - verdict "cohérente" / "Un écart sur …" / "**incomplet**" (no deductions entered: never "cohérente");
+    - leads: children or head of household differing between payslip and profile, the employer not informed, a correction, or contribution rate compared.
+  - `appliquer`:
+    - base salary + bonuses, unless unchecked; fund; hire date;
+    - **salary history entry dated to the payslip month** (same logic as `mettreAJourSalaire`), then `appliquerHistorique`.
+- **Interface** (`vue-fiche.js`, `fiche.css`, `<dialog id="dlg-fiche">`), 4 screens as in the mockup:
+  1. **Drop**: drag and drop, "Choisir un fichier", plus "Prendre une photo" on touch screens only (`capture`). Privacy notice. "Saisir les montants moi-même" link.
+  2. **Reading**: photo shown with a scan bar; progress by stage. At the end, the lines read appear on the sheet and **the lines the values came from are highlighted**.
+  3. **Check**: "À reprendre dans votre profil" group (month, gross, bonuses with "Salaire de base : …", fund, hire date; boxes ticked by default) and "Pour le contrôle · non enregistré" group (contributions, IRPP, CSS, net). Each value shows its source text and status (lu / à vérifier / calculé / non lu / corrigé), and can be edited inline.
+  4. **Check against Orbite**: verdict, Payslip/Orbite/Gap table, leads, assumptions ("personne seule, sans enfant à charge (votre profil)"). Buttons: "Corriger les valeurs", "Fermer sans rien changer", "Mettre à jour mon profil". The update button is disabled when nothing changes ("Profil déjà à jour"); the toast shows a summary and "Annuler".
+  - Entry points:
+    - card "Votre fiche de paie sous la main ?" + "Remplir avec ma fiche de paie" at the top of Mon profil › Salaire (employees only);
+    - "Contrôler ma fiche de paie" button in the Salaire module header (hidden for pension view).
+  - New icons `fiche` and `photo`.
+- **Test fixtures** (fictitious): `e2e/fixtures/fiche-paie.html`, from which `e2e/fiche-fixture.js` generates `fiche-paie.pdf` and `fiche-paie.jpg` (photo rotated 1.2°, blurred). Harder photos (4.5° plus perspective) were tried and read correctly after the fixes.
+- `e2e/serveur.js` serves `.mjs` as JavaScript. Nouveautés `2026-10-11e`; SW `orbite-2026-10-11m`.
+- Tests:
+  - unit 460;
+  - e2e: new step covering:
+    - PDF values read;
+    - IRPP gap of 19.999 DT;
+    - nothing sent;
+    - profile updated then undone;
+    - photo from the Salaire module, tool served by Orbite;
+    - "Fermer sans rien changer";
+    - manual entry judged consistent;
+    - phone without horizontal scroll.
+
 ## 3 unsexagies. Lot 6 « Mon année en orbite » (11 oct., livré)
 
 - **Choix de l'utilisateur** : histoire en cartes ; disponible toute l'année + rendez-vous du 15 décembre au 31 janvier ; image de partage **sans montants** ; données déjà dans Orbite (rien à saisir). Maquette validée : https://claude.ai/artifact/StuAv9XJad5Cn75izGTnQw.
