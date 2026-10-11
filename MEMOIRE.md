@@ -454,6 +454,11 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 quinquinquagies. Signature « Conçu par » en carte de visite (11 oct.)
+
+- **Demande** : signature LinkedIn plus professionnelle et moderne. Maquette (3 propositions) : https://claude.ai/artifact/NTHSMzHwgd3tvwrBdoLisX. **Choix** : **A · Carte de visite** et libellé **« Conçu par »** (au lieu de « Powered by », qui se dit d'une technologie).
+- Balisage (6 occurrences : accueil, connexion, CGV, confidentialité, rail et barre mobile de l'Espace) : `<a class="signature …" target="_blank" rel="noopener noreferrer" aria-label="Conçu par Mohamed Aziz Jaouadi : profil LinkedIn (nouvel onglet)">` + `.signature__mono` (« MJ », dégradé des trois modules) + `.signature__txt` (`.signature__pre` « Conçu par », `.signature__nom`) + `.signature__in` (logo LinkedIn officiel en SVG). `signature.css` réécrit : carte à filet, survol = fond plus marqué, bord bleu LinkedIn, logo qui glisse ; plus d'animation d'entrée (elle laissait la signature invisible sur certaines captures) ; rail resserré pour garder le nom sur une ligne (mesuré : 145 px). SW `orbite-2026-10-11h`. e2e 46/46.
+
 ## 3 quaterquinquagies. Thème « Soleil » : état en direct (11 oct.)
 
 - **Question** : différence entre « Soleil » et « Sombre » ? Réponse : « Soleil » = clair du lever au coucher du soleil à Tunis, sombre ensuite ; après le coucher les deux sont identiques (mêmes couleurs). **Choix de l'utilisateur** : afficher l'état. `#theme-etat` (Paramètres › Préférences, sous « Apparence », seulement si « Soleil ») : « En ce moment : clair. Passage au sombre ce soir à 17 h 50. » / « En ce moment : sombre, le soleil est couché à Tunis. Retour au clair demain à 6 h 23. » (icône soleil / lune, bandeau ambre le jour), recalculé chaque minute (`etatSoleil()` dans `app.js`, `EFTheme.soleil` + `nuitATunis`). e2e 46/46. SW `orbite-2026-10-11g`.
