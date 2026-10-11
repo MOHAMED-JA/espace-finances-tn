@@ -166,28 +166,76 @@
     profilVierge = false;
     recalculer();
     clearTimeout(minuterieProfil);
-    etatEnr.textContent = "Modifications…";
-    etatEnr.className = "barre__etat";
+    temoin("modif");
     minuterieProfil = setTimeout(sauverProfil, o.immediat ? 0 : 900);
   }
+  /* Témoin d'enregistrement (pastille de la barre du haut, visible aussi sur téléphone) :
+     modif → envoi → ok (3 s, coche animée) → ancien (« Enregistré il y a … », mis à jour chaque 30 s) ;
+     horsligne (gardé sur l'appareil) ; erreur (reste affiché, « Réessayer »). Annonce lecteur d'écran : ok, horsligne, erreur. */
+  var ICONES_TEMOIN = {
+    modif: '<circle cx="8" cy="8" r="2.5" fill="currentColor"/>',
+    envoi: '<g class="temoin__tourne"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-opacity=".25" stroke-width="2"/><path d="M8 2a6 6 0 0 1 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></g>',
+    ok: '<circle cx="8" cy="8" r="7" fill="currentColor" opacity=".16"/><path class="temoin__coche" d="M4.6 8.3l2.2 2.2 4.6-4.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+    ancien: '<path d="M4.6 8.3l2.2 2.2 4.6-4.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+    horsligne: '<path d="M2 6.2a9 9 0 0 1 12 0M4.4 8.8a5.5 5.5 0 0 1 7.2 0M7 11.4a1.7 1.7 0 0 1 2 0M2.5 2.5l11 11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+    erreur: '<circle cx="8" cy="8" r="7" fill="currentColor" opacity=".16"/><path d="M8 4.5v4.2M8 11.2v.1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'
+  };
+  var HEURE = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  var temoinEtat = "", temoinLe = 0, minuterieTemoin = null;
+  function libellesTemoin(e) {
+    if (e === "ancien") {
+      var min = Math.floor((Date.now() - temoinLe) / 60000);
+      if (min < 1) return ["Enregistré à l'instant", "Enregistré"];
+      if (min < 60) return ["Enregistré il y a " + min + " min", min + " min"];
+      var h = HEURE.format(new Date(temoinLe)); return ["Enregistré à " + h, h];
+    }
+    return { modif: ["Modifications…", "Modif…"], envoi: ["Enregistrement…", "Envoi…"], ok: ["Enregistré", "Enregistré"],
+      horsligne: ["Enregistré sur l'appareil · envoi au retour du réseau", "Hors ligne"], erreur: ["Non enregistré", "Erreur"] }[e];
+  }
+  function temoin(e) {
+    clearTimeout(minuterieTemoin);
+    var change = e !== temoinEtat;
+    temoinEtat = e;
+    if (e === "ok") temoinLe = Date.now();
+    var l = libellesTemoin(e);
+    if (change) {
+      etatEnr.textContent = "";
+      etatEnr.setAttribute("data-etat", e);
+      var ico = doc.createElement("span");
+      ico.className = "temoin__ico";
+      ico.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true">' + ICONES_TEMOIN[e] + "</svg>";
+      etatEnr.appendChild(ico);
+      var lg = doc.createElement("span"); lg.className = "temoin__long"; etatEnr.appendChild(lg);
+      var ct = doc.createElement("span"); ct.className = "temoin__court"; ct.setAttribute("aria-hidden", "true"); etatEnr.appendChild(ct);
+      if (e === "erreur") {
+        var b = doc.createElement("button");
+        b.type = "button"; b.className = "temoin__reessayer"; b.textContent = "Réessayer";
+        b.addEventListener("click", function () { clearTimeout(minuterieProfil); sauverProfil(); });
+        etatEnr.appendChild(b);
+      }
+      if (e === "ok" || e === "horsligne" || e === "erreur") $("etat-enregistrement-annonce").textContent = l[0];
+    }
+    etatEnr.querySelector(".temoin__long").textContent = l[0];
+    etatEnr.querySelector(".temoin__court").textContent = l[1];
+    etatEnr.title = l[0];
+    etatEnr.hidden = false;
+    if (e === "ok") minuterieTemoin = setTimeout(function () { temoin("ancien"); }, 3000);
+    else if (e === "ancien") minuterieTemoin = setTimeout(function () { temoin("ancien"); }, 30000);
+  }
   function sauverProfil() {
-    etatEnr.textContent = "Enregistrement…";
+    temoin("envoi");
     E.client.auth.updateUser({ data: { orbite: Object.assign({ v: 1 }, profil) } }).then(function (r) {
       if (r.error) throw r.error;
-      etatEnr.textContent = "Profil enregistré";
-      etatEnr.className = "barre__etat barre__etat--ok";
-      setTimeout(function () { if (etatEnr.textContent === "Profil enregistré") etatEnr.textContent = ""; }, 2400);
+      temoin("ok");
     }).catch(function (err) {
       /* Hors connexion : le profil reste sur l'appareil et part dès le retour du réseau. */
       if (E.estErreurReseau(err)) {
         profilEnAttente = true;
-        etatEnr.textContent = "Enregistré au retour du réseau";
-        etatEnr.className = "barre__etat";
+        temoin("horsligne");
         return;
       }
-      etatEnr.textContent = "Non enregistré";
-      etatEnr.className = "barre__etat barre__etat--erreur";
-      E.toast(M.messageErreur(err), { erreur: true });
+      temoin("erreur");
+      E.toast("Non enregistré", { erreur: true, detail: M.messageErreur(err), action: { libelle: "Réessayer", fn: sauverProfil } });
     });
   }
   var profilEnAttente = false;

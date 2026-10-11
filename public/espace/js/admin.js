@@ -12,7 +12,7 @@
   var NOMS_VUES = { orbite: "Mon orbite", profil: "Mon profil", salaire: "Salaire", epargne: "Épargne vie & CEA", credit: "Crédit", simulations: "Simulations",
     abonnement: "Abonnement", compte: "Paramètres", admin: "Administration", vie: "Simulateur de vie", foyer: "Foyer", assistant: "Assistant", fiscal: "Optimiseur fiscal" };
   var ETATS = { essai: "Essai", actif: "Abonné", offert: "Offert", expire: "Expiré" };
-  var estAdmin = false, donnees = null, periode = 30;
+  var estAdmin = false, donnees = null, periode = 30, ecarts = {}, nbContacts = null;
 
   function cree(tag, cls, txt) { var e = doc.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
   function dt(millimes) { return F.dt0(millimes / 1000) + " DT"; }
@@ -22,8 +22,11 @@
   function kpi(dl, liste) {
     dl.textContent = "";
     liste.forEach(function (k) {
-      var d = cree("div", "admin__k" + (k.fort ? " admin__k--fort" : ""));
-      d.appendChild(cree("dt", null, k.lib));
+      var d = cree("div", "admin__k" + (k.fort ? " admin__k--fort" : "") + (k.ecart > 0 ? " admin__k--nouveau" : ""));
+      var t = cree("dt", null, k.lib);
+      /* Après « Actualiser » : ce qui a augmenté depuis la dernière actualisation. */
+      if (k.ecart > 0) { var p = cree("span", "admin__k-plus", "+" + k.ecart); p.setAttribute("aria-label", k.ecart + " de plus depuis la dernière actualisation"); t.appendChild(p); }
+      d.appendChild(t);
       var dd = cree("dd", "chiffre", k.val);
       d.appendChild(dd);
       if (k.sous) d.appendChild(cree("dd", "admin__k-sous", k.sous));
@@ -33,7 +36,7 @@
 
   function rendreTableau(t) {
     kpi($("admin-kpi-comptes"), [
-      { lib: "Inscrits", val: String(t.inscrits), fort: true, sous: t.nouveaux_30j + " sur 30 jours" },
+      { lib: "Inscrits", val: String(t.inscrits), fort: true, sous: t.nouveaux_30j + " sur 30 jours", ecart: ecarts.inscrits },
       { lib: "Connectés aujourd'hui", val: String(t.connectes_jour) },
       { lib: "Connectés cette semaine", val: String(t.connectes_7j) },
       { lib: "Nouveaux comptes", val: String(t.nouveaux_7j), sous: t.nouveaux_jour + " aujourd'hui · 7 derniers jours" }
@@ -41,7 +44,7 @@
     var f = t.par_formule || {}, detail = Object.keys(f).map(function (k) { return f[k] + " " + k; }).join(" · ");
     kpi($("admin-kpi-abos"), [
       { lib: "Essais gratuits en cours", val: String(t.essais) },
-      { lib: "Abonnés", val: String(t.abonnes), fort: true, sous: detail || (t.offerts ? t.offerts + " accès offert" + (t.offerts > 1 ? "s" : "") : "") },
+      { lib: "Abonnés", val: String(t.abonnes), fort: true, ecart: ecarts.abonnes, sous: detail || (t.offerts ? t.offerts + " accès offert" + (t.offerts > 1 ? "s" : "") : "") },
       { lib: "Revenus sur 30 jours", val: dt(t.revenus_30j), sous: t.paiements_30j + " paiement" + (t.paiements_30j > 1 ? "s" : "") + " · total " + dt(t.revenus_total) },
       { lib: "Conversion après l'essai", val: pct(t.convertis, t.essais_termines), sous: t.convertis + " sur " + t.essais_termines + " essai" + (t.essais_termines > 1 ? "s" : "") + " terminé" + (t.essais_termines > 1 ? "s" : "") },
       { lib: "Désabonnements", val: String(t.desabonnes), sous: "abonnements payés non renouvelés" }
@@ -225,6 +228,7 @@
   function rendreContacts(liste) {
     var ul = $("admin-contacts");
     ul.textContent = "";
+    nbContacts = liste.length;
     $("admin-contacts-nb").textContent = liste.length ? String(liste.length) : "";
     if (!liste.length) { ul.appendChild(cree("li", "admin__vide", "Personne n'a encore demandé à être recontacté.")); return; }
     liste.forEach(function (c) {
@@ -250,20 +254,45 @@
   });
   $("admin-fiche-fermer").addEventListener("click", function () { $("admin-fiche").hidden = true; });
 
-  function charger() {
+  /* Nouveautés depuis la dernière actualisation, en toutes lettres. */
+  function nouveautes(e) {
+    var l = [];
+    function ajout(n, un, plusieurs) { if (n > 0) l.push(n + " " + (n > 1 ? plusieurs : un)); }
+    ajout(e.inscrits, "nouvelle inscription", "nouvelles inscriptions");
+    ajout(e.abonnes, "nouvel abonné", "nouveaux abonnés");
+    ajout(e.paiements, "nouveau paiement", "nouveaux paiements");
+    ajout(e.contacts, "demande de contact", "demandes de contact");
+    return l;
+  }
+  /* manuel : clic sur « Actualiser » → bouton qui tourne, heure, tuiles qui ont changé, notification qui résume. */
+  function charger(manuel) {
     if (!estAdmin) return Promise.resolve();
-    var zone = $("admin"), btn = $("admin-actualiser");
+    var zone = $("admin"), btn = $("admin-actualiser"), lib = $("admin-actualiser-lib");
+    var avant = manuel === true && donnees ? { inscrits: donnees.inscrits, abonnes: donnees.abonnes, paiements: donnees.paiements_30j, contacts: nbContacts } : null;
     zone.setAttribute("aria-busy", "true"); btn.disabled = true;
+    if (manuel === true) { btn.classList.add("bouton--charge"); lib.textContent = "Actualisation…"; }
     return Promise.all([E.admin.tableau(), E.admin.alertes(), chargerStatistiques(), chargerCodes(), chargerFiches(), chargerContacts()]).then(function (r) {
       donnees = r[0];
+      ecarts = avant ? { inscrits: donnees.inscrits - avant.inscrits, abonnes: donnees.abonnes - avant.abonnes, paiements: donnees.paiements_30j - avant.paiements,
+        contacts: avant.contacts == null ? 0 : nbContacts - avant.contacts } : {};
       rendreTableau(donnees);
       rendreAlertes(r[1] || []);
-      $("admin-maj").textContent = "Mis à jour à " + new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" }).format(new Date());
-    }).catch(function (x) { E.toast(E.modele.messageErreur(x), { erreur: true }); })
-      .finally(function () { zone.removeAttribute("aria-busy"); btn.disabled = false; O.placerPastilles(zone); });
+      var heure = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" }).format(new Date()), maj = $("admin-maj");
+      maj.textContent = "Mis à jour à " + heure;
+      if (avant) {
+        maj.classList.remove("admin__maj--frais"); void maj.offsetWidth; maj.classList.add("admin__maj--frais");
+        var n = nouveautes(ecarts);
+        if (n.length) E.toast("Données actualisées à " + heure, { detail: n.join(" · ") });
+        else E.toast("Données actualisées à " + heure, { type: "info", detail: "Aucune nouveauté depuis la dernière actualisation" });
+      }
+    }).catch(function (x) { E.toast(manuel === true ? "Actualisation impossible" : E.modele.messageErreur(x), { erreur: true, detail: manuel === true ? E.modele.messageErreur(x) : "" }); })
+      .finally(function () {
+        zone.removeAttribute("aria-busy"); btn.disabled = false; btn.classList.remove("bouton--charge"); lib.textContent = "Actualiser";
+        O.placerPastilles(zone);
+      });
   }
 
-  $("admin-actualiser").addEventListener("click", charger);
+  $("admin-actualiser").addEventListener("click", function () { charger(true); });
   $("admin-recherche").addEventListener("input", rendreComptes);
   $("admin-lues").addEventListener("click", function () {
     E.admin.alertesLues().then(function () { return E.admin.alertes(); }).then(rendreAlertes)

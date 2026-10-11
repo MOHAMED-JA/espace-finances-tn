@@ -49,11 +49,40 @@ body.attente .onglets-bas a, body.attente .rail__liens a { pointer-events: none;
 .barre__logo img, .barre__logo .logo__signe { width: 32px; height: 32px; }
 .barre__titre { font-family: var(--affiche); font-weight: 700; font-size: 18px; letter-spacing: -.02em; }
 @media (min-width: 1024px) { .barre__titre { font-size: 16px; color: var(--encre-3); font-family: var(--texte); font-weight: 600; letter-spacing: 0; } }
-.barre__etat { margin-left: auto; font-size: 13px; color: var(--encre-3); white-space: nowrap; }
-.barre__etat--ok { color: var(--succes); }
-.barre__etat--erreur { color: var(--erreur); }
+/* Témoin d'enregistrement (pastille) : toujours visible, téléphone compris (texte court sous 640 px). */
+.barre__titre { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.temoin { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 11px 0 9px; border-radius: 999px; border: 1px solid transparent; font-size: 12.5px; font-weight: 650; white-space: nowrap; color: var(--encre-2); background: var(--surface-2); transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease; }
+.temoin[hidden] { display: none; }
+.temoin__ico { width: 16px; height: 16px; flex: none; animation: temoin-apparait 220ms var(--sortie); }
+.temoin__ico svg { width: 16px; height: 16px; display: block; }
+.temoin__court { display: none; }
+.temoin[data-etat="envoi"] { color: var(--signal); background: var(--signal-soft); }
+.temoin[data-etat="ok"] { color: var(--succes); background: color-mix(in srgb, var(--succes) 14%, transparent); }
+.temoin[data-etat="ancien"] { color: var(--encre-3); background: transparent; border-color: var(--hairline); }
+.temoin[data-etat="horsligne"] { color: var(--warning); background: color-mix(in srgb, var(--warning) 14%, transparent); }
+.temoin[data-etat="erreur"] { color: var(--erreur); background: color-mix(in srgb, var(--erreur) 12%, transparent); padding-right: 4px; }
+.temoin__reessayer { font: inherit; font-size: 12px; font-weight: 700; border: 0; border-radius: 999px; padding: 4px 10px; margin-left: 2px; background: var(--erreur); color: #fff; cursor: pointer; }
+.temoin__reessayer:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.temoin__tourne { transform-origin: 8px 8px; animation: temoin-tourne 800ms linear infinite; }
+.temoin__coche { stroke-dasharray: 20; stroke-dashoffset: 20; animation: temoin-trace 360ms var(--sortie) 60ms forwards; }
+@keyframes temoin-tourne { to { transform: rotate(360deg); } }
+@keyframes temoin-trace { to { stroke-dashoffset: 0; } }
+@keyframes temoin-apparait { from { opacity: 0; transform: scale(.9); } }
+@media (prefers-reduced-motion: reduce) { .temoin__ico, .temoin__tourne { animation: none; } .temoin__coche { animation: none; stroke-dashoffset: 0; } }
 .barre__actions { display: flex; gap: 8px; }
-@media (max-width: 640px) { .barre__actions .bouton__lib { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .barre__actions .bouton { width: 40px; padding: 0; } .barre__etat { display: none; } }
+@media (max-width: 640px) { .barre__actions .bouton__lib { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .barre__actions .bouton { width: 40px; padding: 0; } .barre { gap: 8px; } }
+/* Téléphone : pastille en icône au repos ; pendant l'enregistrement, juste après ou en cas d'erreur, elle montre son mot
+   et prend un instant la place du titre. Dans les modules (barre déjà pleine), elle reste en icône : le message prend le relais. */
+@media (max-width: 640px) {
+  .temoin { width: 30px; padding: 0; justify-content: center; }
+  .temoin__long, .temoin__court, .temoin__reessayer { display: none; }
+  .barre:has(.barre__actions[hidden]) .temoin:is([data-etat="envoi"], [data-etat="ok"], [data-etat="erreur"], [data-etat="horsligne"]) { width: auto; padding: 0 10px 0 8px; }
+  .barre:has(.barre__actions[hidden]) .temoin:is([data-etat="envoi"], [data-etat="ok"], [data-etat="erreur"], [data-etat="horsligne"]) .temoin__court { display: inline; }
+  .barre:has(.barre__actions[hidden]) .temoin[data-etat="erreur"] { padding-right: 4px; }
+  .barre:has(.barre__actions[hidden]) .temoin[data-etat="erreur"] .temoin__reessayer { display: inline; }
+  .barre:has(.barre__actions[hidden]):has(.temoin:is([data-etat="envoi"], [data-etat="ok"], [data-etat="erreur"], [data-etat="horsligne"])) .barre__titre { display: none; }
+  .barre:has(.barre__actions:not([hidden])) .temoin[data-etat="ancien"] { display: none; }
+}
 
 .principal { width: 100%; max-width: 1240px; margin: 0 auto; padding: 8px 16px 120px; outline: none; }
 @media (min-width: 1024px) { .principal { padding: 12px 32px 64px; } }
@@ -469,7 +498,14 @@ body.attente .onglets-bas a, body.attente .rail__liens a { pointer-events: none;
 .admin__corps { display: grid; gap: 16px; }
 .admin__refus { padding: 18px; border-radius: var(--r-int); background: var(--surface-2); color: var(--encre-2); }
 .admin__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-.admin__maj { color: var(--encre-3); font-size: 13.5px; }
+.admin__maj { color: var(--encre-3); font-size: 13.5px; font-variant-numeric: tabular-nums; border-radius: 999px; padding: 2px 8px; transition: background-color 600ms ease, color 600ms ease; }
+.admin__maj--frais { animation: admin-frais 2.4s ease-out; }
+@keyframes admin-frais { 0%, 40% { background: color-mix(in srgb, var(--succes) 16%, transparent); color: var(--succes); } }
+.bouton--charge svg { animation: temoin-tourne 800ms linear infinite; }
+.bouton--charge { cursor: progress; }
+.admin__k-plus { margin-left: 8px; padding: 1px 7px; border-radius: 999px; font-size: 12px; font-weight: 750; color: var(--succes); background: color-mix(in srgb, var(--succes) 14%, transparent); }
+.admin__k--nouveau { box-shadow: inset 0 0 0 1.5px var(--succes); }
+@media (prefers-reduced-motion: reduce) { .admin__maj--frais, .bouton--charge svg { animation: none; } }
 .admin__bloc { display: grid; gap: 14px; align-content: start; min-width: 0; }
 .admin__bloc h2 { font-size: 18px; }
 .admin__bloc h3 { font-size: 15px; margin-bottom: 8px; }

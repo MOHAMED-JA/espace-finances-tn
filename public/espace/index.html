@@ -79,7 +79,7 @@
           <img class="logo__signe" src="/orbite/icone.svg" alt="" width="32" height="32">
         </a>
         <p class="barre__titre" id="barre-titre" aria-hidden="true">Mon orbite</p>
-        <span class="barre__etat" id="etat-enregistrement" role="status" aria-live="polite"></span>
+        <span class="barre__etat temoin" id="etat-enregistrement" hidden></span>
         <button type="button" class="bouton bouton--fantome bouton--icone bouton--petit barre__aide" id="aide-visite" aria-label="Aide : revoir la visite guidée" title="Revoir la visite guidée"><span aria-hidden="true">?</span></button>
         <a class="pastille-acces" id="pastille-acces" href="#abonnement" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#couronne"/></svg><span id="pastille-acces-lib"></span></a>
         <div class="barre__actions" id="barre-actions" hidden>
@@ -88,6 +88,7 @@
           <button type="button" class="bouton bouton--plein bouton--petit" id="enregistrer"><svg aria-hidden="true"><use href="/orbite/icones.svg#enregistrer"/></svg><span class="bouton__lib" id="enregistrer-lib">Enregistrer</span></button>
         </div>
       </header>
+      <span class="cache" id="etat-enregistrement-annonce" role="status" aria-live="polite"></span>
 
       <p class="signature signature--bandeau barre-signature"><span class="signature__pre">Powered by</span><a class="signature__nom" href="https://www.linkedin.com/in/mohamed-aziz-jaouadi-%D9%85%D8%AD%D9%85%D8%AF-%D8%B9%D8%B2%D9%8A%D8%B2-%D8%A7%D9%84%D8%AC%D9%88%D8%A7%D8%AF%D9%8A-%C2%AEpsm-i-%C2%AEpspo-l-%C2%AEistqb-851009115/?isSelfProfile=true" target="_blank" rel="noopener noreferrer" aria-label="Mohamed Aziz Jaouadi, profil LinkedIn (nouvel onglet)"><span class="signature__in" aria-hidden="true">in</span><span translate="no">Mohamed Aziz Jaouadi</span><span class="signature__fleche" aria-hidden="true">↗</span></a></p>
       <main class="principal" id="principal" tabindex="-1">
@@ -924,8 +925,8 @@
             <p class="admin__refus" id="admin-refus" hidden>Cette page est réservée à l'administrateur d'Orbite.</p>
             <div class="admin__corps" id="admin-corps" hidden>
               <div class="admin__actions">
-                <button type="button" class="bouton bouton--petit" id="admin-actualiser"><svg aria-hidden="true"><use href="/orbite/icones.svg#horloge"/></svg>Actualiser</button>
-                <span class="admin__maj" id="admin-maj"></span>
+                <button type="button" class="bouton bouton--petit" id="admin-actualiser"><svg aria-hidden="true"><use href="/orbite/icones.svg#horloge"/></svg><span id="admin-actualiser-lib">Actualiser</span></button>
+                <span class="admin__maj" id="admin-maj" aria-live="polite"></span>
               </div>
               <section class="panneau admin__bloc" aria-labelledby="admin-t-comptes">
                 <h2 id="admin-t-comptes">Utilisateurs</h2>

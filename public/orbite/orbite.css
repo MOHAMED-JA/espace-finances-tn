@@ -334,9 +334,22 @@ dialog.dialogue[open] { animation: dialogue-entre 260ms var(--sortie); }
 
 /* ---------- Toasts ---------- */
 .toasts { position: fixed; z-index: 90; left: 50%; bottom: 24px; transform: translateX(-50%); display: grid; gap: 8px; pointer-events: none; width: min(440px, calc(100vw - 24px)); }
-.toast { pointer-events: auto; display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; background: var(--cosmos); color: var(--cosmos-encre); box-shadow: var(--ombre-3); font-size: 14.5px; animation: toast-entre 320ms var(--sortie); }
-.toast.sort { animation: toast-sort 220ms ease forwards; }
-.toast button { margin-left: auto; border: 0; background: rgba(255, 255, 255, .1); color: inherit; border-radius: 999px; padding: 6px 12px; font-weight: 650; font-size: 13px; }
+.toast { position: relative; overflow: hidden; pointer-events: auto; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 12px 10px 14px 14px; border-radius: 16px; background: var(--cosmos); color: var(--cosmos-encre); box-shadow: var(--ombre-3); font-size: 14.5px; animation: toast-entre 320ms var(--sortie); }
+.toast.sort, .toast.sortie { animation: toast-sort 200ms ease forwards; }
+/* Icône : vert = fait, bleu = information, rouge = problème. */
+.toast__ico { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: #2F5BEA; }
+.toast__ico svg { width: 16px; height: 16px; }
+.toast--ok .toast__ico { background: #1C8F5A; }
+.toast--erreur .toast__ico { background: #D03A47; }
+.toast__corps { display: grid; gap: 2px; min-width: 0; }
+.toast__t { font-weight: 640; line-height: 1.35; }
+.toast__d { font-size: 13px; line-height: 1.35; opacity: .78; }
+.toast button { border: 0; background: rgba(255, 255, 255, .1); color: inherit; border-radius: 999px; padding: 6px 12px; font-weight: 650; font-size: 13px; cursor: pointer; }
+.toast button:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
+.toast__barre { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: currentColor; opacity: .22; transform-origin: left; animation: toast-duree linear forwards; }
+.toast--pause .toast__barre { animation-play-state: paused; }
+@keyframes toast-duree { to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .toast__barre { display: none; } }
 @keyframes toast-entre { from { opacity: 0; transform: translateY(14px) scale(.97); } }
 @keyframes toast-sort { to { opacity: 0; transform: translateY(8px); } }
 
