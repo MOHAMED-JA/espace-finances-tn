@@ -271,15 +271,37 @@
     return z;
   }
 
-  /* Toast : pause au survol, au focus et onglet caché ; erreurs persistantes. */
+  /* Toast : icône (fait / information / problème), titre, détail facultatif, action facultative (« Annuler »),
+     barre du temps restant ; pause au survol, au focus et onglet caché ; erreurs persistantes ; 3 au plus à l'écran.
+     options : { type: "ok" | "info" | "erreur", erreur (= type erreur), detail, action: { libelle, fn }, duree } */
+  var ICONES_TOAST = {
+    ok: '<path d="M4.4 8.4l2.3 2.3 4.9-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
+    info: '<path d="M8 7.2v4.3M8 4.6v.1" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
+    erreur: '<path d="M8 4.2v4.4M8 11.3v.1" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>'
+  };
   function toast(texte, options) {
-    var o = options || {};
+    var o = options || {}, type = o.erreur ? "erreur" : (ICONES_TOAST[o.type] ? o.type : "ok");
     var t = document.createElement("div");
-    t.className = "toast";
-    if (o.erreur) t.setAttribute("role", "alert");
+    t.className = "toast toast--" + type;
+    t.setAttribute("role", type === "erreur" ? "alert" : "status");
+    var ico = document.createElement("span");
+    ico.className = "toast__ico";
+    ico.setAttribute("aria-hidden", "true");
+    ico.innerHTML = '<svg viewBox="0 0 16 16">' + ICONES_TOAST[type] + "</svg>";
+    t.appendChild(ico);
+    var corps = document.createElement("span");
+    corps.className = "toast__corps";
     var s = document.createElement("span");
+    s.className = "toast__t";
     s.textContent = texte;
-    t.appendChild(s);
+    corps.appendChild(s);
+    if (o.detail) {
+      var d = document.createElement("span");
+      d.className = "toast__d";
+      d.textContent = o.detail;
+      corps.appendChild(d);
+    }
+    t.appendChild(corps);
     var fermer = function () {
       if (t.classList.contains("sortie")) return;
       t.classList.add("sortie");
@@ -292,23 +314,32 @@
       b.addEventListener("click", function () { o.action.fn(); fermer(); });
       t.appendChild(b);
     }
-    if (o.erreur) {
+    if (type === "erreur") {
       var x = document.createElement("button");
       x.type = "button";
       x.textContent = "Fermer";
       x.addEventListener("click", fermer);
       t.appendChild(x);
     }
-    zoneToasts().appendChild(t);
-    if (!o.erreur) {
-      var reste = o.duree || 4200, debut = Date.now(), minuterie = null;
-      var lancer = function () { debut = Date.now(); minuterie = setTimeout(fermer, reste); };
-      var pause = function () { if (minuterie) { clearTimeout(minuterie); minuterie = null; reste -= Date.now() - debut; } };
+    var zone = zoneToasts();
+    zone.appendChild(t);
+    /* Trois au plus : les plus anciennes (hors erreurs) s'effacent. */
+    var vivants = [].filter.call(zone.children, function (c) { return !c.classList.contains("sortie") && !c.classList.contains("toast--erreur"); });
+    while (vivants.length > 3) { var v = vivants.shift(); v.classList.add("sortie"); setTimeout(v.remove.bind(v), 170); }
+    if (type !== "erreur") {
+      var reste = o.duree || 4800, debut = Date.now(), minuterie = null;
+      var barre = document.createElement("span");
+      barre.className = "toast__barre";
+      barre.setAttribute("aria-hidden", "true");
+      barre.style.setProperty("animation-duration", reste + "ms");
+      t.appendChild(barre);
+      var lancer = function () { if (minuterie || !t.isConnected) return; debut = Date.now(); minuterie = setTimeout(fermer, reste); t.classList.remove("toast--pause"); };
+      var pause = function () { if (minuterie) { clearTimeout(minuterie); minuterie = null; reste -= Date.now() - debut; } t.classList.add("toast--pause"); };
       t.addEventListener("pointerenter", pause);
       t.addEventListener("pointerleave", lancer);
       t.addEventListener("focusin", pause);
       t.addEventListener("focusout", lancer);
-      document.addEventListener("visibilitychange", function () { if (document.hidden) pause(); else if (!minuterie && t.isConnected) lancer(); });
+      document.addEventListener("visibilitychange", function () { if (document.hidden) pause(); else lancer(); });
       lancer();
     }
     return fermer;

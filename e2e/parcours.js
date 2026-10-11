@@ -110,7 +110,10 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.click("#form-demarrage button[type=submit]");
     await page.waitForSelector("#demarrage[hidden]", { state: "attached" });
     await page.waitForFunction(() => /1\s?8\d\d/.test(document.getElementById("noyau-val").textContent));
-    await page.waitForFunction(() => document.getElementById("etat-enregistrement").textContent.includes("enregistré") || document.getElementById("etat-enregistrement").textContent === "");
+    /* Témoin d'enregistrement : coche « Enregistré », puis « Enregistré à l'instant / il y a … », toujours visible. */
+    await page.waitForFunction(() => ["ok", "ancien"].includes(document.getElementById("etat-enregistrement").getAttribute("data-etat")));
+    assert(/Enregistré/.test(await page.textContent("#etat-enregistrement")), "témoin « Enregistré »");
+    assert(/Enregistré/.test(await page.textContent("#etat-enregistrement-annonce")), "annonce pour lecteur d'écran");
     const meta = faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite;
     assert(meta && meta.montant === 2500 && meta.chefDeFamille === true, "profil enregistré dans le compte : " + JSON.stringify(meta));
     assert(await page.isVisible("#vue-orbite .requiert-naissance"), "date de naissance demandée avant la capacité");
@@ -493,6 +496,12 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     /* Le pointeur resté sur un message le met en pause : on l'écarte et on attend que les messages se ferment. */
     await pm.mouse.move(5, 5);
     await pm.waitForFunction(() => !document.querySelector(".toasts .toast"), null, { timeout: 10000 });
+    /* Témoin d'enregistrement visible aussi sur téléphone (texte court), sans faire déborder la barre. */
+    await pm.evaluate(() => window.Orbite.majProfil({ enfants: window.Orbite.profil().enfants }));
+    await pm.waitForFunction(() => ["ok", "ancien"].includes(document.getElementById("etat-enregistrement").getAttribute("data-etat")));
+    assert(await pm.isVisible("#etat-enregistrement .temoin__court"), "pastille courte visible sur téléphone");
+    const bt = await pm.evaluate(() => { const r = document.getElementById("etat-enregistrement").getBoundingClientRect(); return [r.left, r.right, document.documentElement.scrollWidth]; });
+    assert(bt[0] >= 0 && bt[1] <= 390 && bt[2] <= 390, "pastille dans l'écran, pas de débordement : " + bt);
     /* L'Assistant reste à portée de pouce sur téléphone (bouton flottant), Vie & impôts est dans « Moi ». */
     assert(await pm.isVisible("#bulle-assistant"), "bouton Assistant visible sur téléphone");
     await pm.tap("#bulle-assistant");
@@ -605,6 +614,15 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(/Inscrits/.test(kpi) && /Connectés aujourd'hui/.test(kpi), "compteurs des utilisateurs : " + kpi);
     assert(/aziz@exemple\.tn/.test(await page.textContent("#admin-comptes")), "le compte figure dans la liste");
     assert(/Conversion après l'essai/.test(await page.textContent("#admin-kpi-abos")), "indicateurs d'abonnement");
+    /* « Actualiser » : notification claire, avec ou sans nouveautés, heure et tuile qui a changé. */
+    await page.click("#admin-actualiser");
+    await page.waitForSelector('.toast--info:has-text("Aucune nouveauté")');
+    assert(/Mis à jour à \d\d:\d\d/.test(await page.textContent("#admin-maj")), "heure de mise à jour");
+    faux.ajouterCompte("nouvelle@exemple.tn", "Motdepasse-2026", {});
+    await page.click("#admin-actualiser");
+    await page.waitForSelector('.toast--ok:has-text("Données actualisées") >> text=1 nouvelle inscription');
+    await page.waitForSelector("#admin-kpi-comptes .admin__k--nouveau .admin__k-plus:has-text(\"+1\")");
+    assert((await page.textContent("#admin-actualiser")).trim() === "Actualiser", "bouton revenu à « Actualiser »");
     assert(!(await page.isHidden("#badge-admin")), "pastille des nouvelles inscriptions");
     await page.click("#admin-lues");
     await page.waitForSelector("#badge-admin", { state: "hidden" });
