@@ -40,6 +40,10 @@ test('robots.txt : accueil et pages du sitemap autorisés, Espace et connexion i
   assert.match(robots, /^Sitemap: https:\/\/espace-finances-tn\.jaouadimohamedaziz\.workers\.dev\/sitemap\.xml$/m);
 });
 
+test('robots.txt : uniquement des caractères ASCII (servi sans charset, les accents s\'afficheraient mal)', () => {
+  assert.equal(/[^\x00-\x7F]/.test(robots), false);
+});
+
 test('accueil : balise de vérification Google Search Console présente', () => {
   assert.match(accueil, /<meta name="google-site-verification" content="K71Vq0bdDlttCVDnTeH7UCR6ePTGkXGDUuHvFIACOZ8">/);
 });
