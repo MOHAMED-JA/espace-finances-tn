@@ -329,7 +329,7 @@ body.attente .onglets-bas a, body.attente .rail__liens a { pointer-events: none;
 .projet--vide p { color: var(--encre-2); }
 
 /* ---------- Profil ---------- */
-.sous-nav { display: flex; gap: 8px; margin-top: 16px; }
+.sous-nav { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 @media (min-width: 1024px) { .sous-nav { display: none; } }
 .profil { display: grid; gap: 12px; }
 .profil-progression { display: grid; gap: 8px; margin-bottom: 14px; padding: 16px 20px; }

@@ -110,7 +110,11 @@
     var acces = window.OrbiteAbonnement && window.OrbiteAbonnement.acces();
     var fiscal = null;
     try { fiscal = OI ? OI.optimiseurFiscal(sy) : null; } catch (e) { fiscal = null; }
-    return R.rappels(sy, acces, fiscal, new Date());
+    var l = R.rappels(sy, acces, fiscal, new Date());
+    /* Échéances des objectifs (« Ma progression ») : un mois avant, type perso, email sans montant. */
+    var PG = window.OrbiteProgression, PC = window.Progression;
+    if (PG && PC) l = l.concat(PC.rappels(PG.objectifs(), new Date()));
+    return l;
   }
   function envoyerRappels() {
     rendreRappels();
@@ -210,7 +214,9 @@
 
   /* Rappels mis à jour à chaque changement du profil (et au démarrage), sans surcharger : une fois par seconde au plus. */
   var minuterie = null;
-  O.surProfil(function () { clearTimeout(minuterie); minuterie = setTimeout(function () { envoyerRappels(); synchroniserEmail(); }, 1000); });
+  function planifierRappels() { clearTimeout(minuterie); minuterie = setTimeout(function () { envoyerRappels(); synchroniserEmail(); }, 1000); }
+  O.surProfil(planifierRappels);
+  doc.addEventListener("orbite:objectifs", planifierRappels);
   doc.addEventListener("orbite:vue", function (e) { if (e.detail.vue === "compte") { majAppli(); rendreRappels(); } });
   majAppli();
 })();

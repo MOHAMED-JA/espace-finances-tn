@@ -14,6 +14,8 @@ function creer() {
   const jetons = new Map();    // access_token -> user id
   const rafraich = new Map();  // refresh_token -> user id
   let simulations = [];
+  /* « Ma progression » (migration 0012) : objectifs et versements, lignes de l'utilisateur seulement. */
+  let objectifs = [], versementsObj = [];
   const profils = new Map();
   const journal = [];
   /* Abonnements : même contrat que la migration 0003 (essai de 3 jours, formules prépayées). */
@@ -326,6 +328,32 @@ function creer() {
         return repondre(route, avant === simulations.length ? 200 : 204);
       }
     }
+    if (url.pathname === "/rest/v1/objectifs" || url.pathname === "/rest/v1/objectifs_versements") {
+      const estObj = url.pathname.endsWith("/objectifs"), f = filtres(url);
+      const table = () => (estObj ? objectifs : versementsObj);
+      const miennes = () => table().filter((x) => x.user_id === u.id);
+      if (methode === "GET") return repondre(route, 200, miennes().filter((x) => correspond(x, f)));
+      if (methode === "POST") {
+        if (estObj && miennes().length >= 12) return repondre(route, 400, { code: "P0001", message: "Limite de 12 objectifs atteinte" });
+        if (!estObj && !objectifs.some((o) => o.id === corps.objectif_id && o.user_id === u.id)) return repondre(route, 400, { code: "P0001", message: "Objectif introuvable" });
+        const maintenant = new Date().toISOString();
+        const l = estObj ? { id: crypto.randomUUID(), user_id: u.id, libelle: "", cible: 0, depart: 0, echeance: null, credit: null, cree_le: maintenant, ...corps }
+          : { id: crypto.randomUUID(), user_id: u.id, le: maintenant.slice(0, 10), cree_le: maintenant, ...corps };
+        table().push(l);
+        return repondre(route, 201, unique(req) ? l : [l]);
+      }
+      if (methode === "PATCH" && estObj) {
+        const cibles = miennes().filter((x) => correspond(x, f));
+        cibles.forEach((x) => Object.assign(x, corps));
+        return repondre(route, 200, unique(req) ? cibles[0] : cibles);
+      }
+      if (methode === "DELETE") {
+        const ids = miennes().filter((x) => correspond(x, f)).map((x) => x.id);
+        if (estObj) { objectifs = objectifs.filter((x) => !ids.includes(x.id)); versementsObj = versementsObj.filter((v) => !ids.includes(v.objectif_id)); }
+        else versementsObj = versementsObj.filter((x) => !ids.includes(x.id));
+        return repondre(route, 204);
+      }
+    }
     if (url.pathname === "/rest/v1/profils") {
       const p = profils.get(u.id);
       if (methode === "GET") return unique(req) ? repondre(route, 200, p) : repondre(route, 200, [p]);
@@ -428,6 +456,8 @@ function creer() {
     gerer,
     ajouterCompte,
     simulations: () => simulations,
+    objectifs: () => objectifs,
+    versementsObjectifs: () => versementsObj,
     paiements: () => paiements,
     photos: () => photos,
     abonnementDe(email) { return abonnementDe(comptes.get(email).user.id); },
