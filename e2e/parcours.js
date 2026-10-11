@@ -108,6 +108,51 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await tel.close();
   });
 
+  await etape("pages publiques : liens depuis l'accueil, mini-calculs exacts et en direct, états, téléphone sans débordement", async () => {
+    await page.goto(base + "/");
+    for (const slug of ["salaire-net-tunisie", "capacite-credit-tunisie", "impot-assurance-vie-cea", "retraite-cnss-cnrps"]) assert(await page.$(`.pied a[href="/${slug}"]`), "lien vers /" + slug + " dans le pied de l'accueil");
+    const ent = (p) => p.evaluate(() => document.querySelector(".grand").textContent);
+    /* Salaire : 2 500 DT → net de l'accueil ; chef de famille + 2 enfants fait monter le net ; pont recalculé. */
+    await page.goto(base + "/salaire-net-tunisie");
+    await page.waitForFunction(() => window.PagesCalcul);
+    assert((await ent(page)).replace(/\s/g, "") === "1849,310DT", "net 2 500 DT : " + (await ent(page)));
+    await page.check("input[name=chef]", { force: true });
+    await page.click("[data-pas='1']"); await page.click("[data-pas='1']");
+    await page.waitForFunction(() => document.querySelector(".grand").textContent.replace(/\s/g, "") !== "1849,310DT");
+    const attendu = await page.evaluate(() => { const a = PagesCalcul.affichage("salaire", { montant: 2500, chef: true, enfants: 2 }, new Date()); return a.net_ent + a.net_dec; });
+    assert((await ent(page)) === attendu, "net chef de famille 2 enfants = moteur");
+    await page.fill("#montant", "4000");
+    await page.waitForFunction(() => /2[\s ]?7/.test(document.querySelector(".pont h2").textContent));
+    assert(await page.$eval("[data-part=net]", (el) => el.style.getPropertyValue("--part") !== ""), "barres positionnées par CSSOM");
+    await page.screenshot({ path: path.join(CAPTURES, "pages-salaire.png") });
+    /* Crédit : capacité épuisée → message, montants à 0. */
+    await page.goto(base + "/capacite-credit-tunisie");
+    await page.fill("#montant", "1000"); await page.fill("#encours", "900");
+    await page.waitForSelector("[data-si-etat=sature]:not([hidden])");
+    assert(await page.$eval("[data-v=cap_immo]", (el) => el.textContent.replace(/\s/g, "") === "0DT"), "capacité logement nulle");
+    /* Impôt : sous le seuil d'imposition → rien à économiser. */
+    await page.goto(base + "/impot-assurance-vie-cea");
+    await page.fill("#montant", "400");
+    await page.waitForSelector("[data-si-etat=sans_impot]:not([hidden])");
+    /* Retraite : CNRPS → départ à 65 ans proposé ; carrière trop courte → explication. */
+    await page.goto(base + "/retraite-cnss-cnrps");
+    await page.check("input[name=secteur][value=public]");
+    await page.fill("#naissance", "1970"); await page.fill("#debut", "1995");
+    await page.waitForSelector("[data-si-tard]:not([hidden])");
+    await page.fill("#debut", "2024");
+    await page.waitForSelector("[data-si-etat=erreur]:not([hidden])");
+    assert(/15 ans/.test(await page.textContent("[data-si-etat=erreur]")), "raison CNRPS affichée");
+    const tel = await navigateur.newPage({ viewport: { width: 390, height: 844 }, colorScheme: "dark" });
+    suivre(tel);
+    for (const slug of ["salaire-net-tunisie", "capacite-credit-tunisie", "impot-assurance-vie-cea", "retraite-cnss-cnrps"]) {
+      await tel.goto(base + "/" + slug);
+      await tel.waitForFunction(() => window.PagesCalcul);
+      assert(!(await tel.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), slug + " sans débordement sur téléphone");
+    }
+    await tel.screenshot({ path: path.join(CAPTURES, "pages-retraite-telephone.png"), fullPage: true });
+    await tel.close();
+  });
+
   await etape("une page protégée renvoie vers la connexion avec l'adresse de retour", async () => {
     await page.goto(base + "/espace/#credit");
     await page.waitForURL(/connexion\.html\?suite=/);

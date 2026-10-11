@@ -24,13 +24,27 @@ function autorise(url) {
   return gagnante ? gagnante.permis : true;
 }
 
+/* Ressources chargées (scripts, styles, polices, icônes) ; les liens de navigation <a> ne comptent pas. */
+const ressources = (html) => [...html.matchAll(/<(?:script|img|source)\b[^>]*\ssrc="(\/[^"/][^"]*)"|<link\b[^>]*\shref="(\/[^"/][^"]*)"/g)]
+  .map((m) => (m[1] || m[2]).split('?')[0]);
+
 test('robots.txt : chaque fichier chargé par l\'accueil est lisible par Google', () => {
-  /* Ressources chargées (scripts, styles, polices, icônes) ; les liens de navigation <a> ne comptent pas. */
-  const locaux = [...accueil.matchAll(/<(?:script|img|source)\b[^>]*\ssrc="(\/[^"/][^"]*)"|<link\b[^>]*\shref="(\/[^"/][^"]*)"/g)]
-    .map((m) => (m[1] || m[2]).split('?')[0]);
+  const locaux = ressources(accueil);
   assert.ok(locaux.length > 20);
   const bloques = locaux.filter((u) => !autorise(u));
   assert.deepEqual(bloques, []);
+});
+
+test('robots.txt : chaque page du sitemap existe et charge seulement des fichiers lisibles par Google', () => {
+  const sitemap = fs.readFileSync(path.join(PUB, 'sitemap.xml'), 'utf8');
+  const urls = [...sitemap.matchAll(/<loc>https:\/\/[^/]+(\/[^<]*)<\/loc>/g)].map((m) => m[1]);
+  assert.ok(urls.length >= 7);
+  for (const u of urls) {
+    const fichier = path.join(PUB, u === '/' ? 'index.html' : u.slice(1) + '.html');
+    assert.ok(fs.existsSync(fichier), u + ' : fichier introuvable');
+    const bloques = ressources(fs.readFileSync(fichier, 'utf8')).filter((r) => !autorise(r));
+    assert.deepEqual(bloques, [], u);
+  }
 });
 
 test('robots.txt : accueil et pages du sitemap autorisés, Espace et connexion interdits', () => {
