@@ -73,6 +73,41 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.screenshot({ path: path.join(CAPTURES, "01-accueil.png") });
   });
 
+  await etape("accueil cinéma : chiffres calculés, chapitres au défilement, trois vies, prix honnêtes, téléphone", async () => {
+    await page.goto(base + "/");
+    await page.waitForSelector("#scene-toile");
+    const att = await page.evaluate(() => { const v = window.RecitCalcul.voyage(new Date()), vi = window.RecitCalcul.vies(new Date()); return { net: v.net, cap: v.capacite, yNet: vi.yasmine.net, kFin: vi.karim.apres && vi.karim.apres.fin, hNet: vi.habib.retraite.net }; });
+    const n = (sel) => page.textContent(sel).then((t) => Number(t.replace(/[^\d,]/g, "").replace(",", ".")));
+    assert(Math.abs((await n('[data-r="v.net"]')) - att.net) < 0.001, "net du voyage = moteur");
+    assert(Math.abs((await n('[data-r="v.capacite"]')) - Math.round(att.cap)) < 1, "capacité du voyage = moteur");
+    assert(Math.abs((await n('[data-r="y.net"]')) - att.yNet) < 0.001, "net de Yasmine = moteur");
+    assert((await page.textContent('[data-r="k.fin"]')) === att.kFin, "fin du crédit auto de Karim");
+    assert(Math.abs((await n('[data-r="h.pension"]')) - Math.round(att.hNet)) < 1, "pension de Habib = moteur");
+    assert((await page.$$(".vie .exemple")).length === 3, "trois cas marqués « Exemple »");
+    const corps = await page.textContent("body");
+    assert(!/orbite gratuite|Gratuit, sans publicité/.test(corps) && /3 jours d'essai gratuit/.test(corps), "prix honnête : essai de 3 jours");
+    assert(!/240 tests/.test(corps), "nombre de tests à jour");
+    /* Défilement : chapitre 2 actif, le noyau affiche la capacité. */
+    await page.evaluate(() => { document.documentElement.style.scrollBehavior = "auto"; const c = document.querySelectorAll(".chapitre")[1]; window.scrollTo(0, c.getBoundingClientRect().top + scrollY - innerHeight * 0.5 + c.offsetHeight * 0.6); });
+    await page.waitForFunction(() => document.getElementById("scene-lib").textContent === "Crédit possible");
+    assert(await page.evaluate(() => document.querySelectorAll(".chapitre")[1].classList.contains("chapitre--actif")), "chapitre 2 actif");
+    await page.screenshot({ path: path.join(CAPTURES, "accueil-voyage.png") });
+    await page.evaluate(() => { const c = document.querySelectorAll(".chapitre")[3]; window.scrollTo(0, c.getBoundingClientRect().top + scrollY - innerHeight * 0.5 + c.offsetHeight * 0.9); });
+    await page.waitForFunction(() => /Pension nette à \d+ ans/.test(document.getElementById("scene-lib").textContent));
+    await page.evaluate(() => document.querySelector(".vies").scrollIntoView());
+    await page.waitForTimeout(900);
+    await page.screenshot({ path: path.join(CAPTURES, "accueil-vies.png") });
+    const tel = await navigateur.newPage({ viewport: { width: 390, height: 844 } });
+    suivre(tel);
+    await tel.goto(base + "/");
+    await tel.waitForSelector("#scene-toile");
+    await tel.evaluate(() => { document.documentElement.style.scrollBehavior = "auto"; const c = document.querySelectorAll(".chapitre")[0]; window.scrollTo(0, c.getBoundingClientRect().top + scrollY - 120); });
+    await tel.waitForTimeout(600);
+    assert(!(await tel.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "accueil sans débordement sur téléphone");
+    await tel.screenshot({ path: path.join(CAPTURES, "accueil-telephone.png") });
+    await tel.close();
+  });
+
   await etape("une page protégée renvoie vers la connexion avec l'adresse de retour", async () => {
     await page.goto(base + "/espace/#credit");
     await page.waitForURL(/connexion\.html\?suite=/);

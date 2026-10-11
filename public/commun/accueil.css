@@ -96,40 +96,10 @@
 .section-accueil { padding: clamp(56px, 8vw, 104px) 0; }
 .section-accueil__titre { font-size: clamp(30px, 4vw, 48px); font-weight: 760; letter-spacing: -.04em; max-width: 20ch; }
 .section-accueil__sous { margin-top: 16px; font-size: 18px; color: var(--encre-2); max-width: 60ch; }
-.trois { display: grid; gap: 16px; margin-top: 40px; }
-@media (min-width: 900px) { .trois { grid-template-columns: repeat(3, 1fr); } }
-.module-carte { padding: 28px; border-radius: var(--r-panneau); background: var(--surface); box-shadow: var(--ombre-2); display: grid; gap: 12px; align-content: start; transition: transform 300ms var(--sortie), box-shadow 300ms ease; }
-@media (hover: hover) { .module-carte:hover { transform: translateY(-4px); box-shadow: var(--ombre-3); } }
-.module-carte__icone { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; }
-.module-carte__icone svg { width: 26px; height: 26px; }
-.module-carte--salaire .module-carte__icone { background: var(--salaire-doux); color: var(--salaire-t); }
-.module-carte--credit .module-carte__icone { background: var(--credit-doux); color: var(--credit-t); }
-.module-carte--epargne .module-carte__icone { background: var(--epargne-doux); color: var(--epargne-t); }
-.module-carte h3 { font-size: 24px; }
-.module-carte p { color: var(--encre-2); }
 
 .section-accueil--cosmos { background: var(--cosmos); color: var(--cosmos-encre); }
 .section-accueil--cosmos .section-accueil__titre { color: #fff; }
-.etapes { list-style: none; margin: 44px 0 0; padding: 0; display: grid; gap: 28px; position: relative; }
-@media (min-width: 860px) { .etapes { grid-template-columns: repeat(3, 1fr); gap: 32px; } .etapes::before { content: ""; position: absolute; top: 22px; left: 22px; right: 22px; height: 2px; background: linear-gradient(90deg, var(--salaire-lum), var(--credit-lum), var(--epargne-lum)); transform-origin: left; transform: scaleX(var(--trace, 1)); transition: transform 1400ms var(--sortie); opacity: .7; } .etapes.attente::before { --trace: 0; } }
-.etapes__num { position: relative; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--cosmos-2); border: 1px solid var(--cosmos-filet); font-weight: 760; font-size: 18px; margin-bottom: 16px; transition: background-color 400ms ease, color 400ms ease; }
-.etapes.joue li:nth-child(1) .etapes__num { background: var(--salaire-lum); color: #0A0D14; transition-delay: 200ms; }
-.etapes.joue li:nth-child(2) .etapes__num { background: var(--credit-lum); color: #0A0D14; transition-delay: 700ms; }
-.etapes.joue li:nth-child(3) .etapes__num { background: var(--epargne-lum); color: #0A0D14; transition-delay: 1200ms; }
-.etapes:not(.attente):not(.joue) li:nth-child(1) .etapes__num { background: var(--salaire-lum); color: #0A0D14; }
-.etapes:not(.attente):not(.joue) li:nth-child(2) .etapes__num { background: var(--credit-lum); color: #0A0D14; }
-.etapes:not(.attente):not(.joue) li:nth-child(3) .etapes__num { background: var(--epargne-lum); color: #0A0D14; }
-.etapes h3 { font-size: 22px; color: #fff; }
-.etapes p { margin-top: 8px; color: var(--cosmos-encre-2); }
 
-.confiance { display: grid; gap: 32px; align-items: center; }
-@media (min-width: 900px) { .confiance { grid-template-columns: 1.1fr 1fr; } }
-.confiance .lien-action { margin-top: 20px; }
-.confiance__liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-.confiance__liste li { display: flex; gap: 14px; padding: 18px 20px; border-radius: var(--r-int); background: var(--surface); box-shadow: var(--ombre-1); }
-.confiance__liste svg { width: 24px; height: 24px; flex: none; color: var(--salaire-t); }
-.confiance__liste strong { display: block; }
-.confiance__liste span { color: var(--encre-2); }
 
 .appel { padding: 0 0 clamp(56px, 8vw, 96px); }
 .appel__boite { display: grid; justify-items: center; text-align: center; gap: 14px; padding: clamp(40px, 7vw, 80px) 24px; }
@@ -139,3 +109,106 @@
 .pied { border-top: 1px solid var(--filet); padding: 28px 0 40px; font-size: 14px; color: var(--encre-3); }
 .pied__ligne { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; }
 .pied p { max-width: 70ch; }
+
+/* ---------- Lot 5 : accueil « scroll-cinéma » ---------- */
+.heros__essai { margin-top: 14px; font-size: 14px; color: var(--encre-3); }
+.heros__essai strong { color: var(--encre); }
+.exemple { display: inline-block; font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--encre-3); border: 1px solid var(--filet-fort); border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
+
+/* Le voyage d'un salaire */
+.voyage { padding: clamp(64px, 9vw, 110px) 0 48px; background: var(--cosmos); color: var(--cosmos-encre); }
+.voyage .exemple { color: var(--cosmos-encre-2); border-color: var(--cosmos-filet); }
+.voyage__titre { margin-top: 12px; font-size: clamp(32px, 4.6vw, 54px); font-weight: 760; letter-spacing: -.04em; line-height: 1.02; color: #fff; text-wrap: balance; }
+.voyage__intro { margin-top: 14px; color: var(--cosmos-encre-2); font-size: 18px; max-width: 58ch; }
+.voyage__grille { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 40px; margin-top: 40px; }
+.scene { position: sticky; top: calc(var(--entete-h, 96px) + 14px); height: min(760px, calc(100vh - var(--entete-h, 96px) - 32px)); min-height: 420px; border-radius: 28px; background: radial-gradient(ellipse at 50% 40%, #141b33, #0A0D16 70%); border: 1px solid var(--cosmos-filet); overflow: hidden; }
+.scene__toile { position: absolute; inset: 0; width: 100%; height: 100%; }
+.scene__noyau { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
+.scene__noyau span { display: block; font-size: 13px; color: var(--cosmos-encre-2); }
+.scene__noyau b { font-size: clamp(26px, 3.4vw, 40px); letter-spacing: -.03em; color: #fff; text-shadow: 0 2px 20px rgba(0, 0, 0, .6); white-space: nowrap; }
+.scene__annee { position: absolute; top: 18px; right: 20px; font-size: 13px; color: var(--cosmos-encre-2); background: rgba(255, 255, 255, .06); border: 1px solid var(--cosmos-filet); border-radius: 999px; padding: 4px 11px; }
+.scene__annee:empty { display: none; }
+.scene__barre { position: absolute; left: 20px; right: 20px; bottom: 18px; display: flex; gap: 6px; }
+.scene__barre i { flex: 1; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+.scene__barre i::after { content: ""; display: block; height: 100%; width: var(--p, 0%); background: linear-gradient(90deg, var(--salaire), var(--credit), var(--epargne)); }
+.chapitres { display: grid; }
+.chapitre { min-height: 82vh; display: grid; align-content: center; gap: 12px; padding-block: 30px; opacity: .4; transition: opacity 400ms ease; }
+.chapitre--actif { opacity: 1; }
+.chapitre__num { font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--cosmos-encre-2); }
+.chapitre h3 { font-size: clamp(24px, 2.8vw, 34px); letter-spacing: -.025em; line-height: 1.12; color: #fff; text-wrap: balance; }
+.chapitre > p:not(.chapitre__num) { color: var(--cosmos-encre-2); max-width: 46ch; }
+.chiffres { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 8px; }
+.chiffres li { display: flex; justify-content: space-between; gap: 14px; padding: 10px 14px; border-radius: 12px; background: rgba(255, 255, 255, .05); border: 1px solid var(--cosmos-filet); font-size: 14.5px; }
+.chiffres li span { min-width: 0; }
+.chiffres li b { font-weight: 600; white-space: nowrap; color: #fff; }
+.chiffres--moins b { color: #FDA29B !important; } .chiffres--plus b { color: #6CE9A6 !important; } .chiffres--bleu b { color: #8FAEFF !important; } .chiffres--violet b { color: #C3B5FD !important; }
+.voyage__note { margin-top: 30px; text-align: center; color: var(--cosmos-encre-2); font-size: 13px; }
+@media (max-width: 900px) {
+  .voyage__grille { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .scene { top: calc(var(--entete-h, 72px) + 8px); height: 40vh; min-height: 260px; z-index: 1; }
+  .chapitre { min-height: 112vh; position: relative; z-index: 2; opacity: 1; align-content: end; padding-bottom: 5vh; }
+  .chapitre > * { background: rgba(10, 13, 22, .88); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  .chapitre h3, .chapitre > p { padding: 6px 10px; border-radius: 10px; justify-self: start; }
+}
+
+/* Trois vies */
+.vies__grille { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 36px; }
+@media (max-width: 980px) { .vies__grille { grid-template-columns: minmax(0, 1fr); } }
+.vie { background: var(--surface); border-radius: var(--r-panneau); box-shadow: var(--ombre-2); padding: 22px; display: grid; gap: 14px; align-content: start; min-width: 0; transition: transform 300ms var(--sortie), box-shadow 300ms ease; }
+.vie:hover { transform: translateY(-4px); box-shadow: var(--ombre-3); }
+.vie__tete { display: flex; align-items: center; gap: 12px; }
+.vie__tete > div { min-width: 0; }
+.vie__mono { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-weight: 750; color: #fff; flex: none; }
+.vie--y .vie__mono { background: linear-gradient(140deg, #12B76A, #0E9F6E); }
+.vie--k .vie__mono { background: linear-gradient(140deg, #2F5BEA, #1F45C7); }
+.vie--h .vie__mono { background: linear-gradient(140deg, #7A5AF8, #5925DC); }
+.vie__tete h3 { font-size: 19px; letter-spacing: -.01em; }
+.vie__tete p { font-size: 13.5px; color: var(--encre-3); }
+.vie__tete .exemple { margin-left: auto; }
+.vie__puces { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.vie__puces li { font-size: 12.5px; padding: 3px 9px; border-radius: 999px; background: var(--surface-2); color: var(--encre-2); }
+.vie__net { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 12px 0; border-block: 1px solid var(--filet); }
+.vie__net span { font-size: 13px; color: var(--encre-3); }
+.vie__net b { font-size: 24px; letter-spacing: -.02em; white-space: nowrap; }
+.vie h4 { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--encre-3); }
+.dit { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.dit > li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; font-size: 14.5px; color: var(--encre-2); }
+.dit > li::before { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; font-size: 13px; font-weight: 800; }
+.dit--ok::before { content: "✓"; background: var(--salaire-doux); color: var(--salaire-t); }
+.dit--att::before { content: "!"; background: var(--ambre-doux); color: var(--ambre-t); }
+.dit--info::before { content: "i"; background: var(--credit-doux); color: var(--credit-t); }
+.dit b { color: var(--encre); font-family: var(--mono); font-weight: 600; white-space: nowrap; }
+.vies__note { margin-top: 18px; font-size: 13px; color: var(--encre-3); }
+
+/* Contenu */
+.contenu__cartes { list-style: none; margin: 32px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 980px) { .contenu__cartes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .contenu__cartes { grid-template-columns: minmax(0, 1fr); } }
+.contenu__carte { background: var(--surface); border-radius: var(--r-int); box-shadow: var(--ombre-1); padding: 18px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.contenu__carte svg { width: 38px; height: 38px; padding: 9px; border-radius: 12px; }
+.contenu__carte--v svg { background: var(--salaire-doux); color: var(--salaire-t); }
+.contenu__carte--b svg { background: var(--credit-doux); color: var(--credit-t); }
+.contenu__carte--p svg { background: var(--epargne-doux); color: var(--epargne-t); }
+.contenu__carte--a svg { background: var(--ambre-doux); color: var(--ambre-t); }
+.contenu__carte h3 { font-size: 16px; }
+.contenu__carte p { font-size: 14px; color: var(--encre-2); }
+.contenu__nouveau { justify-self: start; font-size: 11px; font-weight: 750; color: var(--epargne-t); background: var(--epargne-doux); border-radius: 999px; padding: 2px 8px; }
+
+/* Confiance */
+.confiance__grille { list-style: none; margin: 30px 0 24px; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+@media (max-width: 980px) { .confiance__grille { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .confiance__grille { grid-template-columns: minmax(0, 1fr); } }
+.confiance__grille li { border-top: 2px solid var(--encre); padding-top: 12px; display: grid; gap: 4px; }
+.confiance__grille b { font-size: 26px; letter-spacing: -.02em; }
+.confiance__grille span { font-size: 14px; color: var(--encre-2); }
+
+/* Apparitions (ajoutées par le script : sans lui, tout reste visible) */
+.apparait { opacity: 0; transform: translateY(16px); transition: opacity 700ms var(--sortie) var(--retard, 0ms), transform 700ms var(--sortie) var(--retard, 0ms); }
+.apparait.vu { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .chapitre { opacity: 1; transition: none; } .apparait { opacity: 1; transform: none; transition: none; } }
+.voyage .chiffre, .scene__noyau b, .vie__net b, .confiance__grille b { font-family: var(--mono); }
+@media (max-width: 480px) {
+  .entete__ligne .signature__in { display: none; }
+  .entete__ligne .signature__nom { font-size: 12.5px; white-space: normal; line-height: 1.15; }
+  .entete__actions .bouton { white-space: nowrap; }
+}
