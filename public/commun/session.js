@@ -183,6 +183,49 @@
     reactiver: function () { return client.rpc("rappels_reactiver").then(verifier); },
     confirmer: function () { return appelFonction("rappels-email", { action: "confirmation" }, "L'email de confirmation ne part pas pour le moment."); }
   };
+  /* ---------- Objectifs (« Ma progression ») ----------
+   * Tables objectifs et objectifs_versements (RLS : ses propres lignes ; 12 objectifs, 600 versements au plus). */
+  var COL_OBJ = "id, type, libelle, cible, depart, echeance, credit, cree_le";
+  function ligneObjectif(o) {
+    return { id: o.id, type: o.type, libelle: o.libelle || "", cible: Number(o.cible) || 0, depart: Number(o.depart) || 0, echeance: o.echeance || null, credit: o.credit == null ? null : Number(o.credit), cree_le: o.cree_le };
+  }
+  function champsObjectif(o) {
+    var t = ["projet", "precaution", "credit", "impot"].indexOf(o.type) !== -1 ? o.type : null;
+    if (!t) return null;
+    var borne = function (v) { v = Number(v); return isFinite(v) ? Math.max(0, Math.min(1e8, Math.round(v * 1000) / 1000)) : 0; };
+    return { type: t, libelle: String(o.libelle || "").replace(/\s+/g, " ").trim().slice(0, 60), cible: borne(o.cible), depart: borne(o.depart),
+      echeance: /^\d{4}-\d{2}-\d{2}$/.test(o.echeance || "") ? o.echeance : null,
+      credit: t === "credit" && o.credit != null && o.credit >= 0 && o.credit < 50 ? Math.floor(o.credit) : null };
+  }
+  var objectifs = {
+    lister: function () {
+      return Promise.all([
+        client.from("objectifs").select(COL_OBJ).order("cree_le", { ascending: true }).limit(12).then(verifier),
+        client.from("objectifs_versements").select("id, objectif_id, montant, le").order("le", { ascending: true }).limit(600).then(verifier)
+      ]).then(function (r) {
+        return { objectifs: (r[0] || []).map(ligneObjectif),
+          versements: (r[1] || []).map(function (v) { return { id: v.id, objectif: v.objectif_id, montant: Number(v.montant) || 0, le: v.le }; }) };
+      });
+    },
+    creer: function (o) {
+      var c = champsObjectif(o); if (!c) return Promise.reject(new Error("Objectif invalide."));
+      return client.from("objectifs").insert(c).select(COL_OBJ).single().then(verifier).then(ligneObjectif);
+    },
+    modifier: function (id, o) {
+      var c = champsObjectif(o); if (!c) return Promise.reject(new Error("Objectif invalide."));
+      return client.from("objectifs").update(c).eq("id", id).select(COL_OBJ).single().then(verifier).then(ligneObjectif);
+    },
+    supprimer: function (id) { return client.from("objectifs").delete().eq("id", id).then(verifier); },
+    verser: function (objectif, montant, le) {
+      var m = Math.round(Number(montant) * 1000) / 1000;
+      if (!(m > 0 && m <= 1e7)) return Promise.reject(new Error("Montant invalide."));
+      var ligne = { objectif_id: objectif, montant: m };
+      if (/^\d{4}-\d{2}-\d{2}$/.test(le || "")) ligne.le = le;
+      return client.from("objectifs_versements").insert(ligne).select("id, objectif_id, montant, le").single().then(verifier)
+        .then(function (v) { return { id: v.id, objectif: v.objectif_id, montant: Number(v.montant) || 0, le: v.le }; });
+    },
+    annulerVersement: function (id) { return client.from("objectifs_versements").delete().eq("id", id).then(verifier); }
+  };
   /* ---------- Photo de profil ----------
    * Préférence dans user_metadata.orbite_avatar : "stockage" (photo importée, espace privé),
    * "google" (photo du compte Google), "aucun" (initiales). Par défaut : Google s'il y en a une. */
@@ -384,6 +427,7 @@
     parrainage: parrainage,
     assistant: assistant,
     rappelsEmail: rappelsEmail,
+    objectifs: objectifs,
     estErreurReseau: estErreurReseau,
     horsLigne: function () { return horsLigne || (typeof navigator !== "undefined" && navigator.onLine === false); },
     compterUsage: compterUsage,

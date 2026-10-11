@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="/espace/credit.css">
   <link rel="stylesheet" href="/espace/epargne.css">
   <link rel="stylesheet" href="/espace/abonnement.css">
+  <link rel="stylesheet" href="/espace/progression.css">
   <link rel="stylesheet" href="/orbite/signature.css">
   <script src="/commun/config.js"></script>
   <script src="/commun/garde.js"></script>
@@ -51,6 +52,7 @@
         <li><a href="#epargne" data-vue="epargne" data-module="epargne"><svg aria-hidden="true"><use href="/orbite/icones.svg#epargne"/></svg><span>Épargne vie &amp; CEA</span></a></li>
         <li><a href="#credit" data-vue="credit" data-module="credit"><svg aria-hidden="true"><use href="/orbite/icones.svg#credit"/></svg><span>Crédit</span></a></li>
         <li><a href="#vie" data-vue="vie"><svg aria-hidden="true"><use href="/orbite/icones.svg#cible"/></svg><span>Vie &amp; impôts</span></a></li>
+        <li><a href="#progression" data-vue="progression"><svg aria-hidden="true"><use href="/orbite/icones.svg#hausse"/></svg><span>Ma progression</span></a></li>
         <li><a href="#assistant" data-vue="assistant"><svg aria-hidden="true"><use href="/orbite/icones.svg#etoile"/></svg><span>Assistant</span></a></li>
       </ul>
       <p class="rail__titre" id="rail-perso">Mon espace</p>
@@ -330,6 +332,7 @@
             <p class="vue__sous">Plus votre profil est précis, plus vos conseils le sont. Tout est enregistré automatiquement, et visible par vous seul.</p>
             <nav class="sous-nav" aria-label="Mon espace">
               <a class="bouton bouton--petit" href="#vie"><svg aria-hidden="true"><use href="/orbite/icones.svg#cible"/></svg>Vie &amp; impôts</a>
+              <a class="bouton bouton--petit" href="#progression"><svg aria-hidden="true"><use href="/orbite/icones.svg#hausse"/></svg>Ma progression</a>
               <a class="bouton bouton--petit" href="#simulations"><svg aria-hidden="true"><use href="/orbite/icones.svg#liste"/></svg>Mes simulations</a>
               <a class="bouton bouton--petit" href="#compte"><svg aria-hidden="true"><use href="/orbite/icones.svg#compte"/></svg>Compte</a>
             </nav>
@@ -1196,6 +1199,83 @@
             </div>
           </div>
         </section>
+        <section class="vue" id="vue-progression" data-vue="progression" aria-labelledby="titre-progression" hidden>
+          <header class="vue__tete pg-tete">
+            <div>
+              <h1 id="titre-progression">Ma progression</h1>
+              <p class="vue__sous">Votre salaire face aux prix, votre carrière dans 10 ans, et vos objectifs suivis mois après mois.</p>
+            </div>
+            <div class="pg-onglets" role="tablist" aria-label="Ma progression" data-o="carriere">
+              <i aria-hidden="true"></i>
+              <button type="button" role="tab" id="pg-tab-carriere" aria-controls="pg-carriere" aria-selected="true" data-onglet="carriere">Carrière</button>
+              <button type="button" role="tab" id="pg-tab-objectifs" aria-controls="pg-objectifs" aria-selected="false" tabindex="-1" data-onglet="objectifs">Objectifs</button>
+            </div>
+          </header>
+
+          <!-- ============ Carrière ============ -->
+          <div class="pg-panneau pg-grille" id="pg-carriere" role="tabpanel" aria-labelledby="pg-tab-carriere">
+            <section class="panneau pg-bilan" aria-labelledby="pg-t-bilan">
+              <h2 id="pg-t-bilan">Votre salaire et vos prix</h2>
+              <p class="panneau__sous" id="pg-bilan-sous"></p>
+              <div class="pg-vide" id="pg-carriere-vide" hidden>
+                <p>Indiquez votre date d'embauche ou une hausse passée : Orbite compare votre salaire à l'inflation depuis ce moment.</p>
+                <div class="pg-actions"><a class="bouton bouton--plein bouton--petit" href="#profil?section=salaire">Ajouter ma date d'embauche</a><button type="button" class="bouton bouton--fantome bouton--petit" data-hausse>Ajouter une hausse passée</button></div>
+              </div>
+              <div id="pg-bilan-plein">
+                <div class="pg-tuiles">
+                  <div class="pg-tuile pg-tuile--salaire"><span id="pg-t1-lib">Votre brut</span><b class="chiffre" id="pg-t1"></b></div>
+                  <div class="pg-tuile pg-tuile--prix"><span id="pg-t2-lib">Les prix (INS)</span><b class="chiffre" id="pg-t2"></b></div>
+                  <div class="pg-tuile pg-tuile--verdict" id="pg-t3-boite"><span>Pouvoir d'achat</span><b class="chiffre" id="pg-t3"></b></div>
+                </div>
+                <p class="pg-phrase" id="pg-phrase"></p>
+                <div class="pg-graphe" id="pg-graphe"></div>
+                <div class="pg-legende" aria-hidden="true"><span>Brut réel (historique)</span><span class="reel" id="pg-leg-reel">Ce que vaut votre brut en dinars de départ</span><span class="proj">Projection</span></div>
+                <p class="note">Le pouvoir d'achat est calculé sur le <b>brut</b> (indépendant des changements d'impôt). Le net affiché est calculé au barème actuel.</p>
+                <details class="pg-sources"><summary>Inflation utilisée et sources</summary>
+                  <div class="pg-table"><table id="pg-inflation"></table></div>
+                  <p id="pg-sources-texte"></p>
+                </details>
+              </div>
+            </section>
+            <div class="pg-colonne">
+              <section class="panneau" aria-labelledby="pg-t-proj">
+                <h2 id="pg-t-proj">Projection de carrière</h2>
+                <p class="panneau__sous">Réglez vos hypothèses : Orbite recalcule votre salaire, votre pouvoir d'achat et votre capacité de crédit.</p>
+                <div class="pg-reglage"><label for="pg-hausse">Hausse de salaire par an <b class="chiffre" id="pg-hausse-v"></b></label><input id="pg-hausse" type="range" min="0" max="12" step="0.5" value="3"><small id="pg-hausse-aide"></small></div>
+                <div class="pg-reglage"><label for="pg-inf">Inflation supposée <b class="chiffre" id="pg-inf-v"></b></label><input id="pg-inf" type="range" min="2" max="10" step="0.5" value="5.5"></div>
+                <dl class="pg-lignes" aria-live="polite">
+                  <div><dt id="pg-r-brut-lib">Brut dans 10 ans</dt><dd class="chiffre" id="pg-r-brut"></dd></div>
+                  <div><dt id="pg-r-net-lib">Net (barème actuel)</dt><dd class="chiffre" id="pg-r-net"></dd></div>
+                  <div><dt>Pouvoir d'achat par rapport à aujourd'hui</dt><dd class="chiffre" id="pg-r-pa"></dd></div>
+                  <div><dt>Capacité d'emprunt immobilier</dt><dd class="chiffre" id="pg-r-cap"></dd></div>
+                </dl>
+              </section>
+              <section class="panneau" aria-labelledby="pg-t-etapes">
+                <h2 id="pg-t-etapes">Vos étapes</h2>
+                <ol class="pg-etapes" id="pg-etapes"></ol>
+                <div class="pg-actions"><button type="button" class="bouton bouton--fantome bouton--petit" data-hausse><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg>Ajouter une hausse passée</button></div>
+              </section>
+            </div>
+          </div>
+
+          <!-- ============ Objectifs ============ -->
+          <div class="pg-panneau" id="pg-objectifs" role="tabpanel" aria-labelledby="pg-tab-objectifs" hidden>
+            <p class="pg-erreur" id="pg-obj-erreur" role="alert" hidden></p>
+            <div class="pg-objectifs" id="pg-liste" aria-live="polite"></div>
+            <div class="pg-grille">
+              <section class="panneau" aria-labelledby="pg-t-defis">
+                <h2 id="pg-t-defis">Défis du mois</h2>
+                <p class="panneau__sous">Choisis selon votre profil, vérifiés par Orbite. Chaque mois avec un versement prolonge votre série.</p>
+                <ul class="pg-defis" id="pg-defis" role="list"></ul>
+              </section>
+              <section class="panneau" aria-labelledby="pg-t-badges">
+                <h2 id="pg-t-badges">Badges</h2>
+                <div class="pg-serie" id="pg-serie"></div>
+                <ul class="pg-badges" id="pg-badges" role="list"></ul>
+              </section>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
 
@@ -1207,7 +1287,7 @@
       <a href="#salaire" data-vue="salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#salaire"/></svg><span data-lib-salaire>Salaire</span></a>
       <a href="#epargne" data-vue="epargne"><svg aria-hidden="true"><use href="/orbite/icones.svg#epargne"/></svg><span>Épargne</span></a>
       <a href="#credit" data-vue="credit"><svg aria-hidden="true"><use href="/orbite/icones.svg#credit"/></svg><span>Crédit</span></a>
-      <a href="#profil" data-vue="profil" data-vues="profil simulations compte abonnement vie"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span>Moi</span></a>
+      <a href="#profil" data-vue="profil" data-vues="profil simulations compte abonnement vie progression"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span>Moi</span></a>
     </nav>
   </div>
 
@@ -1365,6 +1445,38 @@
     </form>
   </dialog>
 
+  <dialog class="dialogue" id="dlg-objectif" aria-labelledby="dlg-obj-titre">
+    <form method="dialog" id="form-objectif" novalidate>
+      <div class="dialogue__tete"><h2 id="dlg-obj-titre">Nouvel objectif</h2></div>
+      <div class="dialogue__corps ajout-profil">
+        <fieldset class="pg-types" id="obj-types">
+          <legend>Type d'objectif</legend>
+          <label><input type="radio" name="obj-type" value="projet" checked><span><svg aria-hidden="true"><use href="/orbite/icones.svg#maison"/></svg><b>Projet</b><small>Logement, voiture, études…</small></span></label>
+          <label><input type="radio" name="obj-type" value="precaution"><span><svg aria-hidden="true"><use href="/orbite/icones.svg#bouclier"/></svg><b>Précaution</b><small>3 à 6 mois de dépenses</small></span></label>
+          <label><input type="radio" name="obj-type" value="credit"><span><svg aria-hidden="true"><use href="/orbite/icones.svg#credit"/></svg><b>Crédit</b><small>Le solder plus tôt</small></span></label>
+          <label><input type="radio" name="obj-type" value="impot"><span><svg aria-hidden="true"><use href="/orbite/icones.svg#cible"/></svg><b>Impôt</b><small>Assurance vie avant le 31/12</small></span></label>
+        </fieldset>
+        <div class="champ"><label for="obj-libelle">Nom de l'objectif</label><div class="saisie"><input id="obj-libelle" type="text" maxlength="60" autocomplete="off"></div></div>
+        <div class="champ" id="obj-credit-bloc" hidden><label for="obj-credit">Crédit concerné</label><div class="saisie"><select id="obj-credit"></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div><span class="champ__aide">Suivi automatique : la progression vient de votre crédit, rien à saisir.</span></div>
+        <div class="grille-champs" id="obj-montants">
+          <div class="champ"><label for="obj-cible">Montant visé</label><div class="saisie"><input id="obj-cible" type="text" inputmode="decimal" autocomplete="off"><span class="saisie__unite">DT</span></div><span class="erreur-champ" id="obj-cible-err" hidden></span></div>
+          <div class="champ" id="obj-depart-bloc"><label for="obj-depart">Déjà de côté</label><div class="saisie"><input id="obj-depart" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><span class="saisie__unite">DT</span></div></div>
+        </div>
+        <button type="button" class="lien-action pg-suggestion" id="obj-suggestion" hidden></button>
+        <div class="grille-champs">
+          <div class="champ"><label for="obj-mois">Échéance (mois)</label><div class="saisie"><select id="obj-mois"><option value="">Sans date</option><option value="1">Janvier</option><option value="2">Février</option><option value="3">Mars</option><option value="4">Avril</option><option value="5">Mai</option><option value="6">Juin</option><option value="7">Juillet</option><option value="8">Août</option><option value="9">Septembre</option><option value="10">Octobre</option><option value="11">Novembre</option><option value="12">Décembre</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
+          <div class="champ"><label for="obj-annee">Année</label><div class="saisie"><input id="obj-annee" type="text" inputmode="numeric" maxlength="4" autocomplete="off"></div><span class="erreur-champ" id="obj-annee-err" hidden></span></div>
+        </div>
+        <p class="note" id="obj-apercu" aria-live="polite"></p>
+      </div>
+      <div class="dialogue__pied">
+        <button type="button" class="bouton bouton--fantome pg-supprimer" id="obj-supprimer" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#poubelle"/></svg>Supprimer</button>
+        <button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Annuler</button>
+        <button type="submit" class="bouton bouton--plein" value="ok" id="obj-valider">Créer l'objectif</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog class="dialogue" id="dlg-supprimer-compte" aria-labelledby="dlg-sc-titre">
     <form method="dialog">
       <div class="dialogue__tete"><h2 id="dlg-sc-titre">Supprimer définitivement votre compte&nbsp;?</h2></div>
@@ -1428,6 +1540,8 @@
   <script src="/espace/js/expert-calcul.js"></script>
   <script src="/espace/js/vue-scenarios.js"></script>
   <script src="/espace/js/vue-expert.js"></script>
+  <script src="/espace/js/progression-calcul.js"></script>
+  <script src="/espace/js/vue-progression.js"></script>
   <script src="/espace/js/rappels-calcul.js"></script>
   <script src="/espace/js/nouveautes.js"></script>
   <script src="/espace/js/appli.js"></script>

@@ -1163,6 +1163,103 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     }
   });
 
+  await etape("Ma progression : pouvoir d'achat, courbe, projection, objectifs, « J'ai épargné » annulable, défis, rappel", async () => {
+    await page.evaluate(() => window.Orbite.majProfil({ dateEmbauche: "2019-03-01", montant: 3400, sens: "brut", periode: "mensuel", epargneDisponible: 5000, historiqueSalaire: [
+      { montant: 2400, sens: "brut", periode: "mensuel", mois: 0, annee: 0 }, { montant: 2650, sens: "brut", periode: "mensuel", mois: 3, annee: 2021 },
+      { montant: 3000, sens: "brut", periode: "mensuel", mois: 3, annee: 2023 }, { montant: 3400, sens: "brut", periode: "mensuel", mois: 3, annee: 2025 }] }, { immediat: true }));
+    await page.goto(base + "/espace/#progression");
+    await page.waitForSelector("#pg-carriere:not([hidden]) #pg-graphe svg");
+    assert((await page.textContent("#barre-titre")) === "Ma progression", "titre de la barre");
+    const t = await page.evaluate(() => [1, 2, 3].map((i) => document.getElementById("pg-t" + i).textContent));
+    assert(/^\+41,7/.test(t[0]) && /^\+57,2/.test(t[1]) && /^−9,9/.test(t[2]), "bilan brut / prix / pouvoir d'achat : " + t.join(" | "));
+    assert(/3\s?773 DT/.test(await page.textContent("#pg-phrase")), "brut nécessaire pour garder le pouvoir d'achat");
+    assert((await page.$$("#pg-etapes li")).length === 4, "4 étapes");
+    assert((await page.$$("#pg-graphe .pg-hausse")).length === 3, "3 hausses sur la courbe");
+    assert(/moyenne depuis 2019/.test(await page.textContent("#pg-hausse-aide")), "hausse par défaut = moyenne passée");
+    const brut1 = await page.textContent("#pg-r-brut");
+    await page.$eval("#pg-hausse", (el) => { el.value = "8"; el.dispatchEvent(new Event("input", { bubbles: true })); });
+    assert((await page.textContent("#pg-r-brut")) !== brut1 && (await page.textContent("#pg-hausse-v")).replace(/\s/g, " ") === "8 %", "projection recalculée");
+    await page.screenshot({ path: path.join(CAPTURES, "progression-carriere.png"), fullPage: true });
+    /* Objectifs : création d'un projet daté. */
+    await page.click("#pg-tab-objectifs");
+    await page.waitForSelector("#pg-objectifs:not([hidden]) .pg-ajout");
+    assert(/Créez votre premier objectif/.test(await page.textContent("#pg-defis")), "défi « premier objectif »");
+    await page.click('.pg-ajout__types button[data-type="projet"]');
+    await page.waitForSelector("#dlg-objectif[open]");
+    await page.fill("#obj-libelle", "Apport logement");
+    await page.fill("#obj-cible", "20 000");
+    await page.fill("#obj-depart", "8 000");
+    const an = new Date().getFullYear() + 2;
+    await page.selectOption("#obj-mois", "6");
+    await page.fill("#obj-annee", String(an));
+    await page.waitForFunction(() => /par mois/.test(document.getElementById("obj-apercu").textContent));
+    await page.click("#obj-valider");
+    for (let i = 0; i < 40 && !faux.objectifs().length; i++) await page.waitForTimeout(100);
+    const o = faux.objectifs()[0];
+    assert(o && o.type === "projet" && Number(o.cible) === 20000 && o.echeance === an + "-06-30", "objectif enregistré : " + JSON.stringify(o));
+    await page.waitForSelector('.pg-obj[data-type="projet"] .pg-verser');
+    assert(/Apport logement/.test(await page.textContent('.pg-obj[data-type="projet"] h3')), "carte affichée");
+    /* « J'ai épargné » : versement + épargne disponible, puis annulation. */
+    await page.fill('.pg-obj[data-type="projet"] .pg-verser input', "150");
+    await page.click('.pg-obj[data-type="projet"] .pg-verser button');
+    await page.waitForFunction(() => window.Orbite.profil().epargneDisponible === 5150);
+    assert(faux.versementsObjectifs().length === 1 && Number(faux.versementsObjectifs()[0].montant) === 150, "versement enregistré");
+    await page.waitForFunction(() => /8\s?150/.test(document.querySelector('.pg-obj[data-type="projet"] .pg-montants').textContent));
+    await page.click('.toast button:has-text("Annuler")');
+    await page.waitForFunction(() => window.Orbite.profil().epargneDisponible === 5000);
+    for (let i = 0; i < 20 && faux.versementsObjectifs().length; i++) await page.waitForTimeout(100);
+    assert(!faux.versementsObjectifs().length, "versement annulé");
+    await page.fill('.pg-obj[data-type="projet"] .pg-verser input', "600");
+    await page.click('.pg-obj[data-type="projet"] .pg-verser button');
+    await page.waitForFunction(() => window.Orbite.profil().epargneDisponible === 5600);
+    await page.waitForFunction(() => /Série : 1 mois/.test(document.getElementById("pg-serie").textContent));
+    assert(await page.isVisible(".pg-badge--gagne"), "badge « Premier objectif » gagné");
+    /* Épargne de précaution avec la cible suggérée. */
+    await page.click('.pg-ajout__types button[data-type="precaution"]');
+    await page.waitForSelector("#obj-suggestion:not([hidden])");
+    await page.click("#obj-suggestion");
+    assert((await page.inputValue("#obj-cible")).length > 0, "cible suggérée remplie");
+    await page.click("#obj-valider");
+    await page.waitForSelector('.pg-obj[data-type="precaution"]');
+    assert(faux.objectifs().length === 2, "2 objectifs");
+    /* Rappel d'échéance (type perso, sans montant dans l'email). */
+    const rap = await page.evaluate(() => window.Progression.rappels(window.OrbiteProgression.objectifs(), new Date()));
+    assert(rap.length === 1 && rap[0].type === "perso" && !/DT|Apport/.test(JSON.stringify(rap[0].mail)), "rappel d'échéance : " + JSON.stringify(rap));
+    /* Modification, puis suppression annulée. */
+    await page.click('.pg-obj[data-type="precaution"] .pg-obj__modifier');
+    await page.waitForSelector("#dlg-objectif[open] #obj-supprimer:not([hidden])");
+    await page.fill("#obj-libelle", "Coussin de sécurité");
+    await page.click("#obj-valider");
+    await page.waitForFunction(() => /Coussin de sécurité/.test(document.querySelector('.pg-obj[data-type="precaution"] h3').textContent));
+    await page.click('.pg-obj[data-type="precaution"] .pg-obj__modifier');
+    await page.click("#obj-supprimer");
+    await page.waitForFunction(() => !document.querySelector('.pg-obj[data-type="precaution"]'));
+    await page.click('.toast button:has-text("Annuler")');
+    await page.waitForSelector('.pg-obj[data-type="precaution"]');
+    assert(faux.objectifs().some((x) => x.libelle === "Coussin de sécurité"), "objectif rétabli");
+    await page.screenshot({ path: path.join(CAPTURES, "progression-objectifs.png"), fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(300);
+    const deborde = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
+    assert(!deborde, "pas de défilement horizontal sur téléphone");
+    await page.screenshot({ path: path.join(CAPTURES, "progression-objectifs-telephone.png"), fullPage: true });
+    await page.click("#pg-tab-carriere");
+    await page.waitForSelector("#pg-carriere:not([hidden]) #pg-graphe svg");
+    assert(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "carrière sans débordement sur téléphone");
+    assert(await page.evaluate(() => document.querySelector("#pg-graphe svg").getAttribute("viewBox") === "0 0 380 260"), "courbe adaptée au téléphone");
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: path.join(CAPTURES, "progression-carriere-telephone.png"), fullPage: true });
+    await page.setViewportSize({ width: 1360, height: 900 });
+    await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+    await page.click("#pg-tab-objectifs");
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: path.join(CAPTURES, "progression-objectifs-sombre.png") });
+    await page.click("#pg-tab-carriere");
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: path.join(CAPTURES, "progression-carriere-sombre.png") });
+    await page.evaluate(() => document.documentElement.removeAttribute("data-theme"));
+  });
+
   await etape("déconnexion puis suppression définitive du compte", async () => {
     await page.goto(base + "/espace/#compte?onglet=donnees");
     await page.waitForSelector("#supprimer-compte");
