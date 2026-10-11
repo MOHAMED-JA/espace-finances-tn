@@ -549,7 +549,8 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 
 ## 3 duodequadragies. Programme « créativité » en 8 lots (10 oct.)
 
-> **Avancement** : lot 1 livré (PR #58) ; hors programme, livrés aussi : règle des 8 % (#60), simulations → profil et remboursements anticipés (#61), historique du salaire (#62). Lot 2 livré (« Et si… » + mode Expert, section 3 terquadragies). **Suivant : lot 3 (B6 historique et carrière + C3 objectifs), maquette d'abord.**
+> **Avancement (11 oct.)** : lot 1 livré (PR #58) ; lot 2 livré (« Et si… » + mode Expert, 3 terquadragies). Hors programme, livrés aussi : règle des 8 % (#60), simulations → profil et remboursements anticipés (#61), historique du salaire (#62), coordonnées facultatives (3 quaterquadragies), statut retraité (#69), détail de l'impôt restant (#70), rappels par email Brevo **en service** (#71, #72, #73 ; 3 septquadragies). **Suivant : lot 3 (B6 historique et carrière + C3 objectifs et défis), maquette d'abord — pas encore commencé, l'utilisateur a demandé de s'arrêter avant.**
+> Rappel des définitions d'origine : **B6** = historique et carrière (courbe du salaire dans le temps, hausses datées — base déjà faite avec l'historique du salaire —, pouvoir d'achat corrigé de l'inflation avec les chiffres de l'INS **soumis à l'utilisateur avant intégration**, projection de carrière). **C3** = objectifs et défis (objectifs d'épargne ou de remboursement avec jalons et progression ; nouvelle table Supabase avec RLS). Le lot 3 crée les données dont ont besoin le lot 4 (retraite) et le lot 6 (« Mon année en orbite »).
 
 - **Demande de l'utilisateur** : une créativité énorme (design, fonctionnalités, options avancées), un travail sans faute, des propositions **avant** toute modification, et des questions en cas de doute.
 - **Retenues** : A1, A2, A3, A4, B1, B2, B5, B6, C2, C3, C4. Design « spectaculaire mais sobre ». Interface en français seulement. **Une maquette validée avant chaque fonctionnalité**.
@@ -797,6 +798,12 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
    - comparaison de banques sur le brut ;
    - mode « simulation de vie » (mariage, enfant, achat) qui met tout le profil à jour d'un coup.
 4. `docs/MISE-EN-LIGNE.md` et `docs/SECURITE.md` parlent encore des « outils » : à mettre à jour un jour.
+5. **En attente côté utilisateur (11 oct.)** :
+   - passer en privé les dépôts espace-finances-tn, simulateur-credit, simulateur-assurance-vie, simulateur-Assurance-Automobile (pas portail-rh : GitHub Pages) puis vérifier que Cloudflare déploie toujours ;
+   - corriger son crédit immobilier dans le profil (765,003 DT, début février 2023, 191 mois ; le profil affiche encore 875,894 DT à 2,25 %) ;
+   - facultatif : coller dans le SQL Editor les `revoke` des fonctions de rappels (défense en profondeur ; les gardes `rappels_exiger_serveur` protègent déjà) ;
+   - facultatif : nom de domaine authentifié (SPF/DKIM/DMARC) pour l'expéditeur Brevo (supprime la réécriture en `…@brevosend.com` et les avertissements) ;
+   - facultatif : vérifier l'article 56 de la LF 2026 au JORT (abattement des pensions).
 
 ## 5. Pièges connus
 
