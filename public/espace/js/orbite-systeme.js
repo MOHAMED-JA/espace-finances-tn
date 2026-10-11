@@ -26,7 +26,8 @@
 
     /* Crédits : du plus proche de sa fin au plus lointain (orbites intérieures d'abord). */
     p.credits.forEach(function (c, i) {
-      if (!(c.mensualite > 0)) return;
+      /* Crédit terminé (dates connues, plus aucune échéance) : il ne fait plus partie du système, comme dans le moteur. */
+      if (!(c.mensualite > 0) || OC.creditTermine(c)) return;
       var info = sy.credits[i] || {}, n = info.restantes > 0 ? info.restantes : 0;
       var rt = info.reduction || { applicable: false, motif: null, reductions: [] };
       /* Règle des 8 % : réductions de taux à venir (avant la fin du crédit). */

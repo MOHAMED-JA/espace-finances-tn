@@ -116,3 +116,14 @@ test('profil vide : seulement la place libre, pas de voyage dans le temps', () =
   assert.equal(m.horizon, 0);
   assert.equal(m.etat(0).charges, 0);
 });
+
+test('crédit terminé (dates connues) : absent du système, mensualités et endettement comme le moteur', () => {
+  const p = OC.normaliser(Object.assign(OC.profilParDefaut(), { montant: 3000, dateNaissance: '1990-03-01', credits: [
+    { type: 'immo', libelle: 'Appartement', mensualite: 700, tauxPct: 8, dureeMois: 240, moisDebut: 3, anneeDebut: 2021 },
+    { type: 'auto', libelle: 'Voiture', mensualite: 350, tauxPct: 9, dureeMois: 60, moisDebut: 6, anneeDebut: 2021 }
+  ] }));
+  const sy = OC.synthese(p, {}, new Date(2026, 11, 20)), m = OS.modele(sy);
+  const credits = m.satellites.filter((s) => s.genre === 'credit');
+  assert.deepEqual(credits.map((s) => s.nom), ['Appartement']);
+  assert.equal(m.etat(0).charges, 700);
+});
