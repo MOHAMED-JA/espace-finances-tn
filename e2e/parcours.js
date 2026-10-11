@@ -228,11 +228,15 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => localStorage.getItem("ef-theme") === "heure");
     assert(await page.evaluate(() => document.documentElement.getAttribute("data-theme") === window.EFTheme.effectif()), "thème appliqué selon l'heure");
     assert(/clair de \d+ h \d\d à \d+ h \d\d/.test(await page.textContent("#theme-aide")), "heures du soleil affichées");
+    await page.waitForSelector("#theme-etat:not([hidden])");
+    const etat = await page.textContent("#theme-etat"), sombre = await page.evaluate(() => window.EFTheme.nuitATunis());
+    assert(sombre ? /En ce moment : sombre.*Retour au clair/.test(etat) : /En ce moment : clair\. Passage au sombre ce soir à \d+ h \d\d/.test(etat), "état de « Soleil » : " + etat);
     await page.click('#choix-vibrations label:has(input[value="non"])');
     assert(await page.evaluate(() => localStorage.getItem("ef-vibrations") === "non" && window.Orbite.vibrer(10) === false), "vibrations désactivées");
     await page.click('#choix-vibrations label:has(input[value=""])');
     await page.click('#choix-theme label:has(input[value=""])');
     await page.waitForFunction(() => localStorage.getItem("ef-theme") === null);
+    assert(await page.isHidden("#theme-etat"), "état caché hors « Soleil »");
   });
 
   await etape("capacité : taux du futur crédit à la consommation modifiable", async () => {

@@ -454,6 +454,10 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 quaterquinquagies. Thème « Soleil » : état en direct (11 oct.)
+
+- **Question** : différence entre « Soleil » et « Sombre » ? Réponse : « Soleil » = clair du lever au coucher du soleil à Tunis, sombre ensuite ; après le coucher les deux sont identiques (mêmes couleurs). **Choix de l'utilisateur** : afficher l'état. `#theme-etat` (Paramètres › Préférences, sous « Apparence », seulement si « Soleil ») : « En ce moment : clair. Passage au sombre ce soir à 17 h 50. » / « En ce moment : sombre, le soleil est couché à Tunis. Retour au clair demain à 6 h 23. » (icône soleil / lune, bandeau ambre le jour), recalculé chaque minute (`etatSoleil()` dans `app.js`, `EFTheme.soleil` + `nuitATunis`). e2e 46/46. SW `orbite-2026-10-11g`.
+
 ## 3 terquinquagies. Crédit : montant à la capacité selon le type ; cartes « Vos données » (11 oct.)
 
 - **Demande** : (1) en passant d'Immobilier à Auto, le module gardait 31 000 DT et passait à 5 ans → échéance 578 DT, très au-dessus de la capacité (198 DT) ; l'utilisateur voulait le montant possible pour chaque type à échéance égale. (2) « Partager ma fiche » peu professionnel (texte serré, interrupteur flottant, heure « 05:28 PM »).
