@@ -9,7 +9,9 @@
   var O = window.Orbite, E = window.Espace, doc = document, $ = O.$;
   var ONGLETS = ["profil", "preferences", "securite", "abonnement", "utilisation", "donnees"];
   var DATE = new Intl.DateTimeFormat("fr-TN", { day: "numeric", month: "long", year: "numeric" });
-  var DATE_HEURE = new Intl.DateTimeFormat("fr-TN", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+  var JOUR_MOIS = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" });
+  /* « 11 octobre à 17 h 28 » (fr-TN affiche « 05:28 PM » sur certains navigateurs). */
+  function dateHeure(d) { return JOUR_MOIS.format(d) + " à " + d.getHours() + " h " + String(d.getMinutes()).padStart(2, "0"); }
 
   /* ---------- Onglets (motif ARIA « tabs », flèches du clavier) ---------- */
   var nav = doc.querySelector(".param-nav");
@@ -105,7 +107,7 @@
     $("param-metier").value = m.orbite_metier || "";
     $("param-accueil").value = m.orbite_accueil || "orbite";
     var der = u && u.last_sign_in_at;
-    $("param-connexion").textContent = (der ? "Dernière connexion : " + DATE_HEURE.format(new Date(der)) + ". " : "") + "Fermez Orbite sur tous vos appareils, par exemple après avoir utilisé un ordinateur partagé.";
+    $("param-connexion").textContent = (der ? "Dernière connexion : " + dateHeure(new Date(der)) + ". " : "") + "Fermez Orbite sur tous vos appareils, par exemple après avoir utilisé un ordinateur partagé.";
     etatPhoto();
   }
   $("form-identite").addEventListener("submit", function (e) {
@@ -152,7 +154,7 @@
     var u = O.utilisateur();
     if (!u) return;
     $("u-membre").textContent = u.created_at ? DATE.format(new Date(u.created_at)) : "—";
-    $("u-connexion").textContent = u.last_sign_in_at ? DATE_HEURE.format(new Date(u.last_sign_in_at)) : "—";
+    $("u-connexion").textContent = u.last_sign_in_at ? dateHeure(new Date(u.last_sign_in_at)) : "—";
     var p = O.profil() || {}, points = 0;
     if (p.prenom) points++;
     if (p.montant > 0) points += 2;
@@ -177,9 +179,17 @@
   function rendrePartage(e) {
     var c = $("partage-admin"), t = $("partage-etat");
     c.checked = !!(e && e.accorde); c.disabled = false;
-    if (!e) { t.textContent = ""; return; }
-    var cons = e.consultations ? " Consultée " + e.consultations + " fois, dernière fois le " + DATE_HEURE.format(new Date(e.derniere_consultation)) + "." : " Pas encore consultée.";
-    t.textContent = e.accorde ? "Partage activé depuis le " + DATE.format(new Date(e.accorde_le)) + "." + cons : "Non partagée : l'administrateur ne voit pas votre profil." + (e.consultations ? cons : "");
+    t.textContent = ""; t.hidden = !e;
+    if (!e) return;
+    t.classList.toggle("reglage__etat--actif", !!e.accorde);
+    var ico = doc.createElementNS("http://www.w3.org/2000/svg", "svg"), u = doc.createElementNS("http://www.w3.org/2000/svg", "use");
+    ico.setAttribute("aria-hidden", "true"); u.setAttribute("href", "/orbite/icones.svg#" + (e.accorde ? "valide" : "cadenas")); ico.appendChild(u);
+    var txt = doc.createElement("span"), titre = doc.createElement("strong"), detail = doc.createElement("small");
+    titre.textContent = e.accorde ? "Partage activé depuis le " + DATE.format(new Date(e.accorde_le)) : "Fiche non partagée";
+    detail.textContent = e.consultations ? "Consultée " + e.consultations + " fois · dernière consultation le " + dateHeure(new Date(e.derniere_consultation))
+      : e.accorde ? "Pas encore consultée par l'administrateur" : "L'administrateur ne voit pas votre profil";
+    txt.appendChild(titre); txt.appendChild(detail);
+    t.appendChild(ico); t.appendChild(txt);
   }
   function chargerPartage() { if (E.partage) E.partage.etat().then(rendrePartage).catch(function () { rendrePartage(null); }); }
   $("partage-admin").addEventListener("change", function () {

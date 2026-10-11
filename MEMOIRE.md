@@ -454,6 +454,14 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 terquinquagies. Crédit : montant à la capacité selon le type ; cartes « Vos données » (11 oct.)
+
+- **Demande** : (1) en passant d'Immobilier à Auto, le module gardait 31 000 DT et passait à 5 ans → échéance 578 DT, très au-dessus de la capacité (198 DT) ; l'utilisateur voulait le montant possible pour chaque type à échéance égale. (2) « Partager ma fiche » peu professionnel (texte serré, interrupteur flottant, heure « 05:28 PM »).
+- **Analyse validée** : la limite commune est l'**échéance maximale** (endettement global) ; le montant dépend de la durée et du taux du type. Choix : **montant = capacité** au changement de type si le montant n'a pas été tapé ; montant tapé gardé, avec alerte et bouton ; liste des capacités par type. Partage : **carte en-tête + état** (aperçus validés dans la question).
+- **`module-credit.js`** : `sc.capitalSaisi` (montant ou apport tapés) ; changement de type sans saisie → `S.cible = { capacite: true }` : `suivreCible` prend `capaciteBanque({mois, taux}).capital` (suit aussi durée et taux) ; texte « Montant calculé pour votre échéance maximale… » ; alerte `#cr-capacite-alerte` (échéance au-dessus de la capacité de X DT, bouton `[data-ramener]` « Ramener à ma capacité : … ») ; liste `#cr-capacites` « Ce que vous pouvez emprunter avec N DT par mois » (immo, auto, conso : durée et taux habituels, taux du profil s'il existe ; clic = choisir ce type à la capacité). Styles dans `credit.css`.
+- **Paramètres › Vos données** : cartes `.reglage--carte` (icône, titre, interrupteur sur la même ligne ; texte pleine largeur ; boutons dessous) ; état du partage dans un bandeau (`#partage-etat`, vert si actif, icône valide / cadenas) : « Partage activé depuis le … » + « Consultée N fois · dernière consultation le 11 octobre à 17 h 28 ». Heures : `dateHeure()` en « 17 h 28 » (fr-TN affichait « PM »), aussi pour la dernière connexion.
+- Tests : unitaires 405 ; e2e 46/46 (nouvelle étape crédit + partage). SW `orbite-2026-10-11f`.
+
 ## 3 duoquinquagies. Lot 4 : retraite CNSS / CNRPS (11 oct., livré)
 
 - **Choix de l'utilisateur** : CNSS **et** CNRPS ; afficher âge et pension estimée, curseur partir plus tôt / plus tard, écart à combler (pas le relevé de carrière) ; **3e onglet « Retraite » de Ma progression** ; nouveau champ de profil **« début de carrière »** (mois + année du premier emploi déclaré, par défaut la date d'embauche, + années sans cotisation) ; écart calculé pour garder **80 % du net actuel**.

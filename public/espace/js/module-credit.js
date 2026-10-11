@@ -334,6 +334,8 @@
       '<div class="cr-formulaire" id="cr-formulaire" role="tabpanel" aria-labelledby="cr-tab-0">' +
         '<fieldset class="cr-groupe"><legend class="champ__lib">Type de crédit</legend><div class="cr-puces" id="cr-types">' + puces + '</div></fieldset>' +
         champ({ id: "cr-capital", k: "capital", lib: "Montant emprunté", unite: "DT", grande: true, min: 100, max: 1e8, aide: '<span id="cr-capital-aide-txt">&nbsp;</span>' }) +
+        '<div class="cr-capacite-alerte" id="cr-capacite-alerte" role="status" hidden></div>' +
+        '<div class="cr-capacites" id="cr-capacites" hidden><p class="cr-capacites__titre" id="cr-capacites-titre"></p><ul role="list" id="cr-capacites-liste"></ul></div>' +
         '<div class="champ cr-duree"><div class="cr-duree__tete"><label for="cr-annees">Durée</label><output id="cr-duree-lib" for="cr-annees cr-mois-sup" class="chiffre"></output></div>' +
           '<input type="range" class="curseur" id="cr-annees" min="0" max="25" step="1" data-k="annees" data-t="entier" aria-describedby="cr-duree-lib">' +
           '<div class="cr-duree__pied"><span aria-hidden="true">0</span><span aria-hidden="true">5</span><span aria-hidden="true">10</span><span aria-hidden="true">15</span><span aria-hidden="true">20</span><span aria-hidden="true">25 ans</span></div>' +
@@ -558,7 +560,12 @@
     var r = lireChamp(el);
     if (!r.ok) return;
     var sc = sc0(), v = r.v;
-    if (k === "type") { appliquerType(sc, v); ecrireEditeur(); calculer(true); signalerModif(); return; }
+    if (k === "type") {
+      appliquerType(sc, v);
+      /* Montant non saisi à la main : il suit la capacité (même échéance maximale) pour le nouveau type. */
+      if (!sc.capitalSaisi && S.emp.net > 0) S.cible = { scenario: sc, mensualite: 0, capacite: true };
+      ecrireEditeur(); calculer(true); signalerModif(); return;
+    }
     var mr = /^ras\.(\d+)\.(mois|annee|mode)$/.exec(k);
     if (mr) {
       var ix = +mr[1], ra = sc.ras[ix]; if (!ra) return;
@@ -601,7 +608,7 @@
       return;
     }
     /* Un montant saisi à la main remplace l'échéance cible. */
-    if (S.cible && (k === "capital" || k === "apport.prix" || k === "apport.apport")) S.cible = null;
+    if (k === "capital" || k === "apport.prix" || k === "apport.apport") { S.cible = null; sc.capitalSaisi = true; }
     poser(sc, k, v);
     /* Dépendances : prix, apport et capital restent cohérents */
     if (k === "apport.on" && v) {
@@ -690,7 +697,14 @@
   function suivreCible(sc) {
     if (!S.cible) return;
     if (S.cible.scenario !== sc) { S.cible = null; return; }
-    var c = capitalCible(sc);
+    var c;
+    if (S.cible.capacite) {
+      /* Capacité : montant maximal pour l'échéance maximale de la banque, à cette durée et à ce taux. */
+      var cap = S.emp.net > 0 ? capaciteBanque({ mois: sc.mois, taux: tauxApplique(sc) }) : null;
+      if (!cap || !(cap.capital >= 100)) { S.cible = null; return; }
+      S.cible.mensualite = cap.mensualiteMax;
+      c = Math.max(100, Math.floor(cap.capital));
+    } else c = capitalCible(sc);
     if (c === sc.capital) return;
     sc.capital = c;
     if (sc.apport.on) sc.apport.prix = arr(c + sc.apport.apport);
@@ -784,14 +798,67 @@
     }).join("");
     /* Capacité affichée sous le capital */
     var aide = $("cr-capital-aide-txt");
-    if (S.cible && S.cible.scenario === sc0()) {
+    var alerte = $("cr-capacite-alerte");
+    alerte.hidden = true; alerte.textContent = "";
+    if (S.cible && S.cible.scenario === sc0() && S.cible.capacite) {
+      aide.textContent = "Montant calculé pour votre échéance maximale de " + dt0(S.cible.mensualite) + " par mois : il suit votre capacité quand le type, la durée ou le taux changent. Saisissez un montant pour le fixer.";
+    } else if (S.cible && S.cible.scenario === sc0()) {
       aide.textContent = "Montant calculé pour une échéance de " + dt0(S.cible.mensualite) + " par mois : il augmente quand le taux baisse ou que la durée s'allonge. Saisissez un montant pour le fixer.";
     } else if (S.emp.net > 0) {
       var cap = capaciteBanque(e);
       aide.textContent = cap.capital > 0 ? "Votre capacité sur cette durée et à ce taux : " + dt0(cap.capital) + " (échéance maximale " + dt0(cap.mensualiteMax) + ")." : "Vos crédits en cours ne laissent pas de capacité d'emprunt sur votre " + S.emp.base + ".";
+      /* Échéance au-dessus de la capacité : alerte claire et retour à la capacité en un clic. */
+      if (cap.mensualiteMax > 0 && cap.capital >= 100 && m > cap.mensualiteMax + 0.5) {
+        var t = doc.createElement("p"); t.textContent = "Échéance de " + dt0(m) + " : " + dt0(m - cap.mensualiteMax) + " au-dessus de votre capacité (" + dt0(cap.mensualiteMax) + " par mois).";
+        var b = doc.createElement("button"); b.type = "button"; b.className = "bouton bouton--petit"; b.setAttribute("data-ramener", "");
+        b.textContent = "Ramener à ma capacité : " + dt0(Math.floor(cap.capital));
+        alerte.appendChild(t); alerte.appendChild(b); alerte.hidden = false;
+      }
     } else aide.textContent = "Renseignez votre salaire dans le profil pour voir votre capacité.";
+    rendreCapacites();
     S.precedentM = m;
   }
+
+  /* Ce que l'on peut emprunter pour chaque type, avec la même échéance maximale (durée et taux habituels du type). */
+  function rendreCapacites() {
+    var boite = $("cr-capacites"), ul = $("cr-capacites-liste"), sc = sc0();
+    if (!(S.emp.net > 0)) { boite.hidden = true; return; }
+    var lignes = ["immo", "auto", "conso"].map(function (t) {
+      var pr = MC.appliquerPreset(t); if (!pr) return null;
+      var tp = tauxProfil(t), taux = tp !== null ? tp : pr.tmm ? MC.tauxTmm(pr.tmm.tmm, pr.tmm.marge) : pr.taux;
+      var cap = capaciteBanque({ mois: pr.mois, taux: taux });
+      return { type: t, mois: pr.mois, taux: taux, cap: cap };
+    }).filter(Boolean);
+    var max = lignes.reduce(function (x, l) { return Math.max(x, l.cap.mensualiteMax || 0); }, 0);
+    if (!(max > 0)) { boite.hidden = true; return; }
+    boite.hidden = false;
+    $("cr-capacites-titre").textContent = "Ce que vous pouvez emprunter avec " + dt0(max) + " par mois";
+    ul.textContent = "";
+    lignes.forEach(function (l) {
+      var li = doc.createElement("li"), b = doc.createElement("button");
+      b.type = "button"; b.className = "cr-capacites__ligne" + (sc.type === l.type ? " cr-capacites__ligne--actif" : ""); b.setAttribute("data-capacite-type", l.type);
+      if (sc.type === l.type) b.setAttribute("aria-current", "true");
+      var nom = doc.createElement("span"), det = doc.createElement("small"), val = doc.createElement("strong");
+      nom.textContent = TYPES[l.type].nom; det.textContent = dureeLib(l.mois) + " · " + pc(l.taux, 2);
+      val.className = "chiffre"; val.textContent = l.cap.capital > 0 ? dt0(Math.floor(l.cap.capital)) : "—";
+      nom.appendChild(det); b.appendChild(nom); b.appendChild(val); li.appendChild(b); ul.appendChild(li);
+    });
+  }
+  /* Retour à la capacité (bouton de l'alerte) et choix d'un type depuis la liste des capacités. */
+  racine.addEventListener("click", function (ev) {
+    var r = ev.target.closest("[data-ramener]"), t = ev.target.closest("[data-capacite-type]");
+    if (!r && !t) return;
+    var sc = sc0();
+    if (t) {
+      var type = t.getAttribute("data-capacite-type"), radio = racine.querySelector('input[data-k="type"][value="' + type + '"]');
+      sc.capitalSaisi = false;
+      if (radio && !radio.checked) { radio.checked = true; surSaisie(radio, true); return; }
+    }
+    sc.capitalSaisi = false;
+    S.cible = { scenario: sc, mensualite: 0, capacite: true };
+    calculer(true); signalerModif();
+    var O = Orb(); if (O) O.toast("Montant ramené à votre capacité : " + dt0(sc.capital) + ".", { type: "ok" });
+  });
 
   /* Capacité selon la règle de la banque de l'utilisateur (net ou brut, revenu retenu du profil). */
   function capaciteBanque(e) {

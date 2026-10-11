@@ -713,7 +713,23 @@ body.attente .onglets-bas a, body.attente .rail__liens a { pointer-events: none;
 .saisie:has(input[type="date"][aria-invalid="true"]) { border-color: var(--alerte, #F79009); }
 
 /* Partage de la fiche avec l'administrateur (accord explicite) */
-.reglage__etat { margin-top: 6px; font-size: 13.5px; color: var(--encre-2, inherit); }
+/* Réglage en carte : en-tête (icône, titre, interrupteur), texte pleine largeur, état dans un bandeau. */
+.reglage.reglage--carte { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.reglage__tete { display: flex; align-items: center; gap: 12px; }
+.reglage__tete h2 { font-size: 19px; flex: 1; min-width: 0; text-wrap: balance; }
+.reglage__ico { flex: none; width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: var(--surface-2); color: var(--encre-2); }
+.reglage__ico svg { width: 19px; height: 19px; }
+.reglage__inter { flex: none; }
+.reglage__desc { margin: 0; color: var(--encre-2); font-size: 14.5px; max-width: 72ch; }
+.reglage--carte .reglage__boutons { margin-top: 2px; }
+.reglage__etat { margin: 0; display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: var(--r-int); background: var(--surface-2); color: var(--encre-2); font-size: 13.5px; }
+.reglage__etat[hidden] { display: none; }
+.reglage__etat svg { flex: none; width: 18px; height: 18px; margin-top: 1px; color: var(--encre-3); }
+.reglage__etat span { display: grid; gap: 2px; min-width: 0; }
+.reglage__etat strong { color: var(--encre); font-weight: 650; }
+.reglage__etat small { font-size: 13px; color: var(--encre-2); }
+.reglage__etat--actif { background: var(--salaire-doux); }
+.reglage__etat--actif svg { color: var(--salaire-t); }
 .admin__fiches { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
 .admin__fiche-lien { display: grid; gap: 2px; width: 100%; padding: 10px 14px; border: 1px solid var(--filet); border-radius: var(--r-int, 12px); background: var(--surface-2); color: inherit; font: inherit; text-align: left; cursor: pointer; transition: border-color 150ms ease, transform 160ms ease-out; }
 .admin__fiche-lien:hover { border-color: var(--filet-fort); }
