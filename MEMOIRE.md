@@ -801,7 +801,7 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 5. **En attente côté utilisateur (11 oct.)** :
    - passer en privé les dépôts espace-finances-tn, simulateur-credit, simulateur-assurance-vie, simulateur-Assurance-Automobile (pas portail-rh : GitHub Pages) puis vérifier que Cloudflare déploie toujours ;
    - corriger son crédit immobilier dans le profil (765,003 DT, début février 2023, 191 mois ; le profil affiche encore 875,894 DT à 2,25 %) ;
-   - facultatif : coller dans le SQL Editor les `revoke` des fonctions de rappels (défense en profondeur ; les gardes `rappels_exiger_serveur` protègent déjà) ;
+   - ~~coller dans le SQL Editor les `revoke` des fonctions de rappels~~ : **fait par l'utilisateur le 11 oct.** Vérifié : fonctions serveur exécutables par `service_role` seulement ; fonctions utilisateur refusées à `anon` ; liens par jeton ouverts à `anon` (voulu) ; tables : aucune écriture pour `authenticated`, aucune lecture pour `anon` ; envoi quotidien toujours 200 ;
    - facultatif : nom de domaine authentifié (SPF/DKIM/DMARC) pour l'expéditeur Brevo (supprime la réécriture en `…@brevosend.com` et les avertissements) ;
    - facultatif : vérifier l'article 56 de la LF 2026 au JORT (abattement des pensions).
 
