@@ -4,6 +4,11 @@ Allow: /orbite/
 Allow: /confidentialite.html
 Allow: /cgv.html
 Disallow: /espace/
+# Moteurs de calcul chargés par l'accueil (nécessaires pour que Google affiche la page comme un visiteur)
+Allow: /espace/js/orbite-calcul.js
+Allow: /espace/js/orbite-intelligence.js
+Allow: /espace/js/progression-calcul.js
+Allow: /espace/js/retraite-calcul.js
 Disallow: /outils/
 Disallow: /connexion
 Disallow: /rappels
