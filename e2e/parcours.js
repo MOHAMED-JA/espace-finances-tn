@@ -1205,7 +1205,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => window.Orbite.profil().epargneDisponible === 5150);
     assert(faux.versementsObjectifs().length === 1 && Number(faux.versementsObjectifs()[0].montant) === 150, "versement enregistré");
     await page.waitForFunction(() => /8\s?150/.test(document.querySelector('.pg-obj[data-type="projet"] .pg-montants').textContent));
-    await page.click('.toast button:has-text("Annuler")');
+    await page.click('.toast:has-text("de plus mis de côté") button:has-text("Annuler")');
     await page.waitForFunction(() => window.Orbite.profil().epargneDisponible === 5000);
     for (let i = 0; i < 20 && faux.versementsObjectifs().length; i++) await page.waitForTimeout(100);
     assert(!faux.versementsObjectifs().length, "versement annulé");
@@ -1234,7 +1234,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.click('.pg-obj[data-type="precaution"] .pg-obj__modifier');
     await page.click("#obj-supprimer");
     await page.waitForFunction(() => !document.querySelector('.pg-obj[data-type="precaution"]'));
-    await page.click('.toast button:has-text("Annuler")');
+    await page.click('.toast:has-text("Objectif supprimé") button:has-text("Annuler")');
     await page.waitForSelector('.pg-obj[data-type="precaution"]');
     assert(faux.objectifs().some((x) => x.libelle === "Coussin de sécurité"), "objectif rétabli");
     await page.screenshot({ path: path.join(CAPTURES, "progression-objectifs.png"), fullPage: true });
@@ -1258,6 +1258,54 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(CAPTURES, "progression-carriere-sombre.png") });
     await page.evaluate(() => document.documentElement.removeAttribute("data-theme"));
+  });
+
+  await etape("retraite : CNSS (plafond, départ anticipé), objectif « Retraite » créé puis mis à jour, CNRPS, téléphone", async () => {
+    await page.goto(base + "/espace/#profil?section=salaire");
+    await page.waitForSelector("#sec-salaire", { state: "visible" });
+    await page.waitForSelector("#p-debut", { state: "visible", timeout: 8000 });
+    assert(await page.isVisible("#p-sans-cot"), "champs début de carrière et années sans cotisation");
+    await page.evaluate(() => window.Orbite.majProfil({ dateNaissance: "1984-03-10", debutCarriere: "2008-09-01", anneesSansCotisation: 0, secteur: "prive", activite: "salarie",
+      montant: 5500, sens: "brut", periode: "mensuel", nombreSalaires: 12, historiqueSalaire: [] }, { immediat: true }));
+    await page.goto(base + "/espace/#progression?onglet=retraite");
+    await page.waitForSelector("#pg-retraite:not([hidden]) #pr-frise svg");
+    const att = await page.evaluate(() => { const e = window.Retraite.estimer(window.Orbite.profil(), window.Orbite.synthese(), { age: 60 }); return { net: e.net, trim: e.trimestres, ecart: e.ecart, capital: e.capital }; });
+    assert(att.trim === 142, "142 trimestres : " + att.trim);
+    assert(chiffre(await page.textContent("#pr-net")) === Math.round(att.net), "pension nette affichée = moteur");
+    assert((await page.textContent("#pr-age-v")) === "60 ans", "âge légal CNSS par défaut");
+    assert(/142/.test(await page.textContent("#pr-calcul")), "trimestres dans le calcul");
+    assert(await page.isVisible("#pr-plafond") && /6 SMIG/.test(await page.textContent("#pr-plafond")), "alerte plafond 6 SMIG");
+    assert(await page.isVisible("#pr-objectif"), "écart à combler : bouton d'objectif");
+    await page.$eval("#pr-age", (el) => { el.value = "55"; el.dispatchEvent(new Event("input", { bubbles: true })); });
+    assert(/−10 points pour départ anticipé/.test(await page.textContent("#pr-sous")), "réduction anticipée affichée");
+    await page.$eval("#pr-age", (el) => { el.value = "60"; el.dispatchEvent(new Event("input", { bubbles: true })); });
+    const avant = faux.objectifs().length;
+    await page.click("#pr-objectif");
+    for (let i = 0; i < 40 && faux.objectifs().length === avant; i++) await page.waitForTimeout(100);
+    const o = faux.objectifs().find((x) => x.libelle === "Retraite");
+    assert(o && Number(o.cible) === Math.round(att.capital / 100) * 100 && o.echeance === "2044-03-31", "objectif Retraite : " + JSON.stringify(o));
+    await page.waitForFunction(() => /Mettre à jour l'objectif/.test(document.getElementById("pr-objectif").textContent));
+    await page.$eval("#pr-age", (el) => { el.value = "62"; el.dispatchEvent(new Event("input", { bubbles: true })); });
+    await page.click("#pr-objectif");
+    for (let i = 0; i < 40 && !faux.objectifs().some((x) => x.libelle === "Retraite" && x.echeance === "2046-03-31"); i++) await page.waitForTimeout(100);
+    assert(faux.objectifs().filter((x) => x.libelle === "Retraite").length === 1 && faux.objectifs().some((x) => x.echeance === "2046-03-31"), "objectif mis à jour, pas dupliqué");
+    await page.screenshot({ path: path.join(CAPTURES, "retraite-cnss.png"), fullPage: true });
+    /* Secteur public : CNRPS, 62 à 65 ans, pas de plafond. */
+    await page.evaluate(() => window.Orbite.majProfil({ secteur: "public" }, { immediat: true }));
+    await page.waitForFunction(() => /CNRPS/.test(document.getElementById("pr-info").textContent));
+    assert((await page.getAttribute("#pr-age", "min")) === "62" && (await page.getAttribute("#pr-age", "max")) === "65", "bornes CNRPS");
+    assert(await page.isHidden("#pr-plafond"), "pas de plafond 6 SMIG à la CNRPS");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(400);
+    assert(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "retraite sans débordement sur téléphone");
+    await page.screenshot({ path: path.join(CAPTURES, "retraite-telephone.png"), fullPage: true });
+    await page.setViewportSize({ width: 1360, height: 900 });
+    await page.evaluate(() => window.Orbite.majProfil({ secteur: "prive" }, { immediat: true }));
+    /* Retraité : l'onglet renvoie vers « Ma pension ». */
+    await page.evaluate(() => window.Orbite.majProfil({ activite: "retraite" }, { immediat: true }));
+    await page.waitForSelector("#pr-vide:not([hidden])");
+    assert(/Ma pension/.test(await page.textContent("#pr-vide")), "retraité : renvoi vers Ma pension");
+    await page.evaluate(() => window.Orbite.majProfil({ activite: "salarie" }, { immediat: true }));
   });
 
   await etape("déconnexion puis suppression définitive du compte", async () => {

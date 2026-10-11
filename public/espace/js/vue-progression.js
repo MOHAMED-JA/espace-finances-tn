@@ -3,11 +3,12 @@
  * Carrière : salaire brut face à l'inflation (Progression.carriere), courbe SVG construite en DOM, projection réglable.
  * Objectifs : cartes avec jauge, « J'ai épargné » (versement + épargne disponible du profil, annulable), crédit suivi
  * automatiquement, défis du mois, série et badges. Données : tables objectifs / objectifs_versements (Espace.objectifs).
+ * Retraite : estimation CNSS / CNRPS (Retraite.estimer), curseur d'âge, écart à 80 % du net, objectif « Retraite ».
  * Expose window.OrbiteProgression.objectifs() pour les rappels d'échéance (appli.js) ; événement « orbite:objectifs ».
  */
 (function () {
   "use strict";
-  var O = window.Orbite, E = window.Espace, P = window.Progression, OC = window.OrbiteCalcul, OI = window.OrbiteIntelligence;
+  var O = window.Orbite, E = window.Espace, P = window.Progression, RT = window.Retraite, OC = window.OrbiteCalcul, OI = window.OrbiteIntelligence;
   var F = O.F, $ = O.$, doc = document, SVG = "http://www.w3.org/2000/svg";
   var donnees = { objectifs: [], versements: [] }, charge = false, chargement = null, enCours = false;
   var reglageTouche = false, faitsAvant = null, compte = {};
@@ -29,7 +30,7 @@
   function signaler() { doc.dispatchEvent(new CustomEvent("orbite:objectifs")); }
 
   /* ---------- Onglets ---------- */
-  var ONGLETS = ["carriere", "objectifs"], barre = doc.querySelector(".pg-onglets");
+  var ONGLETS = ["carriere", "objectifs", "retraite"], barre = doc.querySelector(".pg-onglets");
   function ouvrirOnglet(cle, focus) {
     if (ONGLETS.indexOf(cle) === -1) cle = "carriere";
     barre.setAttribute("data-o", cle);
@@ -49,7 +50,7 @@
   barre.addEventListener("keydown", function (e) {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
     e.preventDefault();
-    var cle = barre.getAttribute("data-o") === "carriere" ? "objectifs" : "carriere";
+    var i = ONGLETS.indexOf(barre.getAttribute("data-o")), cle = ONGLETS[(Math.max(0, i) + (e.key === "ArrowRight" ? 1 : ONGLETS.length - 1)) % ONGLETS.length];
     history.replaceState(null, "", "#progression?onglet=" + cle);
     ouvrirOnglet(cle, true);
   });
@@ -146,7 +147,9 @@
   window.addEventListener("resize", function () {
     clearTimeout(minuterieTaille);
     minuterieTaille = setTimeout(function () {
-      if ($("vue-progression").hidden || ongletActif() !== "carriere" || largeurDessin === null) return;
+      if ($("vue-progression").hidden) return;
+      if (ongletActif() === "retraite") { rendreRetraite(); return; }
+      if (ongletActif() !== "carriere" || largeurDessin === null) return;
       if (($("pg-graphe").clientWidth < 520) !== largeurDessin) rendreCarriere();
     }, 200);
   });
@@ -517,10 +520,143 @@
     }, function () { O.toast("La suppression n'a pas abouti. Vérifiez votre connexion.", { type: "erreur" }); });
   });
 
+
+  /* ===================================================================
+     Retraite (lot 4)
+     =================================================================== */
+  var ageChoisi = null;
+  function rendreRetraite() {
+    var p = O.profil(), sy = O.synthese(); if (!p || !sy || !RT) return;
+    var m = new Date(), b = RT.bornes(p, m), vide = $("pr-vide"), plein = $("pr-plein"), act = $("pr-vide-actions");
+    function videAvec(texte, liens) {
+      vide.hidden = false; plein.hidden = true; $("pr-vide-texte").textContent = texte; act.textContent = "";
+      liens.forEach(function (l) { var a = cree("a", "bouton bouton--petit " + (l[2] ? "bouton--plein" : "bouton--fantome"), l[0]); a.href = l[1]; act.appendChild(a); });
+    }
+    if (p.activite === "retraite") return videAvec("Vous êtes à la retraite : votre pension, son détail et la hausse prévue par la loi de finances 2026 sont dans « Ma pension ».", [["Voir ma pension", "#salaire", true]]);
+    if (!p.dateNaissance) return videAvec("Indiquez votre date de naissance dans votre profil : Orbite en déduit votre âge de départ et votre pension.", [["Compléter mon profil", "#profil?section=identite", true]]);
+    if (!b.possible) return videAvec("Vous avez dépassé l'âge maximal de départ de votre caisse : demandez la liquidation de votre pension à la " + (b.caisse === "cnss" ? "CNSS." : "CNRPS."), []);
+    if (!p.debutCarriere && !p.dateEmbauche) return videAvec("Indiquez le début de votre carrière (premier emploi déclaré) : Orbite compte vos années de cotisation.", [["Ajouter le début de carrière", "#profil?section=salaire", true]]);
+    vide.hidden = true; plein.hidden = false;
+    var curseur = $("pr-age");
+    curseur.min = b.min; curseur.max = b.max;
+    if (ageChoisi == null || ageChoisi < b.min || ageChoisi > b.max) ageChoisi = b.defaut;
+    curseur.value = String(ageChoisi);
+    var e = RT.estimer(p, sy, { age: ageChoisi, maintenant: m }), cnss = e.caisse === "cnss";
+    var depLib = libMois(e.depart);
+    $("pr-info").textContent = (cnss ? "CNSS (secteur privé)" : "CNRPS (secteur public)") + " · début de carrière : " + (e.debut ? MOIS[e.debut.getMonth()] + " " + e.debut.getFullYear() : "?") +
+      (e.debutConnu ? "" : " (date d'embauche)") + (p.anneesSansCotisation ? " · " + p.anneesSansCotisation + " an" + (p.anneesSansCotisation > 1 ? "s" : "") + " sans cotisation" : "") + " · ";
+    var lien = cree("a", "", e.debutConnu ? "modifier dans Mon profil" : "préciser dans Mon profil"); lien.href = "#profil?section=salaire"; $("pr-info").appendChild(lien);
+    $("pr-age-v").textContent = ageChoisi + " ans";
+    reperesAge(b);
+    var ok = e.etat === "ok";
+    $("pr-refus").hidden = ok; $("pr-refus").textContent = ok ? "" : e.raisons.join(" ");
+    $("pr-lib").textContent = "Pension nette estimée, à " + ageChoisi + " ans (" + depLib + ")";
+    $("pr-net").textContent = ok ? F.dt0(e.net) : "—";
+    $("pr-sous").textContent = ok ? "en dinars d'aujourd'hui · brute " + dt(e.brut) + " · taux " + F.pct(e.taux / 100, e.taux % 1 ? 1 : 0) + " du salaire de référence" +
+      (e.reduction ? " (dont −" + e.reduction + " points pour départ anticipé, définitif)" : "") + (e.auMinimum ? " · minimum de pension appliqué" : "") : "Pas de pension à cet âge avec vos années de cotisation.";
+    var pa = $("pr-pastille"); pa.hidden = !ok;
+    pa.textContent = F.pct(e.remplacement, 0) + " de votre net actuel"; pa.className = "pr-pastille " + (e.ecart > 0 ? "pr-pastille--court" : "pr-pastille--ok");
+    /* Barre : pension, écart, objectif 80 %, échelle = net actuel. */
+    var ech = Math.max(e.netActuel, e.net) * 1.02 || 1;
+    $("pr-b-pension").style.setProperty("width", (e.net / ech * 100) + "%");
+    $("pr-b-manque").style.setProperty("left", (e.net / ech * 100) + "%"); $("pr-b-manque").style.setProperty("width", (e.ecart / ech * 100) + "%");
+    $("pr-b-cible").style.setProperty("left", (e.cible / ech * 100) + "%");
+    $("pr-barre").setAttribute("aria-label", "Pension nette " + dt(e.net) + ", objectif " + dt(e.cible) + ", net actuel " + dt(e.netActuel));
+    $("pr-l-pension").textContent = F.dt0(e.net); $("pr-l-ecart").textContent = F.dt0(e.ecart); $("pr-l-cible").textContent = F.dt0(e.cible); $("pr-l-net").textContent = F.dt0(e.netActuel);
+    friseRetraite(e, m);
+    var pl = $("pr-plafond"); pl.hidden = !(cnss && e.depassePlafond > 1);
+    if (!pl.hidden) pl.textContent = "Votre brut moyen (" + dt(e.refBrute) + " par mois, primes comprises) dépasse le plafond de la CNSS de base, 6 SMIG (" + dt(e.plafond) + ") : " + dt(e.depassePlafond) + " ne comptent pas pour cette pension. Une retraite complémentaire, si votre employeur en a une, viendrait en plus (non comptée ici).";
+    /* Écart et objectif. */
+    var ex = $("pr-ecart"), a0 = e.ecart > 0.5 && ok;
+    ex.textContent = !ok ? "—" : a0 ? dt(e.ecart) + " / mois" : "Aucun écart"; ex.classList.toggle("pr-ecart--zero", ok && !a0);
+    $("pr-capital").textContent = !ok ? "" : a0 ? "Soit un capital d'environ " + dt(Math.round(e.capital / 100) * 100) + " pour 20 ans de retraite." : "Votre pension estimée dépasse 80 % de votre net actuel : rien à combler à cet âge.";
+    $("pr-effort").hidden = !a0; $("pr-objectif").hidden = !a0; $("pr-astuce").hidden = !a0;
+    if (a0) {
+      $("pr-mensuel").textContent = dt(e.mensuel);
+      $("pr-jusqua").textContent = "jusqu'à " + depLib + " (rendement réel supposé : 2 % par an)";
+      var existant = objectifRetraite();
+      $("pr-objectif").textContent = existant ? "Mettre à jour l'objectif « Retraite »" : "Créer l'objectif « Retraite »";
+    }
+    /* Calcul détaillé. */
+    var L = cnss ? [["Trimestres cotisés au départ", F.dt0(e.trimestres)], ["Taux (40 % + 0,5 % par trimestre au-delà de 40, 80 % au plus)", F.pct(e.tauxBrut / 100, 0)]]
+      : [["Années de service au départ", String(Math.round(e.annees * 10) / 10).replace(".", ",")], ["Taux (2 % · 3 % · 2 % par an, 90 % au plus)", F.pct(e.tauxBrut / 100, e.tauxBrut % 1 ? 1 : 0)]];
+    if (e.reduction) L.push(["Réduction pour départ avant 60 ans", "−" + e.reduction + " points"]);
+    L.push([cnss ? "Salaire de référence (moyenne 10 ans, 6 SMIG au plus)" : "Salaire de référence (dernière rémunération)", dt(e.reference)]);
+    if (ok) { L.push(["Pension brute", dt(e.brut)]); L.push(["Retenue maladie (4 %) et impôt", "−" + dt(e.brut - e.net)]); L.push(["Pension nette", dt(e.net)]); }
+    var dl = $("pr-calcul"); dl.textContent = "";
+    L.forEach(function (l) { var d = cree("div"); d.appendChild(cree("dt", "", l[0])); d.appendChild(cree("dd", "chiffre", l[1])); dl.appendChild(d); });
+    /* Réserves et sources. */
+    var res = [["!", "Estimation, pas un relevé officiel : demandez votre relevé de carrière à la " + (cnss ? "CNSS" : "CNRPS") + " avant toute décision."]];
+    if (cnss) res.push(["!", "Départ avant 60 ans : la réduction de 2 points par année reste à vie, même après 60 ans."]);
+    else res.push(["!", "Départ à 57 ans avec 15 ans de service : mesure exceptionnelle, non simulée ici (renseignez-vous auprès de la CNRPS)."]);
+    if (!e.debutConnu) res.push(["!", "Début de carrière inconnu : Orbite compte depuis votre date d'embauche. Précisez-le dans Mon profil si vous avez travaillé avant."]);
+    res.push(["≈", "Calcul en dinars d'aujourd'hui, salaire supposé constant jusqu'au départ" + (cnss ? " ; brut moyen par mois, primes comprises." : " ; primes non soumises à retenue comprises.")]);
+    res.push(["≈", "20 ans de retraite ; rendement réel de l'épargne 2 % par an" + (cnss ? " ; réduction anticipée en points de taux." : ".")]);
+    var ul = $("pr-reserves"); ul.textContent = "";
+    res.forEach(function (r) { var li = cree("li", r[0] === "≈" ? "pr-reserves__hyp" : ""), i = cree("span", "pr-reserves__ico", r[0]); i.setAttribute("aria-hidden", "true"); li.appendChild(i); li.appendChild(cree("span", "", r[1])); ul.appendChild(li); });
+    var us = $("pr-sources");
+    if (!us.firstChild) RT.REGLES.sources.forEach(function (x) { var li = cree("li"), a = cree("a", "", x.titre); a.href = x.url; a.target = "_blank"; a.rel = "noopener noreferrer"; li.appendChild(a); us.appendChild(li); });
+    dernierRetraite = e;
+  }
+  var dernierRetraite = null;
+  function reperesAge(b) {
+    var box = $("pr-reperes"); box.textContent = "";
+    var pts = b.caisse === "cnss" ? [[55, "55 ans · anticipé"], [60, "60 ans · âge légal"], [65, "65 ans"]] : [[62, "62 ans · âge légal"], [65, "65 ans · sur demande"]];
+    pts.filter(function (x) { return x[0] >= b.min && x[0] <= b.max; }).forEach(function (x) {
+      var sp = cree("span", x[0] === b.legal ? "pr-reperes__legal" : "", x[1]), pc = b.max > b.min ? (x[0] - b.min) / (b.max - b.min) : 0;
+      sp.style.setProperty("--pc", pc);
+      if (pc === 0) sp.classList.add("pr-reperes__debut"); else if (pc === 1) sp.classList.add("pr-reperes__fin");
+      box.appendChild(sp);
+    });
+  }
+  function friseRetraite(e, m) {
+    var boite = $("pr-frise"); boite.textContent = "";
+    var etroit = (boite.clientWidth || 640) < 480, W = etroit ? 360 : 640, H = 92, g = 8, d = 8, y = 34, h = 14;
+    var x0 = e.debut.getFullYear() + e.debut.getMonth() / 12, x1 = e.depart.getFullYear() + e.depart.getMonth() / 12, xa = m.getFullYear() + m.getMonth() / 12;
+    function X(a) { return g + Math.max(0, Math.min(1, (a - x0) / (x1 - x0))) * (W - g - d); }
+    var s = svg("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Cotisation de " + libMois(e.debut) + " à " + libMois(e.depart) + " : " + Math.floor(e.moisFaits / 3) + " trimestres à ce jour" });
+    s.appendChild(svg("rect", { class: "pr-f-fond", x: g, y: y, width: W - g - d, height: h, rx: 7 }));
+    s.appendChild(svg("rect", { class: "pr-f-fait", x: g, y: y, width: Math.max(0, X(xa) - g), height: h, rx: 7 }));
+    s.appendChild(svg("rect", { class: "pr-f-avenir", x: X(xa), y: y, width: Math.max(0, X(x1) - X(xa)), height: h }));
+    s.appendChild(svg("line", { class: "pr-f-trait", x1: X(xa), x2: X(xa), y1: y - 10, y2: y + h + 4 }));
+    var t = svg("text", { class: "pr-f-fort", x: X(xa), y: y - 14, "text-anchor": X(xa) < 90 ? "start" : X(xa) > W - 90 ? "end" : "middle" });
+    t.textContent = "Aujourd'hui · " + (e.caisse === "cnss" ? Math.floor(e.moisFaits / 3) + " trimestres" : (Math.round(e.moisFaits / 12 * 10) / 10 + " ans").replace(".", ",")); s.appendChild(t);
+    var xm = e.tauxMaxLe.getFullYear() + e.tauxMaxLe.getMonth() / 12;
+    if (xm < x1 && xm > x0) {
+      s.appendChild(svg("line", { class: "pr-f-max", x1: X(xm), x2: X(xm), y1: y - 4, y2: y + h + 4 }));
+      var tm = svg("text", { class: "pr-f-txt", x: X(xm), y: y + h + 18, "text-anchor": X(xm) > W - 70 ? "end" : "middle" }); tm.textContent = (e.caisse === "cnss" ? "80 %" : "90 %") + " atteint (" + e.tauxMaxLe.getFullYear() + ")"; s.appendChild(tm);
+    }
+    s.appendChild(svg("circle", { class: "pr-f-depart", cx: X(x1), cy: y + h / 2, r: 7 }));
+    var t1 = svg("text", { class: "pr-f-txt", x: g, y: y + h + 34 }); t1.textContent = String(e.debut.getFullYear()); s.appendChild(t1);
+    var t2 = svg("text", { class: "pr-f-txt", x: W - d, y: y + h + 34, "text-anchor": "end" }); t2.textContent = "Départ " + libMois(e.depart); s.appendChild(t2);
+    boite.appendChild(s);
+  }
+  function objectifRetraite() { return donnees.objectifs.filter(function (o) { return o.type === "projet" && /^retraite$/i.test(o.libelle); })[0] || null; }
+  $("pr-age").addEventListener("input", function () { ageChoisi = +this.value; compter("retraite"); rendreRetraite(); });
+  $("pr-objectif").addEventListener("click", function () {
+    var e = dernierRetraite; if (!e || !(e.capital > 0) || enCours) return;
+    var fin = new Date(e.depart.getFullYear(), e.depart.getMonth() + 1, 0);
+    var o = { type: "projet", libelle: "Retraite", cible: Math.round(e.capital / 100) * 100, depart: 0,
+      echeance: fin.getFullYear() + "-" + String(fin.getMonth() + 1).padStart(2, "0") + "-" + String(fin.getDate()).padStart(2, "0") };
+    var existant = objectifRetraite(), b = this; enCours = true; b.disabled = true;
+    if (existant) o.depart = existant.depart;
+    (existant ? E.objectifs.modifier(existant.id, o) : E.objectifs.creer(o)).then(function (r) {
+      enCours = false; b.disabled = false;
+      if (existant) donnees.objectifs = donnees.objectifs.map(function (x) { return x.id === r.id ? r : x; }); else donnees.objectifs.push(r);
+      compter("objectif-retraite"); signaler(); rendre();
+      O.toast(existant ? "Objectif « Retraite » mis à jour : " + dt(r.cible) + " avant " + libMois(e.depart) + "." : "Objectif « Retraite » créé : " + dt(r.cible) + " avant " + libMois(e.depart) + ".", {
+        type: "ok", detail: "Suivez-le dans l'onglet Objectifs, avec « J'ai épargné ».", action: { libelle: "Voir", fn: function () { history.replaceState(null, "", "#progression?onglet=objectifs"); ouvrirOnglet("objectifs"); } } });
+    }, function (err) {
+      enCours = false; b.disabled = false;
+      O.toast(/Limite/.test(String(err && err.message)) ? "12 objectifs au plus : terminez ou supprimez-en un." : "L'objectif n'a pas été enregistré. Vérifiez votre connexion.", { type: "erreur" });
+    });
+  });
+
   /* ---------- Rendu et navigation ---------- */
   function rendre() {
     if ($("vue-progression").hidden) return;
-    if (ongletActif() === "objectifs") rendreObjectifs(); else rendreCarriere();
+    var o = ongletActif();
+    if (o === "objectifs") rendreObjectifs(); else if (o === "retraite") rendreRetraite(); else rendreCarriere();
   }
   doc.addEventListener("orbite:vue", function (e) {
     if (e.detail.vue !== "progression") return;

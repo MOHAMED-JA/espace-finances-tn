@@ -454,7 +454,7 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
-## 3 duoquinquagies. Lot 4 : retraite CNSS / CNRPS (11 oct., en cours : maquette à valider)
+## 3 duoquinquagies. Lot 4 : retraite CNSS / CNRPS (11 oct., livré)
 
 - **Choix de l'utilisateur** : CNSS **et** CNRPS ; afficher âge et pension estimée, curseur partir plus tôt / plus tard, écart à combler (pas le relevé de carrière) ; **3e onglet « Retraite » de Ma progression** ; nouveau champ de profil **« début de carrière »** (mois + année du premier emploi déclaré, par défaut la date d'embauche, + années sans cotisation) ; écart calculé pour garder **80 % du net actuel**.
 - **Règles validées par l'utilisateur** (sites officiels cnss.tn, CNRPS, JORT bloqués depuis l'environnement : sources secondaires recoupées, réserves affichées) :
@@ -463,6 +463,11 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
   - Net : CNAM 4 % + abattement 25 → 50 % (2029), moteur `pension.js` existant.
   - Hypothèses (affichées) : calcul en **dinars d'aujourd'hui** (tient lieu d'actualisation), salaire constant par défaut ; réduction anticipée en **points de taux** ; **20 ans** de retraite ; rendement réel de l'épargne **2 %/an**.
 - **Maquette** : https://claude.ai/artifact/W9p6vJBteLFK8qGnSKu9cm (exemple fictif Leïla, née mars 1984, brut 5 500 DT, carrière depuis sept. 2008 : CNSS à 60 ans → 142 trimestres, 80 %, réf. 3 328 DT, brute 2 663, nette 2 389 DT = 66 % du net 3 623 ; écart 509 DT/mois, capital ≈ 100 700 DT, 403 DT/mois jusqu'en 2044 ; CNRPS à 62 ans → 85 %, nette 4 051 DT, pas d'écart). Données générées par le moteur (`scratchpad/lot4`).
+- **Maquette validée** ; objectif automatique = **capital nécessaire** (projet « Retraite », échéance = fin du mois de départ ; s'il existe, il est mis à jour, jamais dupliqué).
+- **Module pur `public/espace/js/retraite-calcul.js`** (`window.Retraite`, testé : `tests/espace/retraite.test.js`, 9 tests) : `REGLES` (+ sources), `caisseDe(p)` (secteur public → CNRPS), `bornes(p, m)` (jamais un âge passé), `tauxCnss`, `tauxCnrps`, `capitalRente`, `estimer(p, sy, {age, maintenant, hausseReelle, cible})` (états `ok` / `retraite` / `naissance` / `carriere` / `depasse` / `insuffisant` / `anticipe-ferme` ; référence = **brut annuel ÷ 12, primes comprises**, en dinars d'aujourd'hui ; minimum 2/3 SMIG ; net par `CalculPension` avec chef de famille, sans enfants ; `tauxMaxLe` = 30 ans CNSS / 40 ans CNRPS), `courbe`. Reproduit la maquette au dinar près.
+- **Profil** : `debutCarriere` (date, vide = date d'embauche) et `anneesSansCotisation` (0-40), dans « Votre salaire » (salariés).
+- **Vue** : 3e onglet `#progression?onglet=retraite` (pastille à 3 positions) : info caisse / début de carrière, pension nette (grand chiffre), pastille % du net, refus expliqué, curseur d'âge avec repères, barre pension / écart / objectif 80 %, frise SVG en DOM (aujourd'hui, taux maximum atteint, départ ; repère 360 px sur écran étroit), alerte plafond 6 SMIG, écart + capital + effort mensuel, bouton objectif, calcul détaillé, réserves, sources. États vides : retraité → « Ma pension » ; naissance ou carrière manquante → lien vers le profil.
+- Tests : unitaires 405 ; e2e 45/45 (nouvelle étape retraite ; pièges : cliquer « Annuler » dans le **bon** toast, `:has-text(...)`, plusieurs toasts peuvent être ouverts). Nouveautés « 2026-10-11c », SW `orbite-2026-10-11e`.
 
 ## 3 unquinquagies. Bouton « Guide » à la place du « ? » (11 oct.)
 
