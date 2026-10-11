@@ -1045,3 +1045,9 @@ body.pension-active[data-vue-active="salaire"] #barre-actions { display: none !i
 .fiscal__employeur .champ__lib { margin: 0; font-weight: 600; font-size: 14px; }
 .fiscal__employeur .bascule { max-width: 280px; }
 .fiscal__employeur .champ__aide { margin: 0; }
+
+/* État du thème « Soleil » (Paramètres › Préférences) */
+.theme-etat { margin-top: 10px !important; align-items: center; }
+.theme-etat svg { color: var(--epargne-t); margin-top: 0; }
+.theme-etat--jour { background: var(--ambre-doux); }
+.theme-etat--jour svg { color: var(--ambre-t); }

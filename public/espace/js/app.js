@@ -652,8 +652,29 @@
       var hm = function (m) { m = Math.round(m); return Math.floor(m / 60) + " h " + String(m % 60).padStart(2, "0"); };
       aide.textContent = "Comme votre appareil, clair, sombre, ou « Soleil » : aujourd'hui à Tunis, clair de " + hm(so.lever) + " à " + hm(so.coucher) + ", sombre ensuite.";
     }
+    etatSoleil();
     doc.dispatchEvent(new CustomEvent("orbite:theme"));
   }
+  /* « Soleil » choisi : ce qui est appliqué en ce moment et le prochain changement (lever ou coucher à Tunis). */
+  function etatSoleil() {
+    var el = $("theme-etat"), T = window.EFTheme;
+    if (!el) return;
+    if (E.themeActuel() !== "heure" || !T || !T.soleil) { el.hidden = true; return; }
+    var m = new Date(), so = T.soleil(m), min = (m.getUTCHours() * 60 + m.getUTCMinutes() + 60) % 1440;
+    var hm = function (x) { x = Math.round(x); return Math.floor(x / 60) + " h " + String(x % 60).padStart(2, "0"); };
+    var nuit = T.nuitATunis(m), texte;
+    if (!nuit) texte = "En ce moment : clair. Passage au sombre ce soir à " + hm(so.coucher) + ".";
+    else if (min < so.lever) texte = "En ce moment : sombre, le soleil n'est pas encore levé à Tunis. Retour au clair à " + hm(so.lever) + ".";
+    else texte = "En ce moment : sombre, le soleil est couché à Tunis. Retour au clair demain à " + hm(T.soleil(new Date(m.getTime() + 864e5)).lever) + ".";
+    el.textContent = "";
+    var ico = doc.createElementNS("http://www.w3.org/2000/svg", "svg"), u = doc.createElementNS("http://www.w3.org/2000/svg", "use");
+    ico.setAttribute("aria-hidden", "true"); u.setAttribute("href", "/orbite/icones.svg#" + (nuit ? "lune" : "soleil")); ico.appendChild(u);
+    var sp = doc.createElement("span"); sp.textContent = texte;
+    el.appendChild(ico); el.appendChild(sp);
+    el.classList.toggle("theme-etat--jour", !nuit);
+    el.hidden = false;
+  }
+  setInterval(function () { if (!doc.hidden) etatSoleil(); }, 60000);
   doc.addEventListener("ef:theme", majTheme);
   function changerTheme(t) {
     var appliquer = function () { E.appliquerTheme(t); majTheme(); };
