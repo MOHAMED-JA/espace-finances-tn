@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-  <title>Orbite — votre salaire au centre, tout le reste en orbite</title>
-  <meta name="description" content="Orbite, l'application des salariés tunisiens : salaire net, tranche d'impôt, capacité de crédit sur le net et sur le brut, épargne assurance vie et CEA. Un seul profil, barèmes 2026, données protégées.">
+  <title>Calcul salaire net Tunisie 2026, crédit et impôt — Orbite</title>
+  <meta name="description" content="Salaire net en Tunisie (barèmes 2026), capacité de crédit, impôt économisable avec l'assurance vie et le CEA, retraite CNSS ou CNRPS. Un seul profil. Essai gratuit de 3 jours.">
   <!-- Aperçu de partage (LinkedIn, Facebook, WhatsApp, X) : vérifiable avec le LinkedIn Post Inspector. -->
   <link rel="canonical" href="https://espace-finances-tn.jaouadimohamedaziz.workers.dev/">
   <meta name="author" content="Mohamed Aziz Jaouadi">
@@ -24,6 +24,50 @@
   <meta name="twitter:title" content="Orbite — votre salaire au centre, tout le reste en orbite">
   <meta name="twitter:description" content="Salaire brut → net, capacité de crédit, impôt, épargne et Assistant en darija, pour les salariés tunisiens.">
   <meta name="twitter:image" content="https://espace-finances-tn.jaouadimohamedaziz.workers.dev/orbite/og-orbite.jpg">
+  <!-- Données structurées (lues par les moteurs de recherche, jamais exécutées). Prix = table formules (Supabase). -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/#app",
+        "name": "Orbite",
+        "url": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/",
+        "description": "Application des salariés et retraités tunisiens : salaire brut et net (barèmes IRPP et CSS 2026), capacité de crédit sur le net et sur le brut, impôt économisable avec l'assurance vie et le CEA, retraite CNSS ou CNRPS, objectifs d'épargne.",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web, Android, iOS",
+        "inLanguage": "fr",
+        "isAccessibleForFree": false,
+        "areaServed": { "@type": "Country", "name": "Tunisie" },
+        "image": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/orbite/og-orbite.jpg",
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "TND",
+          "lowPrice": "9.900",
+          "highPrice": "79.900",
+          "offerCount": 3,
+          "description": "Essai gratuit de 3 jours, puis formule mensuelle (9,900 DT), semestrielle (49,900 DT) ou annuelle (79,900 DT)."
+        },
+        "author": { "@id": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/#auteur" }
+      },
+      {
+        "@type": "Person",
+        "@id": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/#auteur",
+        "name": "Mohamed Aziz Jaouadi",
+        "sameAs": ["https://www.linkedin.com/in/mohamed-aziz-jaouadi-%D9%85%D8%AD%D9%85%D8%AF-%D8%B9%D8%B2%D9%8A%D8%B2-%D8%A7%D9%84%D8%AC%D9%88%D8%A7%D8%AF%D9%8A-%C2%AEpsm-i-%C2%AEpspo-l-%C2%AEistqb-851009115/"]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/#site",
+        "name": "Orbite",
+        "url": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/",
+        "inLanguage": "fr",
+        "publisher": { "@id": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/#auteur" }
+      }
+    ]
+  }
+  </script>
   <meta name="theme-color" content="#F3F4F8" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#07090F" media="(prefers-color-scheme: dark)">
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -72,6 +116,7 @@
       <div class="heros__grille-points" aria-hidden="true"></div>
       <div class="conteneur heros__grille">
         <div class="heros__texte">
+          <p class="heros__surtitre">Salaire, crédit, impôt et retraite en Tunisie · barèmes <span data-annee>2026</span></p>
           <h1 id="titre-heros" class="heros__titre">
             <span class="ligne-titre"><span>Votre salaire au centre.</span></span>
             <span class="ligne-titre"><span class="heros__accent">Tout le reste en orbite.</span></span>

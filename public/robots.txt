@@ -1,6 +1,11 @@
 User-agent: *
 Allow: /$
 Allow: /orbite/
+Allow: /confidentialite.html
+Allow: /cgv.html
 Disallow: /espace/
 Disallow: /outils/
 Disallow: /connexion
+Disallow: /rappels
+
+Sitemap: https://espace-finances-tn.jaouadimohamedaziz.workers.dev/sitemap.xml

@@ -454,6 +454,13 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 octoquinquagies. Référencement : base technique (11 oct.)
+
+- **Question** : comment apparaître dans les premiers résultats ? Constat : pas de `sitemap.xml`, une seule page indexable (accueil), pas de données structurées, peu de liens entrants ; « Orbite » est un mot courant → viser les recherches précises (« calcul salaire net Tunisie 2026 », « capacité crédit Tunisie », « assurance vie impôt Tunisie », « retraite CNSS/CNRPS »). Seulement des solutions **gratuites**.
+- **Choix** : base technique d'abord + guide Google Search Console (pages publiques par recherche, FAQ et lien depuis portail-rh proposés pour plus tard).
+- **Fait** : `public/sitemap.xml` (accueil, confidentialité, CGV) ; `robots.txt` (Sitemap, `/rappels` exclu) ; `index.html` : titre « Calcul salaire net Tunisie 2026, crédit et impôt — Orbite », description avec mots-clés et « Essai gratuit de 3 jours », surtitre visible « Salaire, crédit, impôt et retraite en Tunisie · barèmes 2026 », JSON-LD (`WebApplication` FinanceApplication avec `AggregateOffer` 9,900 à 79,900 TND = table `formules`, `Person` auteur avec LinkedIn, `WebSite`) — bloc de données non exécuté, aucune violation CSP (e2e 47/47).
+- **À faire par l'utilisateur** : Google Search Console (propriété « préfixe d'URL », vérification par balise HTML : il colle le `content` de la balise, valeur publique) puis envoi de `sitemap.xml` ; Bing Webmaster Tools (import depuis Search Console) ; partager le lien (LinkedIn, groupes Facebook RH/finances, profil GitHub).
+
 ## 3 septquinquagies. Lot 5 : accueil « scroll-cinéma » (11 oct., livré)
 
 - **Constat** : sous le héros, des blocs statiques ; 3 modules seulement (rien sur Ma progression, Retraite, « Et si… », rappels, Assistant) ; « Plus de 240 tests » périmé ; **« Gratuit, sans publicité » / « Créer mon orbite gratuite » faux** (formules payantes après 3 jours d'essai).
