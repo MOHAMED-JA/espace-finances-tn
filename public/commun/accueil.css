@@ -108,6 +108,8 @@
 
 .pied { border-top: 1px solid var(--filet); padding: 28px 0 40px; font-size: 14px; color: var(--encre-3); }
 .pied__ligne { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; }
+.pied nav { display: flex; flex-wrap: wrap; gap: 6px 16px; max-width: 520px; }
+.pied nav a { color: var(--encre-2); }
 .pied p { max-width: 70ch; }
 
 /* ---------- Lot 5 : accueil « scroll-cinéma » ---------- */
