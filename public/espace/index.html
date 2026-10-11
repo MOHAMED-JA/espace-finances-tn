@@ -1190,6 +1190,11 @@
                 <button type="button" class="bouton bouton--petit bouton--danger" id="supprimer-compte"><svg aria-hidden="true"><use href="/orbite/icones.svg#poubelle"/></svg>Supprimer mon compte</button>
               </div>
             </section>
+            <section class="panneau reglage reglage--carte" aria-labelledby="r-accord">
+              <div class="reglage__tete"><span class="reglage__ico" aria-hidden="true"><svg><use href="/orbite/icones.svg#valide"/></svg></span><h2 id="r-accord">Documents acceptés</h2></div>
+              <p class="reglage__desc"><strong>Politique de confidentialité et conditions générales de vente.</strong> <span id="accord-etat">—</span></p>
+              <p class="reglage__desc"><a href="/confidentialite.html" target="_blank" rel="noopener">Relire la politique<span class="cache"> (nouvel onglet)</span></a> · <a href="/cgv.html" target="_blank" rel="noopener">Relire les CGV<span class="cache"> (nouvel onglet)</span></a>. Pour retirer votre accord, supprimez votre compte ci-dessus.</p>
+            </section>
             <section class="panneau reglage reglage--carte" aria-labelledby="r-partage">
               <div class="reglage__tete">
                 <span class="reglage__ico" aria-hidden="true"><svg><use href="/orbite/icones.svg#bouclier"/></svg></span>
@@ -1445,6 +1450,29 @@
     <button type="button" role="menuitem" data-action="supprimer" class="danger">Supprimer</button>
   </div>
 
+  <!-- Acceptation obligatoire de la politique et des CGV (commun/consentement.js) : impossible à fermer sans accepter. -->
+  <dialog class="dialogue dialogue--consentement" id="dlg-consentement" aria-labelledby="consentement-titre" aria-describedby="consentement-texte">
+    <div class="consentement" tabindex="-1" autofocus>
+      <span class="consentement__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.4-3 7.8-7 9-4-1.2-7-4.6-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></span>
+      <h2 id="consentement-titre">Avant de continuer</h2>
+      <p class="consentement__maj" data-consentement-motif="mise-a-jour" hidden>La politique de confidentialité a été mise à jour. Merci de la relire et de l'accepter pour continuer.</p>
+      <p id="consentement-texte">Pour utiliser Orbite, acceptez la politique de confidentialité et les conditions générales de vente. Elles disent quelles données sont gardées, qui peut les voir, et les règles de l'essai et des abonnements.</p>
+      <div class="consentement__docs">
+        <a class="consentement__doc" href="/confidentialite.html" target="_blank" rel="noopener"><span><b>Politique de confidentialité</b><small>Mise à jour le 11 octobre 2026</small></span><svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg><span class="cache"> (nouvel onglet)</span></a>
+        <a class="consentement__doc" href="/cgv.html" target="_blank" rel="noopener"><span><b>Conditions générales de vente</b><small>Essai, formules, résiliation</small></span><svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg><span class="cache"> (nouvel onglet)</span></a>
+      </div>
+      <label class="accord">
+        <input type="checkbox" id="consentement-case">
+        <span>J'ai lu et j'accepte la politique de confidentialité et les conditions générales de vente.</span>
+      </label>
+      <p class="erreur-champ" id="consentement-erreur" role="alert" hidden>L'acceptation n'a pas pu être enregistrée. Vérifiez votre connexion et réessayez.</p>
+      <div class="consentement__actions">
+        <button type="button" class="bouton bouton--plein" id="consentement-accepter" disabled>Accepter et continuer</button>
+        <button type="button" class="bouton bouton--fantome" id="consentement-sortie">Se déconnecter</button>
+      </div>
+    </div>
+  </dialog>
+
   <dialog class="dialogue" id="dlg-enregistrer" aria-labelledby="dlg-enr-titre">
     <form method="dialog">
       <div class="dialogue__tete"><h2 id="dlg-enr-titre">Enregistrer la simulation</h2></div>
@@ -1558,6 +1586,7 @@
 
   <script src="/commun/vendor/supabase.js"></script>
   <script src="/commun/modele.js"></script>
+  <script src="/commun/consentement.js"></script>
   <script src="/commun/session.js"></script>
   <script src="/moteurs/salaire/parametres.js"></script>
   <script src="/moteurs/salaire/calcul.js"></script>

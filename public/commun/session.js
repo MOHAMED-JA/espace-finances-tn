@@ -51,7 +51,12 @@
           return client.auth.signOut({ scope: "local" }).finally(function () { location.replace(adresseConnexion()); })
             .then(function () { return new Promise(function () {}); });
         }
-        return u;
+        /* Politique de confidentialité et CGV : acceptation obligatoire (écran bloquant si besoin). */
+        if (!window.EFConsentement) return u;
+        return window.EFConsentement.garantir(u, {
+          dernier: consentements.dernier, accepter: consentements.accepter, deconnecter: deconnexion,
+          horsLigne: function (e) { return horsLigne || estErreurReseau(e); }
+        }, document).then(function (c) { consentementActuel = c || null; return u; });
       });
     });
   }
@@ -225,6 +230,23 @@
         .then(function (v) { return { id: v.id, objectif: v.objectif_id, montant: Number(v.montant) || 0, le: v.le }; });
     },
     annulerVersement: function (id) { return client.from("objectifs_versements").delete().eq("id", id).then(verifier); }
+  };
+  /* ---------- Acceptation de la politique et des CGV (table consentements : lecture et ajout seulement) ---------- */
+  var consentementActuel = null;
+  var consentements = {
+    dernier: function () {
+      return client.from("consentements").select("version, accepte_le").order("accepte_le", { ascending: false }).limit(1)
+        .then(verifier).then(function (r) { return (r && r[0]) || null; });
+    },
+    accepter: function (version) {
+      return client.from("consentements").insert({ version: version, documents: "confidentialite+cgv" }).select("version, accepte_le").single()
+        .then(function (r) {
+          /* Déjà enregistrée (autre onglet, double clic) : on relit la ligne existante. */
+          if (r.error && r.error.code === "23505") return consentements.dernier();
+          return verifier(r);
+        });
+    },
+    actuel: function () { return consentementActuel; }
   };
   /* ---------- Photo de profil ----------
    * Préférence dans user_metadata.orbite_avatar : "stockage" (photo importée, espace privé),
@@ -428,6 +450,7 @@
     assistant: assistant,
     rappelsEmail: rappelsEmail,
     objectifs: objectifs,
+    consentements: consentements,
     estErreurReseau: estErreurReseau,
     horsLigne: function () { return horsLigne || (typeof navigator !== "undefined" && navigator.onLine === false); },
     compterUsage: compterUsage,

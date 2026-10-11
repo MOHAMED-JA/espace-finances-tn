@@ -9,6 +9,7 @@ const fs = require("node:fs");
 const { chromium } = require(process.env.PLAYWRIGHT_CORE || "playwright-core");
 const { demarrer } = require("./serveur.js");
 const Faux = require("./faux-supabase.js");
+const VERSION_ACCORD = require("../public/commun/consentement.js").VERSION;
 
 const SUPABASE = "https://txrwgqgnqdkipwtwpevl.supabase.co";
 const CAPTURES = process.env.CAPTURES || path.join(__dirname, "..", "test-results");
@@ -161,6 +162,10 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
 
   await etape("inscription : validations sur place puis création du compte", async () => {
     await page.goto(base + "/connexion.html?mode=inscription");
+    /* Politique et CGV : sans la case, « Continuer avec Google » ne part pas. */
+    await page.click("#google");
+    await page.waitForSelector("#cgu-erreur:not([hidden])");
+    assert(/connexion\.html/.test(page.url()), "Google bloqué tant que la case n'est pas cochée");
     await page.fill("#email", "pas-un-email");
     await page.fill("#mdp", "court");
     await page.click("#envoyer");
@@ -180,6 +185,11 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.check("#cgu");
     await page.click("#envoyer");
     await page.waitForURL(/\/espace\//);
+    /* Case cochée à l'inscription : acceptation enregistrée automatiquement, sans écran. */
+    for (let i = 0; i < 50 && !faux.consentementsDe("aziz@exemple.tn").length; i++) await page.waitForTimeout(100);
+    const acc = faux.consentementsDe("aziz@exemple.tn");
+    assert(acc.length === 1 && acc[0].version === VERSION_ACCORD, "acceptation enregistrée à l'inscription");
+    assert(!(await page.isVisible("#dlg-consentement")), "aucun écran d'acceptation après une inscription acceptée");
   });
 
   await etape("premier pas : trois réponses mettent l'orbite en mouvement", async () => {
@@ -451,6 +461,18 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await p2.fill("#mdp", "Autre-compte-2026!");
     await p2.click("#envoyer");
     await p2.waitForURL(/\/espace\//);
+    /* Compte existant sans acceptation : écran bloquant, impossible à fermer sans accepter. */
+    await p2.waitForSelector("#dlg-consentement[open]");
+    assert(await p2.isHidden('[data-consentement-motif="mise-a-jour"]'), "premier accord : pas de message de mise à jour");
+    assert(await p2.isDisabled("#consentement-accepter"), "bouton inactif sans la case");
+    await p2.keyboard.press("Escape");
+    await p2.waitForTimeout(200);
+    assert(await p2.isVisible("#dlg-consentement"), "Échap ne ferme pas l'écran");
+    assert(!faux.consentementsDe("autre@exemple.tn").length, "rien d'enregistré avant d'accepter");
+    await p2.check("#consentement-case", { force: true });
+    await p2.click("#consentement-accepter");
+    await p2.waitForSelector("#dlg-consentement", { state: "hidden" });
+    assert(faux.consentementsDe("autre@exemple.tn").length === 1, "acceptation enregistrée");
     await p2.waitForSelector("#demarrage:not([hidden])");
     await p2.goto(base + "/espace/#simulations");
     await p2.waitForSelector("#toutes .vide");
@@ -459,6 +481,9 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   });
 
   await etape("compte : nom affiché, thème, export JSON avec le profil", async () => {
+    await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.waitForSelector("#onglet-donnees:not([hidden])");
+    assert(/^Acceptées le \d{1,2} \S+ \d{4} à \d{1,2} h \d\d \(version du 11 octobre 2026\)\.$/.test(await page.textContent("#accord-etat")), "trace de l'acceptation : " + await page.textContent("#accord-etat"));
     await page.goto(base + "/espace/#compte");
     await page.waitForSelector("#vue-compte:not([hidden])");
     await page.fill("#nom-affiche", "Aziz J.");
@@ -786,7 +811,8 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     const code = (await page.textContent("#ab-parr-code")).trim();
     assert(/^[A-Z0-9]{8}$/.test(code), "code de parrainage : " + code);
     const finAvant = Date.parse(faux.abonnementDe("aziz@exemple.tn").fin);
-    faux.ajouterCompte("filleul@exemple.tn", "Filleul-compte-2026!", { full_name: "Filleul" });
+    /* Inscrit sur un autre appareil avec la case cochée (version dans le compte) : accepté sans écran. */
+    faux.ajouterCompte("filleul@exemple.tn", "Filleul-compte-2026!", { full_name: "Filleul", orbite_consentement: VERSION_ACCORD });
     faux.marquerTesteur("filleul@exemple.tn");
     const ctx3 = await navigateur.newContext({ viewport: { width: 1280, height: 900 } });
     await ctx3.route(SUPABASE + "/**", (r) => faux.gerer(r));
@@ -799,6 +825,8 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await p3.fill("#mdp", "Filleul-compte-2026!");
     await p3.click("#envoyer");
     await p3.waitForURL(/\/espace\//);
+    for (let i = 0; i < 50 && !faux.consentementsDe("filleul@exemple.tn").length; i++) await p3.waitForTimeout(100);
+    assert(faux.consentementsDe("filleul@exemple.tn").length === 1 && !(await p3.isVisible("#dlg-consentement")), "accord du compte enregistré sans écran");
     await p3.waitForFunction(() => /parrainage enregistré/.test([...document.querySelectorAll(".toast")].map((t) => t.textContent).join(" ")));
     await p3.goto(base + "/espace/#abonnement");
     await p3.waitForSelector('#ab-offres input[value="annuel"]');

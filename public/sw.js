@@ -8,7 +8,7 @@
  *   la synchronisation périodique (application installée) les affiche même quand Orbite est fermée.
  */
 "use strict";
-var VERSION = "orbite-2026-10-11j";
+var VERSION = "orbite-2026-10-11k";
 var CACHE = VERSION + "-site";
 var RAPPELS = "/__orbite/rappels.json";
 var DEJA = "/__orbite/rappels-vus.json";

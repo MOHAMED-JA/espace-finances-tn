@@ -16,6 +16,8 @@ function creer() {
   let simulations = [];
   /* « Ma progression » (migration 0012) : objectifs et versements, lignes de l'utilisateur seulement. */
   let objectifs = [], versementsObj = [];
+  /* Acceptation de la politique et des CGV (migration 0013) : lecture et ajout seulement, date posée par le serveur. */
+  let consentements = [];
   const profils = new Map();
   const journal = [];
   /* Abonnements : même contrat que la migration 0003 (essai de 3 jours, formules prépayées). */
@@ -354,6 +356,19 @@ function creer() {
         return repondre(route, 204);
       }
     }
+    if (url.pathname === "/rest/v1/consentements") {
+      const miennes = consentements.filter((c) => c.user_id === u.id).sort((a, b) => b.accepte_le.localeCompare(a.accepte_le));
+      if (methode === "GET") return repondre(route, 200, miennes.slice(0, Number(url.searchParams.get("limit")) || miennes.length).map(({ version, accepte_le }) => ({ version, accepte_le })));
+      if (methode === "POST") {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(corps.version || "")) return repondre(route, 400, { code: "23514", message: "check constraint" });
+        if (miennes.some((c) => c.version === corps.version)) return repondre(route, 409, { code: "23505", message: "duplicate key value violates unique constraint" });
+        const l = { id: crypto.randomUUID(), user_id: u.id, version: corps.version, documents: "confidentialite+cgv", accepte_le: new Date().toISOString() };
+        consentements.push(l);
+        const vue = { version: l.version, accepte_le: l.accepte_le };
+        return repondre(route, 201, unique(req) ? vue : [vue]);
+      }
+      return repondre(route, 403, { code: "42501", message: "permission denied for table consentements" });
+    }
     if (url.pathname === "/rest/v1/profils") {
       const p = profils.get(u.id);
       if (methode === "GET") return unique(req) ? repondre(route, 200, p) : repondre(route, 200, [p]);
@@ -458,6 +473,8 @@ function creer() {
     simulations: () => simulations,
     objectifs: () => objectifs,
     versementsObjectifs: () => versementsObj,
+    consentementsDe(email) { const id = comptes.get(email).user.id; return consentements.filter((c) => c.user_id === id); },
+    accepterPour(email, version) { consentements.push({ id: crypto.randomUUID(), user_id: comptes.get(email).user.id, version, documents: "confidentialite+cgv", accepte_le: new Date().toISOString() }); },
     paiements: () => paiements,
     photos: () => photos,
     abonnementDe(email) { return abonnementDe(comptes.get(email).user.id); },
