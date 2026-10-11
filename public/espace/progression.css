@@ -181,3 +181,78 @@
   .pg-trace, .pg-jauge i, .pg-onglets i, .pg-defi__case, .pg-obj--squelette { animation: none !important; transition: none !important; }
   .pg-trace { stroke-dashoffset: 0 !important; }
 }
+
+/* Onglets à trois positions (Carrière, Objectifs, Retraite) */
+.pg-onglets { grid-template-columns: repeat(3, 1fr); }
+.pg-onglets i { width: calc((100% - 8px) / 3); }
+.pg-onglets[data-o="objectifs"] i { transform: translateX(100%); }
+.pg-onglets[data-o="retraite"] i { transform: translateX(200%); }
+@media (max-width: 420px) { .pg-onglets button { padding: 0 12px; } }
+
+/* ---------- Retraite ---------- */
+#pg-retraite { display: grid; gap: 18px; }
+#pg-retraite[hidden] { display: none; }
+.pr-vide p { margin: 0; color: var(--encre-2); }
+.pr-info { margin: 4px 0 0; font-size: 13px; color: var(--encre-3); }
+.pr-info a { color: var(--credit-t); font-weight: 650; text-decoration: none; }
+.pr-info a:hover { text-decoration: underline; }
+.pr-resultat { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 18px; align-items: end; margin-top: 18px; }
+.pr-grand p { margin: 0; }
+.pr-grand__lib { font-size: 13px; font-weight: 650; color: var(--encre-3); }
+.pr-grand__val b { font-size: clamp(36px, 6vw, 54px); font-weight: 600; letter-spacing: -.04em; line-height: 1.05; }
+.pr-grand__val small { font-family: var(--mono); font-size: 18px; color: var(--encre-3); }
+.pr-grand__sous { margin-top: 4px !important; color: var(--encre-2); font-size: 14px; }
+.pr-pastille { justify-self: end; font-size: 12.5px; font-weight: 750; padding: 6px 11px; border-radius: 999px; white-space: nowrap; }
+.pr-pastille--ok { background: var(--salaire-doux); color: var(--salaire-t); }
+.pr-pastille--court { background: var(--ambre-doux); color: var(--ambre-t); }
+@media (max-width: 560px) { .pr-resultat { grid-template-columns: minmax(0, 1fr); } .pr-pastille { justify-self: start; } }
+#pr-refus { margin-top: 14px; }
+.pr-age { margin-top: 20px; }
+.pr-age label { display: flex; justify-content: space-between; font-weight: 650; font-size: 14px; }
+.pr-age input[type="range"] { width: 100%; margin: 8px 0 0; min-height: 28px; accent-color: var(--epargne); }
+.pr-reperes { position: relative; height: 34px; font-size: 11.5px; color: var(--encre-3); }
+.pr-reperes span { position: absolute; left: calc(var(--pc) * (100% - 16px) + 8px); transform: translateX(-50%); white-space: nowrap; }
+.pr-reperes span.pr-reperes__debut { transform: translateX(-8px); }
+.pr-reperes span.pr-reperes__fin { transform: translateX(calc(-100% + 8px)); }
+.pr-reperes__legal { color: var(--encre); font-weight: 700; }
+.pr-reperes__legal::before { content: ""; display: block; width: 2px; height: 8px; margin: 0 auto 2px; background: var(--encre); border-radius: 2px; }
+.pr-remplacement { margin-top: 20px; display: grid; gap: 8px; }
+.pr-remplacement h3, .pr-frise h3 { margin: 0; font-size: 14px; }
+.pr-barre { position: relative; height: 40px; border-radius: 12px; background: var(--surface-2); overflow: hidden; }
+.pr-barre i { position: absolute; top: 0; bottom: 0; }
+.pr-barre__pension { left: 0; width: 0; border-radius: 12px 0 0 12px; background: linear-gradient(90deg, var(--epargne), color-mix(in srgb, var(--epargne) 70%, var(--salaire))); transition: width 700ms var(--sortie); }
+.pr-barre__manque { background: repeating-linear-gradient(135deg, var(--ambre-doux) 0 6px, color-mix(in srgb, var(--ambre) 30%, var(--ambre-doux)) 6px 12px); transition: left 700ms var(--sortie), width 700ms var(--sortie); }
+.pr-barre__cible { top: -2px !important; bottom: -2px !important; width: 2px; background: var(--encre); transition: left 700ms var(--sortie); }
+.pr-legende { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 14px; font-size: 12.5px; color: var(--encre-2); }
+.pr-legende b { color: var(--encre); }
+.pr-point { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.pr-point--p { background: var(--epargne); }
+.pr-point--m { background: var(--ambre); }
+.pr-point--c { background: var(--encre); width: 3px; }
+.pr-frise { margin-top: 20px; }
+.pr-frise svg { display: block; width: 100%; height: auto; overflow: visible; margin-top: 6px; }
+.pr-f-fond { fill: var(--surface-2); }
+.pr-f-fait { fill: var(--salaire); }
+.pr-f-avenir { fill: color-mix(in srgb, var(--salaire) 35%, var(--surface-2)); }
+.pr-f-trait { stroke: var(--encre-3); stroke-width: 1.2; stroke-dasharray: 3 3; }
+.pr-f-max { stroke: var(--epargne); stroke-width: 2; }
+.pr-f-depart { fill: var(--epargne); }
+.pr-f-txt { font-family: var(--mono); font-size: 11px; fill: var(--encre-3); }
+.pr-f-fort { font-size: 11.5px; font-weight: 700; fill: var(--encre); }
+.pr-plafond { margin: 16px 0 0; padding: 12px 14px; border-radius: var(--r-int); background: var(--ambre-doux); color: var(--encre); font-size: 13.5px; }
+.pr-ecart { margin: 10px 0 2px; font-size: 30px; font-weight: 600; letter-spacing: -.03em; color: var(--ambre-t); }
+.pr-ecart--zero { color: var(--salaire-t); }
+.pr-effort { margin-top: 14px; padding: 14px; border-radius: var(--r-int); background: var(--epargne-doux); display: grid; gap: 4px; }
+.pr-effort[hidden] { display: none; }
+.pr-effort span { font-size: 13px; color: var(--encre-2); }
+.pr-effort b { font-size: 22px; color: var(--epargne-t); }
+.pr-objectif { width: 100%; margin-top: 14px; }
+#pr-astuce { font-size: 13px; color: var(--encre-2); margin: 12px 0 0; }
+.pr-reserves { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 10px; }
+.pr-reserves li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; font-size: 13.5px; color: var(--encre-2); }
+.pr-reserves__ico { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--ambre-doux); color: var(--ambre-t); font-weight: 800; font-size: 12px; }
+.pr-reserves__hyp .pr-reserves__ico { background: var(--credit-doux); color: var(--credit-t); }
+.pr-sources { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+.pr-sources a { color: var(--credit-t); }
+@media (prefers-reduced-motion: reduce) { .pr-barre i { transition: none; } }
+.pr-grand__val small { margin-left: 4px; }

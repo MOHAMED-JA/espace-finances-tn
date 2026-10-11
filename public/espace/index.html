@@ -392,6 +392,8 @@
                 <div class="champ seul-salarie"><label for="p-ind">Indemnités non imposables (par mois)</label><div class="saisie"><input id="p-ind" data-p="indemnitesNonImposables" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div><span class="champ__aide">Transport, panier… exonérés</span></div>
                 <div class="champ seul-salarie"><label for="p-statut">Type de contrat</label><div class="saisie"><select id="p-statut" data-p="statut"><option value="cdi">CDI</option><option value="fonctionnaire">Fonctionnaire titulaire</option><option value="cdd">CDD</option><option value="contractuel">Contractuel</option><option value="autre">Autre</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
                 <div class="champ seul-salarie"><label for="p-embauche">Date d'embauche</label><div class="saisie"><input id="p-embauche" data-p="dateEmbauche" data-type="date" type="date" min="1960-01-01" aria-describedby="p-anciennete-aide"></div><span class="champ__aide" id="p-anciennete-aide"></span></div>
+                <div class="champ seul-salarie"><label for="p-debut">Début de carrière</label><div class="saisie"><input id="p-debut" data-p="debutCarriere" data-type="date" type="date" min="1960-01-01" aria-describedby="p-debut-aide"></div><span class="champ__aide" id="p-debut-aide">Premier emploi déclaré à la CNSS ou à la CNRPS. Sert à estimer votre retraite (vide : date d'embauche).</span></div>
+                <div class="champ seul-salarie"><label for="p-sans-cot">Années sans cotisation depuis</label><div class="saisie"><input id="p-sans-cot" data-p="anneesSansCotisation" data-type="entier" type="text" inputmode="numeric" placeholder="0" maxlength="2"><span class="saisie__unite">ans</span></div><span class="champ__aide">Chômage, études, travail non déclaré ou à l'étranger…</span></div>
                 <div class="champ"><label for="p-autres">Autres revenus réguliers (par mois)</label><div class="saisie"><input id="p-autres" data-p="autresRevenus" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div><span class="champ__aide">Loyer perçu, pension… pris en compte par la banque</span></div>
                 <p class="profil-resume champ--large" id="p-resume-salaire" aria-live="polite"></p>
                 <details class="expert-seul expert-bloc champ--large" id="p-paie">
@@ -1209,6 +1211,7 @@
               <i aria-hidden="true"></i>
               <button type="button" role="tab" id="pg-tab-carriere" aria-controls="pg-carriere" aria-selected="true" data-onglet="carriere">Carrière</button>
               <button type="button" role="tab" id="pg-tab-objectifs" aria-controls="pg-objectifs" aria-selected="false" tabindex="-1" data-onglet="objectifs">Objectifs</button>
+              <button type="button" role="tab" id="pg-tab-retraite" aria-controls="pg-retraite" aria-selected="false" tabindex="-1" data-onglet="retraite">Retraite</button>
             </div>
           </header>
 
@@ -1273,6 +1276,66 @@
                 <div class="pg-serie" id="pg-serie"></div>
                 <ul class="pg-badges" id="pg-badges" role="list"></ul>
               </section>
+            </div>
+          </div>
+
+          <!-- ============ Retraite ============ -->
+          <div class="pg-panneau" id="pg-retraite" role="tabpanel" aria-labelledby="pg-tab-retraite" hidden>
+            <section class="panneau pr-vide" id="pr-vide" hidden><p id="pr-vide-texte"></p><div class="pg-actions" id="pr-vide-actions"></div></section>
+            <div class="pg-grille" id="pr-plein">
+              <section class="panneau" aria-labelledby="pr-t">
+                <h2 id="pr-t">Votre retraite</h2>
+                <p class="pr-info" id="pr-info"></p>
+                <div class="pr-resultat" aria-live="polite">
+                  <div class="pr-grand">
+                    <p class="pr-grand__lib" id="pr-lib"></p>
+                    <p class="pr-grand__val"><b class="chiffre" id="pr-net"></b> <small>DT / mois</small></p>
+                    <p class="pr-grand__sous" id="pr-sous"></p>
+                  </div>
+                  <span class="pr-pastille" id="pr-pastille"></span>
+                </div>
+                <p class="pg-erreur" id="pr-refus" hidden></p>
+                <div class="pr-age">
+                  <label for="pr-age">Âge de départ <b class="chiffre" id="pr-age-v"></b></label>
+                  <input id="pr-age" type="range" step="1">
+                  <div class="pr-reperes" id="pr-reperes" aria-hidden="true"></div>
+                </div>
+                <div class="pr-remplacement">
+                  <h3>Votre revenu à la retraite, comparé à aujourd'hui</h3>
+                  <div class="pr-barre" id="pr-barre" role="img"><i class="pr-barre__pension" id="pr-b-pension"></i><i class="pr-barre__manque" id="pr-b-manque"></i><i class="pr-barre__cible" id="pr-b-cible"></i></div>
+                  <div class="pr-legende">
+                    <span><i class="pr-point pr-point--p"></i>Pension nette <b class="chiffre" id="pr-l-pension"></b></span>
+                    <span><i class="pr-point pr-point--m"></i>Écart <b class="chiffre" id="pr-l-ecart"></b></span>
+                    <span><i class="pr-point pr-point--c"></i>Objectif 80 % du net <b class="chiffre" id="pr-l-cible"></b></span>
+                    <span>Net actuel <b class="chiffre" id="pr-l-net"></b></span>
+                  </div>
+                </div>
+                <div class="pr-frise">
+                  <h3>Vos années de cotisation</h3>
+                  <div id="pr-frise"></div>
+                </div>
+                <p class="pr-plafond" id="pr-plafond" hidden></p>
+              </section>
+              <div class="pg-colonne">
+                <section class="panneau" aria-labelledby="pr-t-ecart">
+                  <h2 id="pr-t-ecart">Écart à combler</h2>
+                  <p class="panneau__sous">Pour garder 80 % de votre net actuel à la retraite.</p>
+                  <p class="pr-ecart chiffre" id="pr-ecart"></p>
+                  <p class="panneau__sous" id="pr-capital"></p>
+                  <div class="pr-effort" id="pr-effort"><span>À mettre de côté dès maintenant, chaque mois</span><b class="chiffre" id="pr-mensuel"></b><span id="pr-jusqua"></span></div>
+                  <button type="button" class="bouton bouton--plein pr-objectif" id="pr-objectif">Créer l'objectif « Retraite »</button>
+                  <p class="note" id="pr-astuce">Une assurance vie peut porter cette épargne : vos versements réduisent aussi votre impôt chaque année.</p>
+                </section>
+                <section class="panneau" aria-labelledby="pr-t-calc">
+                  <h2 id="pr-t-calc">Le calcul</h2>
+                  <dl class="pg-lignes" id="pr-calcul"></dl>
+                </section>
+                <section class="panneau" aria-labelledby="pr-t-savoir">
+                  <h2 id="pr-t-savoir">À savoir</h2>
+                  <ul class="pr-reserves" id="pr-reserves" role="list"></ul>
+                  <details class="pg-sources"><summary>Règles utilisées et sources</summary><ul class="pr-sources" id="pr-sources"></ul></details>
+                </section>
+              </div>
             </div>
           </div>
         </section>
@@ -1541,6 +1604,7 @@
   <script src="/espace/js/vue-scenarios.js"></script>
   <script src="/espace/js/vue-expert.js"></script>
   <script src="/espace/js/progression-calcul.js"></script>
+  <script src="/espace/js/retraite-calcul.js"></script>
   <script src="/espace/js/vue-progression.js"></script>
   <script src="/espace/js/rappels-calcul.js"></script>
   <script src="/espace/js/nouveautes.js"></script>

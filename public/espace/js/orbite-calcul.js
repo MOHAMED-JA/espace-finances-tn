@@ -46,7 +46,7 @@
 
   function profilParDefaut() {
     return {
-      prenom: "", nom: "", dateNaissance: "", dateEmbauche: "", anneeNaissance: 1990, situation: "celibataire", statut: "cdi", anciennete: 3,
+      prenom: "", nom: "", dateNaissance: "", dateEmbauche: "", debutCarriere: "", anneesSansCotisation: 0, anneeNaissance: 1990, situation: "celibataire", statut: "cdi", anciennete: 3,
       montant: 2500, sens: "brut", periode: "mensuel", secteur: "prive", nombreSalaires: 12, calendrierPrimes: [],
       activite: "salarie", caissePension: "cnss", pensionEtrangere: false,
       primesImposables: 0, primesNonCotisables: 0, avantagesNature: 0, indemnitesNonImposables: 0,
@@ -282,6 +282,9 @@
       /* Date de naissance complète (âge au jour près) ; l'année seule reste lue pour les anciens profils. */
       dateNaissance: dateIso(p.dateNaissance, "1930-01-01", isoDecale(16)),
       dateEmbauche: dateIso(p.dateEmbauche, "1960-01-01", isoDecale(0)),
+      /* Retraite : premier emploi déclaré (CNSS / CNRPS) et années sans cotisation depuis ; vide = date d'embauche. */
+      debutCarriere: dateIso(p.debutCarriere, "1960-01-01", isoDecale(0)),
+      anneesSansCotisation: entier(p.anneesSansCotisation, 0, 0, 40),
       anneeNaissance: dateIso(p.dateNaissance, "1930-01-01", isoDecale(16)) ? +p.dateNaissance.slice(0, 4) : entier(p.anneeNaissance, d.anneeNaissance, 1930, anneeCourante() - 16),
       situation: choix(p.situation, ["celibataire", "marie", "divorce", "veuf"], "celibataire"),
       statut: choix(p.statut, ["cdi", "cdd", "fonctionnaire", "contractuel", "autre"], "cdi"),
