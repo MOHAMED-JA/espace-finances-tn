@@ -26,6 +26,7 @@ Règles permanentes de l'utilisateur :
 - fusionner soi-même (PR puis merge) ;
 - carte blanche sur les dépôts ;
 - sécurité élevée : dépôt privé, CSP stricte, RLS.
+- **aucune solution payante** (l'utilisateur n'a pas de budget, rappelé le 11 oct.) : ne proposer que du gratuit ou des essais gratuits ; si rien de gratuit n'existe, le dire et proposer de garder l'existant.
 
 Liens :
 - application : https://espace-finances-tn.jaouadimohamedaziz.workers.dev (Cloudflare Workers ; se déploie depuis `main`) ;
@@ -802,7 +803,7 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
    - passer en privé les dépôts espace-finances-tn, simulateur-credit, simulateur-assurance-vie, simulateur-Assurance-Automobile (pas portail-rh : GitHub Pages) puis vérifier que Cloudflare déploie toujours ;
    - corriger son crédit immobilier dans le profil (765,003 DT, début février 2023, 191 mois ; le profil affiche encore 875,894 DT à 2,25 %) ;
    - ~~coller dans le SQL Editor les `revoke` des fonctions de rappels~~ : **fait par l'utilisateur le 11 oct.** Vérifié : fonctions serveur exécutables par `service_role` seulement ; fonctions utilisateur refusées à `anon` ; liens par jeton ouverts à `anon` (voulu) ; tables : aucune écriture pour `authenticated`, aucune lecture pour `anon` ; envoi quotidien toujours 200 ;
-   - facultatif : nom de domaine authentifié (SPF/DKIM/DMARC) pour l'expéditeur Brevo (supprime la réécriture en `…@brevosend.com` et les avertissements) ;
+   - nom de domaine : **écarté (payant)**. Pistes gratuites seulement : renommer le sous-domaine `workers.dev` (gratuit) ; domaine gratuit `eu.org` (validation lente, permettrait aussi d'authentifier l'expéditeur Brevo) ; sinon garder l'existant (emails déjà reçus en boîte de réception) ;
    - facultatif : vérifier l'article 56 de la LF 2026 au JORT (abattement des pensions).
 
 ## 5. Pièges connus
