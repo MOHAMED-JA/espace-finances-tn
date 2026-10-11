@@ -454,6 +454,10 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 sexquinquagies. Crédit terminé exclu des charges (11 oct.)
+
+- **Bogue trouvé en préparant le lot 5** : un crédit dont la dernière échéance est passée comptait encore dans `chargesCredits` (donc capacité, endettement, budget, marge d'épargne) — ex. voiture soldée fin 2023 : 350 DT retirés à tort. `creditTermine(c)` (dates connues et `moisRestants === 0` après `appliquerEcheanciers` à la date du jour) l'exclut ; sans dates, le crédit compte toujours (on ne peut pas savoir). Mon orbite l'affichait déjà « Remboursé ». Test dans `orbite-calcul.test.js`. Unitaires 406 ; e2e 46/46. SW `orbite-2026-10-11i`.
+
 ## 3 quinquinquagies. Signature « Conçu par » en carte de visite (11 oct.)
 
 - **Demande** : signature LinkedIn plus professionnelle et moderne. Maquette (3 propositions) : https://claude.ai/artifact/NTHSMzHwgd3tvwrBdoLisX. **Choix** : **A · Carte de visite** et libellé **« Conçu par »** (au lieu de « Powered by », qui se dit d'une technologie).
