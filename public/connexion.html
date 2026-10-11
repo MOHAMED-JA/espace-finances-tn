@@ -18,16 +18,25 @@
 </head>
 <body>
   <a class="evitement" href="#formulaire">Aller au formulaire</a>
+  <canvas class="ciel" id="ciel" aria-hidden="true"></canvas>
+  <div class="aurore aurore--a" aria-hidden="true"></div>
+  <div class="aurore aurore--b" aria-hidden="true"></div>
   <div class="ecran">
-    <aside class="ecran__marque bande-sombre" aria-label="Présentation">
+    <aside class="ecran__marque" aria-label="Présentation">
       <a class="marque marque--orbite" href="/" aria-label="Orbite, retour à l'accueil">
         <img src="/orbite/icone.svg" alt="" width="34" height="34">
         Orbite
       </a>
       <p class="signature ecran__signature"><span class="signature__pre">Powered by</span><a class="signature__nom" href="https://www.linkedin.com/in/mohamed-aziz-jaouadi-%D9%85%D8%AD%D9%85%D8%AF-%D8%B9%D8%B2%D9%8A%D8%B2-%D8%A7%D9%84%D8%AC%D9%88%D8%A7%D8%AF%D9%8A-%C2%AEpsm-i-%C2%AEpspo-l-%C2%AEistqb-851009115/?isSelfProfile=true" target="_blank" rel="noopener noreferrer" aria-label="Mohamed Aziz Jaouadi, profil LinkedIn (nouvel onglet)"><span class="signature__in" aria-hidden="true">in</span><span translate="no">Mohamed Aziz Jaouadi</span><span class="signature__fleche" aria-hidden="true">↗</span></a></p>
+      <div class="planete-zone">
+        <canvas id="planete-connexion" role="img" aria-label="Planète Orbite : votre salaire au centre ; crédit, épargne et impôt en orbite. Faites-la tourner du doigt ou à la souris."></canvas>
+        <span class="etiquette-sat" data-sat="0" aria-hidden="true"><i class="etiquette-sat__point etiquette-sat__point--credit"></i>Crédit</span>
+        <span class="etiquette-sat" data-sat="1" aria-hidden="true"><i class="etiquette-sat__point etiquette-sat__point--epargne"></i>Épargne</span>
+        <span class="etiquette-sat" data-sat="2" aria-hidden="true"><i class="etiquette-sat__point etiquette-sat__point--impot"></i>Impôt</span>
+        <span class="aide-glisser" id="aide-glisser" aria-hidden="true">↔ Faites tourner la planète</span>
+      </div>
       <div class="ecran__message">
-        <div class="mini-orbite" aria-hidden="true"><i class="mini-orbite__noyau"></i><i class="mini-orbite__anneau mini-orbite__anneau--a"><b></b></i><i class="mini-orbite__anneau mini-orbite__anneau--b"><b></b></i><i class="mini-orbite__anneau mini-orbite__anneau--c"><b></b></i></div>
-        <p class="ecran__titre">Votre salaire au centre.<br>Tout le reste en orbite.</p>
+        <p class="ecran__titre">Votre salaire au centre.<br>Tout le reste <em>en orbite.</em></p>
         <ul class="ecran__points" role="list">
           <li><span class="pastille" data-outil="salaire"></span>Salaire net, tranche d'impôt, augmentation</li>
           <li><span class="pastille" data-outil="credit"></span>Capacité de crédit sur le net et sur le brut</li>
@@ -107,6 +116,8 @@
       <p class="mentions"><a href="/">Accueil</a> · <a href="/confidentialite.html">Confidentialité</a></p>
     </main>
   </div>
+  <div class="eclat" id="eclat" aria-hidden="true"></div>
+  <div class="bienvenue" aria-live="polite"><p id="bienvenue-t"></p></div>
 
   <script src="/commun/vendor/supabase.js"></script>
   <script src="/commun/config.js"></script>
@@ -114,6 +125,7 @@
   <script src="/commun/session.js"></script>
   <script src="/commun/fuites.js"></script>
   <script src="/commun/turnstile.js"></script>
+  <script src="/commun/connexion-scene.js"></script>
   <script src="/commun/connexion.js"></script>
 </body>
 </html>

@@ -1,56 +1,135 @@
-/* Connexion / inscription */
-.ecran { min-height: 100dvh; display: grid; }
-@media (min-width: 980px) { .ecran { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); } }
+/* Connexion / inscription : planète salaire vivante sur ciel étoilé + formulaire en verre dépoli (maquette validée le 11 oct.). */
+:root { --c-net: #12A150; --c-credit: #2F5BEA; --c-epargne: #7C4DDB; --c-impot: #B98400; --c-etoile: #283C6E; --verre: rgba(255, 255, 255, .72); --verre-bord: rgba(10, 13, 20, .09); }
+:root[data-theme="dark"] { --c-net: #4ADE80; --c-credit: #7EA2FF; --c-epargne: #B794F6; --c-impot: #F5B70A; --c-etoile: #DCE6FF; --verre: rgba(17, 22, 36, .62); --verre-bord: rgba(255, 255, 255, .09); }
+body { background: var(--canvas); overflow-x: hidden; }
 
-.ecran__marque {
-  display: flex; flex-direction: column; justify-content: space-between; gap: 32px;
-  padding: max(20px, env(safe-area-inset-top)) clamp(20px, 4vw, 56px) 24px;
-  border-bottom: 1px solid var(--hairline);
+/* ---------- Fond : ciel étoilé (canvas) + deux aurores lentes ---------- */
+.ciel { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.aurore { position: fixed; z-index: 0; border-radius: 50%; filter: blur(80px); opacity: .3; pointer-events: none; }
+.aurore--a { width: 46vmax; height: 46vmax; left: -12vmax; top: -16vmax; background: radial-gradient(circle, color-mix(in srgb, var(--c-net) 60%, transparent), transparent 70%); }
+.aurore--b { width: 40vmax; height: 40vmax; right: -14vmax; bottom: -18vmax; background: radial-gradient(circle, color-mix(in srgb, var(--c-epargne) 55%, transparent), transparent 70%); }
+@media (prefers-reduced-motion: no-preference) {
+  .aurore--a { animation: derive 26s ease-in-out infinite alternate; }
+  .aurore--b { animation: derive 32s ease-in-out infinite alternate-reverse; }
 }
-@media (min-width: 980px) { .ecran__marque { border-bottom: 0; border-right: 1px solid var(--hairline); padding-block: 32px 40px; position: sticky; top: 0; height: 100dvh; } }
+@keyframes derive { to { transform: translate(6vmax, 4vmax) scale(1.08); } }
+
+/* ---------- Mise en page ---------- */
+.ecran { position: relative; z-index: 1; min-height: 100dvh; display: grid; }
+@media (min-width: 980px) { .ecran { grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); } }
+
+.ecran__marque { display: flex; flex-direction: column; gap: 8px; padding: max(18px, env(safe-area-inset-top)) clamp(16px, 4vw, 56px) 4px; min-width: 0; }
+@media (min-width: 980px) { .ecran__marque { gap: 20px; padding-block: 32px 36px; position: sticky; top: 0; height: 100dvh; } }
 .marque__tn { color: var(--signal); }
-.ecran__message { display: none; }
-.ecran__note { display: none; font-size: 13px; color: var(--ink-3); max-width: 40ch; }
+.ecran__marque > .marque--orbite { align-self: flex-start; }
+.ecran__marque > .ecran__signature { margin-top: 0; }
+@media (min-width: 980px) { .ecran__marque > .ecran__signature { margin-top: -8px; } }
+
+/* Planète */
+.planete-zone { position: relative; height: 220px; overflow: hidden; }
+@media (min-width: 980px) { .planete-zone { flex: 1; height: auto; min-height: 340px; } }
+#planete-connexion { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; touch-action: pan-y; }
+#planete-connexion:active { cursor: grabbing; }
+.etiquette-sat {
+  position: absolute; left: 0; top: 0; pointer-events: none; will-change: transform; white-space: nowrap;
+  font-size: 12px; font-weight: 700; padding: 4px 9px; border-radius: 999px; color: var(--ink);
+  background: var(--verre); border: 1px solid var(--verre-bord); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  transition: opacity 240ms ease;
+}
+.etiquette-sat__point { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.etiquette-sat__point--credit { background: var(--c-credit); }
+.etiquette-sat__point--epargne { background: var(--c-epargne); }
+.etiquette-sat__point--impot { background: var(--c-impot); }
+.aide-glisser { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); font-size: 12px; color: var(--ink-3); white-space: nowrap; transition: opacity 400ms ease; pointer-events: none; }
+.aide-glisser--vue { opacity: 0; }
+
+/* Slogan */
+.ecran__message { display: block; }
+.ecran__titre { font-size: 26px; line-height: 1.05; font-weight: 760; letter-spacing: -.04em; text-wrap: balance; }
+.ecran__titre em {
+  font-style: normal; color: transparent; -webkit-background-clip: text; background-clip: text;
+  background-image: linear-gradient(100deg, var(--c-net), var(--c-credit) 45%, var(--c-epargne) 70%, var(--c-net)); background-size: 220% 100%;
+}
+@media (prefers-reduced-motion: no-preference) { .ecran__titre em { animation: reflet 7s linear infinite; } }
+@keyframes reflet { to { background-position: -220% 0; } }
+.ecran__points, .ecran__note { display: none; }
 @media (min-width: 980px) {
-  .ecran__message, .ecran__note { display: block; }
-  .ecran__titre { font-size: clamp(32px, 3.2vw, 48px); line-height: 1.05; font-weight: 660; font-stretch: 114%; letter-spacing: -.03em; max-width: 16ch; text-wrap: balance; }
-  .ecran__points { list-style: none; padding: 0; margin: 32px 0 0; display: grid; gap: 12px; color: var(--ink-2); }
-  .ecran__points li { display: flex; align-items: center; gap: 10px; }
+  .ecran__titre { font-size: clamp(34px, 3.8vw, 56px); line-height: 1.02; max-width: 16ch; }
+  .ecran__points { display: grid; list-style: none; padding: 0; margin: 24px 0 0; gap: 10px; color: var(--ink-2); font-size: 15.5px; }
+  .ecran__points li { display: flex; align-items: center; gap: 12px; }
+  .ecran__points .pastille { width: 9px; height: 9px; box-shadow: 0 0 12px var(--couleur-pastille, currentColor); }
+  .ecran__note { display: block; font-size: 13px; color: var(--ink-3); max-width: 46ch; }
 }
 
-.ecran__formulaire { display: grid; align-content: center; justify-items: center; gap: 20px; padding: 32px 16px calc(32px + env(safe-area-inset-bottom)); }
-.carte-auth { width: min(440px, 100%); }
+/* ---------- Formulaire ---------- */
+.ecran__formulaire { display: grid; align-content: center; justify-items: center; gap: 18px; padding: 24px 16px calc(32px + env(safe-area-inset-bottom)); min-width: 0; }
+@media (min-width: 980px) { .ecran__formulaire { padding: 32px clamp(16px, 4vw, 56px); } }
+.carte-auth {
+  position: relative; width: min(440px, 100%); padding: 26px 24px 22px; border-radius: 26px;
+  background: var(--verre); backdrop-filter: blur(22px) saturate(1.3); -webkit-backdrop-filter: blur(22px) saturate(1.3);
+  box-shadow: 0 30px 80px -30px rgba(0, 0, 0, .45);
+  transition: transform 500ms cubic-bezier(.16, 1, .3, 1), opacity 400ms ease, filter 400ms ease;
+}
+/* Liseré lumineux qui tourne lentement autour de la carte */
+@property --angle-carte { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+.carte-auth::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: conic-gradient(from var(--angle-carte), var(--verre-bord), color-mix(in srgb, var(--c-net) 70%, transparent), var(--verre-bord) 30%, var(--verre-bord) 60%, color-mix(in srgb, var(--c-credit) 70%, transparent), var(--verre-bord) 90%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .carte-auth::before { animation: tour-carte 9s linear infinite; }
+  .carte-auth.secoue { animation: secoue 380ms cubic-bezier(.36, .07, .19, .97); }
+}
+@keyframes tour-carte { to { --angle-carte: 360deg; } }
+@keyframes secoue { 20%, 60% { transform: translateX(-7px); } 40%, 80% { transform: translateX(7px); } }
 
 .onglets-auth {
-  position: relative; display: grid; grid-template-columns: 1fr 1fr; padding: 4px;
-  background: var(--surface-2); border: 1px solid var(--hairline); border-radius: var(--r-pill); margin-bottom: 32px;
+  position: relative; display: grid; grid-template-columns: 1fr 1fr; padding: 4px; margin-bottom: 24px;
+  background: color-mix(in srgb, var(--surface-2) 55%, transparent); border: 1px solid var(--verre-bord); border-radius: var(--r-pill);
 }
 .onglets-auth button {
   position: relative; z-index: 1; min-height: 40px; border: 0; background: transparent; border-radius: var(--r-pill);
-  font-size: 14px; font-weight: 580; color: var(--ink-2); cursor: pointer; user-select: none; touch-action: manipulation;
-  transition: color 120ms var(--ease-out);
+  font-size: 14px; font-weight: 640; color: var(--ink-3); cursor: pointer; user-select: none; touch-action: manipulation;
+  transition: color 160ms var(--ease-out);
 }
 .onglets-auth button[aria-selected="true"] { color: var(--ink); }
 .onglets-auth__indicateur {
   position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px); border-radius: var(--r-pill);
-  background: var(--surface-1); box-shadow: var(--e1), var(--edge); border: 1px solid var(--hairline);
-  transition: transform var(--t-tab) var(--ease-out);
+  background: color-mix(in srgb, var(--ink) 9%, transparent); box-shadow: inset 0 0 0 1px var(--verre-bord);
+  transition: transform 360ms cubic-bezier(.16, 1, .3, 1);
 }
 .onglets-auth[data-actif="inscription"] .onglets-auth__indicateur { transform: translateX(100%); }
 .onglets-auth.sans-anim .onglets-auth__indicateur { transition: none; }
 .onglets-auth[hidden] { display: none; }
 
-.panneau-auth { display: grid; gap: 20px; }
-.panneau-auth h1 { font-size: 32px; font-weight: 660; font-stretch: 112%; letter-spacing: -.025em; }
+.panneau-auth { display: grid; gap: 18px; }
+.panneau-auth h1 { font-size: 30px; font-weight: 760; letter-spacing: -.03em; }
 .sous-titre { color: var(--ink-2); margin-top: -12px; }
 
-.bouton-google { min-height: 52px; gap: 12px; }
+/* Messages : icône ronde, verre teinté */
+.message { display: flex; align-items: flex-start; gap: 10px; border-radius: 14px; }
+.message::before { content: "i"; flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; color: #fff; background: var(--signal); margin-top: 1px; }
+.message--succes { border-color: color-mix(in srgb, var(--c-net) 35%, transparent); background: color-mix(in srgb, var(--c-net) 12%, transparent); }
+.message--succes::before { content: "✓"; background: var(--c-net); color: var(--canvas); }
+.message--erreur { border-color: color-mix(in srgb, var(--danger) 40%, transparent); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.message--erreur::before { content: "!"; background: var(--danger); }
+@media (prefers-reduced-motion: no-preference) { .message:not([hidden]) { animation: glisse 600ms cubic-bezier(.16, 1, .3, 1); } }
+@keyframes glisse { from { opacity: 0; transform: translateY(-6px); } }
+
+.bouton-google { min-height: 52px; gap: 12px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--surface-2) 45%, transparent); border-color: var(--verre-bord); }
 .bouton-google svg { width: 18px; height: 18px; }
 
 .separateur { display: flex; align-items: center; gap: 12px; color: var(--ink-3); font-size: 13px; }
-.separateur::before, .separateur::after { content: ""; flex: 1; height: 1px; background: var(--hairline); }
+.separateur::before, .separateur::after { content: ""; flex: 1; height: 1px; background: var(--verre-bord); }
 
 #form-auth { display: grid; gap: 16px; }
+.carte-auth .champ input { border-radius: 14px; background: color-mix(in srgb, var(--surface-2) 55%, transparent); border-color: var(--verre-bord); transition: border-color 200ms ease, box-shadow 260ms ease; }
+.carte-auth .champ input:focus-visible {
+  outline: none; border-color: color-mix(in srgb, var(--c-net) 75%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--c-net) 18%, transparent), 0 0 28px -6px color-mix(in srgb, var(--c-net) 60%, transparent);
+}
+.carte-auth .champ input[aria-invalid="true"] { border-color: var(--danger); }
 .champ__entete { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .facultatif { color: var(--ink-3); font-weight: 450; }
 .lien-discret {
@@ -59,8 +138,16 @@
 }
 .lien-discret:hover { color: var(--ink); }
 .case { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--ink-2); cursor: pointer; }
-.case input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--signal); flex: none; }
-.bouton-envoi { min-height: 52px; font-size: 16px; margin-top: 4px; }
+.case input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--c-net); flex: none; }
+
+/* Bouton principal : lueur et reflet au survol */
+.bouton-envoi { position: relative; overflow: hidden; min-height: 54px; font-size: 16px; font-weight: 720; margin-top: 4px; border-radius: var(--r-pill); transition: transform 120ms ease, box-shadow 260ms ease, background-color 160ms ease; }
+.bouton-envoi::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .5) 50%, transparent 70%); transform: translateX(-120%); }
+@media (hover: hover) {
+  .bouton-envoi:hover:not(:disabled) { box-shadow: 0 0 0 4px color-mix(in srgb, var(--c-net) 22%, transparent), 0 12px 40px -10px color-mix(in srgb, var(--c-net) 70%, transparent); }
+  .bouton-envoi:hover:not(:disabled)::after { transform: translateX(120%); transition: transform 900ms cubic-bezier(.16, 1, .3, 1); }
+}
+.bouton-envoi:active:not(:disabled), .bouton-google:active:not(:disabled) { transform: scale(.98); }
 .bas-formulaire { text-align: center; min-height: 0; }
 .mentions { font-size: 13px; color: var(--ink-3); }
 .mentions a { color: var(--ink-2); }
@@ -68,29 +155,27 @@
 .panneau-auth.bascule > * { animation: bascule 200ms var(--ease-out); }
 @keyframes bascule { from { opacity: .4; transform: translateY(calc(var(--motion-distance) / 2)); } }
 
-/* Orbite */
+/* Marque */
 .marque--orbite { display: inline-flex; align-items: center; gap: 10px; font-family: "Bricolage Grotesque", var(--font); font-weight: 760; font-size: 21px; letter-spacing: -.03em; color: var(--ink); text-decoration: none; }
 .marque--orbite img { width: 34px; height: 34px; }
-.pastille[data-outil="salaire"] { background: #4ADE80; }
-.pastille[data-outil="credit"] { background: #7EA2FF; }
-.pastille[data-outil="assurance_vie"] { background: #A78BFA; }
-.mini-orbite { position: relative; width: 180px; height: 180px; margin-bottom: 36px; }
-.mini-orbite__noyau { position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px; border-radius: 50%; background: #fff; box-shadow: 0 0 40px rgba(255, 255, 255, .35); }
-.mini-orbite__anneau { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .14); }
-.mini-orbite__anneau--a { inset: 22px; }
-.mini-orbite__anneau--b { inset: 4px; transform: rotate(60deg) scaleY(.55); }
-.mini-orbite__anneau--c { inset: 40px; }
-.mini-orbite__anneau b { position: absolute; top: -5px; left: 50%; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; }
-.mini-orbite__anneau--a b { background: #4ADE80; }
-.mini-orbite__anneau--b b { background: #7EA2FF; }
-.mini-orbite__anneau--c b { background: #A78BFA; }
-@media (prefers-reduced-motion: no-preference) {
-  .mini-orbite__anneau--a { animation: mo-tour 22s linear infinite; }
-  .mini-orbite__anneau--c { animation: mo-tour 14s linear infinite reverse; }
-}
-@keyframes mo-tour { to { transform: rotate(360deg); } }
+.pastille[data-outil="salaire"] { background: var(--c-net); --couleur-pastille: var(--c-net); }
+.pastille[data-outil="credit"] { background: var(--c-credit); --couleur-pastille: var(--c-credit); }
+.pastille[data-outil="assurance_vie"] { background: var(--c-epargne); --couleur-pastille: var(--c-epargne); }
 .invitation { padding: 10px 14px; border-radius: 12px; border: 1px solid var(--signal); background: var(--signal-soft); color: var(--ink); font-size: 14px; }
 
 /* Cloudflare Turnstile : cadre de vérification anti-robots, au-dessus du bouton d'envoi. */
 .turnstile { display: flex; justify-content: center; min-height: 65px; margin: 4px 0 14px; }
 .turnstile[hidden] { display: none; }
+
+/* ---------- Connexion réussie : la planète grandit, la carte s'efface, éclat, « Bienvenue » ---------- */
+.eclat { position: fixed; inset: 0; z-index: 5; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle at var(--x, 30%) var(--y, 40%), color-mix(in srgb, var(--c-net) 85%, white) 0%, color-mix(in srgb, var(--c-net) 40%, transparent) 18%, transparent 55%); }
+.bienvenue { position: fixed; inset: 0; z-index: 6; display: grid; place-items: center; pointer-events: none; opacity: 0; padding: 16px; }
+.bienvenue p { margin: 0; text-align: center; font-family: "Bricolage Grotesque", var(--font); font-size: clamp(26px, 4vw, 40px); font-weight: 780; letter-spacing: -.03em; color: var(--ink); text-shadow: 0 0 30px color-mix(in srgb, var(--c-net) 60%, transparent); }
+body.decolle .carte-auth { transform: translateY(14px) scale(.96); opacity: 0; filter: blur(6px); }
+body.decolle .ecran__message, body.decolle .ecran__note, body.decolle .aide-glisser, body.decolle .mentions, body.decolle .ecran__marque > .marque--orbite, body.decolle .ecran__signature { opacity: 0; transition: opacity 300ms ease; }
+body.decolle .etiquette-sat { visibility: hidden; }
+body.decolle .eclat { animation: eclat 900ms ease-out forwards; }
+body.decolle .bienvenue { animation: bienvenue 800ms cubic-bezier(.16, 1, .3, 1) 200ms forwards; }
+@keyframes eclat { 0% { opacity: 0; } 35% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes bienvenue { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
