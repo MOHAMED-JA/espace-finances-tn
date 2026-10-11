@@ -10,7 +10,8 @@
  *
  * Secrets (Supabase → Edge Functions → Secrets), jamais dans le dépôt :
  *   BREVO_API_KEY       clé API Brevo (créée par le propriétaire du compte Brevo)
- *   ORBITE_EXPEDITEUR   adresse d'expéditeur validée dans Brevo
+ *   ORBITE_EXPEDITEUR   adresse d'expéditeur validée dans Brevo (sert aussi d'adresse de réponse)
+ *   ORBITE_REPONSE      facultatif : autre adresse de réponse (« Répondre à »)
  *   URL_APPLICATION     facultatif (par défaut l'adresse Cloudflare d'Orbite)
  * Les journaux ne contiennent que des compteurs : aucune adresse, aucun texte de rappel.
  */
@@ -43,6 +44,8 @@ async function envoyerBrevo(a: string, nom: string, m: { objet: string; html: st
   const corps: Record<string, unknown> = {
     sender: { name: "Orbite", email: env.ORBITE_EXPEDITEUR },
     to: [{ email: a, ...(nom ? { name: nom } : {}) }],
+    /* Brevo réécrit l'expéditeur Gmail en adresse technique (…@brevosend.com) : les réponses doivent revenir à Orbite. */
+    replyTo: { email: env.ORBITE_REPONSE || env.ORBITE_EXPEDITEUR, name: "Orbite" },
     subject: m.objet, htmlContent: m.html, textContent: m.texte, tags: [jeton ? "rappels" : "confirmation"]
   };
   if (jeton) corps.headers = { "List-Unsubscribe": `<${URL_FONCTION}?desinscription=${jeton}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" };
