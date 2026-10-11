@@ -730,7 +730,12 @@ body.attente .onglets-bas a, body.attente .rail__liens a { pointer-events: none;
 .taux-futurs .paliers__taux:first-of-type { margin-top: 6px; }
 
 /* ---------- Visite guidée (première connexion, bouton « ? ») ---------- */
-.barre__aide { flex: none; font-family: var(--affiche); font-weight: 700; font-size: 16px; }
+.barre__aide { flex: none; gap: 6px; padding: 0 12px 0 10px; font-weight: 650; font-size: 14px; color: var(--encre-2); }
+.barre__aide svg { width: 18px; height: 18px; transition: transform 420ms var(--ressort); }
+.barre__aide:hover { color: var(--encre); }
+.barre__aide:hover svg, .barre__aide:focus-visible svg { transform: rotate(-35deg); }
+@media (max-width: 640px) { .barre__aide { width: 36px; padding: 0; } .barre__aide-lib { display: none; } }
+@media (prefers-reduced-motion: reduce) { .barre__aide svg { transition: none; } }
 .visite { position: fixed; inset: 0; z-index: 200; }
 .visite__halo { position: fixed; left: 0; top: 0; border-radius: 14px; box-shadow: 0 0 0 9999px rgba(7, 9, 15, .62), 0 0 0 2px var(--credit-lum); pointer-events: none;
   transition: transform 320ms var(--sortie), width 320ms var(--sortie), height 320ms var(--sortie); }

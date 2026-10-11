@@ -454,6 +454,10 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 unquinquagies. Bouton « Guide » à la place du « ? » (11 oct.)
+
+- **Demande** : le point d'interrogation de la barre du haut (visite guidée, `#aide-visite`) ne plaisait pas ; choix laissé à Claude. **Choix** : icône **boussole** (nouveau symbole `boussole` dans `orbite/icones.svg`) + mot « Guide » sur ordinateur, icône seule sous 640 px ; la boussole pivote de −35° au survol / focus (ressort, coupé si mouvement réduit). `aria-label` « Guide : revoir la visite guidée ». SW `orbite-2026-10-11d`. Tests : unitaires 396, e2e 44/44.
+
 ## 3 quinquagies. Lot 3 : « Ma progression » (carrière + objectifs) (11 oct., livré)
 
 - **Choix de l'utilisateur** : inflation INS **validée** (moyennes annuelles : 2015 4,4 · 2016 3,6 · 2017 5,3 · 2018 7,3 · 2019 6,7 · 2020 5,6 · 2021 5,7 · 2022 8,3 · 2023 9,3 · 2024 7,0 · 2025 5,3 · 2026 5,6 provisoire = glissement de septembre 2026, à remplacer par la moyenne annuelle en janvier 2027 ; sources : INS 2019 et 2022-2025, BCT 2021, Banque mondiale d'après l'INS 2015-2018 et 2020) ; nouvelle rubrique **« Ma progression »** (menu + « Moi » sur téléphone), onglets **Carrière** et **Objectifs** ; suivi **automatique + saisie** (« J'ai épargné ») ; **défis mensuels + badges sobres** ; « J'ai épargné » **ajoute aussi le montant à l'épargne disponible du profil** (annulable) ; projection : hausse par défaut = **moyenne passée** (3 % si historique insuffisant).
