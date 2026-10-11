@@ -212,3 +212,4 @@
   .entete__ligne .signature__nom { font-size: 12.5px; white-space: normal; line-height: 1.15; }
   .entete__actions .bouton { white-space: nowrap; }
 }
+.heros__surtitre { margin: 0 0 14px; font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--encre-3); }
