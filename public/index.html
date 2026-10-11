@@ -58,7 +58,7 @@
       </div>
       <nav class="entete__actions" aria-label="Compte">
         <a class="bouton bouton--fantome bouton--petit" href="/connexion.html" data-si-deconnecte>Se connecter</a>
-        <a class="bouton bouton--plein bouton--petit" href="/connexion.html?mode=inscription" data-si-deconnecte>Créer mon orbite</a>
+        <a class="bouton bouton--plein bouton--petit" href="/connexion.html?mode=inscription" data-si-deconnecte>Essayer gratuitement</a>
         <a class="bouton bouton--plein bouton--petit" href="/espace/" data-si-connecte hidden>Ouvrir mon orbite</a>
       </nav>
     </div>
@@ -78,14 +78,15 @@
           </h1>
           <p class="heros__sous">Indiquez votre salaire une seule fois. Orbite vous montre votre vrai net, votre tranche d'impôt, ce que la banque peut vous prêter — sur le net <em>et</em> sur le brut — et l'épargne qui fait baisser vos impôts.</p>
           <div class="heros__actions">
-            <a class="bouton bouton--plein bouton--grand" href="/connexion.html?mode=inscription" data-si-deconnecte>Créer mon orbite gratuite<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
+            <a class="bouton bouton--plein bouton--grand" href="/connexion.html?mode=inscription" data-si-deconnecte>Essayer gratuitement<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
             <a class="bouton bouton--plein bouton--grand" href="/espace/" data-si-connecte hidden>Ouvrir mon orbite<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
-            <a class="bouton bouton--grand" href="#fonctionnement">Comment ça marche</a>
+            <a class="bouton bouton--grand" href="#voyage">Voir le voyage d'un salaire</a>
           </div>
+          <p class="heros__essai" data-si-deconnecte><strong>3 jours d'essai gratuit</strong>, sans carte bancaire, puis la formule de votre choix. Sans publicité.</p>
           <ul class="heros__garanties" role="list">
-            <li><svg aria-hidden="true"><use href="/orbite/icones.svg#valide"/></svg>Barèmes IRPP et CSS <span data-annee>2026</span></li>
-            <li><svg aria-hidden="true"><use href="/orbite/icones.svg#bouclier"/></svg>Vos données ne sont visibles que par vous</li>
-            <li><svg aria-hidden="true"><use href="/orbite/icones.svg#valide"/></svg>Connexion Google ou e-mail</li>
+            <li>Barèmes IRPP et CSS <span data-annee>2026</span></li>
+            <li>Vos données ne sont visibles que par vous</li>
+            <li>Connexion Google ou e-mail</li>
           </ul>
         </div>
 
@@ -130,65 +131,149 @@
       </div>
     </section>
 
-    <!-- Un profil, trois réponses -->
-    <section class="section-accueil" aria-labelledby="titre-trois">
+    <!-- Le voyage d'un salaire : scène fixée, 4 chapitres pilotés par le défilement (accueil-recit.js) -->
+    <section class="voyage" id="voyage" aria-labelledby="titre-voyage">
       <div class="conteneur">
-        <h2 class="section-accueil__titre" id="titre-trois">Un profil. Trois réponses qui se parlent.</h2>
-        <p class="section-accueil__sous">Ailleurs, chaque simulateur vous redemande tout. Ici, votre salaire alimente tout le reste — et chaque réponse tient compte des autres.</p>
-        <div class="trois">
-          <article class="module-carte module-carte--salaire">
-            <span class="module-carte__icone" aria-hidden="true"><svg><use href="/orbite/icones.svg#salaire"/></svg></span>
-            <h3>Salaire</h3>
-            <p>Brut ⇄ net au millime, 12 à 18 salaires, primes, coût employeur. Et avant un entretien : ce qu'une augmentation vous rapporte vraiment, et si elle change votre tranche d'impôt.</p>
-          </article>
-          <article class="module-carte module-carte--credit">
-            <span class="module-carte__icone" aria-hidden="true"><svg><use href="/orbite/icones.svg#credit"/></svg></span>
-            <h3>Crédit</h3>
-            <p>Votre capacité d'emprunt sur le net et sur le brut, crédits en cours déduits. Mensualité, TMM + marge, TEG, tableau d'amortissement, renégociation et règle de réduction du taux.</p>
-          </article>
-          <article class="module-carte module-carte--epargne">
-            <span class="module-carte__icone" aria-hidden="true"><svg><use href="/orbite/icones.svg#epargne"/></svg></span>
-            <h3>Épargne vie &amp; CEA</h3>
-            <p>Trois propositions adaptées à votre net, l'économie d'impôt de l'article 39, le capital projeté, le rachat, la retraite. Vos contrats actuels sont pris en compte.</p>
-          </article>
+        <span class="exemple">Exemple · 2 500 DT brut, marié, 2 enfants</span>
+        <h2 class="voyage__titre" id="titre-voyage">Le voyage d'un salaire</h2>
+        <p class="voyage__intro">Faites défiler : la planète, c'est votre salaire. Regardez ce qu'il devient, ce qu'il permet et ce qu'il deviendra.</p>
+        <div class="voyage__grille">
+          <div class="scene" aria-hidden="true">
+            <canvas class="scene__toile" id="scene-toile"></canvas>
+            <span class="scene__annee chiffre" id="scene-annee"></span>
+            <div class="scene__noyau"><span id="scene-lib">Brut par mois</span><b class="chiffre" id="scene-val">2 500 DT</b></div>
+            <div class="scene__barre"><i></i><i></i><i></i><i></i></div>
+          </div>
+          <div class="chapitres">
+            <article class="chapitre" data-ch="0">
+              <p class="chapitre__num">Chapitre 1 · Du brut au net</p>
+              <h3>2 500 DT sur la fiche de paie. Combien dans votre poche ?</h3>
+              <p>Les cotisations, puis l'impôt et la contribution sociale se détachent de la planète, au millime près.</p>
+              <ul class="chiffres" role="list">
+                <li><span>Salaire brut</span><b class="chiffre" data-r="v.brut">2 500,000 DT</b></li>
+                <li class="chiffres--moins"><span>Cotisations CNSS</span><b class="chiffre" data-r="v.cotisations">−242,000 DT</b></li>
+                <li class="chiffres--moins"><span>Impôt et CSS</span><b class="chiffre" data-r="v.impot">−395,982 DT</b></li>
+                <li class="chiffres--plus"><span>Net par mois</span><b class="chiffre" data-r="v.net">1 862,018 DT</b></li>
+              </ul>
+            </article>
+            <article class="chapitre" data-ch="1">
+              <p class="chapitre__num">Chapitre 2 · La banque</p>
+              <h3>Ce que votre salaire peut emprunter.</h3>
+              <p>Un satellite apparaît : votre capacité d'emprunt, calculée comme la banque, sur le net ou sur le brut, crédits en cours déduits.</p>
+              <ul class="chiffres" role="list">
+                <li class="chiffres--bleu"><span>Échéance maximale</span><b class="chiffre" data-r="v.mensualiteMax">745 DT / mois</b></li>
+                <li class="chiffres--bleu"><span>Crédit immobilier possible (20 ans)</span><b class="chiffre" data-r="v.capacite">77 180 DT</b></li>
+              </ul>
+            </article>
+            <article class="chapitre" data-ch="2">
+              <p class="chapitre__num">Chapitre 3 · L'impôt</p>
+              <h3>Une partie de l'impôt peut revenir vers vous.</h3>
+              <p>L'assurance vie et le CEA réduisent l'impôt. Orbite calcule le meilleur partage et ce que votre employeur peut déjà vous rendre d'ici décembre.</p>
+              <ul class="chiffres" role="list">
+                <li class="chiffres--violet"><span>Versements utiles cette année</span><b class="chiffre" data-r="v.versements">9 270 DT</b></li>
+                <li class="chiffres--plus"><span>Impôt en moins</span><b class="chiffre" data-r="v.gainImpot">jusqu'à 2 546 DT</b></li>
+              </ul>
+            </article>
+            <article class="chapitre" data-ch="3">
+              <p class="chapitre__num">Chapitre 4 · Le temps</p>
+              <h3>Et dans 10 ans ? Et à la retraite ?</h3>
+              <p>Les années défilent : votre salaire progresse, vos crédits se terminent, la retraite approche. Orbite vous dit où vous en serez.</p>
+              <ul class="chiffres" role="list">
+                <li><span data-r="v.brutProjectionLib">Brut en 2036 (hausse de 5 % par an)</span><b class="chiffre" data-r="v.brutProjection">4 072 DT</b></li>
+                <li class="chiffres--bleu"><span data-r="v.capaciteProjectionLib">Capacité immobilière en 2036</span><b class="chiffre" data-r="v.capaciteProjection">116 713 DT</b></li>
+                <li class="chiffres--violet"><span data-r="v.retraiteLib">Pension nette estimée à 60 ans (2050)</span><b class="chiffre" data-r="v.retraiteNet">1 832 DT</b></li>
+              </ul>
+            </article>
+          </div>
         </div>
+        <p class="voyage__note" data-r="v.note">Chiffres de l'exemple calculés par Orbite (barèmes 2026, CNSS, 40 % d'endettement sur 20 ans à 10 %, début de carrière en 2014). Estimations indicatives.</p>
       </div>
     </section>
 
-    <!-- Fonctionnement -->
-    <section class="section-accueil section-accueil--cosmos" id="fonctionnement" aria-labelledby="titre-fonctionnement">
+    <!-- Trois vies, trois orbites (personnes fictives, vrais calculs) -->
+    <section class="section-accueil vies" aria-labelledby="titre-vies">
       <div class="conteneur">
-        <h2 class="section-accueil__titre" id="titre-fonctionnement">Trois minutes pour y voir clair</h2>
-        <ol class="etapes" id="etapes">
-          <li><span class="etapes__num" aria-hidden="true">1</span><h3>Votre salaire</h3><p>Brut ou net, privé ou public, et votre famille. C'est tout pour commencer.</p></li>
-          <li><span class="etapes__num" aria-hidden="true">2</span><h3>Votre situation</h3><p>Crédits en cours, contrats vie, loyer, projets : chaque détail affine les conseils.</p></li>
-          <li><span class="etapes__num" aria-hidden="true">3</span><h3>Vos réponses</h3><p>Ce que vous touchez, ce que vous pouvez emprunter, ce que vous pouvez épargner — et ce qu'il faut faire en premier.</p></li>
-        </ol>
+        <h2 class="section-accueil__titre" id="titre-vies">Trois vies, trois orbites</h2>
+        <p class="section-accueil__sous">Trois situations fictives, et ce qu'Orbite leur répond. Les chiffres sont de vrais calculs ; les personnes n'existent pas.</p>
+        <div class="vies__grille">
+          <article class="vie vie--y">
+            <div class="vie__tete"><span class="vie__mono" aria-hidden="true">Y</span><div><h3>Yasmine</h3><p><span data-r="y.age">26</span> ans · premier poste</p></div><span class="exemple">Exemple</span></div>
+            <ul class="vie__puces" role="list"><li>Privé</li><li>Célibataire</li><li>1 900 DT brut</li><li>Loyer 450 DT</li></ul>
+            <p class="vie__net"><span>Net par mois</span><b class="chiffre" data-r="y.net">1 466,813 DT</b></p>
+            <h4>Orbite lui dit</h4>
+            <ul class="dit" role="list">
+              <li class="dit--info"><span>Son loyer prend <b data-r="y.loyerPart">31 %</b> de son net : il lui reste <b data-r="y.reste">1 017 DT</b> par mois.</span></li>
+              <li class="dit--ok"><span>Une épargne de précaution de <b data-r="y.precaution">4 400 DT</b> (6 mois de dépenses) avant tout projet.</span></li>
+              <li class="dit--ok"><span>Jusqu'à <b data-r="y.gainImpot">1 594 DT</b> d'impôt en moins par an avec l'assurance vie et le CEA.</span></li>
+            </ul>
+          </article>
+          <article class="vie vie--k">
+            <div class="vie__tete"><span class="vie__mono" aria-hidden="true">K</span><div><h3>Karim</h3><p><span data-r="k.age">38</span> ans · cadre, 2 enfants</p></div><span class="exemple">Exemple</span></div>
+            <ul class="vie__puces" role="list"><li>Marié</li><li>3 800 DT brut</li><li>Appartement 900 DT/mois</li><li>Voiture 350 DT/mois</li></ul>
+            <p class="vie__net"><span>Net par mois</span><b class="chiffre" data-r="k.net">2 656,345 DT</b></p>
+            <h4>Orbite lui dit</h4>
+            <ul class="dit" role="list">
+              <li class="dit--att"><span>Ses crédits prennent <b data-r="k.endettement">47 %</b> de son net : la banque refusera un nouveau prêt aujourd'hui.</span></li>
+              <li class="dit--info"><span>Voiture soldée en <b data-r="k.fin">janvier 2029</b> : endettement à <b data-r="k.endettementApres">34 %</b>, nouvelle marge de <b data-r="k.marge">163 DT</b> par mois.</span></li>
+              <li class="dit--ok"><span>Sa tranche est à <b data-r="k.tranche">33 %</b> : jusqu'à <b data-r="k.gainImpot">5 014 DT</b> d'impôt en moins par an avec l'assurance vie et le CEA.</span></li>
+            </ul>
+          </article>
+          <article class="vie vie--h">
+            <div class="vie__tete"><span class="vie__mono" aria-hidden="true">H</span><div><h3>Habib</h3><p><span data-r="h.age">56</span> ans · fonctionnaire</p></div><span class="exemple">Exemple</span></div>
+            <ul class="vie__puces" role="list"><li>CNRPS</li><li>Marié, 1 enfant</li><li>3 200 DT brut</li><li>Depuis <span data-r="h.depuis">1995</span></li></ul>
+            <p class="vie__net"><span>Net par mois</span><b class="chiffre" data-r="h.net">2 223,591 DT</b></p>
+            <h4>Orbite lui dit</h4>
+            <ul class="dit" role="list">
+              <li class="dit--info"><span>Retraite à <b data-r="h.quand">62 ans (juin 2032)</b> avec <b data-r="h.taux">83,5 %</b> de son salaire de référence.</span></li>
+              <li class="dit--ok"><span>Pension nette estimée <b data-r="h.pension">2 397 DT</b> <span data-r="h.comparaison">: plus que son net actuel, grâce à l'abattement de la loi de finances 2026.</span></span></li>
+              <li class="dit--info"><span>En prolongeant jusqu'à 65 ans : <b data-r="h.taux65">89,5 %</b>, soit <b data-r="h.net65">2 558 DT</b> nets par mois.</span></li>
+            </ul>
+          </article>
+        </div>
+        <p class="vies__note">Estimations indicatives (barèmes <span data-annee>2026</span>, règles de la CNSS et de la CNRPS), en dinars d'aujourd'hui.</p>
+      </div>
+    </section>
+
+    <!-- Tout ce qui tourne autour du salaire -->
+    <section class="section-accueil contenu" id="fonctionnement" aria-labelledby="titre-contenu">
+      <div class="conteneur">
+        <h2 class="section-accueil__titre" id="titre-contenu">Tout ce qui tourne autour de votre salaire</h2>
+        <p class="section-accueil__sous">Un seul profil alimente tout. Chaque réponse tient compte des autres.</p>
+        <ul class="contenu__cartes" role="list">
+          <li class="contenu__carte contenu__carte--v"><svg aria-hidden="true"><use href="/orbite/icones.svg#orbite"/></svg><h3>Mon orbite</h3><p>Votre situation en un coup d'œil, et un voyage dans le temps jusqu'à la fin de vos crédits.</p></li>
+          <li class="contenu__carte contenu__carte--v"><svg aria-hidden="true"><use href="/orbite/icones.svg#salaire"/></svg><h3>Salaire</h3><p>Brut ⇄ net au millime, primes, hausses datées, impôt mois par mois.</p></li>
+          <li class="contenu__carte contenu__carte--b"><svg aria-hidden="true"><use href="/orbite/icones.svg#credit"/></svg><h3>Crédit</h3><p>Capacité sur le net et le brut, TMM + marge, tableau, remboursements anticipés, règle des 8 %.</p></li>
+          <li class="contenu__carte contenu__carte--p"><svg aria-hidden="true"><use href="/orbite/icones.svg#epargne"/></svg><h3>Épargne et impôt</h3><p>Assurance vie et CEA, l'optimiseur fiscal et ce que la paie vous rend d'ici décembre.</p></li>
+          <li class="contenu__carte contenu__carte--v"><svg aria-hidden="true"><use href="/orbite/icones.svg#hausse"/></svg><h3>Ma progression</h3><p>Votre salaire face à l'inflation, vos objectifs, défis et badges.</p><span class="contenu__nouveau">Nouveau</span></li>
+          <li class="contenu__carte contenu__carte--p"><svg aria-hidden="true"><use href="/orbite/icones.svg#horloge"/></svg><h3>Retraite</h3><p>CNSS ou CNRPS : âge de départ, pension estimée et épargne à prévoir.</p><span class="contenu__nouveau">Nouveau</span></li>
+          <li class="contenu__carte contenu__carte--a"><svg aria-hidden="true"><use href="/orbite/icones.svg#comparer"/></svg><h3>Et si…</h3><p>Mariage, naissance, voiture, mutation : testez avant de décider, côte à côte.</p></li>
+          <li class="contenu__carte contenu__carte--b"><svg aria-hidden="true"><use href="/orbite/icones.svg#etoile"/></svg><h3>Rappels et Assistant</h3><p>Rappels par email sans aucun montant, et un assistant qui répond en français ou en darija.</p></li>
+        </ul>
       </div>
     </section>
 
     <!-- Confiance -->
-    <section class="section-accueil" aria-labelledby="titre-confiance">
-      <div class="conteneur confiance">
-        <div>
-          <h2 class="section-accueil__titre" id="titre-confiance">Vos chiffres restent les vôtres</h2>
-          <p class="section-accueil__sous">Votre profil et vos simulations sont chiffrés en transit, isolés par compte et visibles par vous seul. Vous pouvez tout exporter ou tout effacer, à tout moment.</p>
-          <a class="lien-action" href="/confidentialite.html">Lire la politique de confidentialité<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
-        </div>
-        <ul class="confiance__liste" role="list">
-          <li><svg aria-hidden="true"><use href="/orbite/icones.svg#bouclier"/></svg><span><strong>Isolé par compte</strong>Personne d'autre ne peut lire vos données.</span></li>
-          <li><svg aria-hidden="true"><use href="/orbite/icones.svg#valide"/></svg><span><strong>Calculs vérifiés</strong>Plus de 240 tests automatiques, au millime près.</span></li>
-          <li><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg><span><strong>Export et suppression</strong>Vos données vous appartiennent.</span></li>
+    <section class="section-accueil confiance" aria-labelledby="titre-confiance">
+      <div class="conteneur">
+        <h2 class="section-accueil__titre" id="titre-confiance">Vos chiffres restent les vôtres</h2>
+        <p class="section-accueil__sous">Isolés par compte au niveau de la base de données, visibles par vous seul, exportables et effaçables à tout moment.</p>
+        <ul class="confiance__grille" role="list">
+          <li><b class="chiffre">400+</b><span>tests automatiques, calculs vérifiés au millime</span></li>
+          <li><b class="chiffre">1 compte</b><span>personne d'autre ne peut lire vos données</span></li>
+          <li><b class="chiffre">0 montant</b><span>dans les emails de rappel</span></li>
+          <li><b class="chiffre">1 clic</b><span>pour tout exporter ou tout effacer</span></li>
         </ul>
+        <a class="lien-action" href="/confidentialite.html">Lire la politique de confidentialité<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
       </div>
     </section>
 
     <section class="appel" aria-labelledby="titre-appel">
       <div class="conteneur appel__boite cosmos">
         <h2 id="titre-appel">Mettez votre salaire en orbite.</h2>
-        <p>Gratuit, sans publicité, en français.</p>
-        <a class="bouton bouton--plein bouton--grand" href="/connexion.html?mode=inscription" data-si-deconnecte>Créer mon orbite<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
-        <a class="bouton bouton--plein bouton--grand" href="/espace/" data-si-connecte hidden>Ouvrir mon orbite<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
+        <p data-si-deconnecte>3 jours d'essai gratuit, sans carte bancaire. Sans publicité, en français.</p>
+        <p data-si-connecte hidden>Votre orbite vous attend.</p>
+        <a class="bouton bouton--plein bouton--grand" href="/connexion.html?mode=inscription" data-si-deconnecte>Essayer gratuitement</a>
+        <a class="bouton bouton--plein bouton--grand" href="/espace/" data-si-connecte hidden>Ouvrir mon orbite</a>
       </div>
     </section>
   </main>
@@ -209,7 +294,12 @@
   <script src="/moteurs/vie/scenario.js"></script>
   <script src="/moteurs/salaire/pension.js"></script>
   <script src="/espace/js/orbite-calcul.js"></script>
+  <script src="/espace/js/orbite-intelligence.js"></script>
+  <script src="/espace/js/retraite-calcul.js"></script>
+  <script src="/espace/js/progression-calcul.js"></script>
+  <script src="/commun/recit-calcul.js"></script>
   <script src="/commun/planete.js"></script>
   <script src="/commun/accueil.js"></script>
+  <script src="/commun/accueil-recit.js"></script>
 </body>
 </html>
