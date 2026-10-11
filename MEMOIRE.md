@@ -463,7 +463,8 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Sécurité** : CSP stricte pour chaque page (`/slug` et `/slug.html`), aucun attribut `style` ni script en ligne (hors JSON-LD) ; **CSP ajoutée aussi à `/cgv`** (elle n'en avait pas). Rien n'est envoyé ni enregistré par les mini-calculs.
 - **Exemples** : 2 500 DT brut célibataire privé (net 1 849,310 DT) ; pont retraite avec âge d'exemple 36 ans et 12 ans de carrière (relatifs à l'année en cours, affichés). Textes d'épargne : plafonds et pourcentages lus dans `moteurs/vie/baremes.js` (« à confirmer » côté moteur → phrase de réserve sur la page).
 - Tests : unitaires 432 (dont `pages-publiques.test.js` 10, `pages-publiques-html.test.js` 6) ; e2e 48/48 (nouvelle étape : liens, mini-calculs = moteurs, états saturé / sans impôt / carrière courte / CNRPS 65 ans, téléphone sans débordement).
-- **À faire par l'utilisateur** : Search Console → Sitemaps → renvoyer `sitemap.xml` ; Inspection de l'URL → demander l'indexation des 4 pages (quota quotidien) ; Bing → URL Submission des 4 pages.
+- **Fait par l'utilisateur (11 oct.)** : `sitemap.xml` renvoyé dans Search Console (7 pages) ; 4 pages envoyées à Bing (URL Submission, 20 h 10).
+- **Reste à faire (12 oct.)** : Search Console → Inspection de l'URL → « Tester l'URL active » puis « Demander une indexation » pour l'accueil et les 4 pages (quota quotidien : en faire autant que possible, le reste le lendemain).
 
 ## 3 octoquinquagies. Référencement : base technique (11 oct.)
 
