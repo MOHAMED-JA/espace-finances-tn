@@ -717,8 +717,13 @@
     return morceaux.join(" et ");
   }
 
+  /* Crédit terminé : dates connues et plus aucune échéance (moisRestants recalculé à la date du jour par appliquerEcheanciers). */
+  function creditTermine(c) { return c.dureeMois > 0 && c.anneeDebut > 1970 && c.moisDebut > 0 && c.moisRestants === 0; }
   function chargesCredits(p) {
-    return p.credits.reduce(function (s, c) { return s + (c.moisRestants === 0 && c.capitalRestant === 0 && c.mensualite === 0 ? 0 : c.mensualite); }, 0);
+    return p.credits.reduce(function (s, c) {
+      if (creditTermine(c) || (c.moisRestants === 0 && c.capitalRestant === 0 && c.mensualite === 0)) return s;
+      return s + c.mensualite;
+    }, 0);
   }
 
   /* Capacité d'emprunt sur une base de revenu mensuel (net ou brut). */
@@ -1069,7 +1074,7 @@
 
   return {
     TMM: TMM, CREDITS_TYPES: CREDITS_TYPES, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, pension: pension, futursRevenu: futursRevenu, lireEmail: lireEmail, lireTelephone: lireTelephone, formatTelephone: formatTelephone, contratCommence: contratCommence, normaliserChangement: normaliserChangement, normaliserScenario: normaliserScenario, MAX_SCENARIOS: MAX_SCENARIOS, MAX_CHANGEMENTS: MAX_CHANGEMENTS, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
-    profilParDefaut: profilParDefaut, normaliser: normaliser, age: age, etatSalaire: etatSalaire, entreeBrut: entreeBrut,
+    profilParDefaut: profilParDefaut, normaliser: normaliser, creditTermine: creditTermine, age: age, etatSalaire: etatSalaire, entreeBrut: entreeBrut,
     tranche: tranche, salaire: salaire, augmentation: augmentation, calendrierPrimes: calendrierPrimes, impotRestantAnnee: impotRestantAnnee,
     capitalPourMensualite: capitalPourMensualite, mensualitePourCapital: mensualitePourCapital, capacite: capacite,
     epargnePour: epargnePour, suggestionsEpargne: suggestionsEpargne, budget: budget, estimationContrat: estimationContrat, paliersMarge: paliersMarge, tauxImmo: tauxImmo, tauxNouveaux: tauxNouveaux, echeancier: echeancier, analyseTaux: analyseTaux, sortieEndettement: sortieEndettement,

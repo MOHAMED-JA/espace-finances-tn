@@ -345,3 +345,21 @@ test('taux du futur crédit auto : choisi, sinon crédit auto en cours, sinon TM
   assert.deepEqual(O.tauxNouveaux(choisi).auto, { tauxPct: 8, source: 'choisi' }, 'le taux choisi prime sur le crédit en cours');
   assert.equal(O.normaliser({ tauxAutoPct: '' }).tauxAutoPct, null);
 });
+
+test('crédit terminé : ne compte plus dans les charges, la capacité ni l\'endettement', () => {
+  const OCt = require('../../public/espace/js/orbite-calcul.js');
+  const base = { montant: 3800, sens: 'brut', dateNaissance: '1988-02-01' };
+  const fini = { type: 'auto', libelle: 'Voiture', mensualite: 350, tauxPct: 9, dureeMois: 36, moisDebut: 1, anneeDebut: 2021 };
+  const enCours = { type: 'immo', libelle: 'Appartement', mensualite: 900, tauxPct: 8.5, dureeMois: 240, moisDebut: 3, anneeDebut: 2021 };
+  const m = new Date(2026, 9, 11);
+  const sy = OCt.synthese(Object.assign(OCt.profilParDefaut(), base, { credits: [fini, enCours] }), {}, m);
+  assert.equal(sy.chargesCredits, 900);
+  assert.ok(OCt.creditTermine(sy.profil.credits[0]));
+  assert.ok(!OCt.creditTermine(sy.profil.credits[1]));
+  /* Le même crédit, encore en cours en 2022, compte toujours. */
+  const avant = OCt.synthese(Object.assign(OCt.profilParDefaut(), base, { credits: [fini, enCours] }), {}, new Date(2022, 5, 1));
+  assert.equal(avant.chargesCredits, 1250);
+  /* Sans dates : on ne peut pas savoir, il compte. */
+  const sansDates = OCt.synthese(Object.assign(OCt.profilParDefaut(), base, { credits: [{ type: 'auto', mensualite: 300, tauxPct: 9 }] }), {}, m);
+  assert.equal(sansDates.chargesCredits, 300);
+});
