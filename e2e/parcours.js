@@ -1679,6 +1679,104 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.setViewportSize({ width: 1360, height: 900 });
   });
 
+  await etape("négociateur : cible exacte, unités, marge, plancher, réussites gardées, phrase, 2 PDF, « J'ai obtenu… », offre reçue, entrées, téléphone", async () => {
+    await page.goto(base + "/espace/#salaire");
+    await page.waitForSelector("#nego-ouvrir:not([hidden])");
+    await page.click("#nego-ouvrir");
+    await page.waitForSelector("#dlg-nego[open]");
+    /* +10 % net par défaut : le brut affiché est celui du moteur. */
+    const attendu = await page.evaluate(() => window.Negociateur.preparer(window.Orbite.profil(), { mode: "pct", valeur: 10 }, { marge: 0.05, reussites: [] }, new Date()));
+    assert((await page.textContent("#ng-cible")).replace(/\s/g, "") === String(Math.round(attendu.cible.brut)), "cible : " + await page.textContent("#ng-cible") + " ≠ " + attendu.cible.brut);
+    assert((await page.textContent("#ng-ancre")).replace(/\s/g, "") === Math.round(attendu.ancre.brut) + "DT" && attendu.ancre.brut % 50 === 0, "ancre arrondie aux 50 DT");
+    assert(/^Sur 100 DT de hausse brute, vous gardez \d+ DT net$/.test(await page.textContent("#ng-garde-lib")), "part gardée");
+    /* 20 % : même cible exprimée en net puis en brut. */
+    await page.fill("#ng-objectif", "20");
+    await page.waitForFunction(() => /Net visé/.test(document.getElementById("ng-objectif-aide").textContent));
+    const cible20 = (await page.textContent("#ng-cible")).replace(/\s/g, "");
+    await page.click('#dlg-nego label:has(input[name="ng-vise"][value="net"])');
+    assert((await page.textContent("#ng-unite")) === "DT net / mois", "unité net");
+    await page.click('#dlg-nego label:has(input[name="ng-vise"][value="brut"])');
+    assert(Math.abs(Number((await page.inputValue("#ng-objectif")).replace(/\s/g, "")) - Number(cible20)) <= 25, "brut converti : " + await page.inputValue("#ng-objectif"));
+    await page.click('#dlg-nego label:has(input[name="ng-vise"][value="pct"])');
+    await page.fill("#ng-objectif", "20");
+    /* Objectif refusé : message, verdict grisé, téléchargement bloqué. */
+    await page.fill("#ng-objectif", "0");
+    await page.waitForSelector("#ng-erreur:not([hidden])");
+    assert(await page.isDisabled("#ng-telecharger"), "PDF bloqué tant que l'objectif est faux");
+    await page.fill("#ng-objectif", "20");
+    await page.waitForSelector("#ng-erreur", { state: "hidden" });
+    /* Petite hausse : alerte sous le plancher si les prix ont monté. */
+    await page.fill("#ng-objectif", "1");
+    const prix = await page.evaluate(() => window.Negociateur.preparer(window.Orbite.profil(), { mode: "pct", valeur: 1 }, {}, new Date()).cibleSousPlancher);
+    assert((await page.isVisible("#ng-sous-plancher")) === prix, "alerte du plancher cohérente");
+    await page.fill("#ng-objectif", "20");
+    /* Marge 0 : ancre = cible. */
+    await page.fill("#ng-marge", "0");
+    await page.waitForFunction(() => /Sans marge/.test(document.getElementById("ng-ancre-d").textContent));
+    await page.fill("#ng-marge", "5");
+    /* Réussites : argument et phrase ; gardées sur l'appareil. */
+    await page.fill("#ng-reussites", "Migration de la paie livrée en avance\nFormation de 3 collègues");
+    await page.waitForFunction(() => /Parmi mes réalisations : migration de la paie livrée en avance\./.test(document.getElementById("ng-phrase").textContent));
+    assert(/Vos réussites : Migration de la paie livrée en avance ; Formation de 3 collègues\./.test(await page.textContent("#ng-arguments")), "réussites dans les arguments");
+    assert((await page.evaluate(() => localStorage.getItem("orbite_nego_reussites"))).indexOf("Formation") > 0, "réussites gardées sur l'appareil");
+    assert(/Je souhaite que mon salaire de base soit porté à [\d\s]+\sDT brut par mois\.\s»$/.test(await page.textContent("#ng-phrase")), "phrase prête");
+    await page.waitForTimeout(450);
+    await page.screenshot({ path: path.join(CAPTURES, "negociateur.png") });
+    /* Deux PDF : aide-mémoire et demande. */
+    const [pdf1] = await Promise.all([page.waitForEvent("download"), page.click("#ng-telecharger")]);
+    assert(/^ma-negociation-\d{8}\.pdf$/.test(pdf1.suggestedFilename()), "nom : " + pdf1.suggestedFilename());
+    const o1 = fs.readFileSync(await pdf1.path());
+    assert(o1.toString("latin1", 0, 5) === "%PDF-" && o1.length > 3000, "PDF pour moi");
+    await page.click('#dlg-nego label:has(input[name="ng-version"][value="responsable"])');
+    assert(/Ni plancher/.test(await page.textContent("#ng-version-aide")), "aide de la version responsable");
+    const [pdf2] = await Promise.all([page.waitForEvent("download"), page.click("#ng-telecharger")]);
+    assert(/^demande-de-revision-de-salaire-\d{8}\.pdf$/.test(pdf2.suggestedFilename()), "nom : " + pdf2.suggestedFilename());
+    assert(await page.isVisible("#dlg-nego[open]"), "la fenêtre reste ouverte après un PDF");
+    /* Offre reçue. */
+    await page.click('#dlg-nego label:has(input[name="ng-mode"][value="offre"])');
+    await page.waitForSelector("#ng-o-contre");
+    assert(await page.isHidden("#ng-telecharger") && await page.isHidden("#ng-obtenu"), "pas de note ni de « J'ai obtenu… » pour une offre");
+    await page.fill("#ng-offre-brut", "100 000");
+    await page.waitForFunction(() => /L'offre atteint déjà/.test(document.getElementById("ng-o-sur").textContent));
+    await page.fill("#ng-offre-salaires", "20");
+    await page.waitForSelector("#ng-offre-erreur:not([hidden])");
+    await page.fill("#ng-offre-salaires", "12");
+    await page.fill("#ng-offre-brut", "1 000");
+    await page.waitForFunction(() => /à contre-proposer/.test(document.getElementById("ng-o-contre-lib").textContent));
+    assert(/^−/.test((await page.textContent("#ng-o-net-d")).trim()), "baisse signalée");
+    await page.click('#dlg-nego label:has(input[name="ng-mode"][value="hausse"])');
+    /* « J'ai obtenu… » : fenêtre du salaire préremplie, puis annulée. */
+    await page.click("#ng-obtenu");
+    await page.waitForSelector("#dlg-salaire[open]");
+    assert((await page.inputValue("#sal-montant")) !== "", "salaire prérempli");
+    await page.keyboard.press("Escape");
+    await page.waitForSelector("#dlg-salaire", { state: "hidden" });
+    /* Entrées : Ma progression, palette, lien direct. */
+    await page.goto(base + "/espace/#progression?onglet=carriere");
+    await page.waitForSelector("#pg-nego:not([hidden])");
+    await page.click("#pg-nego");
+    await page.waitForSelector("#dlg-nego[open]");
+    assert((await page.inputValue("#ng-reussites")).indexOf("Migration") === 0, "réussites retrouvées");
+    await page.keyboard.press("Escape");
+    await page.waitForSelector("#dlg-nego", { state: "hidden" });
+    await page.keyboard.press("Control+k");
+    await page.fill("#palette-q", "zyeda");
+    await page.waitForFunction(() => (document.querySelector('#palette-liste [aria-selected="true"]') || { getAttribute: () => "" }).getAttribute("data-id") === "a-nego");
+    await page.keyboard.press("Enter");
+    await page.waitForSelector("#dlg-nego[open]");
+    await page.keyboard.press("Escape");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(base + "/espace/#salaire?nego=1&mode=offre");
+    await page.waitForSelector("#dlg-nego[open]");
+    assert(await page.isChecked('input[name="ng-mode"][value="offre"]'), "lien direct vers l'offre reçue");
+    await page.click('#dlg-nego label:has(input[name="ng-mode"][value="hausse"])');
+    await page.waitForTimeout(400);
+    assert(await page.$eval("#dlg-nego", (d) => d.scrollWidth <= d.clientWidth + 1), "fenêtre sans défilement horizontal sur téléphone");
+    await page.screenshot({ path: path.join(CAPTURES, "negociateur-mobile.png") });
+    await page.keyboard.press("Escape");
+    await page.setViewportSize({ width: 1360, height: 900 });
+  });
+
   await etape("palette : Ctrl K, « / » hors champ, darija, clavier, récents, action, thème, phrase vers l'Assistant, raccourcis installés, téléphone", async () => {
     await page.goto(base + "/espace/#orbite");
     await page.waitForSelector("#palette-ouvrir");

@@ -454,6 +454,36 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 unseptuagies. Négociateur de salaire (12 oct.)
+
+- **Maquette** https://claude.ai/artifact/Wu7rFqSwpMcPWMFhokqDG4 (calculée par le vrai moteur de paie, profil fictif « Aziz Démo »). **Validée** le 12 oct. avec : entrées « Partout », note PDF « Les deux au choix », onglet « Offre reçue » « Maintenant ».
+- **Moteur pur** `public/espace/js/negociateur-calcul.js` (`window.Negociateur`, dépend d'OrbiteCalcul, Progression, CalculSalaire, PARAMETRES_PAIE ; chargé après `dossier-calcul.js`) :
+  - `preparer(p, { mode: "pct" | "net" | "brut", valeur }, { marge, reussites }, maintenant)` ; `null` pour un retraité ou sans salaire ;
+  - base = salaire de base brut d'un mois habituel (`OC.entreeBrut`, saisie à l'année ramenée au mois) ; net = net d'un mois habituel (`calculerAvecVersements`) ; brut pour un net visé : `calculerDepuisNet` ;
+  - objectifs acceptés : 1 à 100 % ; net ou brut au-dessus de l'actuel et au plus le double ;
+  - **plancher** = brut actuel × `Progression.indice(année de la dernière hausse, année en cours)`, arrondi aux 10 DT au-dessus. C'est la règle de Ma progression, pour que l'inflation affichée concorde partout. Repère : la dernière hausse datée de l'historique, sinon l'embauche, sinon la dernière année ;
+  - **ancre** = cible × (1 + marge), arrondie aux 50 DT au-dessus (marge de 0 à 25 %, 5 % par défaut ; 0 = ancre égale à la cible) ;
+  - `garde` : part nette, CNSS, IRPP et CSS de chaque dinar de hausse brute (somme = 1) ;
+  - `alternatives` : prime unique au même gain net annuel (par dichotomie), un salaire de plus par an (pas au-delà de 16), hausse en deux temps (part du gain la première année) ;
+  - `arguments` : prix, pouvoir d'achat, ancienneté, durée sans hausse, avec mention « provisoire » pour l'année en cours ; `phrase` prête, qui annonce l'ancre ;
+  - `offre(p, { brut, salaires }, maintenant)` : primes de l'employeur actuel non reprises ; contre-proposition pour +20 % net sur l'année, arrondie aux 50 DT ; `atteint` si l'offre y est déjà.
+- **PDF** `negociateur-pdf.js` (`window.NegociateurPDF.generer`, jsPDF chargé à la demande) :
+  - « pour moi » : aide-mémoire d'une page, marqué « Document personnel » : paliers, chiffres, part gardée, arguments, réalisations, alternatives, phrase, conseils d'entretien ;
+  - « pour mon responsable » : salaire actuel, **salaire demandé = le chiffre annoncé (l'ancre)**, pour que la note et la phrase dite donnent le même montant ; arguments et réalisations ; ni plancher, ni marge, ni alternatives ;
+  - le pire cas (5 réussites et l'alerte du plancher) tient sur une page.
+- **Fenêtre** `#dlg-nego` (`vue-negociateur.js`, `negociateur.css`) :
+  - deux colonnes sur PC, une sur téléphone (sous-titre et aide du pied masqués, bouton « Ma note ») ;
+  - échelle des paliers placée par CSSOM ; étiquettes tournées vers l'intérieur aux deux bouts ; si deux jalons sont à moins de 74 px, l'étiquette la moins utile se tait ;
+  - les réussites restent sur l'appareil (`localStorage` `orbite_nego_reussites`, sous try/catch) ;
+  - « J'ai obtenu… » ouvre « Mettre à jour mon salaire », prérempli avec la cible dans l'unité du profil.
+- **Entrées** :
+  - bouton `#nego-ouvrir` dans l'en-tête du module Salaire (groupe `.module__actions` avec « Contrôler ma fiche de paie », masqué pour un retraité) ;
+  - carte `#pg-nego-carte` dans Ma progression › Carrière ;
+  - action `a-nego` de la palette (mots-clés dont « zyeda ») ;
+  - lien `#salaire?nego=1` (`&mode=offre`) ; API `Orbite.ouvrirNegociation(o)`, `Orbite.negociationPossible()`.
+- **Versions** : SW `orbite-2026-10-12e`, Nouveautés `2026-10-12d` (négociateur, palette, raccourcis, dossier banque).
+- **Tests** : 12 tests unitaires dans `tests/espace/negociateur.test.js` ; étape e2e « négociateur » (cible égale au moteur, unités, refus, plancher, marge 0, réussites, 2 PDF, offre reçue, « J'ai obtenu… », 3 entrées, téléphone).
+
 ## 3 septuagies. Palette Ctrl + K et raccourcis de l'application installée (12 oct.)
 
 - **Ouverture** : Ctrl + K (⌘ + K sur Mac, ferme aussi), « / » hors d'un champ et hors d'une autre fenêtre (et pas avant le premier pas), loupe `#palette-ouvrir` dans la barre, partout (rappel « Ctrl K » affiché seulement à partir de 1 024 px). Échap ou clic hors de la fenêtre ferme.

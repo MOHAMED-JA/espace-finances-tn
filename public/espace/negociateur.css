@@ -1,0 +1,120 @@
+/* Orbite — fenêtre « Préparer ma négociation » : réglages à gauche, verdict à droite (une colonne sur téléphone). */
+
+dialog.nego { width: min(1080px, calc(100vw - 24px)); max-height: min(92vh, 940px); }
+dialog.nego[open] { display: flex; flex-direction: column; }
+#form-nego { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.nego__tete { flex-wrap: wrap; align-items: flex-start; padding-bottom: 14px; border-bottom: 1px solid var(--filet); }
+.nego__tete > div:first-child { flex: 1 1 320px; min-width: 0; }
+.nego__sous { margin: 4px 0 0; font-size: 13.5px; color: var(--encre-3); line-height: 1.45; max-width: 62ch; }
+.nego__modes { flex: 0 1 300px; }
+.nego__corps { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 330px) minmax(0, 1fr); padding: 0; }
+.nego__reglages { display: grid; gap: 20px; align-content: start; padding: 18px 22px 22px; border-right: 1px solid var(--filet); background: color-mix(in srgb, var(--surface-2) 45%, var(--surface)); }
+.nego__verdict { display: grid; gap: 20px; align-content: start; padding: 18px 22px 24px; min-width: 0; }
+@media (max-width: 860px) {
+  .nego__corps { grid-template-columns: minmax(0, 1fr); }
+  .nego__reglages { border-right: 0; border-bottom: 1px solid var(--filet); }
+}
+.nego__bloc { display: grid; gap: 10px; min-width: 0; }
+.nego__lib { margin: 0; padding: 0; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--encre-3); }
+.nego__situation { margin: 0; display: grid; gap: 6px; font-size: 14px; }
+.nego__situation div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-bottom: 6px; border-bottom: 1px dashed var(--filet); }
+.nego__situation dt { color: var(--encre-2); }
+.nego__situation dd { margin: 0; font-weight: 650; text-align: right; }
+.nego__situation small { display: block; font-size: 12.5px; font-weight: 500; color: var(--encre-3); }
+.nego__lien { font-size: 13px; font-weight: 600; color: var(--credit-t); }
+.nego__vise span { padding: 0 4px; font-size: 13.5px; }
+.nego__curseur { width: 100%; accent-color: var(--salaire); margin: 4px 0 0; }
+#ng-reussites { width: 100%; min-height: 84px; resize: vertical; padding: 10px 12px; border: 1px solid var(--filet-fort); border-radius: var(--r-champ); background: var(--surface); color: var(--encre); font: 14.5px/1.45 var(--texte); }
+#ng-reussites:focus-visible { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 22%, transparent); }
+
+/* Cible. */
+.nego__heros { display: grid; gap: 4px; }
+.nego__sur { margin: 0; font-size: 12.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--salaire-t); }
+.nego__grand { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.nego__grand b { font: 720 clamp(40px, 6vw, 56px)/1 var(--affiche); letter-spacing: -.02em; }
+.nego__grand small { font-size: 17px; font-weight: 600; color: var(--encre-3); }
+.nego__ligne { margin: 6px 0 0; color: var(--encre-2); font-size: 14.5px; line-height: 1.5; max-width: 66ch; }
+.nego__ligne b, .nego__arg b, .nego__carte-d b { color: var(--encre); font-weight: 700; }
+.nego--erreur .nego__verdict { opacity: .35; pointer-events: none; }
+.nego__alerte { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--ambre-doux); color: var(--ambre-t); font-size: 13.5px; font-weight: 600; line-height: 1.45; }
+
+/* Part gardée de chaque dinar. */
+.nego__garde { display: grid; gap: 8px; }
+.nego__barre { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--surface-2); }
+.nego__barre i { display: block; flex: 0 0 0; transition: flex-basis 400ms var(--sortie); }
+.ng-g-net { background: var(--salaire); } .ng-g-cnss { background: var(--credit); } .ng-g-irpp { background: var(--epargne); } .ng-g-css { background: var(--ambre); }
+.nego__legende { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--encre-2); font-variant-numeric: tabular-nums; }
+.nego__legende span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 6px; background: var(--c); }
+.ng-l-net { --c: var(--salaire); } .ng-l-cnss { --c: var(--credit); } .ng-l-irpp { --c: var(--epargne); } .ng-l-css { --c: var(--ambre); }
+
+/* Sections. */
+.nego__section { margin: 0; padding: 0; border: 0; min-width: 0; display: grid; gap: 10px; }
+.nego__section-t { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; }
+.nego__section-t h3 { margin: 0; font: 700 17px var(--affiche); }
+.nego__section-t span { font-size: 12.5px; color: var(--encre-3); }
+
+/* Échelle : aujourd'hui, plancher, cible, ancre. */
+.nego__echelle { position: relative; height: 46px; margin: 0 10px; }
+.nego__rail { position: absolute; left: 0; right: 0; bottom: 6px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--surface-3), var(--salaire-doux) 40%, var(--salaire)); }
+.nego__jalon { position: absolute; bottom: 0; left: 0; display: grid; justify-items: center; gap: 6px; transform: translateX(-50%); transition: left 420ms var(--sortie); }
+.nego__jalon em { font-style: normal; font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ct); white-space: nowrap; }
+.nego__jalon i { width: 20px; height: 20px; border-radius: 50%; background: var(--c); border: 3px solid var(--surface); box-shadow: 0 0 0 1.5px var(--c); }
+.nego__jalon--actuel { --c: var(--filet-fort); --ct: var(--encre-3); }
+.nego__jalon--plancher { --c: var(--ambre); --ct: var(--ambre-t); }
+.nego__jalon--cible { --c: var(--salaire); --ct: var(--salaire-t); }
+.nego__jalon--ancre { --c: var(--credit); --ct: var(--credit-t); }
+/* Premier et dernier jalons : l'étiquette part du point vers l'intérieur ; étiquettes trop proches : la moins utile se tait. */
+.nego__jalon--debut { justify-items: start; transform: translateX(-10px); }
+.nego__jalon--fin { justify-items: end; transform: translateX(calc(-100% + 10px)); }
+.nego__jalon--muet em { visibility: hidden; }
+@media (max-width: 560px) { .nego__jalon em { display: none; } .nego__echelle { height: 24px; } }
+
+.nego__cartes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.nego__cartes--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 720px) { .nego__cartes, .nego__cartes--2 { grid-template-columns: minmax(0, 1fr); } }
+.nego__carte { display: grid; gap: 4px; align-content: start; padding: 12px 14px; border: 1px solid var(--filet); border-radius: 14px; min-width: 0; }
+.nego__carte[hidden] { display: none; }
+.nego__carte--plancher { border-top: 3px solid var(--ambre); }
+.nego__carte--cible { border-top: 3px solid var(--salaire); }
+.nego__carte--ancre { border-top: 3px solid var(--credit); }
+.nego__carte-t { margin: 0; font-size: 12.5px; font-weight: 650; color: var(--encre-3); }
+.nego__carte-v { margin: 0; font: 700 21px/1.2 var(--affiche); white-space: normal; }
+.nego__carte-d { margin: 0; font-size: 13px; color: var(--encre-2); line-height: 1.45; }
+.nego--baisse b { color: var(--erreur); }
+
+/* Arguments. */
+.nego__arguments { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.nego__arg { display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 12px; padding: 11px 14px; border-radius: 12px; background: var(--surface-2); font-size: 14.5px; line-height: 1.5; }
+.nego__arg::before { content: ""; width: 8px; height: 8px; margin-top: 7px; border-radius: 50%; background: var(--c); }
+.nego__arg p { margin: 0; color: var(--encre-2); }
+.nego__arg small { display: block; margin-top: 2px; font-size: 12.5px; color: var(--encre-3); }
+.nego__arg--prix { --c: var(--erreur); } .nego__arg--anciennete { --c: var(--credit); } .nego__arg--cout { --c: var(--salaire); } .nego__arg--reussites { --c: var(--epargne); }
+
+/* Phrase prête (sur fond cosmos, comme la fiche de Mon orbite). */
+.nego__phrase { display: grid; gap: 12px; padding: 16px 18px; border-radius: 16px; background: var(--cosmos); color: var(--cosmos-encre); }
+.nego__phrase p { margin: 0; font-size: 15.5px; line-height: 1.55; }
+.nego__phrase-pied { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; font-size: 12.5px; color: var(--cosmos-encre-2); }
+.nego__copier { background: rgba(255, 255, 255, .08); color: var(--cosmos-encre); border-color: rgba(255, 255, 255, .2); }
+.nego__copier:hover { background: rgba(255, 255, 255, .14); }
+.nego__copier svg { width: 16px; height: 16px; }
+.nego__version { max-width: 420px; }
+
+/* Pied : la phrase d'aide prend la place libre, les boutons passent à la ligne sur téléphone. */
+.nego__pied { flex-wrap: wrap; align-items: center; }
+.nego__prive { flex: 1 1 260px; display: flex; align-items: flex-start; gap: 8px; margin: 0; font-size: 12.5px; color: var(--encre-3); line-height: 1.45; }
+.nego__prive svg { flex: none; width: 16px; height: 16px; margin-top: 1px; }
+#ng-telecharger svg { width: 16px; height: 16px; }
+.nego__court { display: none; }
+@media (max-width: 520px) {
+  .nego__sous, .nego__prive { display: none; }
+  .nego__tete { padding-bottom: 10px; }
+  .nego__pied { flex-wrap: nowrap; gap: 8px; padding: 10px 14px 14px; }
+  .nego__pied .bouton { flex: 1 1 auto; padding-inline: 10px; }
+  .nego__long { display: none; }
+  .nego__court { display: inline; }
+}
+
+/* Ma progression : carte d'entrée. */
+.pg-nego h2 { margin-bottom: 4px; }
+
+@media (prefers-reduced-motion: reduce) { .nego__barre i, .nego__jalon { transition: none; } }
