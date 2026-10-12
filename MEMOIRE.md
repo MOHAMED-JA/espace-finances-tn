@@ -677,6 +677,45 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centies. Point 5 livré : projet immobilier, offres, regroupement, TMM, Mon mois (12 oct.)
+
+Branche `point5`. Choix validés par l'utilisateur (options conseillées) ; règles chiffrées : voir 3 decnonagies.
+
+**Crédit : 5 onglets** (`public/espace/js/credit-espaces.js`, moteur pur `public/moteurs/credit/projets.js`, testé)
+- Onglets `Simuler | Mon projet immobilier | Comparer mes offres | Regrouper mes crédits | Le TMM` ; route `#credit?espace=projet|offres|regrouper|tmm` ; aussi dans Ctrl K.
+- **Projet immobilier** (premier logement, achat chez un promoteur) :
+  - frais d'achat détaillés (`CreditProjets.fraisPrix`), tous modifiables ;
+  - crédit nécessaire = besoin ÷ (1 − (hypothèque + dossier) / 100) ;
+  - « Quand acheter ? » : le mois où l'apport et la capacité suffisent ;
+  - option « Premier logement » affichée « à confirmer ».
+- **Comparer mes offres** : classées par **coût total** ; lecture d'une offre en photo ou PDF ; chaque offre peut être enregistrée comme simulation de crédit.
+- **Regrouper** : crédit immobilier facultatif ; IRA de 1,5 % du capital restant (modifiable) ; verdict `gagnant`, `moins_cher_mensualite_plus_haute`, `mensualite_baisse_cout_monte` ou `perdant`.
+
+**TMM du mois** (`public/espace/js/tmm.js`, migration `supabase/migrations/0015_tmm.sql`)
+- Table `tmm_mensuel` (mois au 1er, taux 0 à 30), RLS et tous les droits retirés ; lecture par `tmm_historique(24)` ; saisie et suppression par l'admin (`admin_tmm_saisir` refuse un mois futur, `admin_tmm_supprimer`).
+- Administration › « TMM du mois » ; le dernier taux s'applique à tout Orbite (`OrbiteCalcul.definirTMM`, `Orbite.recalculer()`), gardé sur l'appareil (`orbite-tmm`) ; annoncé une fois au chargement suivant ; sans historique, retour au défaut 7,5 %.
+- Onglet Crédit › Le TMM : courbe 24 mois, effet de la dernière variation et d'un point de plus sur les crédits variables (sans crédit variable : exemple de 150 000 DT sur 20 ans à TMM + 2,5).
+
+**Mon mois** (nouvelle page du menu, route `#mois?onglet=budget|calendrier`, `vue-mois.js`, `mois.css`)
+- **Budget** (`budget-calcul.js`, pur, testé) :
+  - 8 enveloppes : crédits, logement et charges, courses, transport, santé, loisirs, épargne, divers ;
+  - proposées depuis le profil tant que l'utilisateur n'en a modifié aucune (crédits, loyer + charges, épargne ; le reste réparti 40 / 15 / 8 / 12 / 25 %) ;
+  - reste à vivre et montant **par jour jusqu'à la paie** (aujourd'hui compris, jour de paie non) ; alertes de dépassement et de plan supérieur au revenu ;
+  - dépense en une phrase (`BudgetCalcul.phrase`) : français, darija, chiffres arabes, « mille » / « k » ; enveloppe devinée, modifiable ;
+  - **seuls les totaux par enveloppe** sont gardés, dans `profil.budget` (`{ enveloppes, mois: { "AAAA-MM": { cle: montant } } }`, 12 derniers mois) ; chaque changement s'annule depuis le message ; l'import d'un relevé viendra plus tard.
+- **Calendrier** (`calendrier-calcul.js`, pur, testé) :
+  - paie et versements en plus (13ᵉ mois, calendrier des primes), échéances des crédits et dernière échéance, versements d'épargne, 31 décembre, rappels déjà en place (essai, abonnement, objectifs… via `window.OrbiteRappels.liste()`) ;
+  - mois en cours et 11 suivants ; total des prélèvements ;
+  - « Régler les dates » : jour de paie, jour de prélèvement de chaque crédit, jour de versement de l'épargne (qui règle aussi son rappel) ;
+  - « Ajouter à mon agenda » : fichier `.ics` de 12 mois, créé sur l'appareil.
+- Profil : nouveaux champs `jourPaie` (0 = dernier jour), `credits[].jourPrelevement` (0 = non précisé, aussi dans Mon profil › Crédits) et `budget` (normalisé seulement si `budget-calcul.js` est chargé, donc pas sur les pages publiques).
+- Accès : rail « Mon mois », onglet « Moi » sur téléphone, Mon profil, Ctrl K (« Noter une dépense », « Calendrier de l'argent »).
+- Icônes ajoutées : `panier`, `calendrier`.
+
+**Barre du haut** : actions secondaires en icône seule de 641 à 1480 px (`confort.css`), pour ne plus déborder.
+
+**Livraison** : SW `orbite-2026-10-12k`, Nouveautés `2026-10-12i`, visite « Les nouveautés » `2026-10-12c` (Mon mois, calendrier, onglets du Crédit en premier) ; « Envoyer un document » passe dans « Pour aller plus loin ». Unitaires 535 ; étapes e2e « crédit, point 5 », « TMM du mois », « Mon mois ».
+
 ## 3 decnonagies. Point 5 : règles sourcées et validées (12 oct.)
 
 Recherche du 12 oct. Les sites officiels (jibaya.tn, jurisitetunisie, sites des banques) sont injoignables depuis l'environnement de travail ; seuls les résumés de recherche sont disponibles. Les sources se contredisent. **Choix validés par l'utilisateur** (options conseillées) :

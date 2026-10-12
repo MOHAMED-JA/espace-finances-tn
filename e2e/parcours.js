@@ -271,8 +271,8 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(await page.$eval("#visite-chap-nouveautes", (b) => b.classList.contains("visite__chap--conseil")), "déjà venu : « Les nouveautés » conseillées");
     assert(await page.isVisible("#visite-chap-plus"), "chapitre « Pour aller plus loin »");
     await page.click("#visite-chap-nouveautes");
-    assert(/Simulation guidée/.test(await page.textContent("#visite-titre")), "première nouveauté : la simulation guidée");
-    await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.querySelector("[data-guidee='credit']").getBoundingClientRect(); return location.hash === "#credit" && !document.querySelector(".visite--transit") && Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
+    assert(/Mon mois : le budget/.test(await page.textContent("#visite-titre")), "première nouveauté : Mon mois");
+    await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.getElementById("mo-ajout").getBoundingClientRect(); return location.hash === "#mois?onglet=budget" && !document.querySelector(".visite--transit") && Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
     await page.waitForTimeout(400);
     await page.screenshot({ path: path.join(CAPTURES, "visite-nouveautes.png") });
     const vus = [];
@@ -281,12 +281,12 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
       await page.waitForFunction(() => !document.querySelector(".visite--transit"));
       vus.push((await page.textContent("#visite-titre")) + " @ " + (await page.evaluate(() => location.hash)));
     }
-    assert(vus.some((t) => /Partager une simulation @ #credit/.test(t)) && vus.some((t) => /Comparer vos simulations @ #simulations/.test(t)) && vus.some((t) => /Rappel de versement @ #profil/.test(t)) && vus.some((t) => /Haute lisibilité @ #compte\?onglet=preferences/.test(t)), "pages ouvertes : " + vus.join(" | "));
+    assert(vus.some((t) => /calendrier de l'argent @ #mois\?onglet=calendrier/.test(t)) && vus.some((t) => /4 nouveaux onglets @ #credit/.test(t)) && vus.some((t) => /Partager une simulation @ #credit/.test(t)) && vus.some((t) => /Comparer vos simulations @ #simulations/.test(t)) && vus.some((t) => /Haute lisibilité @ #compte\?onglet=preferences/.test(t)), "pages ouvertes : " + vus.join(" | "));
     await page.screenshot({ path: path.join(CAPTURES, "visite-credit.png") });
     await page.click("#visite-suiv");
     await page.waitForSelector(".visite", { state: "detached" });
     await page.waitForFunction(() => location.hash === "#orbite");
-    await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite_nouveautes === "2026-10-12b");
+    await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite_nouveautes === "2026-10-12c");
     /* « Pour aller plus loin » : les nouveautés précédentes, fiche de paie d'abord. */
     await page.click("#aide-visite");
     await page.waitForSelector(".visite__bulle #visite-chapitres:not([hidden])");
@@ -296,7 +296,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => location.hash === "#profil?section=salaire" && !document.querySelector(".visite--transit"));
     await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.getElementById("fiche-entree-profil").getBoundingClientRect(); return Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
     const vus2 = [];
-    for (let i = 1; i < 14; i++) {
+    for (let i = 1; i < 15; i++) {
       await page.click("#visite-suiv");
       await page.waitForFunction(() => !document.querySelector(".visite--transit"));
       vus2.push((await page.textContent("#visite-titre")) + " @ " + (await page.evaluate(() => location.hash)));
@@ -1500,7 +1500,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
       credits: [{ libelle: "Auto démo", type: "auto", mensualite: 320, capitalRestant: 9000, tauxPct: 10, moisRestants: 31, jourPrelevement: 5 },
         { libelle: "Conso démo", type: "conso", mensualite: 210, capitalRestant: 400, tauxPct: 12, moisRestants: 2 }],
       contrats: [{ type: "av", versementMensuel: 150, moisDebut: 1, anneeDebut: 2020 }] }, { immediat: true }));
-    await page.goto(base + "/espace/#mois");
+    await page.goto(base + "/espace/#mois?onglet=budget");
     await page.waitForSelector("#mo-budget:not([hidden]) .mo-ligne");
     assert((await page.$$("#mo-env-liste .mo-ligne")).length === 8, "8 enveloppes");
     const prevuCredits = await page.textContent('.mo-ligne[data-cle="credits"] .mo-ligne__chiffres');
