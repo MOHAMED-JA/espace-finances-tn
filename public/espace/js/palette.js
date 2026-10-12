@@ -41,6 +41,7 @@
       vue("v-epargne", "#epargne", "Épargne vie & CEA", "Impôt économisé, capital", "epargne assurance vie cea impot dhariba", "epargne"),
       vue("v-credit", "#credit", "Crédit", "Mensualité, capacité, renégociation", "credit pret banque kridi dyn", "credit"),
       vue("v-progression", "#progression", "Ma progression", "Pouvoir d'achat, objectifs, retraite", "progression carriere objectifs retraite t9a3od", "orbite"),
+      vue("v-mois", "#mois", "Mon mois", "Budget par enveloppe, calendrier de l'argent", "mois budget enveloppes depenses calendrier agenda dates paie prelevement masrouf", "orbite"),
       vue("v-vie", "#vie", "Vie & impôts", "Score, Et si…, optimiseur fiscal", "vie impots scenarios et si fiscal", "epargne"),
       vue("v-assistant", "#assistant", "Assistant", "Posez une question sur vos chiffres", "assistant question aide", "orbite"),
       vue("v-simulations", "#simulations", "Mes simulations", "Simulations enregistrées", "simulations enregistrees", "orbite"),
@@ -55,6 +56,8 @@
       section("s-foyer", "#profil?section=foyer", "Mode couple / foyer", "Mon profil › Foyer", "foyer couple conjoint mariage", "orbite"),
       section("s-fiscal", "#vie?onglet=fiscal", "Optimiseur fiscal", "Vie & impôts › Impôt", "optimiseur fiscal impot 31 decembre dhariba", "epargne"),
       section("s-etsi", "#vie?onglet=scenarios", "Et si…", "Vie & impôts › Scénarios", "et si scenarios mariage enfant achat", "epargne"),
+      section("s-depense", "#mois?onglet=budget", "Noter une dépense", "Mon mois › Budget", "depense noter ajouter courses essence cafe masrouf", "orbite"),
+      section("s-calendrier", "#mois?onglet=calendrier", "Calendrier de l'argent", "Mon mois › Calendrier : paie, prélèvements, 31 décembre", "calendrier agenda dates paie prelevement echeance ics", "orbite"),
       section("s-projet", "#credit?espace=projet", "Mon projet immobilier", "Crédit › Projet : frais, crédit, quand acheter", "projet immobilier logement maison appartement achat promoteur frais notaire enregistrement premier logement dar", "credit"),
       section("s-offres", "#credit?espace=offres", "Comparer mes offres", "Crédit › Offres de plusieurs banques", "comparer offres banques comparateur cout total moins cher", "credit"),
       section("s-tmm", "#credit?espace=tmm", "Le TMM et mes crédits", "Crédit › TMM du mois, courbe, effet", "tmm taux marche monetaire bct variable revision", "credit"),
@@ -174,7 +177,7 @@
   }
   var ICONES = { orbite: "orbite", salaire: "salaire", epargne: "epargne", credit: "credit", action: "etoile" };
   /* Une icône par entrée : la couleur dit le module, le dessin dit la chose. */
-  var ICO = { "v-orbite": "orbite", "v-profil": "profil", "v-salaire": "salaire", "v-epargne": "epargne", "v-credit": "credit", "v-progression": "hausse", "v-vie": "bouclier", "v-assistant": "etoile", "v-simulations": "liste", "v-compte": "compte", "s-retraite": "horloge", "s-objectifs": "cible", "s-annee": "etoile", "s-credits": "credit", "s-historique": "hausse", "s-budget": "epargne", "s-banque": "credit", "s-foyer": "profil", "s-fiscal": "epargne", "s-etsi": "comparer", "s-marge": "horloge", "s-projet": "maison", "s-offres": "comparer", "s-regrouper": "liste", "s-tmm": "hausse", "s-preferences": "outils", "s-donnees": "telecharger", "a-salaire": "hausse", "a-nego": "cible", "a-apps": "grille", "a-dossier": "fiche", "a-fiche": "fiche", "a-visite": "boussole", "a-expert": "outils", "a-export": "telecharger", "a-deconnexion": "sortie", "a-lisible": "lisible", "a-annuler": "annuler", "a-retablir": "retablir", "a-partager": "partager", "m-fiscal": "horloge", "m-annee": "etoile" };
+  var ICO = { "v-orbite": "orbite", "v-profil": "profil", "v-salaire": "salaire", "v-epargne": "epargne", "v-credit": "credit", "v-progression": "hausse", "v-mois": "calendrier", "s-depense": "panier", "s-calendrier": "calendrier", "v-vie": "bouclier", "v-assistant": "etoile", "v-simulations": "liste", "v-compte": "compte", "s-retraite": "horloge", "s-objectifs": "cible", "s-annee": "etoile", "s-credits": "credit", "s-historique": "hausse", "s-budget": "epargne", "s-banque": "credit", "s-foyer": "profil", "s-fiscal": "epargne", "s-etsi": "comparer", "s-marge": "horloge", "s-projet": "maison", "s-offres": "comparer", "s-regrouper": "liste", "s-tmm": "hausse", "s-preferences": "outils", "s-donnees": "telecharger", "a-salaire": "hausse", "a-nego": "cible", "a-apps": "grille", "a-dossier": "fiche", "a-fiche": "fiche", "a-visite": "boussole", "a-expert": "outils", "a-export": "telecharger", "a-deconnexion": "sortie", "a-lisible": "lisible", "a-annuler": "annuler", "a-retablir": "retablir", "a-partager": "partager", "m-fiscal": "horloge", "m-annee": "etoile" };
   function majSelection() {
     liste.querySelectorAll("[role=option]").forEach(function (li, i) { li.setAttribute("aria-selected", i === sel ? "true" : "false"); });
     var s = liste.querySelector('[aria-selected="true"]');

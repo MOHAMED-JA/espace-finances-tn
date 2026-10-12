@@ -1494,6 +1494,84 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => window.OrbiteCalcul.TMM === 7.5 && window.MoteurCredit.DEFAUTS.tmm === 7.5 && !localStorage.getItem("orbite-tmm"));
   });
 
+  await etape("Mon mois : budget proposé, dépense en une phrase annulable, enveloppe réglée, calendrier, dates, agenda .ics, téléphone", async () => {
+    const avant = await page.evaluate(() => JSON.stringify({ credits: window.Orbite.profil().credits, contrats: window.Orbite.profil().contrats, budget: window.Orbite.profil().budget, jourPaie: window.Orbite.profil().jourPaie, loyer: window.Orbite.profil().loyer }));
+    await page.evaluate(() => window.Orbite.majProfil({ loyer: 450, jourPaie: 25, budget: { enveloppes: [], mois: {} },
+      credits: [{ libelle: "Auto démo", type: "auto", mensualite: 320, capitalRestant: 9000, tauxPct: 10, moisRestants: 31, jourPrelevement: 5 },
+        { libelle: "Conso démo", type: "conso", mensualite: 210, capitalRestant: 400, tauxPct: 12, moisRestants: 2 }],
+      contrats: [{ type: "av", versementMensuel: 150, moisDebut: 1, anneeDebut: 2020 }] }, { immediat: true }));
+    await page.goto(base + "/espace/#mois");
+    await page.waitForSelector("#mo-budget:not([hidden]) .mo-ligne");
+    assert((await page.$$("#mo-env-liste .mo-ligne")).length === 8, "8 enveloppes");
+    const prevuCredits = await page.textContent('.mo-ligne[data-cle="credits"] .mo-ligne__chiffres');
+    assert(/530 DT/.test(prevuCredits.replace(/\s/g, " ")), "crédits prévus : " + prevuCredits);
+    assert(/Proposition/.test(await page.textContent("#mo-env-sous")), "proposition affichée");
+    /* Une phrase → la bonne enveloppe ; annulable. */
+    await page.fill("#mo-phrase", "45 dinars d'essence");
+    await page.waitForFunction(() => document.getElementById("mo-env").value === "transport" && /45 DT → Transport/.test(document.getElementById("mo-phrase-aide").textContent.replace(/\s/g, " ")));
+    await page.click("#mo-ajouter");
+    await page.waitForFunction(() => { const b = window.Orbite.profil().budget, k = window.BudgetCalcul.cleMois(new Date()); return b.mois[k] && b.mois[k].transport === 45 && b.enveloppes.length === 8; });
+    await page.fill("#mo-phrase", "٢٠ دينار خضرة");
+    await page.press("#mo-phrase", "Enter");
+    await page.waitForFunction(() => { const k = window.BudgetCalcul.cleMois(new Date()); return window.Orbite.profil().budget.mois[k].courses === 20; });
+    await page.click('.toast:has-text("ajoutés à « Courses »") button:has-text("Annuler")');
+    await page.waitForFunction(() => { const k = window.BudgetCalcul.cleMois(new Date()); return !window.Orbite.profil().budget.mois[k].courses; });
+    await page.fill("#mo-phrase", "bonjour");
+    await page.click("#mo-ajouter");
+    assert(/Montant non reconnu/.test(await page.textContent("#mo-phrase-aide")), "phrase sans montant refusée");
+    /* Enveloppe réglée : dépassement signalé. */
+    await page.click('[data-modifier="loisirs"]');
+    await page.fill("#mo-p-loisirs", "50");
+    await page.fill("#mo-d-loisirs", "80");
+    await page.click('#mo-edit-loisirs button[type="submit"]');
+    await page.waitForSelector('.mo-ligne--depasse[data-cle="loisirs"]');
+    assert(/Loisirs et sorties \(\+30 DT\)/.test((await page.textContent("#mo-alerte")).replace(/\s/g, " ")), "alerte de dépassement");
+    assert(!/Proposition/.test(await page.textContent("#mo-env-sous")), "le plan devient le budget");
+    assert(/jours?, soit .* par jour/.test(await page.textContent("#mo-par-jour")), "montant par jour jusqu'à la paie");
+    await page.click('[data-modifier="credits"]');
+    await page.click('[data-paye="credits"]');
+    await page.waitForFunction(() => { const k = window.BudgetCalcul.cleMois(new Date()); return window.Orbite.profil().budget.mois[k].credits === 530; });
+    await page.click("#mo-b-prec");
+    assert(/^0 \//.test((await page.textContent('.mo-ligne[data-cle="transport"] .mo-ligne__chiffres')).replace(/\s/g, " ")), "le mois précédent repart de zéro");
+    await page.click("#mo-b-suiv");
+    await page.screenshot({ path: path.join(CAPTURES, "mois-budget.png"), fullPage: true });
+    /* Calendrier : échéances du mois, jour à préciser, dernière échéance le mois suivant. */
+    await page.click("#mo-tab-calendrier");
+    await page.waitForSelector("#mo-calendrier:not([hidden]) .mo-evt");
+    const agenda = (await page.textContent("#mo-agenda")).replace(/\s/g, " ");
+    assert(/Auto démo/.test(agenda) && /Conso démo/.test(agenda) && /Versement d'épargne/.test(agenda) && /Paie/.test(agenda), "agenda : " + agenda.slice(0, 300));
+    assert(/Prélèvements : 680 DT/.test((await page.textContent("#mo-cal-resume")).replace(/\s/g, " ")), "total des prélèvements");
+    assert(await page.$('.mo-evt[data-jour="25"][data-t="paie"]'), "paie le 25");
+    await page.click("#mo-agenda [data-dates]");
+    await page.waitForSelector("#mo-dates[open] #mo-jour-credit-1");
+    await page.selectOption("#mo-jour-credit-1", "10");
+    await page.waitForFunction(() => window.Orbite.profil().credits[1].jourPrelevement === 10);
+    await page.waitForSelector('.mo-evt[data-jour="10"][data-t="credit"]');
+    await page.click("#mo-c-suiv");
+    await page.waitForFunction(() => /Dernière échéance : Conso démo/.test(document.getElementById("mo-agenda").textContent));
+    await page.click('.mo-cal__case--evt[data-jour="10"]');
+    await page.waitForSelector('.mo-evt--vu[data-jour="10"]');
+    await page.click("#mo-c-prec");
+    await page.screenshot({ path: path.join(CAPTURES, "mois-calendrier.png"), fullPage: true });
+    const [ics] = await Promise.all([page.waitForEvent("download"), page.click("#mo-ics")]);
+    const txt = fs.readFileSync(await ics.path(), "utf8");
+    assert(ics.suggestedFilename() === "orbite-calendrier.ics" && /^BEGIN:VCALENDAR/.test(txt) && (txt.match(/BEGIN:VEVENT/g) || []).length > 20 && /SUMMARY:Auto démo · 320\\,000 DT/.test(txt), "fichier agenda");
+    /* Palette et téléphone. */
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(base + "/espace/#mois?onglet=budget");
+    await page.waitForSelector("#mo-budget:not([hidden]) .mo-ligne");
+    const deborde = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+    assert(!deborde, "pas de défilement horizontal sur téléphone");
+    assert(await page.getAttribute('.onglets-bas a[data-vue="profil"]', "aria-current") === "page", "onglet « Moi » actif");
+    await page.screenshot({ path: path.join(CAPTURES, "mois-budget-mobile.png"), fullPage: true });
+    await page.click("#mo-tab-calendrier");
+    await page.waitForSelector("#mo-calendrier:not([hidden]) .mo-evt");
+    assert(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), "calendrier sans débordement");
+    await page.screenshot({ path: path.join(CAPTURES, "mois-calendrier-mobile.png"), fullPage: true });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.evaluate((a) => window.Orbite.majProfil(JSON.parse(a), { immediat: true }), avant);
+  });
+
   await etape("crédit : lire une offre (texte), contrôler le tableau de la banque (exemple exact, PDF avec une erreur)", async () => {
     await page.goto(base + "/espace/#credit");
     await page.waitForSelector("#cr-outil-offre");

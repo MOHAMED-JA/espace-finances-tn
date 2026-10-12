@@ -11,12 +11,12 @@
     module.exports = fabrique(
       require("../../moteurs/salaire/calcul.js"), require("../../moteurs/salaire/parametres.js"),
       require("../../moteurs/salaire/etat.js"), require("../../moteurs/vie/moteur-fiscal.js"),
-      require("../../moteurs/vie/scenario.js"), require("../../moteurs/salaire/pension.js")
+      require("../../moteurs/vie/scenario.js"), require("../../moteurs/salaire/pension.js"), require("./budget-calcul.js")
     );
   } else {
-    racine.OrbiteCalcul = fabrique(racine.CalculSalaire, racine.PARAMETRES_PAIE, racine.EtatSimulation, racine.MoteurFiscal, racine.Scenario, racine.CalculPension);
+    racine.OrbiteCalcul = fabrique(racine.CalculSalaire, racine.PARAMETRES_PAIE, racine.EtatSimulation, racine.MoteurFiscal, racine.Scenario, racine.CalculPension, racine.BudgetCalcul);
   }
-})(typeof self !== "undefined" ? self : this, function (C, P, E, MF, SC, CP) {
+})(typeof self !== "undefined" ? self : this, function (C, P, E, MF, SC, CP, BC) {
   "use strict";
 
   /* Hypothèses par défaut des crédits types (modifiables dans le module Crédit). */
@@ -51,7 +51,7 @@
       activite: "salarie", caissePension: "cnss", pensionEtrangere: false,
       primesImposables: 0, primesNonCotisables: 0, avantagesNature: 0, indemnitesNonImposables: 0,
       chefDeFamille: false, enfants: 0, etudiants: 0, handicapes: 0, parents: 0,
-      credits: [], contrats: [], projets: [], historiqueSalaire: [], scenarios: [], rappelsPerso: [], jourVersement: 0,
+      credits: [], contrats: [], projets: [], historiqueSalaire: [], scenarios: [], rappelsPerso: [], jourVersement: 0, jourPaie: 0,
       loyer: 0, chargesFixes: 0, epargneDisponible: 0, autresRevenus: 0,
       quotiteNet: QUOTITE, quotiteBrut: QUOTITE
     };
@@ -98,7 +98,9 @@
       /* Règle des 8 % : type de taux (« fixe », « variable » ou non précisé) et dernière réduction de taux obtenue. */
       tauxType: choix(c.tauxType, ["fixe", "variable"], ""),
       reductionMois: entier(c.reductionMois, 0, 0, 12),
-      reductionAnnee: entier(c.reductionAnnee, 0, 0, 2100)
+      reductionAnnee: entier(c.reductionAnnee, 0, 0, 2100),
+      /* Jour du prélèvement de la mensualité (calendrier) : 0 = non précisé. */
+      jourPrelevement: entier(c.jourPrelevement, 0, 0, 31)
     };
   }
 
@@ -321,6 +323,10 @@
       rappelsPerso: liste(p.rappelsPerso, normaliserRappel, 20).filter(function (r) { return r.titre && r.annee > 0; }),
       /* Rappel mensuel de versement d'épargne (Lot 2) : jour du mois, 0 = aucun rappel. */
       jourVersement: entier(p.jourVersement, 0, 0, 28),
+      /* Point 5 : jour de la paie (0 = dernier jour du mois) et budget du mois (enveloppes + dépenses des 12 derniers mois).
+         Le budget n'est gardé que sur l'espace (module budget-calcul.js chargé) ; les pages publiques n'en ont pas besoin. */
+      jourPaie: entier(p.jourPaie, 0, 0, 31),
+      budget: BC ? BC.normaliser(p.budget) : undefined,
       historiqueSalaire: liste(p.historiqueSalaire, normaliserHausse, 40).filter(function (h) { return h.montant > 0; }).sort(function (a, b) { return cleHausse(a) - cleHausse(b); }),
       loyer: nombre(p.loyer, 0, 0, 1e6),
       chargesFixes: nombre(p.chargesFixes, 0, 0, 1e6),

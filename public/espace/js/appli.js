@@ -80,6 +80,8 @@
     dlg.showModal();
   }
   window.OrbiteMaj = { proposer: proposerMaj, nouveautes: montrerNouveautes };
+  /* Rappels en place (essai, abonnement, réduction de taux, objectifs…) : repris par le calendrier de « Mon mois ». */
+  window.OrbiteRappels = { liste: function () { return liste(); } };
   /* Nouveau venu : décidé à l'ouverture (il peut remplir son premier pas avant l'affichage des notes). */
   function planifier() { var v = O.profilVierge(); setTimeout(function () { montrerNouveautes(v); }, 600); }
   if (O.pret) planifier();

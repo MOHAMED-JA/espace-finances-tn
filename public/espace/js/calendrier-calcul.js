@@ -35,7 +35,7 @@
       });
       var ep = 0;
       (x.contrats || []).forEach(function (c) { if (!(c.anneeDebut > 0) || c.anneeDebut * 12 + (c.moisDebut || 1) - 1 <= a * 12 + m0) ep += num(c.versementMensuel, 0); });
-      if (ep > 0) ajouter(jourDans(a, m0, num(x.jourVersement, 0) || 1), "epargne", "Versement d'épargne", ep, num(x.jourVersement, 0) ? "" : "jour à choisir dans Mon profil › Contrats");
+      if (ep > 0) ajouter(jourDans(a, m0, num(x.jourVersement, 0) || 1), "epargne", "Versement d'épargne", ep, num(x.jourVersement, 0) ? "" : "jour du versement à préciser");
       var jp = jourDans(a, m0, num(x.jourPaie, 0));
       if (x.activite !== "retraite" || num(x.montant, 0) > 0) ajouter(jp, "paie", x.activite === "retraite" ? "Pension" : "Paie", num(opt.net, 0) > 0 ? opt.net : null);
       var cal = Array.isArray(x.calendrierPrimes) && x.calendrierPrimes.length === 12 ? x.calendrierPrimes : null, plus = 0;
