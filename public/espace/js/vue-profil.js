@@ -403,12 +403,14 @@
 
   O.surProfil(rendre);
 
-  /* Ouverture d'une section précise : #profil?section=budget */
+  /* Ouverture d'une section précise : #profil?section=budget ; #profil?section=salaire&salaire=1 ouvre aussi
+     « Mettre à jour mon salaire » (raccourci de l'application installée). */
   doc.addEventListener("orbite:vue", function (e) {
     if (e.detail.vue !== "profil") return;
     var sec = e.detail.params.get("section");
     if (!sec) return;
     var d = $("sec-" + sec);
     if (d) { d.open = true; setTimeout(function () { d.scrollIntoView({ behavior: O.mouvementReduit.matches ? "auto" : "smooth", block: "start" }); }, 60); }
+    if (e.detail.params.get("salaire") === "1" && O.profil() && !O.profilVierge()) setTimeout(function () { O.mettreAJourSalaire(); }, 120);
   });
 })();

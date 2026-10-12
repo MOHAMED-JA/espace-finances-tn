@@ -454,6 +454,23 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 septuagies. Palette Ctrl + K et raccourcis de l'application installée (12 oct.)
+
+- **Ouverture** : Ctrl + K (⌘ + K sur Mac, ferme aussi), « / » hors d'un champ et hors d'une autre fenêtre (et pas avant le premier pas), loupe `#palette-ouvrir` dans la barre, partout (rappel « Ctrl K » affiché seulement à partir de 1 024 px). Échap ou clic hors de la fenêtre ferme.
+- **Fichiers** : `public/espace/js/palette.js` (chargé après `vue-dossier.js`), `public/espace/palette.css`, fenêtre `#dlg-palette` dans `index.html` (champ `#palette-q` en `combobox`, liste `#palette-liste` en `listbox`, `aria-activedescendant`). API : `Orbite.ouvrirPalette(texte)`.
+- **Catalogue** (dans `catalogue()`, recalculé à chaque frappe) :
+  - 10 vues, 13 sections (liens `#vue?onglet=` / `?section=`), 8 actions ;
+  - actions : salaire (`O.mettreAJourSalaire`), dossier banque (`O.ouvrirDossier` après passage sur `#credit`), fiche de paie (clic `#fiche-controle` sur `#salaire`, absente pour un retraité), visite (`#aide-visite`), thème (`#bascule-theme`, libellé et icône selon le thème courant), mode Expert, export (`#exporter`), déconnexion ;
+  - `surVue(nom, fn)` : va sur la vue, attend `orbite:vue`, puis agit ; `aller(hash)` réaffiche la vue si l'adresse est déjà la bonne ;
+  - « En ce moment » (dates seulement) : « Verser avant le 31 décembre » du 15 octobre au 31 décembre, « Mon année en orbite » du 15 décembre au 31 janvier.
+- **Recherche** : sans accents ni apostrophes, tous les morceaux tapés doivent apparaître (titre, sous-titre ou mots-clés, darija comprise : kridi, khedma, dhariba, t9a3od). Score : titre qui commence par le mot (0), titre qui le contient (1), mot-clé seul (2). Les résultats restent groupés (Vues, Sections, Actions) ; le groupe qui a le meilleur résultat passe devant. Le morceau trouvé est surligné dans le titre.
+- **Assistant** : dernière ligne « Demander à l'Assistant : « … » » dès 3 mots ou quand rien ne correspond (≤ 200 caractères) → `#assistant?q=`. Le message « Rien ne correspond » n'apparaît donc qu'au-delà de 200 caractères.
+- **Récents** : 3 identifiants (vues, sections, actions ; jamais la question) dans `localStorage` `orbite_palette_recents`, lecture et écriture sous try/catch. Aucun montant ni donnée du profil dans la palette (vérifié en e2e).
+- **Téléphone** (≤ 640 px) : feuille basse, raccourcis clavier et colonne de droite masqués.
+- **Raccourcis du manifeste** (`public/manifest.webmanifest`) : Mettre à jour mon salaire (`/espace/#profil?section=salaire&salaire=1`, ouvre la fenêtre du salaire via `vue-profil.js`), Dossier banque (`#credit?dossier=1`), Mon orbite, Ma progression. Icônes 96 × 96 générées avec PIL dans `public/orbite/raccourcis/` (vert hausse, bleu fiche, noir orbite, violet cible).
+- **Versions** : SW `orbite-2026-10-12d`, Nouveautés `2026-10-12c` (4 points : palette, raccourcis, dossier banque, visite guidée).
+- **Tests** : unitaires 473 ; e2e nouvelle étape « palette » (darija, « / » dans un champ n'ouvre rien, flèches, récents, thème aller-retour, phrase vers l'Assistant, manifeste et icônes, lien `salaire=1`, téléphone), captures `palette.png` et `palette-mobile.png`.
+
 ## 3 novosexagies. Programme « Fable » : palette Ctrl + K, raccourcis, négociateur, immobilier, LF 2027, apparence, graphiques, journal (12 oct.)
 
 - **Contexte** : l'utilisateur passe au modèle Fable 5.1 et demande de nouvelles propositions (fonctionnalités, design, options avancées). Mes 9 propositions, toutes gratuites ; **choix de l'utilisateur** (12 oct.) :
@@ -461,7 +478,7 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
   - design : **palette de commandes Ctrl + K**, **apparence personnelle** (accent, densité, taille du texte), **graphiques unifiés** (survol, export en image) ;
   - options : **journal des modifications et « Annuler »**, **raccourcis de l'application installée**.
   - **Ordre** : Ctrl + K puis raccourcis, puis négociateur, immobilier, journal, apparence, graphiques, LF 2027 en décembre ; ensuite le programme précédent (comparateur d'offres, TMM, rachat, budget, calendrier).
-- **Palette Ctrl + K** : maquette https://claude.ai/artifact/H76Hz8zQAe4hSSgVaqh4Dt (en attente de validation). Ouverture : Ctrl/⌘ + K, « / » hors champ, loupe dans la barre ; vide : 3 récents + actions du moment ; recherche sans accents, morceaux de mots, darija (kridi, khedma, dhariba, t9a3od) ; dernière ligne « Demander à l'Assistant » ; aucun chiffre du profil dans la palette. Raccourcis du manifest à remplacer par : Mettre à jour mon salaire, Dossier banque, Mon orbite, Ma progression (icônes dédiées).
+- **Palette Ctrl + K** : maquette https://claude.ai/artifact/H76Hz8zQAe4hSSgVaqh4Dt (**validée** le 12 oct. : loupe « Partout », touche « / » oui, raccourcis « ceux de la maquette » ; livrée, voir « 3 septuagies »). Ouverture : Ctrl/⌘ + K, « / » hors champ, loupe dans la barre ; vide : 3 récents + actions du moment ; recherche sans accents, morceaux de mots, darija (kridi, khedma, dhariba, t9a3od) ; dernière ligne « Demander à l'Assistant » ; aucun chiffre du profil dans la palette. Raccourcis du manifest à remplacer par : Mettre à jour mon salaire, Dossier banque, Mon orbite, Ma progression (icônes dédiées).
 
 ## 3 octosexagies. Enfants réservés au chef de famille (12 oct.)
 

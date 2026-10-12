@@ -1426,6 +1426,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(CAPTURES, "progression-carriere-telephone.png"), fullPage: true });
     await page.setViewportSize({ width: 1360, height: 900 });
+    const themeAvant = await page.getAttribute("html", "data-theme");
     await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
     await page.click("#pg-tab-objectifs");
     await page.waitForTimeout(500);
@@ -1433,7 +1434,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.click("#pg-tab-carriere");
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(CAPTURES, "progression-carriere-sombre.png") });
-    await page.evaluate(() => document.documentElement.removeAttribute("data-theme"));
+    await page.evaluate((t) => document.documentElement.setAttribute("data-theme", t), themeAvant);
   });
 
   await etape("Mon année en orbite : bouton de Ma progression, cartes calculées, navigation au clavier, image sans montant", async () => {
@@ -1676,6 +1677,117 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.keyboard.press("Escape");
     await page.waitForSelector("#dlg-dossier", { state: "hidden" });
     await page.setViewportSize({ width: 1360, height: 900 });
+  });
+
+  await etape("palette : Ctrl K, « / » hors champ, darija, clavier, récents, action, thème, phrase vers l'Assistant, raccourcis installés, téléphone", async () => {
+    await page.goto(base + "/espace/#orbite");
+    await page.waitForSelector("#palette-ouvrir");
+    await page.keyboard.press("Control+k");
+    await page.waitForSelector("#dlg-palette[open]");
+    assert(await page.evaluate(() => document.activeElement && document.activeElement.id === "palette-q"), "le champ a le focus");
+    await page.fill("#palette-q", "kridi");
+    await page.waitForFunction(() => document.querySelector('#palette-liste [role="option"]'));
+    assert((await page.getAttribute('#palette-liste [aria-selected="true"]', "data-id")) === "v-credit", "« kridi » trouve Crédit (darija, sans accent)");
+    assert((await page.$$eval("#palette-liste mark", (m) => m.length)) === 0 && (await page.textContent('#palette-liste [aria-selected="true"] b')) === "Crédit", "titre sans surlignage quand le mot-clé est un synonyme");
+    await page.keyboard.press("Enter");
+    await page.waitForSelector("#dlg-palette", { state: "hidden" });
+    await page.waitForFunction(() => location.hash === "#credit");
+    /* « / » hors d'un champ ouvre ; dans un champ, non. */
+    await page.waitForSelector("#dossier-ouvrir");
+    await page.keyboard.press("/");
+    await page.waitForSelector("#dlg-palette[open]");
+    assert((await page.inputValue("#palette-q")) === "", "le « / » n'est pas écrit dans le champ");
+    await page.fill("#palette-q", "doss");
+    await page.waitForFunction(() => document.querySelector('#palette-liste [aria-selected="true"]') && document.querySelector('#palette-liste [aria-selected="true"]').getAttribute("data-id") === "a-dossier");
+    assert((await page.textContent('#palette-liste [aria-selected="true"] mark')) === "doss", "morceau du mot surligné dans « Préparer mon dossier banque »");
+    await page.keyboard.press("Enter");
+    await page.waitForSelector("#dlg-dossier[open]");
+    await page.keyboard.press("Escape");
+    await page.waitForSelector("#dlg-dossier", { state: "hidden" });
+    /* Loupe, flèches, section de Ma progression. */
+    await page.click("#palette-ouvrir");
+    await page.waitForSelector("#dlg-palette[open]");
+    await page.fill("#palette-q", "retraite");
+    await page.waitForFunction(() => document.querySelectorAll('#palette-liste [role="option"]').length >= 2);
+    assert((await page.getAttribute('#palette-liste [aria-selected="true"]', "data-id")) === "s-retraite", "la section « Retraite » passe avant les vues qui la citent");
+    await page.keyboard.press("ArrowDown");
+    assert((await page.getAttribute('#palette-liste [aria-selected="true"]', "data-id")) !== "s-retraite", "flèche bas");
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => location.hash === "#progression?onglet=retraite");
+    /* Récents en tête d'une palette vide. */
+    await page.keyboard.press("Control+k");
+    await page.waitForSelector("#dlg-palette[open]");
+    await page.waitForFunction(() => document.querySelector('#palette-liste [role="option"]'));
+    assert((await page.textContent("#palette-liste .palette__groupe")) === "Récents", "groupe Récents");
+    assert((await page.getAttribute('#palette-liste [role="option"]', "data-id")) === "s-retraite", "dernier choix en premier");
+    assert((await page.textContent("#palette-liste")).indexOf("DT") === -1, "aucun montant dans la palette");
+    /* Thème : l'action suit le thème courant. */
+    const avant = await page.getAttribute("html", "data-theme");
+    await page.fill("#palette-q", "thème");
+    await page.waitForFunction(() => (document.querySelector('#palette-liste [aria-selected="true"]') || {}).getAttribute && document.querySelector('#palette-liste [aria-selected="true"]').getAttribute("data-id") === "a-theme");
+    assert((await page.textContent('#palette-liste [aria-selected="true"] b')).indexOf(avant === "light" ? "sombre" : "clair") !== -1, "libellé selon le thème courant");
+    await page.keyboard.press("Enter");
+    await page.waitForFunction((a) => document.documentElement.getAttribute("data-theme") !== a, avant);
+    await page.keyboard.press("Control+k");
+    await page.fill("#palette-q", "thème");
+    await page.keyboard.press("Enter");
+    await page.waitForFunction((a) => document.documentElement.getAttribute("data-theme") === a, avant);
+    /* Une phrase part à l'Assistant ; « / » dans sa zone de texte n'ouvre rien. */
+    await page.keyboard.press("Control+k");
+    await page.fill("#palette-q", "combien je paie d'impôt par an");
+    await page.waitForFunction(() => { var o = document.querySelectorAll('#palette-liste [role="option"]'); return o.length && o[o.length - 1].getAttribute("data-id") === "q"; });
+    await page.keyboard.press("End");
+    await page.keyboard.press("ArrowDown");
+    for (let i = 0; i < 12; i++) await page.keyboard.press("ArrowDown");
+    assert((await page.getAttribute('#palette-liste [aria-selected="true"]', "data-id")) === "q", "dernière ligne : Demander à l'Assistant");
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => location.hash === "#assistant");
+    await page.waitForFunction(() => document.querySelectorAll("#assistant-fil li").length >= 1);
+    await page.focus("#assistant-question");
+    await page.keyboard.press("/");
+    await page.waitForTimeout(150);
+    assert(!(await page.isVisible("#dlg-palette")), "« / » dans un champ n'ouvre pas la palette");
+    assert((await page.inputValue("#assistant-question")) === "/", "le « / » est bien tapé dans le champ");
+    await page.fill("#assistant-question", "");
+    /* Rien trouvé : seule la question à l'Assistant reste proposée, puis Échap. */
+    await page.keyboard.press("Escape");
+    await page.click("#palette-ouvrir");
+    await page.fill("#palette-q", "zzqx");
+    await page.waitForFunction(() => { var o = document.querySelectorAll('#palette-liste [role="option"]'); return o.length === 1 && o[0].getAttribute("data-id") === "q"; });
+    await page.keyboard.press("Escape");
+    await page.waitForSelector("#dlg-palette", { state: "hidden" });
+    /* Raccourcis de l'application installée : manifeste et icônes, lien direct du salaire. */
+    const manifeste = await (await page.request.get(base + "/manifest.webmanifest")).json();
+    assert(manifeste.shortcuts.length === 4 && manifeste.shortcuts[0].url === "/espace/#profil?section=salaire&salaire=1" && manifeste.shortcuts[1].url === "/espace/#credit?dossier=1", "4 raccourcis");
+    for (const r of manifeste.shortcuts) assert((await page.request.get(base + r.icons[0].src)).status() === 200, "icône présente : " + r.icons[0].src);
+    await page.goto(base + "/espace/#profil?section=salaire&salaire=1");
+    await page.waitForSelector("#dlg-salaire[open]");
+    await page.keyboard.press("Escape");
+    await page.waitForSelector("#dlg-salaire", { state: "hidden" });
+    /* Téléphone : feuille basse, sans débordement. */
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(base + "/espace/#orbite");
+    await page.waitForSelector("#palette-ouvrir");
+    assert(await page.$eval("#palette-ouvrir kbd", (k) => getComputedStyle(k).display === "none"), "« Ctrl K » caché sur téléphone");
+    await page.click("#palette-ouvrir");
+    await page.waitForSelector("#dlg-palette[open]");
+    await page.fill("#palette-q", "sal");
+    await page.waitForFunction(() => document.querySelector('#palette-liste [role="option"]'));
+    await page.waitForTimeout(300);
+    assert(await page.$eval("#dlg-palette", (d) => d.scrollWidth <= d.clientWidth + 1 && d.getBoundingClientRect().bottom <= innerHeight), "palette dans l'écran, sans défilement horizontal");
+    await page.screenshot({ path: path.join(CAPTURES, "palette-mobile.png") });
+    await page.keyboard.press("Escape");
+    await page.setViewportSize({ width: 1360, height: 900 });
+    await page.goto(base + "/espace/#orbite");
+    await page.waitForSelector("#palette-ouvrir");
+    await page.keyboard.press("Control+k");
+    await page.waitForSelector("#dlg-palette[open]");
+    await page.fill("#palette-q", "cr");
+    await page.waitForFunction(() => document.querySelector('#palette-liste [role="option"]'));
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: path.join(CAPTURES, "palette.png") });
+    await page.keyboard.press("Escape");
   });
 
   await etape("déconnexion puis suppression définitive du compte", async () => {
