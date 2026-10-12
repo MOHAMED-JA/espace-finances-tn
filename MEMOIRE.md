@@ -454,6 +454,15 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 novosexagies. Programme « Fable » : palette Ctrl + K, raccourcis, négociateur, immobilier, LF 2027, apparence, graphiques, journal (12 oct.)
+
+- **Contexte** : l'utilisateur passe au modèle Fable 5.1 et demande de nouvelles propositions (fonctionnalités, design, options avancées). Mes 9 propositions, toutes gratuites ; **choix de l'utilisateur** (12 oct.) :
+  - fonctionnalités : **négociateur de salaire** (net visé → brut à demander, arguments chiffrés, note PDF), **projet immobilier de A à Z** (apport, frais, mensualité, « quand pourrai-je acheter ? », règles sourcées soumises à validation), **loi de finances 2027 avant/après** (bascule 2026/2027 dès la publication, en décembre) ; **profils invités** écarté ;
+  - design : **palette de commandes Ctrl + K**, **apparence personnelle** (accent, densité, taille du texte), **graphiques unifiés** (survol, export en image) ;
+  - options : **journal des modifications et « Annuler »**, **raccourcis de l'application installée**.
+  - **Ordre** : Ctrl + K puis raccourcis, puis négociateur, immobilier, journal, apparence, graphiques, LF 2027 en décembre ; ensuite le programme précédent (comparateur d'offres, TMM, rachat, budget, calendrier).
+- **Palette Ctrl + K** : maquette https://claude.ai/artifact/H76Hz8zQAe4hSSgVaqh4Dt (en attente de validation). Ouverture : Ctrl/⌘ + K, « / » hors champ, loupe dans la barre ; vide : 3 récents + actions du moment ; recherche sans accents, morceaux de mots, darija (kridi, khedma, dhariba, t9a3od) ; dernière ligne « Demander à l'Assistant » ; aucun chiffre du profil dans la palette. Raccourcis du manifest à remplacer par : Mettre à jour mon salaire, Dossier banque, Mon orbite, Ma progression (icônes dédiées).
+
 ## 3 octosexagies. Enfants réservés au chef de famille (12 oct.)
 
 - **Remarque de l'utilisateur** : « quand chef de famille n'est pas activé, logiquement je ne peux pas ajouter de nombre d'enfants ». Juste : le moteur (`enfantsReservesAuChefDeFamille: true`) ignorait déjà enfants, étudiants et handicapés sans chef de famille, mais l'interface laissait saisir des valeurs sans effet.
