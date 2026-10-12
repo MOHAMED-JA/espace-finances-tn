@@ -487,7 +487,21 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
   - **Liens entre pages** : chaque page renvoie vers les 6 autres, en 2 rangées de 3 sur grand écran. Le pied de l'accueil a 7 liens.
 - **Partout ailleurs** : `DATE_PAGES` au 12 oct. 2026 (toutes les pages régénérées) ; sitemap de 10 URL, toutes en `lastmod` 2026-10-12 ; CSP des 3 pages dans `_headers` (avec et sans `.html`).
 - **Tests** : 3 nouveaux tests de calcul ; le test HTML passe à 7 pages ; étape e2e « pages publiques » étendue (type de crédit, taux, menu, assurance vie non imposée, CEA au-delà du dépôt utile, téléphone pour les 7 pages).
-- **À faire par l'utilisateur après la mise en ligne** : renvoyer le sitemap dans Search Console, puis demander l'indexation des 3 nouvelles adresses (quota d'environ 10 par jour).
+- **Livré** : PR #104 fusionnée.
+- **Liens depuis les simulateurs** (12 oct.) :
+  - les 3 simulateurs ont reçu les mêmes ajouts :
+    - une bande « Orbite : salaire, crédit, impôt et retraite en Tunisie, au même endroit. » avec le lien « Découvrir Orbite » vers l'**accueil** (avant : la page de connexion, exclue des moteurs, sans effet) ;
+    - une **carte Orbite** dans « Les autres simulateurs » (grille 2 × 2) ;
+    - **Orbite en tête de la signature** ;
+  - simulateur-credit#3 : carte vers `/capacite-credit-tunisie`, traductions arabes `data-t`, cache `2026-10-12-1` ;
+  - simulateur-assurance-vie#4 : carte vers `/calcul-cea-tunisie`, traductions anglaises et arabes dans `js/i18n.js` (son test exige une traduction pour chaque chaîne, y compris « Orbite »), cache `simulateur-av-v14`, tests 114/114 ;
+  - simulateur-Assurance-Automobile#2 (attention au nom du dépôt, avec des majuscules) : nouvelle bande (styles repris de `espace-bande.css`), carte vers `/simulateur-credit-tunisie` dans les 2 sections, signature aux 2 endroits, cache `2026-10-12a` ;
+  - portail-rh renvoyait déjà vers l'accueil (portail-rh#13).
+- **Textes pour les réseaux** : un article LinkedIn (lien de partage `https://mohamed-ja.github.io/portail-rh/orbite/`, car LinkedIn ne lit pas workers.dev) et 2 publications Facebook (crédit auto → `/simulateur-credit-tunisie` ; CEA et assurance vie avant le 31 décembre → `/calcul-cea-tunisie`), sans prix, essai, offre ni parrainage. Remis à l'utilisateur le 12 oct.
+- **À faire par l'utilisateur** :
+  - Search Console : renvoyer le sitemap (10 pages), puis demander l'indexation des 3 nouvelles adresses (quota d'environ 10 par jour) ;
+  - publier les textes ;
+  - Bing Webmaster Tools : envoyer les 3 nouvelles adresses.
 
 ## 3 sexsexagies. Programme de 6 fonctionnalités + « Mon dossier banque » (12 oct.)
 
