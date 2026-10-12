@@ -1118,14 +1118,14 @@
       '<div class="cr-cmp-actions">' + S.scenarios.map(function (sc, i) {
         return '<button type="button" class="bouton bouton--petit bouton--fantome" data-sc-suppr="' + i + '">' + ico("poubelle") + 'Supprimer le scénario ' + LETTRES[i] + '</button>';
       }).join("") + '</div>';
-    var zone = $("cr-cmp-graphe"), w = largeur(zone);
+    var zone = $("cr-cmp-graphe");
     var series = res.map(function (r, i) {
       if (!r) return null;
       var pts = [[0, r.C]]; r.lignes.forEach(function (l) { pts.push([l.mois * r.p, MC.resteFin(l)]); });
       return { pts: pts, classe: "cr-serie--sc" + i, nom: "Scénario " + LETTRES[i] };
     }).filter(Boolean);
-    zone.innerHTML = grapheLignes({ w: w, h: hauteurGraphe(), series: series, fmtY: compact, ticksX: ticksMois(Math.max.apply(null, series.map(function (s) { return s.pts[s.pts.length - 1][0]; }))),
-      titre: "Capital restant dû des scénarios", desc: "Courbes du capital restant dû de chaque scénario au fil des mois." }) + legende(series);
+    grapheLignes(zone, { series: series, fmtY: compact, ticksX: ticksMois(Math.max.apply(null, series.map(function (s) { return s.pts[s.pts.length - 1][0]; }))), titreX: titreMois,
+      titre: "Capital restant dû des scénarios", desc: "Courbes du capital restant dû de chaque scénario au fil des mois.", tableau: { entete: "Date", pas: 12 } });
     $("cr-cmp-resume").textContent = series.map(function (s, i) { return s.nom + " : soldé en " + dureeLib(s.pts[s.pts.length - 1][0]); }).join(" · ") + ".";
   }
   function valEcart(ecart, m) { var v = 0; ecart.forEach(function (p) { if (p[0] <= m) v = p[1]; }); return v; }
@@ -1133,18 +1133,8 @@
   /* ===================================================================
      Graphiques SVG
      =================================================================== */
-  var NS_ID = 0;
-  function largeur(el) { return Math.max(280, Math.round((el && el.clientWidth) || 640)); }
   function hauteurGraphe() { return window.innerWidth < 640 ? 220 : 280; }
-  function graduations(min, max, n) {
-    if (!(max > min)) { max = min + 1; }
-    var pas = (max - min) / (n || 4), p10 = Math.pow(10, Math.floor(Math.log(pas) / Math.LN10)), f = pas / p10;
-    pas = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p10;
-    var d = Math.floor(min / pas) * pas, out = [];
-    for (var v = d; v <= max + pas * 0.5; v += pas) { out.push(Math.round(v * 1e6) / 1e6); if (v >= max) break; }
-    if (out[out.length - 1] < max) out.push(out[out.length - 1] + pas);
-    return out;
-  }
+  var graduations = window.OrbiteGraphe.graduations;
   function ticksMois(nMois) {
     var dDeb = MC.lireDate(sc0().dateDebut), annees = nMois / 12, pas = annees <= 6 ? 1 : annees <= 12 ? 2 : 5, out = [];
     for (var a = 0; a * 12 <= nMois + 0.01; a += pas) {
@@ -1154,106 +1144,36 @@
   }
   function chem(pts, X, Y) { return pts.map(function (p, i) { return (i ? "L" : "M") + X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1); }).join(""); }
 
-  /* Graphique en lignes / aires. */
-  function grapheLignes(o) {
-    var W = o.w, H = o.h, g = { l: 54, r: 12, t: 12, b: 30 };
-    var xs = [], ys = [];
-    (o.series || []).forEach(function (s) { s.pts.forEach(function (p) { xs.push(p[0]); ys.push(p[1]); }); });
-    (o.bandes || []).forEach(function (b) { b.haut.forEach(function (p) { xs.push(p[0]); ys.push(p[1]); }); b.bas.forEach(function (p) { ys.push(p[1]); }); });
-    if (o.seuil != null) ys.push(o.seuil);
-    if (!xs.length) return "";
-    var xmin = o.xmin != null ? o.xmin : Math.min.apply(null, xs), xmax = o.xmax != null ? o.xmax : Math.max.apply(null, xs);
-    var ymin0 = o.ymin != null ? o.ymin : Math.min(0, Math.min.apply(null, ys)), ymax0 = Math.max.apply(null, ys);
-    var ty = graduations(ymin0, ymax0, 4), ymin = ty[0], ymax = ty[ty.length - 1];
-    if (xmax === xmin) xmax = xmin + 1;
-    function X(v) { return g.l + (v - xmin) / (xmax - xmin) * (W - g.l - g.r); }
-    function Y(v) { return H - g.b - (v - ymin) / (ymax - ymin) * (H - g.t - g.b); }
-    NS_ID += 1;
-    var tid = "cr-svg-t" + NS_ID, did = "cr-svg-d" + NS_ID;
-    var s = '<svg class="cr-svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-labelledby="' + tid + ' ' + did + '"><title id="' + tid + '">' + esc(o.titre || "Graphique") + '</title><desc id="' + did + '">' + esc(o.desc || "") + '</desc>';
-    (o.zones || []).forEach(function (z) { s += '<rect class="cr-zone" x="' + X(z[0]).toFixed(1) + '" y="' + g.t + '" width="' + Math.max(1, X(z[1]) - X(z[0])).toFixed(1) + '" height="' + (H - g.t - g.b) + '"/>'; });
-    s += '<g class="cr-axe">';
-    ty.forEach(function (v) { s += '<line x1="' + g.l + '" x2="' + (W - g.r) + '" y1="' + Y(v).toFixed(1) + '" y2="' + Y(v).toFixed(1) + '"/><text x="' + (g.l - 8) + '" y="' + (Y(v) + 4).toFixed(1) + '" text-anchor="end">' + esc((o.fmtY || compact)(v)) + '</text>'; });
-    var tx = o.ticksX || graduations(xmin, xmax, 5).map(function (v) { return { v: v, lib: (o.fmtX || compact)(v) }; });
-    var dernierX = -1e9;
-    tx.forEach(function (t) {
-      if (t.v < xmin - 1e-9 || t.v > xmax + 1e-9) return;
-      var x = X(t.v);
-      if (x - dernierX < 34) return;
-      dernierX = x;
-      s += '<text x="' + x.toFixed(1) + '" y="' + (H - 9) + '" text-anchor="middle">' + esc(t.lib) + '</text>';
+  /* Graphiques : moteur commun (orbite-graphe.js). Les options gardent l'ancien format du module ; couleurs de la
+     palette commune : capital 1 (bleu), intérêts 2 (ambre), assurance 3 (vert) ; scénarios A, B, C dans le même ordre. */
+  var COULEUR = { "cr-serie--capital": 1, "cr-serie--interet": 2, "cr-serie--assurance": 3, "cr-serie--sans": 2, "cr-serie--sc0": 1, "cr-serie--sc1": 2, "cr-serie--sc2": 3 };
+  function grapheLignes(zone, o) {
+    window.OrbiteGraphe.lignes(zone, {
+      titre: o.titre, resume: o.desc, hauteur: hauteurGraphe(),
+      series: (o.series || []).map(function (se) { return { nom: se.nom, c: COULEUR[se.classe] || 1, pts: se.pts, aire: se.aire, tirets: se.pointille }; }),
+      bandes: (o.bandes || []).map(function (bd) { return { nom: bd.nom, c: 1, force: /etroite/.test(bd.classe) ? "etroite" : "large", haut: bd.haut, bas: bd.bas }; }),
+      zones: (o.zones || []).map(function (z, i) { return { de: z[0], a: z[1], nom: i ? null : o.zoneNom, ton: "ok" }; }),
+      seuil: o.seuil != null ? { y: o.seuil, lib: o.seuilLib } : null, curseurX: o.curseurX,
+      marqueurs: (o.marqueurs || []).map(function (m) { return { x: m.x, y: m.y, lib: m.lib, c: "ok" }; }), nomMarqueurs: o.nomMarqueurs,
+      xmin: o.xmin, xmax: o.xmax, ymin: o.ymin, ticksX: o.ticksX, fmtX: o.fmtX, fmtY: o.fmtY || compact, fmtV: o.fmtV || dt0, titreX: o.titreX, tableau: o.tableau
     });
-    s += '</g>';
-    (o.bandes || []).forEach(function (b) {
-      var d = chem(b.haut, X, Y) + b.bas.slice().reverse().map(function (p) { return "L" + X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1); }).join("") + "Z";
-      s += '<path class="cr-bande ' + (b.classe || "") + '" d="' + d + '"/>';
-    });
-    (o.series || []).forEach(function (se) {
-      if (se.aire) s += '<path class="cr-aire ' + se.classe + '" d="' + chem(se.pts, X, Y) + 'L' + X(se.pts[se.pts.length - 1][0]).toFixed(1) + ' ' + Y(Math.max(ymin, 0)).toFixed(1) + 'L' + X(se.pts[0][0]).toFixed(1) + ' ' + Y(Math.max(ymin, 0)).toFixed(1) + 'Z"/>';
-    });
-    if (o.seuil != null) s += '<line class="cr-seuil" x1="' + g.l + '" x2="' + (W - g.r) + '" y1="' + Y(o.seuil).toFixed(1) + '" y2="' + Y(o.seuil).toFixed(1) + '"/>' + (o.seuilLib ? '<text class="cr-seuil__lib" x="' + (W - g.r - 4) + '" y="' + (Y(o.seuil) - 6).toFixed(1) + '" text-anchor="end">' + esc(o.seuilLib) + '</text>' : "");
-    (o.series || []).forEach(function (se) {
-      s += '<path class="cr-ligne cr-trace ' + se.classe + (se.pointille ? " cr-ligne--pointille" : "") + '" pathLength="1" d="' + chem(se.pts, X, Y) + '"/>';
-    });
-    (o.marqueurs || []).forEach(function (m) { s += '<circle class="cr-marqueur ' + (m.classe || "") + '" cx="' + X(m.x).toFixed(1) + '" cy="' + Y(m.y).toFixed(1) + '" r="5"><title>' + esc(m.lib || "") + '</title></circle>'; });
-    if (o.curseurX != null) s += '<line class="cr-curseur-x" x1="' + X(o.curseurX).toFixed(1) + '" x2="' + X(o.curseurX).toFixed(1) + '" y1="' + g.t + '" y2="' + (H - g.b) + '"/>';
-    return s + '</svg>';
   }
-
-  /* Barres empilées. cats : [{lib, parts:[{v, classe}]}] */
-  function grapheBarres(o) {
-    var W = o.w, H = o.h, g = { l: 54, r: 10, t: 12, b: 30 }, n = o.cats.length;
-    var max = Math.max.apply(null, o.cats.map(function (c) { return c.parts.reduce(function (s, p) { return s + Math.max(0, p.v); }, 0); }));
-    var ty = graduations(0, max || 1, 4), ymax = ty[ty.length - 1];
-    function Y(v) { return H - g.b - v / ymax * (H - g.t - g.b); }
-    var bande = (W - g.l - g.r) / n, bw = Math.max(3, Math.min(34, bande * 0.66));
-    NS_ID += 1;
-    var tid = "cr-svg-t" + NS_ID, did = "cr-svg-d" + NS_ID;
-    var s = '<svg class="cr-svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-labelledby="' + tid + ' ' + did + '"><title id="' + tid + '">' + esc(o.titre) + '</title><desc id="' + did + '">' + esc(o.desc || "") + '</desc><g class="cr-axe">';
-    ty.forEach(function (v) { s += '<line x1="' + g.l + '" x2="' + (W - g.r) + '" y1="' + Y(v).toFixed(1) + '" y2="' + Y(v).toFixed(1) + '"/><text x="' + (g.l - 8) + '" y="' + (Y(v) + 4).toFixed(1) + '" text-anchor="end">' + esc((o.fmtY || compact)(v)) + '</text>'; });
-    var pasLib = Math.ceil(n / Math.max(1, Math.floor((W - g.l) / 38)));
-    o.cats.forEach(function (c, i) { if (i % pasLib === 0) s += '<text x="' + (g.l + bande * (i + 0.5)).toFixed(1) + '" y="' + (H - 9) + '" text-anchor="middle">' + esc(c.lib) + '</text>'; });
-    s += '</g><g class="cr-barres">';
-    o.cats.forEach(function (c, i) {
-      var y0 = 0, x = g.l + bande * (i + 0.5) - bw / 2;
-      c.parts.forEach(function (p) {
-        if (!(p.v > 0)) return;
-        var h = p.v / ymax * (H - g.t - g.b);
-        s += '<rect class="cr-barre ' + p.classe + '" x="' + x.toFixed(1) + '" y="' + (Y(y0) - h).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(0.5, h).toFixed(1) + '" rx="2"><title>' + esc(c.titre || c.lib) + ' · ' + esc(p.nom || "") + ' : ' + esc(dt0(p.v)) + '</title></rect>';
-        y0 += p.v;
-      });
+  /* Colonnes empilées. cats : [{ lib, titre, parts: [{ v, classe, nom }] }] */
+  function grapheBarres(zone, o) {
+    window.OrbiteGraphe.colonnes(zone, {
+      titre: o.titre, resume: o.desc, hauteur: hauteurGraphe(), fmtY: compact, fmtV: dt0, tableau: o.tableau,
+      cats: o.cats.map(function (c) { return { lib: c.lib, titre: c.titre, parts: c.parts.map(function (p) { return { v: p.v, nom: p.nom, c: COULEUR[p.classe] || 1 }; }) }; })
     });
-    return s + '</g></svg>';
   }
-  function legende(series) {
-    return '<ul class="cr-legende cr-legende--graphe">' + series.map(function (s) { return '<li><i class="cr-point ' + s.classe + (s.pointille ? " cr-point--pointille" : "") + '" aria-hidden="true"></i><span>' + esc(s.nom) + '</span></li>'; }).join("") + '</ul>';
+  /* Bulle des courbes en mois : date de l'échéance quand la date de début est connue. */
+  function titreMois(m) {
+    var dDeb = MC.lireDate(sc0().dateDebut), n = Math.round(m);
+    if (!dDeb) return n ? "Après " + dureeLib(n) : "Au départ";
+    return n ? moisAn(new Date(dDeb.getFullYear(), dDeb.getMonth() + n, 1)) : "Au départ (" + moisAn(dDeb) + ")";
   }
-
-  /* Dessin à la première apparition (trait qui se trace), une seule fois. */
-  var observateur = window.IntersectionObserver ? new IntersectionObserver(function (entrees) {
-    entrees.forEach(function (en) {
-      if (!en.isIntersecting) return;
-      var el = en.target;
-      observateur.unobserve(el);
-      el.classList.remove("cr-anim-attente");
-      el.classList.add("cr-anim");
-      setTimeout(function () { el.classList.remove("cr-anim"); }, 1300);
-    });
-  }, { threshold: 0.25 }) : null;
-  function preparerDessin(el) {
-    if (!el || el.getAttribute("data-dessine")) return;
-    el.setAttribute("data-dessine", "1");
-    if (!observateur || mouvementReduit.matches) { el.classList.remove("cr-anim-attente"); return; }
-    el.classList.add("cr-anim-attente");
-    observateur.observe(el);
-  }
-
-  function dessinUnique(corps, z) { if (corps.getAttribute("data-dessin")) return; corps.setAttribute("data-dessin", "1"); preparerDessin(z); }
-
   function rendreGraphe() {
     var d = S.dernier; if (!d) return;
-    var zone = $("cr-gr-zone"), r = d.r, w = largeur(zone), h = hauteurGraphe();
-    preparerDessin(zone);
+    var zone = $("cr-gr-zone"), r = d.r;
     if (S.vueGraphe === "crd") {
       var pts = [[0, r.C]]; r.lignes.forEach(function (l) { pts.push([l.mois * r.p, MC.resteFin(l)]); });
       var series = [{ pts: pts, classe: "cr-serie--capital", aire: true, nom: "Capital restant dû" }];
@@ -1263,9 +1183,8 @@
         series.push({ pts: p2, classe: "cr-serie--sans", pointille: true, nom: "Sans remboursement anticipé" });
       }
       var marq = r.reductions.map(function (x) { return { x: (x.mois - 1) * r.p, y: x.reste, lib: "Réduction de taux à l'échéance " + x.mois, classe: "cr-marqueur--reduction" }; });
-      zone.innerHTML = grapheLignes({ w: w, h: h, series: series, marqueurs: marq, fmtY: compact, ticksX: ticksMois(Math.max(r.nPrevu * r.p, pts[pts.length - 1][0])), xmax: Math.max(pts[pts.length - 1][0], series[1] ? series[1].pts[series[1].pts.length - 1][0] : 0),
-        titre: "Capital restant dû au fil du temps", desc: "Le capital restant dû part de " + dt0(r.C) + " et atteint zéro après " + dureeLib(r.n * r.p) + "." }) +
-        legende(series.concat(marq.length ? [{ classe: "cr-point--reduction", nom: "Réduction de taux" }] : []));
+      grapheLignes(zone, { series: series, marqueurs: marq, nomMarqueurs: "Réduction de taux", fmtY: compact, ticksX: ticksMois(Math.max(r.nPrevu * r.p, pts[pts.length - 1][0])), xmax: Math.max(pts[pts.length - 1][0], series[1] ? series[1].pts[series[1].pts.length - 1][0] : 0), titreX: titreMois, tableau: false,
+        titre: "Capital restant dû au fil du temps", desc: "Le capital restant dû part de " + dt0(r.C) + " et atteint zéro après " + dureeLib(r.n * r.p) + "." });
       var mi = r.lignes[Math.min(r.lignes.length - 1, Math.floor(r.lignes.length / 2) - 1)];
       $("cr-gr-resume").textContent = "Vous empruntez " + dt0(r.C) + ". À mi-parcours (échéance " + (mi ? mi.mois : 1) + "), il reste " + dt0(mi ? MC.resteFin(mi) : r.C) + " à rembourser ; le crédit est soldé après " + dureeLib(r.n * r.p) + (r.reductions.length ? ", avec une réduction de taux dès l'échéance " + r.reductions[0].mois : "") + ".";
     } else {
@@ -1278,7 +1197,7 @@
       var series2 = [{ classe: "cr-serie--capital", nom: "Capital remboursé" }, { classe: "cr-serie--interet", nom: "Intérêts" }];
       if (r.totAss) series2.push({ classe: "cr-serie--assurance", nom: "Assurance" });
       var bascule = an.filter(function (a) { return a.principal >= a.interet; })[0];
-      zone.innerHTML = grapheBarres({ w: w, h: h, cats: cats, titre: "Intérêts et capital remboursés chaque année", desc: "Barres empilées par année : capital remboursé, intérêts" + (r.totAss ? " et assurance" : "") + "." }) + legende(series2);
+      grapheBarres(zone, { cats: cats, tableau: false, titre: "Intérêts et capital remboursés chaque année", desc: "Barres empilées par année : capital remboursé, intérêts" + (r.totAss ? " et assurance" : "") + "." });
       $("cr-gr-resume").textContent = "La 1re année, vous payez " + dt0(an[0].interet) + " d'intérêts pour " + dt0(an[0].principal) + " de capital. " +
         (bascule ? "Le capital remboursé dépasse les intérêts à partir de l'année " + bascule.annee + "." : "Les intérêts restent supérieurs au capital remboursé chaque année.");
     }
@@ -1599,11 +1518,9 @@
           (isFinite(o.seuil) ? stat("Risque de dépasser " + dt0(o.seuil), pc(r.probaDepasse * 100, 1), "des trajectoires", r.probaDepasse > 0.1 ? "cr-stat--alerte" : "") : "") + '</div>' +
           '<div class="cr-graphe cr-graphe--outil" data-g></div><p class="cr-graphe__resume">Dans 9 cas sur 10, le TMM resterait entre ' + pc(r.bandes[annees - 1].p5, 2) + ' et ' + pc(r.bandes[annees - 1].p95, 2) + ' la dernière année (médiane ' + pc(r.bandes[annees - 1].p50, 2) + ').</p>';
         var z = out.querySelector("[data-g]");
-        z.innerHTML = grapheLignes({ w: largeur(z), h: hauteurGraphe(), bandes: [{ haut: ptsAn("p95"), bas: ptsAn("p5"), classe: "cr-bande--large" }, { haut: ptsAn("p75"), bas: ptsAn("p25"), classe: "cr-bande--etroite" }], series: [{ pts: ptsAn("p50"), classe: "cr-serie--capital", nom: "TMM médian" }],
-          fmtY: function (v) { return nombre(v, 1) + " %"; }, fmtX: function (v) { return "an " + Math.round(v); }, ymin: Math.max(0, Math.floor(Math.min.apply(null, r.bandes.map(function (b) { return b.p5; })) - 1)),
-          titre: "Évolution possible du TMM", desc: "Bandes de centiles du TMM simulé année par année : 5 à 95 % et 25 à 75 %, avec la médiane." }) +
-          legende([{ classe: "cr-serie--capital", nom: "TMM médian" }, { classe: "cr-bande--etroite", nom: "1 cas sur 2" }, { classe: "cr-bande--large", nom: "9 cas sur 10" }]);
-        dessinUnique(c, z);
+        grapheLignes(z, { bandes: [{ haut: ptsAn("p95"), bas: ptsAn("p5"), classe: "cr-bande--large", nom: "9 cas sur 10" }, { haut: ptsAn("p75"), bas: ptsAn("p25"), classe: "cr-bande--etroite", nom: "1 cas sur 2" }], series: [{ pts: ptsAn("p50"), classe: "cr-serie--capital", nom: "TMM médian" }],
+          fmtY: function (v) { return nombre(v, 1) + " %"; }, fmtV: function (v) { return pc(v, 2); }, fmtX: function (v) { return "an " + Math.round(v); }, titreX: function (v) { return "Année " + Math.round(v); }, ymin: Math.max(0, Math.floor(Math.min.apply(null, r.bandes.map(function (b) { return b.p5; })) - 1)),
+          titre: "Évolution possible du TMM", desc: "Bandes de centiles du TMM simulé année par année : 5 à 95 % et 25 à 75 %, avec la médiane.", tableau: { entete: "Année" } });
       }
     },
 
@@ -1634,8 +1551,7 @@
           '<div class="cr-graphe cr-graphe--outil" data-g></div><p class="cr-graphe__resume">Patrimoine net chaque année : bien moins capital restant dû si vous achetez, épargne placée si vous louez.</p>';
         var z = out.querySelector("[data-g]");
         var series = [{ pts: ach, classe: "cr-serie--capital", nom: "Acheter" }, { pts: loc, classe: "cr-serie--interet", nom: "Louer et placer" }];
-        z.innerHTML = grapheLignes({ w: largeur(z), h: hauteurGraphe(), series: series, fmtX: function (v) { return "an " + Math.round(v); }, titre: "Patrimoine : acheter ou louer", desc: "Deux courbes de patrimoine net année par année." }) + legende(series);
-        dessinUnique(c, z);
+        grapheLignes(z, { series: series, fmtX: function (v) { return "an " + Math.round(v); }, titreX: function (v) { return "Année " + Math.round(v); }, titre: "Patrimoine : acheter ou louer", desc: "Deux courbes de patrimoine net année par année.", tableau: { entete: "Année" } });
       }
     },
 
@@ -1712,10 +1628,10 @@
             (q.recevable ? stat("Nouvelle mensualité", dt(q.nouvelleMensualite)) + stat("Intérêts économisés", dt(q.economie), "", "cr-stat--fort") : stat("Prochaine date possible", q.prochaine ? "Échéance " + q.prochaine : "Aucune")) + '</div>' +
           '<div class="cr-graphe cr-graphe--outil" data-g></div><p class="cr-graphe__resume">' + (q.premiere ? "Première date possible : échéance " + q.premiere + (q.base.lignes[q.premiere - 1].date ? " (" + moisAn(q.base.lignes[q.premiere - 1].date) + ")" : "") + ". Plus la demande est tôt, plus l'économie est grande." : "Le ratio ne dépasse jamais strictement 8 % sur la durée du crédit.") + '</p>';
         var z = out.querySelector("[data-g]");
-        z.innerHTML = grapheLignes({ w: largeur(z), h: hauteurGraphe(), series: [{ pts: q.ratios, classe: "cr-serie--interet", nom: "Ratio intérêts 36 mois / capital restant dû" }], seuil: 8, seuilLib: "8 %", zones: q.zones, curseurX: q.k, ymin: 0,
+        grapheLignes(z, { series: [{ pts: q.ratios, classe: "cr-serie--interet", nom: "Ratio intérêts 36 mois / capital restant dû" }], seuil: 8, seuilLib: "8 %", zones: q.zones, zoneNom: "Zone où la demande est recevable", curseurX: q.k, ymin: 0,
+          fmtV: function (v) { return pc(v, 2); }, titreX: function (v) { return "Échéance " + Math.round(v); }, tableau: { entete: "Échéance" },
           fmtY: function (v) { return nombre(v, 1) + " %"; }, ticksX: graduations(37, n, 5).map(function (v) { return { v: v, lib: "n° " + Math.round(v) }; }), xmin: 37, xmax: n,
-          titre: "Ratio de la règle des 8 %", desc: "Ratio des intérêts des 36 derniers mois sur le capital restant dû, à chaque échéance ; la réduction est possible au-dessus de 8 %." }) +
-          legende([{ classe: "cr-serie--interet", nom: "Ratio" }, { classe: "cr-zone-leg", nom: "Zone où la demande est recevable" }]);
+          titre: "Ratio de la règle des 8 %", desc: "Ratio des intérêts des 36 derniers mois sur le capital restant dû, à chaque échéance ; la réduction est possible au-dessus de 8 %." });
         self.lettre(c);
       },
       lettre: function (c) {

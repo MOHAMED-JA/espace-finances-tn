@@ -1483,10 +1483,13 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.evaluate(() => document.querySelector(".lien-evitement").click());
     assert(await page.evaluate(() => location.hash === "#admin" && document.activeElement.id === "principal"), "lien d'évitement");
     await page.goto(base + "/espace/#credit?espace=tmm");
-    await page.waitForSelector("#credit-tmm:not([hidden]) .tmm-courbe");
+    await page.waitForSelector("#credit-tmm:not([hidden]) .tmm-cadre .og-svg");
     const txt = await page.textContent("#credit-tmm");
     assert(/7,2 %/.test(txt) && /−0,25 point/.test(txt), "TMM du mois et variation : " + txt.slice(0, 300));
-    assert((await page.$$("#credit-tmm .tmm-courbe circle")).length === 2, "deux points sur la courbe");
+    assert((await page.$$("#credit-tmm .tmm-cadre .og-tableau tbody tr")).length === 2, "deux mois dans le tableau du graphique");
+    /* Graphique commun : bulle au clavier sur le dernier mois. */
+    await page.focus("#credit-tmm .tmm-cadre .og-svg");
+    await page.waitForFunction(() => { const b = document.querySelector("#credit-tmm .og-bulle"); return b && !b.hidden && /7,2\s?%/.test(b.textContent); });
     assert(await page.evaluate(() => JSON.parse(localStorage.getItem("orbite-tmm")).taux === 7.2), "gardé sur l'appareil");
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(CAPTURES, "credit-tmm.png") });

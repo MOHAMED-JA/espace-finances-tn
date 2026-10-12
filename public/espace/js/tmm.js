@@ -73,24 +73,18 @@
     }
 
     /* ---------- Crédit › « Le TMM » ---------- */
-    function courbe(s) {
-      var NS = "http://www.w3.org/2000/svg", W = 640, H = 220, g = 36, d = 14, h = 18, b = 30;
-      var svg = doc.createElementNS(NS, "svg");
-      svg.setAttribute("viewBox", "0 0 " + W + " " + H); svg.setAttribute("class", "tmm-courbe"); svg.setAttribute("role", "img");
-      svg.setAttribute("aria-label", "TMM sur " + s.serie.length + " mois, de " + pc(s.serie[0].taux) + " à " + pc(s.dernier.taux));
-      var min = Math.min(s.min, s.max - 0.25), max = Math.max(s.max, s.min + 0.25), pad = (max - min) * 0.15; min -= pad; max += pad;
-      var n = s.serie.length, X = function (i) { return n === 1 ? (g + W - d) / 2 : g + i * (W - g - d) / (n - 1); }, Y = function (t) { return h + (max - t) / (max - min) * (H - h - b); };
-      function el(nom, at, txt) { var e = doc.createElementNS(NS, nom); Object.keys(at).forEach(function (k) { e.setAttribute(k, at[k]); }); if (txt != null) e.textContent = txt; svg.appendChild(e); return e; }
-      [max - pad, (max + min) / 2, min + pad].forEach(function (t) {
-        el("line", { x1: g, x2: W - d, y1: Y(t), y2: Y(t), class: "tmm-courbe__grille" });
-        el("text", { x: g - 6, y: Y(t) + 4, "text-anchor": "end", class: "tmm-courbe__axe" }, N2.format(Math.round(t * 100) / 100));
+    /* Courbe du TMM : moteur commun des graphiques (OrbiteGraphe). */
+    var MOISC = new Intl.DateTimeFormat("fr-FR", { month: "short", year: "2-digit" });
+    function courbe(zone, s) {
+      var n = s.serie.length, min = Math.min(s.min, s.max - 0.25), max = Math.max(s.max, s.min + 0.25);
+      window.OrbiteGraphe.lignes(zone, {
+        titre: "Le TMM sur " + n + " mois", resume: "De " + pc(s.serie[0].taux) + " en " + nomMois(s.serie[0].mois) + " à " + pc(s.dernier.taux) + " en " + nomMois(s.dernier.mois) + ".",
+        series: [{ nom: "TMM", c: 1, pts: s.serie.map(function (p, i) { return [i, p.taux]; }) }],
+        xmin: 0, xmax: Math.max(1, n - 1), ymin: Math.max(0, min - 0.25), ymax: max + 0.25, hauteur: 220,
+        ticksX: s.serie.map(function (p, i) { return { v: i, lib: MOISC.format(new Date(p.mois + "T12:00:00")) }; }),
+        titreX: function (i) { return nomMois(s.serie[Math.round(i)].mois); }, fmtV: pc, fmtY: function (v) { return N2.format(v) + " %"; },
+        etiquetteFin: pc, tableau: { entete: "Mois" }
       });
-      var pts = s.serie.map(function (p, i) { return X(i).toFixed(1) + "," + Y(p.taux).toFixed(1); });
-      if (n > 1) el("polyline", { points: pts.join(" "), class: "tmm-courbe__ligne" });
-      s.serie.forEach(function (p, i) { var c = el("circle", { cx: X(i), cy: Y(p.taux), r: i === n - 1 ? 5 : 3, class: i === n - 1 ? "tmm-courbe__dernier" : "tmm-courbe__point" }); el("title", {}, nomMois(p.mois) + " : " + pc(p.taux)); c.appendChild(svg.lastChild); });
-      el("text", { x: g, y: H - 8, class: "tmm-courbe__axe" }, nomMois(s.serie[0].mois));
-      el("text", { x: W - d, y: H - 8, "text-anchor": "end", class: "tmm-courbe__axe" }, nomMois(s.dernier.mois));
-      return svg;
     }
     function rendreOnglet() {
       var r = $("credit-tmm"); if (!r) return;
@@ -108,7 +102,7 @@
         '<div class="cr-stat"><span class="cr-stat__lib">Effet du mois sur vos échéances</span><strong class="cr-stat__val chiffre">' + signe(eff.ecartTotal) + ' DT</strong><small class="cr-stat__note">par mois' + (eff.exemple ? ", sur l'exemple" : "") + '</small></div>' +
         '<div class="cr-stat"><span class="cr-stat__lib">Si le TMM monte d\'un point</span><strong class="cr-stat__val chiffre">+' + N2.format(eff.plusUnPointTotal).replace(/[  ]/g, " ") + ' DT</strong><small class="cr-stat__note">par mois</small></div>';
       sec.appendChild(stats);
-      var cadre = doc.createElement("div"); cadre.className = "tmm-cadre"; cadre.appendChild(courbe(s)); sec.appendChild(cadre);
+      var cadre = doc.createElement("div"); cadre.className = "tmm-cadre"; sec.appendChild(cadre); courbe(cadre, s);
       var t = doc.createElement("table"); t.className = "ce-table";
       t.innerHTML = '<caption>' + (eff.exemple ? "Vous n'avez pas de crédit à taux variable : voici l'effet sur un exemple" : "Vos crédits à taux variable") + '</caption><thead><tr><th scope="col">Crédit</th><th scope="col" class="nb">Échéance avant</th><th scope="col" class="nb">Après le TMM du mois</th><th scope="col" class="nb">TMM +1 point</th></tr></thead>';
       var tb = doc.createElement("tbody");
