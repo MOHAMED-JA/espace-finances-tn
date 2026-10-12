@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="/espace/progression.css">
   <link rel="stylesheet" href="/espace/annee.css">
   <link rel="stylesheet" href="/espace/fiche.css">
+  <link rel="stylesheet" href="/espace/dossier.css">
   <link rel="stylesheet" href="/orbite/signature.css">
   <script src="/commun/config.js"></script>
   <script src="/commun/garde.js"></script>
@@ -407,6 +408,8 @@
                 <div class="champ seul-salarie"><label for="p-ava">Avantages en nature (par mois)</label><div class="saisie"><input id="p-ava" data-p="avantagesNature" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
                 <div class="champ seul-salarie"><label for="p-ind">Indemnités non imposables (par mois)</label><div class="saisie"><input id="p-ind" data-p="indemnitesNonImposables" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div><span class="champ__aide">Transport, panier… exonérés</span></div>
                 <div class="champ seul-salarie"><label for="p-statut">Type de contrat</label><div class="saisie"><select id="p-statut" data-p="statut"><option value="cdi">CDI</option><option value="fonctionnaire">Fonctionnaire titulaire</option><option value="cdd">CDD</option><option value="contractuel">Contractuel</option><option value="autre">Autre</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
+                <div class="champ seul-salarie"><label for="p-employeur">Employeur <span class="champ__facultatif">facultatif</span></label><div class="saisie"><input id="p-employeur" data-p="employeur" type="text" maxlength="60" autocomplete="organization"></div><span class="champ__aide">Repris dans votre dossier banque</span></div>
+                <div class="champ seul-salarie"><label for="p-poste">Poste <span class="champ__facultatif">facultatif</span></label><div class="saisie"><input id="p-poste" data-p="poste" type="text" maxlength="60" autocomplete="organization-title"></div></div>
                 <div class="champ seul-salarie"><label for="p-embauche">Date d'embauche</label><div class="saisie"><input id="p-embauche" data-p="dateEmbauche" data-type="date" type="date" min="1960-01-01" aria-describedby="p-anciennete-aide"></div><span class="champ__aide" id="p-anciennete-aide"></span></div>
                 <div class="champ seul-salarie"><label for="p-debut">Début de carrière</label><div class="saisie"><input id="p-debut" data-p="debutCarriere" data-type="date" type="date" min="1960-01-01" aria-describedby="p-debut-aide"></div><span class="champ__aide" id="p-debut-aide">Premier emploi déclaré à la CNSS ou à la CNRPS. Sert à estimer votre retraite (vide : date d'embauche).</span></div>
                 <div class="champ seul-salarie"><label for="p-sans-cot">Années sans cotisation depuis</label><div class="saisie"><input id="p-sans-cot" data-p="anneesSansCotisation" data-type="entier" type="text" inputmode="numeric" placeholder="0" maxlength="2"><span class="saisie__unite">ans</span></div><span class="champ__aide">Chômage, études, travail non déclaré ou à l'étranger…</span></div>
@@ -686,6 +689,7 @@
           <header class="vue__tete module__tete">
             <span class="module__pastille" aria-hidden="true"><svg><use href="/orbite/icones.svg#credit"/></svg></span>
             <div><h1 id="titre-credit">Crédit</h1><p class="vue__sous">Mensualité, TMM + marge, TEG, tableau d'amortissement, capacité et renégociation.</p></div>
+            <button type="button" class="bouton bouton--petit module__action" id="dossier-ouvrir"><svg aria-hidden="true"><use href="/orbite/icones.svg#fiche"/></svg>Préparer mon dossier banque</button>
           </header>
           <div id="credit-racine" class="module__racine"><div class="squelette module__attente"></div></div>
         </section>
@@ -1552,6 +1556,59 @@
     </form>
   </dialog>
 
+  <!-- Dossier banque : PDF à remettre au conseiller, fabriqué sur l'appareil -->
+  <dialog class="dialogue dialogue--large dossier" id="dlg-dossier" aria-labelledby="db-titre">
+    <form method="dialog" id="form-dossier" novalidate>
+      <div class="dialogue__tete"><div><h2 id="db-titre">Préparer mon dossier banque</h2><p class="dossier__sous">Tout est repris de votre profil. Il ne reste que le crédit que vous allez demander.</p></div></div>
+      <div class="dialogue__corps dossier__corps">
+        <fieldset class="dossier__bloc">
+          <legend class="dossier__lib">Le crédit demandé</legend>
+          <div class="bascule dossier__types" role="radiogroup" aria-label="Type de crédit">
+            <label><input type="radio" name="db-type" value="immo"><span>Immobilier</span></label>
+            <label><input type="radio" name="db-type" value="auto"><span>Auto</span></label>
+            <label><input type="radio" name="db-type" value="conso"><span>Conso</span></label>
+            <label><input type="radio" name="db-type" value="aucun" checked><span>Aucun</span></label>
+            <i class="bascule__pastille" aria-hidden="true"></i>
+          </div>
+          <p class="champ__aide" id="db-aucun-aide">Sans crédit précis, le dossier montre votre capacité et le montant maximum par type de crédit.</p>
+          <div class="grille-champs" id="db-champs" hidden>
+            <div class="champ"><label for="db-montant">Montant</label><div class="saisie"><input id="db-montant" type="text" inputmode="decimal" autocomplete="off"><span class="saisie__unite">DT</span></div><span class="erreur-champ" id="db-montant-err" hidden>Indiquez le montant demandé.</span></div>
+            <div class="champ"><label for="db-duree">Durée</label><div class="saisie"><input id="db-duree" type="text" inputmode="numeric" maxlength="3" autocomplete="off"><span class="saisie__unite">mois</span></div><span class="champ__aide" id="db-duree-aide"></span></div>
+            <div class="champ"><label for="db-taux">Taux annuel</label><div class="saisie"><input id="db-taux" type="text" inputmode="decimal" maxlength="5" autocomplete="off"><span class="saisie__unite">%</span></div><span class="champ__aide" id="db-taux-aide"></span></div>
+            <div class="champ"><label for="db-objet">Objet <span class="champ__facultatif">facultatif</span></label><div class="saisie"><input id="db-objet" type="text" maxlength="60" autocomplete="off" placeholder="Appartement, voiture, travaux…"></div></div>
+          </div>
+          <div class="dossier__effet" id="db-effet" aria-live="polite">
+            <div class="dossier__ligne"><span id="db-l1-lib">Disponible par mois</span><b id="db-l1"></b></div>
+            <div class="dossier__ligne"><span id="db-l2-lib">Endettement aujourd'hui</span><b id="db-l2"></b></div>
+            <div class="dossier__jauge" aria-hidden="true"><i class="dossier__jauge-apres" id="db-j2"></i><i class="dossier__jauge-avant" id="db-j1"></i><span class="dossier__seuil" id="db-seuil"></span></div>
+            <p class="dossier__verdict" id="db-verdict"></p>
+          </div>
+          <label class="interrupteur" id="db-deux-bloc" hidden><span><strong>Dossier à deux noms</strong><small id="db-deux-aide">Les revenus et les crédits de votre conjoint sont ajoutés.</small></span><input type="checkbox" id="db-deux" role="switch"><span class="interrupteur__piste" aria-hidden="true"></span></label>
+        </fieldset>
+        <fieldset class="dossier__bloc" id="db-emploi">
+          <legend class="dossier__lib">Votre emploi</legend>
+          <div class="grille-champs">
+            <div class="champ"><label for="db-employeur">Employeur <span class="champ__facultatif">facultatif</span></label><div class="saisie"><input id="db-employeur" type="text" maxlength="60" autocomplete="organization"></div></div>
+            <div class="champ"><label for="db-poste">Poste <span class="champ__facultatif">facultatif</span></label><div class="saisie"><input id="db-poste" type="text" maxlength="60" autocomplete="organization-title"></div></div>
+          </div>
+          <p class="champ__aide">Enregistrés dans votre profil, pour vos prochains dossiers.</p>
+        </fieldset>
+        <fieldset class="dossier__bloc">
+          <legend class="dossier__lib">Dans le PDF</legend>
+          <label class="interrupteur"><span><strong>Mes coordonnées</strong><small>Téléphone et email de contact du profil</small></span><input type="checkbox" id="db-coord" role="switch" checked><span class="interrupteur__piste" aria-hidden="true"></span></label>
+          <label class="interrupteur" id="db-ech-bloc"><span><strong>L'échéancier du crédit demandé</strong><small>Capital, intérêts et reste dû, année par année</small></span><input type="checkbox" id="db-ech" role="switch" checked><span class="interrupteur__piste" aria-hidden="true"></span></label>
+          <label class="interrupteur"><span><strong>Ma capacité dans le temps</strong><small>Quand vos crédits se terminent et ce que cela libère</small></span><input type="checkbox" id="db-pal" role="switch" checked><span class="interrupteur__piste" aria-hidden="true"></span></label>
+          <label class="interrupteur"><span><strong>Les pièces à apporter</strong><small>Liste habituelle, à confirmer avec votre banque</small></span><input type="checkbox" id="db-pie" role="switch" checked><span class="interrupteur__piste" aria-hidden="true"></span></label>
+        </fieldset>
+        <p class="dossier__prive"><svg aria-hidden="true"><use href="/orbite/icones.svg#cadenas"/></svg>Le PDF est créé sur votre appareil. Orbite n'envoie rien à aucune banque.</p>
+      </div>
+      <div class="dialogue__pied">
+        <button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Annuler</button>
+        <button type="submit" class="bouton bouton--plein" value="ok" id="db-valider"><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg>Télécharger le PDF</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- Lot 7 : fiche de paie lue sur l'appareil (déposer, lecture, vérifier, contrôle) -->
   <dialog class="dialogue fiche" id="dlg-fiche" aria-labelledby="fiche-titre">
     <div class="dialogue__tete">
@@ -1747,6 +1804,8 @@
   <script src="/espace/js/vue-annee.js"></script>
   <script src="/espace/js/fiche-lecture.js"></script>
   <script src="/espace/js/fiche-calcul.js"></script>
+  <script src="/espace/js/dossier-calcul.js"></script>
+  <script src="/espace/js/vue-dossier.js"></script>
   <script src="/espace/js/vue-fiche.js"></script>
   <script src="/espace/js/rappels-calcul.js"></script>
   <script src="/espace/js/nouveautes.js"></script>
