@@ -454,6 +454,17 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 octosexagies. Enfants réservés au chef de famille (12 oct.)
+
+- **Remarque de l'utilisateur** : « quand chef de famille n'est pas activé, logiquement je ne peux pas ajouter de nombre d'enfants ». Juste : le moteur (`enfantsReservesAuChefDeFamille: true`) ignorait déjà enfants, étudiants et handicapés sans chef de famille, mais l'interface laissait saisir des valeurs sans effet.
+- **Correction** :
+  - Mon profil : les trois compteurs (enfants, étudiants, handicapés) sont **désactivés** tant que « Chef de famille » est décoché, lignes grisées (`data-seul-chef`, `.compteur-ligne--bloque`) et aide `#p-enfants-aide` (« la déduction lui est réservée »). Les valeurs ne sont pas effacées : elles reviennent si la case est recochée. `majEnfants(p)` est appelée à chaque rendu, y compris pendant une saisie (`remplirChamps` est sautée en édition).
+  - Module Salaire : les lignes étudiants et handicapés (dans « Plus d'options ») suivent désormais la case, comme la ligne enfants (`data-seul-chef`).
+  - Pages publiques (salaire, impôt) : le compteur d'enfants est généré désactivé (`aria-disabled`, titre « Réservé au chef de famille ») et s'active au `change` de la case (`majEnfants()` dans `pages-publiques.js`).
+  - Les parents à charge ne dépendent pas du chef de famille : inchangés.
+- **Tests** : e2e profil (compteurs bloqués puis débloqués, aide visible) et pages publiques (compteur bloqué avant la case). Pour cocher l'interrupteur du profil dans Playwright, cliquer sur `.interrupteur__piste` : un clic forcé sur l'`input` (1 px, opacité 0) ne le bascule pas.
+- SW `orbite-2026-10-12c`.
+
 ## 3 septsexagies. Référencement : 3 nouvelles pages publiques, liens des simulateurs, textes réseaux (12 oct.)
 
 - **Contexte** : l'accueil est indexé, mais Orbite n'apparaît pas en première page.

@@ -54,6 +54,7 @@ body { background: var(--fond); }
 .calc__options .interrupteur__piste::after { width: 20px; height: 20px; }
 .calc__options .interrupteur input:checked + .interrupteur__piste::after { transform: translateX(18px); }
 .calc__compteur { display: inline-flex; align-items: center; gap: 10px; font-size: 14.5px; font-weight: 600; color: var(--encre-2); }
+.calc__compteur[aria-disabled="true"] { color: var(--encre-3); }
 .calc__duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
 
 .resultat { border-top: 1px solid var(--filet); padding-top: 16px; display: grid; gap: 12px; }

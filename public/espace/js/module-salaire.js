@@ -138,6 +138,7 @@
       });
     });
     $("ligne-enfants").hidden = !$("chef").checked;
+    doc.querySelectorAll("#vue-salaire [data-seul-chef]").forEach(function (l) { l.hidden = !$("chef").checked; });
     var n = compteurs.salaires;
     $("aide-salaires").textContent = n === 12 ? "12 = sans 13ᵉ mois" : n === 13 ? "13 = avec un 13ᵉ mois" : "dont " + (n - 12) + " versements en plus";
     var sens = radio("sens"), periode = radio("periode");

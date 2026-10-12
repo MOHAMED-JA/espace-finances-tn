@@ -304,9 +304,23 @@
     if (p.projets.length) points++;
     return Math.min(1, points / total);
   }
+  /* Enfants, étudiants, handicapés : la déduction est réservée au chef de famille, les compteurs aussi
+     (à chaque rendu, même pendant une saisie : la case se coche sans quitter le champ). */
+  var ENFANTS = ["enfants", "etudiants", "handicapes"];
+  function majEnfants(p) {
+    ENFANTS.forEach(function (cle) {
+      form.querySelectorAll('[data-pp="' + cle + '"]').forEach(function (b) {
+        var pas = Number(b.getAttribute("data-pas"));
+        b.disabled = !p.chefDeFamille || (pas < 0 ? p[cle] <= (MIN[cle] || 0) : p[cle] >= MAX[cle]);
+      });
+    });
+    form.querySelectorAll("[data-seul-chef]").forEach(function (l) { l.classList.toggle("compteur-ligne--bloque", !p.chefDeFamille); });
+    $("p-enfants-aide").hidden = !!p.chefDeFamille;
+  }
   function rendre(sy, p) {
     if (!sy) return;
     if (!enEdition) remplirChamps(p);
+    majEnfants(p);
     rendreFoyer(p);
     var s = sy.salaire;
     $("p-age").textContent = p.dateNaissance ? sy.age + " ans" : "Obligatoire : la banque en tient compte pour la durée du crédit.";

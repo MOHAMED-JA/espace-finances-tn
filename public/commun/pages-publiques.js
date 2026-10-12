@@ -80,7 +80,15 @@
     });
   }
 
-  /* Compteur d'enfants (0 à 4, comme les déductions). */
+  /* Compteur d'enfants (0 à 4, comme les déductions), réservé au chef de famille : la déduction l'est aussi. */
+  function majEnfants() {
+    var chef = champ("chef"), bloc = form.querySelector("[data-seul-chef]");
+    if (!chef || !bloc) return;
+    var out = bloc.querySelector("output"), n = Number(out.value || out.textContent) || 0, ok = chef.checked;
+    bloc.setAttribute("aria-disabled", ok ? "false" : "true");
+    bloc.querySelector("[data-pas='-1']").disabled = !ok || n <= 0;
+    bloc.querySelector("[data-pas='1']").disabled = !ok || n >= 4;
+  }
   form.querySelectorAll(".compteur").forEach(function (cpt) {
     var out = cpt.querySelector("output"), moins = cpt.querySelector("[data-pas='-1']"), plus = cpt.querySelector("[data-pas='1']");
     cpt.addEventListener("click", function (ev) {
@@ -107,7 +115,7 @@
       champ("marge").value = fmt(Number(r.getAttribute("data-marge")));
     }
   });
-  form.addEventListener("change", function (ev) { if (!ev.target.matches("input[type='text']")) { placer(); calculer(); } });
+  form.addEventListener("change", function (ev) { if (!ev.target.matches("input[type='text']")) { if (ev.target.name === "chef") majEnfants(); placer(); calculer(); } });
   form.addEventListener("submit", function (ev) { ev.preventDefault(); calculer(); });
   form.querySelectorAll("input[inputmode='decimal']").forEach(function (el) {
     el.addEventListener("blur", function () {
@@ -117,6 +125,7 @@
   });
 
   placer();
+  majEnfants();
   if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(placer);
   window.addEventListener("resize", placer);
   calculer();

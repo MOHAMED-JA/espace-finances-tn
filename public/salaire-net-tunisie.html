@@ -192,7 +192,7 @@
           </div>
           <div class="calc__options">
             <label class="interrupteur"><span>Chef de famille</span><input type="checkbox" name="chef" role="switch"><span class="interrupteur__piste" aria-hidden="true"></span></label>
-            <div class="calc__compteur"><span id="lib-enfants">Enfants</span><div class="compteur" role="group" aria-labelledby="lib-enfants"><button type="button" data-pas="-1" aria-label="Un enfant de moins" disabled><svg aria-hidden="true"><use href="/orbite/icones.svg#moins"/></svg></button><output name="enfants" aria-live="polite">0</output><button type="button" data-pas="1" aria-label="Un enfant de plus"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg></button></div></div>
+            <div class="calc__compteur" data-seul-chef aria-disabled="true" title="Réservé au chef de famille"><span id="lib-enfants">Enfants</span><div class="compteur" role="group" aria-labelledby="lib-enfants"><button type="button" data-pas="-1" aria-label="Un enfant de moins" disabled><svg aria-hidden="true"><use href="/orbite/icones.svg#moins"/></svg></button><output name="enfants" aria-live="polite">0</output><button type="button" data-pas="1" aria-label="Un enfant de plus" disabled><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg></button></div></div>
           </div>
           <div class="resultat">
             <span class="resultat__lib">Net à payer par mois</span>
