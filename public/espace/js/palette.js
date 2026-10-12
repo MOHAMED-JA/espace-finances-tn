@@ -74,6 +74,9 @@
     if (H && H.possible(-1)) L.push(action("a-annuler", "Annuler la dernière modification", "Ctrl Z", "annuler retour arriere defaire modification ctrl z", function () { H.annuler(); }));
     if (H && H.possible(1)) L.push(action("a-retablir", "Rétablir la modification", "Ctrl Y", "retablir refaire ctrl y", function () { H.retablir(); }));
     if (window.OrbitePartage && /^(salaire|credit|epargne)$/.test(O.lireRoute().vue)) L.push(action("a-partager", "Partager cette simulation", "Lien, QR code, WhatsApp, e-mail", "partager envoyer lien qr whatsapp email mail", function () { window.OrbitePartage.ouvrir(); }));
+    if (window.OrbiteGuidee) [["credit", "un crédit", "credit pret banque kridi"], ["salaire", "mon salaire", "salaire brut net paie khedma"], ["epargne", "mon épargne", "epargne assurance vie cea impot"]].forEach(function (x) {
+      L.push(Object.assign(action("a-guidee-" + x[0], "Simulation guidée : " + x[1], "Quelques questions, puis le résultat", "simulation guidee pas a pas etapes questions debutant aide " + x[2], function () { surVue(x[0], function () { window.OrbiteGuidee.ouvrir(x[0]); }); }), { ico: "etapes" }));
+    });
     /* Lanceur et simulateurs, ouverts dans Orbite. */
     L.push(action("a-apps", "Mes applications", "Les parties d'Orbite et les simulateurs", "applications apps lanceur outils simulateurs", function () { O.ouvrirApps(); }));
     (O.SIMULATEURS || []).forEach(function (x) {

@@ -1281,6 +1281,115 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => !window.Orbite.utilisateur().user_metadata.orbite_lisible);
   });
 
+  await etape("simulation guidée (crédit, salaire, épargne), comparer 2 crédits enregistrés, rappel de versement mensuel", async () => {
+    async function enregistrer(nom) {
+      await page.click("#enregistrer");
+      await page.waitForSelector("#dlg-enregistrer[open]");
+      await page.fill("#enr-nom", nom);
+      await page.click('#dlg-enregistrer button[value="ok"]');
+      await page.waitForFunction((n) => !document.getElementById("dlg-enregistrer").open, nom);
+      await page.waitForTimeout(400);
+    }
+    async function choisir(texte) { await page.click(`#guidee-reponse .guidee__option:has-text("${texte}")`); await page.waitForTimeout(250); }
+    /* Crédit : voiture, 40 000 DT, 5 ans, taux de 9 %. */
+    await page.goto(base + "/espace/#credit");
+    await page.waitForSelector('[data-guidee="credit"]');
+    await page.click('[data-guidee="credit"]');
+    await page.waitForSelector("#dlg-guidee[open]");
+    await choisir("Une voiture");
+    await page.waitForSelector("#guidee-montant");
+    await page.fill("#guidee-montant", "40000");
+    await page.keyboard.press("Enter");
+    await choisir("5 ans");
+    await choisir("J'ai un taux");
+    await page.waitForSelector("#guidee-montant");
+    await page.fill("#guidee-montant", "abc");
+    await page.click("#guidee-suivant");
+    await page.waitForSelector("#guidee-erreur:not([hidden])");
+    await page.fill("#guidee-montant", "9");
+    await page.click("#guidee-suivant");
+    await page.waitForSelector(".guidee__resultat");
+    const mens = await page.textContent(".guidee__resultat-val");
+    assert(/830,3\d\d/.test(mens.replace(/\s/g, "")), "mensualité 40 000 DT, 5 ans, 9 % : " + mens);
+    await page.screenshot({ path: path.join(CAPTURES, "guidee-credit.png") });
+    await page.click("#guidee-suivant");
+    await page.waitForFunction(() => !document.getElementById("dlg-guidee").open);
+    const e1 = await page.evaluate(() => window.ModuleCredit.etat());
+    assert(/c=40000/.test(e1) && /m=60/.test(e1) && /t=9(&|$)/.test(e1) && /ty=auto/.test(e1), "module rempli : " + e1);
+    await enregistrer("Banque A voiture");
+    /* Deuxième offre : même voiture au taux habituel. */
+    await page.click('[data-guidee="credit"]');
+    await page.waitForSelector("#dlg-guidee[open]");
+    await choisir("Une voiture");
+    await page.fill("#guidee-montant", "40000");
+    await page.click("#guidee-suivant");
+    await choisir("5 ans");
+    await choisir("Taux habituel");
+    await page.waitForSelector(".guidee__resultat");
+    await page.click("#guidee-suivant");
+    await enregistrer("Banque B voiture");
+    /* Salaire : net connu, public, chef de famille avec 2 enfants. */
+    await page.goto(base + "/espace/#salaire");
+    await page.waitForSelector('[data-guidee="salaire"]');
+    await page.click('[data-guidee="salaire"]');
+    await page.waitForSelector("#dlg-guidee[open]");
+    await choisir("Mon net");
+    await page.fill("#guidee-montant", "2000");
+    await page.click("#guidee-suivant");
+    await choisir("Secteur public");
+    await choisir("Chef de famille, 2 enfants");
+    await page.waitForSelector(".guidee__resultat");
+    await page.click("#guidee-suivant");
+    const es = await page.evaluate(() => window.EtatSimulation.decoder(window.ModuleSalaire.etat()).a);
+    assert(es.sens === "net" && es.montant === 2000 && es.secteur === "public" && es.chefDeFamille && es.enfants === 2, "salaire rempli : " + JSON.stringify(es));
+    /* Épargne : les deux, 150 + 100 DT par mois, 12 ans → 15 ans proposés : on prend 15. */
+    await page.goto(base + "/espace/#epargne");
+    await page.waitForSelector('[data-guidee="epargne"]');
+    await page.click('[data-guidee="epargne"]');
+    await page.waitForSelector("#dlg-guidee[open]");
+    await choisir("Les deux");
+    await page.fill("#guidee-montant", "150");
+    await page.click("#guidee-suivant");
+    await page.fill("#guidee-montant", "100");
+    await page.click("#guidee-suivant");
+    await choisir("15 ans");
+    await page.waitForSelector(".guidee__resultat");
+    await page.setViewportSize({ width: 375, height: 760 });
+    await page.screenshot({ path: path.join(CAPTURES, "guidee-epargne-telephone.png") });
+    await page.setViewportSize({ width: 1360, height: 900 });
+    await page.click("#guidee-suivant");
+    const ee = await page.evaluate(() => window.ModuleEpargne.etat());
+    assert(/Xp=ac/.test(ee), "épargne : les deux produits : " + ee);
+    /* Comparer les deux crédits. */
+    await page.goto(base + "/espace/#simulations");
+    await page.waitForSelector('.carte[data-outil="credit"]');
+    await page.click("#comparer-mode");
+    await page.waitForSelector("#comparer-barre:not([hidden])");
+    for (const nom of ["Banque A voiture", "Banque B voiture"]) await page.click(`.carte:has-text("${nom}") .carte__lien`);
+    const autre = await page.$('.carte:not([data-outil="credit"]) .carte__case');
+    if (autre) assert(await autre.isDisabled(), "une simulation d'un autre module ne peut pas être cochée");
+    await page.click("#comparer-ouvrir");
+    await page.waitForSelector("#dlg-comparer[open]");
+    const entetes = await page.$$eval("#comparer-table thead .comparer__nom", (x) => x.map((e) => e.textContent));
+    assert(entetes.length === 2 && entetes.includes("Banque A voiture"), "colonnes : " + entetes);
+    const meilleur = await page.$$eval("#comparer-table .comparer__principal td", (x) => x.map((e) => e.className));
+    assert(meilleur.filter((c) => /meilleur/.test(c)).length === 1, "une mensualité la plus basse : " + meilleur);
+    await page.screenshot({ path: path.join(CAPTURES, "comparer-credits.png") });
+    await page.click("#dlg-comparer .bouton--fermer");
+    await page.click("#comparer-annuler");
+    assert(await page.isHidden("#comparer-barre"), "mode comparaison quitté");
+    /* Rappel de versement : le 10 de chaque mois. */
+    await page.goto(base + "/espace/#profil?section=contrats");
+    await page.waitForSelector("#p-jour-versement", { state: "attached" });
+    await page.evaluate(() => { const d = document.getElementById("sec-contrats"); if (d) d.open = true; });
+    await page.selectOption("#p-jour-versement", "10");
+    await page.waitForFunction(() => window.Orbite.profil().jourVersement === 10);
+    const rv = await page.evaluate(() => window.RappelsCalcul.rappels(window.Orbite.synthese(), null, null, new Date()).filter((r) => r.type === "versement"));
+    assert(rv.length === 1 && new Date(rv[0].quand).getDate() >= 1 && !/\d{3}/.test(rv[0].mail.corps), "rappel de versement : " + JSON.stringify(rv));
+    await page.selectOption("#p-jour-versement", "0");
+    await page.waitForFunction(() => window.Orbite.profil().jourVersement === 0);
+  });
+
   await etape("crédit : lire une offre (texte), contrôler le tableau de la banque (exemple exact, PDF avec une erreur)", async () => {
     await page.goto(base + "/espace/#credit");
     await page.waitForSelector("#cr-outil-offre");

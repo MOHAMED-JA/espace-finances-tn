@@ -465,6 +465,7 @@
               <div class="depliant__corps">
                 <ul class="lignes-liste" id="liste-contrats"></ul>
                 <button type="button" class="bouton bouton--petit" data-ajouter="contrats"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg>Ajouter un contrat</button>
+                <div class="champ rappel-versement"><label for="p-jour-versement">Rappel de versement</label><div class="saisie"><select id="p-jour-versement" data-p="jourVersement" aria-describedby="p-jour-versement-aide"><option value="0">Pas de rappel</option><option value="1">Chaque mois, le 1er</option><option value="5">Chaque mois, le 5</option><option value="10">Chaque mois, le 10</option><option value="15">Chaque mois, le 15</option><option value="20">Chaque mois, le 20</option><option value="25">Chaque mois, le 25</option><option value="28">Chaque mois, le 28</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div><span class="champ__aide" id="p-jour-versement-aide">Une notification le jour choisi pour verser votre épargne du mois. L'e-mail de rappel, si vous l'avez activé, ne contient aucun montant.</span></div>
               </div>
             </details>
 
@@ -505,6 +506,7 @@
             <span class="module__pastille" aria-hidden="true"><svg><use href="/orbite/icones.svg#salaire"/></svg></span>
             <div><h1 id="titre-salaire">Salaire</h1><p class="vue__sous" id="sous-salaire">Brut ⇄ net, tranche d'impôt, augmentation, coût employeur et offres. Barèmes <span data-annee>2026</span>.</p></div>
             <div class="module__actions">
+              <button type="button" class="bouton bouton--petit" data-guidee="salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#etapes"/></svg>Simulation guidée</button>
               <button type="button" class="bouton bouton--petit" id="nego-ouvrir"><svg aria-hidden="true"><use href="/orbite/icones.svg#hausse"/></svg>Préparer ma négociation</button>
               <button type="button" class="bouton bouton--petit" id="fiche-controle"><svg aria-hidden="true"><use href="/orbite/icones.svg#fiche"/></svg>Contrôler ma fiche de paie</button>
             </div>
@@ -695,6 +697,7 @@
           <header class="vue__tete module__tete">
             <span class="module__pastille" aria-hidden="true"><svg><use href="/orbite/icones.svg#epargne"/></svg></span>
             <div><h1 id="titre-epargne">Épargne vie &amp; CEA</h1><p class="vue__sous">Économie d'impôt (art. 39), capital projeté, rachat, retraite et protection.</p></div>
+            <div class="module__actions"><button type="button" class="bouton bouton--petit" data-guidee="epargne"><svg aria-hidden="true"><use href="/orbite/icones.svg#etapes"/></svg>Simulation guidée</button></div>
           </header>
           <div id="epargne-racine" class="module__racine"><div class="squelette module__attente"></div></div>
         </section>
@@ -704,7 +707,10 @@
           <header class="vue__tete module__tete">
             <span class="module__pastille" aria-hidden="true"><svg><use href="/orbite/icones.svg#credit"/></svg></span>
             <div><h1 id="titre-credit">Crédit</h1><p class="vue__sous">Mensualité, TMM + marge, TEG, tableau d'amortissement, capacité et renégociation.</p></div>
-            <button type="button" class="bouton bouton--petit module__action" id="dossier-ouvrir"><svg aria-hidden="true"><use href="/orbite/icones.svg#fiche"/></svg>Préparer mon dossier banque</button>
+            <div class="module__actions">
+              <button type="button" class="bouton bouton--petit" data-guidee="credit"><svg aria-hidden="true"><use href="/orbite/icones.svg#etapes"/></svg>Simulation guidée</button>
+              <button type="button" class="bouton bouton--petit" id="dossier-ouvrir"><svg aria-hidden="true"><use href="/orbite/icones.svg#fiche"/></svg>Préparer mon dossier banque</button>
+            </div>
           </header>
           <div id="credit-racine" class="module__racine"><div class="squelette module__attente"></div></div>
         </section>
@@ -724,9 +730,15 @@
               <i class="bascule__pastille" aria-hidden="true"></i>
             </div>
             <div class="saisie recherche"><svg aria-hidden="true"><use href="/orbite/icones.svg#recherche"/></svg><input id="recherche" type="search" placeholder="Rechercher par nom" aria-label="Rechercher une simulation"></div>
+            <button type="button" class="bouton bouton--petit" id="comparer-mode" aria-pressed="false"><svg aria-hidden="true"><use href="/orbite/icones.svg#comparer"/></svg>Comparer</button>
             <div class="saisie tri"><select id="tri" aria-label="Trier"><option value="recent">Plus récentes</option><option value="ancien">Plus anciennes</option><option value="nom">Par nom</option><option value="favori">Favoris d'abord</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div>
           </div>
           <ul class="cartes" id="toutes" role="list" aria-busy="true"></ul>
+          <div class="comparer-barre" id="comparer-barre" role="region" aria-label="Comparaison" hidden>
+            <p id="comparer-etat" aria-live="polite">Cochez 2 ou 3 simulations du même module.</p>
+            <button type="button" class="bouton bouton--fantome bouton--petit" id="comparer-annuler">Annuler</button>
+            <button type="button" class="bouton bouton--plein bouton--petit" id="comparer-ouvrir" disabled>Comparer</button>
+          </div>
         </section>
 
         <!-- ======== Vie & impôts (route #vie, onglet par #vie?onglet=vie|fiscal) ======== -->
@@ -1440,6 +1452,7 @@
         <span class="carte__secondaires"></span>
       </a>
       <div class="carte__actions">
+        <label class="carte__choix"><input type="checkbox" class="carte__case"><span class="cache carte__case-lib">Comparer</span></label>
         <button type="button" class="bouton bouton--fantome bouton--icone bouton--petit carte__favori" aria-pressed="false"><svg aria-hidden="true"><use href="/orbite/icones.svg#etoile"/></svg></button>
         <button type="button" class="bouton bouton--fantome bouton--icone bouton--petit carte__menu" aria-haspopup="menu" aria-expanded="false"><svg aria-hidden="true"><use href="/orbite/icones.svg#points"/></svg></button>
       </div>
@@ -2024,6 +2037,41 @@
     </form>
   </dialog>
 
+  <dialog class="dialogue dialogue--guidee" id="dlg-guidee" aria-labelledby="guidee-question">
+    <form method="dialog" id="guidee-form" novalidate>
+      <div class="dialogue__tete guidee__tete">
+        <p class="guidee__module" id="guidee-module"></p>
+        <ol class="guidee__points" id="guidee-points" aria-hidden="true"></ol>
+        <p class="cache" id="guidee-progression" aria-live="polite"></p>
+      </div>
+      <div class="dialogue__corps guidee__corps" id="guidee-corps">
+        <h2 class="guidee__question" id="guidee-question" tabindex="-1"></h2>
+        <p class="guidee__aide" id="guidee-aide"></p>
+        <div class="guidee__reponse" id="guidee-reponse"></div>
+        <p class="erreur-champ" id="guidee-erreur" role="alert" hidden></p>
+      </div>
+      <div class="dialogue__pied guidee__pied">
+        <button type="button" class="bouton bouton--fantome" id="guidee-retour">Retour</button>
+        <span class="guidee__espace"></span>
+        <button type="submit" class="bouton bouton--fermer" value="fermer" formnovalidate id="guidee-fermer">Fermer</button>
+        <button type="button" class="bouton bouton--plein" id="guidee-suivant">Suivant</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialogue dialogue--comparer" id="dlg-comparer" aria-labelledby="comparer-titre">
+    <form method="dialog">
+      <div class="dialogue__tete"><h2 id="comparer-titre">Comparer vos simulations</h2><p class="comparer__sous" id="comparer-sous"></p></div>
+      <div class="dialogue__corps">
+        <div class="comparer__table-cadre" tabindex="0" role="region" aria-labelledby="comparer-titre">
+          <table class="comparer__table" id="comparer-table"></table>
+        </div>
+        <p class="comparer__note">✓ marque la meilleure valeur quand le sens ne fait pas de doute (mensualité, coût et impôt les plus bas ; net et économie les plus hauts).</p>
+      </div>
+      <div class="dialogue__pied"><button type="submit" class="bouton bouton--fermer" value="fermer">Fermer</button></div>
+    </form>
+  </dialog>
+
   <dialog class="dialogue" id="dlg-supprimer-compte" aria-labelledby="dlg-sc-titre">
     <form method="dialog">
       <div class="dialogue__tete"><h2 id="dlg-sc-titre">Supprimer définitivement votre compte&nbsp;?</h2></div>
@@ -2078,11 +2126,13 @@
   <script src="/espace/js/module-epargne.js"></script>
   <script src="/moteurs/credit/credit.js"></script><script src="/moteurs/credit/phrase.js"></script><script src="/moteurs/credit/audit.js"></script><script src="/espace/js/credit-documents.js"></script><script src="/espace/js/module-credit.js"></script>
   <script src="/commun/fuites.js"></script>
+  <script src="/espace/js/comparer-calcul.js"></script>
   <script src="/espace/js/simulations.js"></script>
   <script src="/commun/partage-lien.js"></script>
   <script src="/espace/js/partage-simulation.js"></script>
   <script src="/espace/js/lisibilite.js"></script>
   <script src="/espace/js/historique.js"></script>
+  <script src="/espace/js/guidee.js"></script>
   <script src="/espace/js/abonnement-calcul.js"></script>
   <script src="/espace/js/abonnement.js"></script>
   <script src="/espace/js/parametres.js"></script>

@@ -96,3 +96,22 @@ test('rappels programmés par l\'utilisateur : au mois choisi, URL limitée à l
   assert.equal(new Date(r[1].quand).getMonth(), 4);
   assert.equal(R.aAfficher(r, {}, m).length, 0, 'pas encore échus');
 });
+
+test("versement mensuel : le jour choisi à 9 h, 5 jours ; le mois suivant une fois passé ; aucun montant dans l'email", () => {
+  const p = O.normaliser(Object.assign({}, PROFIL, { jourVersement: 5, contrats: [
+    { type: 'av', libelle: 'Assurance vie', versementMensuel: 200, moisDebut: 1, anneeDebut: 2025 },
+    { type: 'cea', libelle: 'CEA', versementMensuel: 100, moisDebut: 1, anneeDebut: 2025 }] }));
+  const sy = O.synthese(p, {}, M);
+  const v = R.rappels(sy, null, null, M).filter((r) => r.type === 'versement');
+  assert.equal(v.length, 1);
+  assert.equal(v[0].id, 'versement-2026-10');
+  assert.equal(new Date(v[0].quand).getTime(), M.getTime()); /* 5 octobre passé de 4 jours : encore visible */
+  assert.match(v[0].corps, /300\s?DT/);
+  assert.ok(!/\d/.test(v[0].mail.corps.replace(/le 5 /, "")), "email sans montant : " + v[0].mail.corps);
+  const plusTard = new Date('2026-10-20T12:00:00');
+  const w = R.rappels(O.synthese(p, {}, plusTard), null, null, plusTard).filter((r) => r.type === 'versement');
+  assert.equal(w[0].id, 'versement-2026-11');
+  assert.equal(new Date(w[0].quand).getDate(), 5);
+  assert.equal(O.normaliser({ jourVersement: 40 }).jourVersement, 28);
+  assert.equal(R.rappels(O.synthese(O.normaliser(PROFIL), {}, M), null, null, M).filter((r) => r.type === 'versement').length, 0);
+});

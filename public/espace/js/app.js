@@ -758,6 +758,8 @@
     utilisateur: function () { return utilisateur; },
     modifie: modifie,
     ouvrirSimulation: ouvrirSimulation,
+    /* Nouvelle simulation partie de zéro (simulation guidée) : « Enregistrer » crée une nouvelle fiche au lieu de mettre à jour. */
+    detacherSimulation: function (vue) { if (simulationOuverte[vue]) { simulationOuverte[vue] = null; if (moduleCourant() === vue) $("enregistrer-lib").textContent = "Enregistrer"; } },
     lireRoute: lireRoute,
     remplirUtilisateur: remplirUtilisateur,
     enregistrerModule: function (vue) { if (lireRoute().vue === vue) afficher(false); },

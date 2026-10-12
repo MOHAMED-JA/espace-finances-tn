@@ -110,7 +110,7 @@
     var u = ind.unite;
     if (u === "%") return formater(ind.valeur, 2) + " %";
     if (u === "DT" || u === "TND") return formater(ind.valeur, Math.abs(ind.valeur) >= 10000 ? 0 : 3) + " DT";
-    if (!u && Number.isInteger(ind.valeur)) return formater(ind.valeur, 0);
+    if (Number.isInteger(ind.valeur)) return formater(ind.valeur, 0) + (u ? " " + u : "");
     return formater(ind.valeur) + (u ? " " + u : "");
   }
 

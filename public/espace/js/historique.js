@@ -119,6 +119,8 @@
   doc.addEventListener("orbite:pret", function () { var v = vueCourante(); if (v) depart(v); }, { once: true });
 
   window.OrbiteHistorique = { annuler: function () { return aller(-1); }, retablir: function () { return aller(1); }, possible: possible,
+    /* À appeler juste avant une modification faite hors du module (simulation guidée, lien reçu…) : l'état d'avant est gardé. */
+    avant: function (vue) { if (MODULES[vue]) noter(vue); },
     /* Position dans l'historique du module affiché (tests). */
     position: function () { var v = vueCourante(), p = v ? pile(v) : null; return p ? { vue: v, i: p.i, n: p.etats.length } : null; } };
 })();
