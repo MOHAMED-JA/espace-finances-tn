@@ -1,4 +1,5 @@
-/* Orbite — pages publiques : mini-calcul en direct (salaire net, capacité de crédit, impôt, retraite).
+/* Orbite — pages publiques : mini-calcul en direct (salaire net, capacité de crédit, impôt, retraite, simulateur de crédit,
+   assurance vie, CEA).
    Les textes viennent de PagesCalcul.affichage, la même fonction qui a écrit le HTML : avant et après le script, mêmes formats.
    Aucune donnée n'est envoyée ni enregistrée. CSP stricte : styles posés par CSSOM (style.setProperty), jamais en attribut. */
 (function () {
@@ -29,6 +30,19 @@
       var enc = champ("encours"), v = lire(enc.value, true);
       enc.setAttribute("aria-invalid", v == null && enc.value.trim() !== "" ? "true" : "false");
       e = { net: montant, encours: v || 0 };
+    }
+    if (page === "pret" || page === "vie" || page === "cea") {
+      var bons = {
+        pret: function () { return { type: coche("type") || "auto", montant: montant, dureeAns: lire(champ("duree").value), marge: lire(champ("marge").value, true) }; },
+        vie: function () { return { montant: montant, versement: lire(champ("versement").value, true), dureeAns: lire(champ("duree").value), rendement: lire(champ("rendement").value, true) }; },
+        cea: function () { return { montant: montant, depot: lire(champ("depot").value, true) }; }
+      }[page]();
+      Object.keys(bons).forEach(function (k) {
+        if (k === "type" || k === "montant") return;
+        var nom = k === "dureeAns" ? "duree" : k, el = champ(nom), bon = bons[k] != null;
+        el.setAttribute("aria-invalid", bon ? "false" : "true"); if (!bon) ok = false;
+      });
+      e = bons;
     }
     if (page === "retraite") {
       ["anneeNaissance", "anneeDebut"].forEach(function (k) {
@@ -84,11 +98,20 @@
   form.addEventListener("input", function (ev) {
     if (ev.target.matches("input[type='text']")) { clearTimeout(frappe); frappe = setTimeout(calculer, 80); }
   });
+  /* Simulateur de crédit : un autre type reprend son exemple (montant, durée, marge). */
+  form.addEventListener("change", function (ev) {
+    if (ev.target.name === "type" && page === "pret") {
+      var r = ev.target, fmt = function (n) { return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 3 }).format(n).replace(/[\u00a0\u202f]/g, " "); };
+      champ("montant").value = fmt(Number(r.getAttribute("data-montant")));
+      champ("duree").value = r.getAttribute("data-duree");
+      champ("marge").value = fmt(Number(r.getAttribute("data-marge")));
+    }
+  });
   form.addEventListener("change", function (ev) { if (!ev.target.matches("input[type='text']")) { placer(); calculer(); } });
   form.addEventListener("submit", function (ev) { ev.preventDefault(); calculer(); });
   form.querySelectorAll("input[inputmode='decimal']").forEach(function (el) {
     el.addEventListener("blur", function () {
-      var v = lire(el.value, el.name === "encours");
+      var v = lire(el.value, ["encours", "versement", "rendement", "marge", "depot"].indexOf(el.name) !== -1);
       if (v != null) el.value = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 3 }).format(v).replace(/[  ]/g, " ");
     });
   });

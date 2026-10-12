@@ -104,3 +104,45 @@ test('les exemples ne vieillissent pas : un an plus tard, même âge de départ,
   assert.equal(b.retraite.age, a.retraite.age);
   assert.equal(b.retraite.annee, a.retraite.annee + 1);
 });
+
+test('simulateur de crédit : mensualité à annuités constantes au taux TMM + marge, durée bornée par type', () => {
+  const OC = require('../../public/espace/js/orbite-calcul.js');
+  const k = C.simulCredit({ type: 'auto', montant: 40000, dureeAns: 7, marge: 3 });
+  assert.equal(k.taux, OC.TMM + 3);
+  proche(k.mensualite, 674.427);
+  proche(k.interets, k.mensualite * 84 - 40000);
+  proche(k.total, k.montant + k.interets);
+  assert.equal(C.simulCredit({ type: 'auto', dureeAns: 15 }).dureeAns, 7);
+  assert.equal(C.simulCredit({ type: 'immo', dureeAns: 30 }).dureeAns, 25);
+  assert.equal(C.simulCredit({ type: 'inconnu' }).type, 'auto');
+  const a = C.affichage('pret', { type: 'immo', montant: 120000, dureeAns: 20, marge: 2.5 }, M);
+  assert.equal(a.taux, '10\u00a0%');
+  assert.equal(a.taux_lib, 'TMM 7,5 % + 2,5 points');
+  proche(a.parts.capital + a.parts.interets, 1, 1e-9);
+});
+
+test('assurance vie : capital de 200 DT par mois sur 10 ans à 6 %, impôt économisé = moteur fiscal (taux marginal 30 %)', () => {
+  const a = C.assuranceVie({ montant: 2500, versement: 200, dureeAns: 10, rendement: 6 }, M);
+  assert.equal(a.verse, 24000);
+  proche(a.capital, 32494.688, 0.01);
+  proche(a.interets, a.capital - a.verse);
+  assert.equal(a.economie, 720);
+  assert.equal(a.dureeMinimale, 8);
+  /* Économie plafonnée : jamais plus de 55 % de l'impôt (impôt minimum 45 %). */
+  const gros = C.assuranceVie({ montant: 2500, versement: 5000 }, M);
+  assert.ok(gros.economie <= gros.impot * (1 - gros.impotMinimumTaux) + 0.01);
+  assert.equal(C.affichage('vie', { montant: 400, versement: 200 }, M).eco, '0\u00a0DT');
+});
+
+test('CEA : impôt économisé, dépôt utile (impôt minimum 60 %), déblocage au 1er janvier après 5 ans', () => {
+  const c = C.cea({ montant: 2500, depot: 3000 }, M);
+  assert.equal(c.economie, 900);
+  proche(c.impotMinimum, c.impot * 0.6, 0.01);
+  assert.ok(c.utile > 3000 && c.utile < 10000);
+  assert.equal(c.disponible, 2032);
+  const au = C.cea({ montant: 2500, depot: c.utile + 2000 }, M);
+  proche(au.economie, c.impot - c.impotMinimum, 0.01);
+  assert.equal(C.affichage('cea', { montant: 2500, depot: c.utile + 2000 }, M).etat, 'au_dela');
+  assert.equal(C.affichage('cea', { montant: 400, depot: 3000 }, M).etat, 'sans_impot');
+  assert.equal(C.affichage('cea', { montant: 2500, depot: 3000 }, M).dispo, '1er janvier 2032');
+});

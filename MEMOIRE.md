@@ -454,6 +454,41 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 septsexagies. Référencement : 3 nouvelles pages publiques, liens des simulateurs, textes réseaux (12 oct.)
+
+- **Contexte** : l'accueil est indexé, mais Orbite n'apparaît pas en première page.
+  - Ce que j'ai dit à l'utilisateur : personne ne peut garantir la première place. Les mots seuls (« crédit », « simulateur », « finances », « Orbite ») sont tenus par les banques et des sites anciens. Le site a quelques jours, et les liens venant d'autres sites manquent.
+  - Ce qui est réaliste et gratuit : viser des recherches précises, une page par recherche, des liens depuis les autres simulateurs, des textes pour LinkedIn et Facebook. Il faut compter 3 à 6 mois.
+- **Choix de l'utilisateur** :
+  - référencement **avant** le programme des 6 fonctionnalités ;
+  - 3 pages : simulateur de crédit, simulateur d'assurance vie, calcul du CEA ;
+  - liens depuis **tous** les simulateurs ;
+  - textes LinkedIn et Facebook ;
+  - menu à **5 entrées**.
+- Maquette validée : https://claude.ai/artifact/AjaysK5iZAFqxRgqM8GGhy.
+- **Les 3 pages** (générées par `scripts/pages-publiques.js`, même structure que les 4 autres) :
+  - **`/simulateur-credit-tunisie`** :
+    - calcul : bascule Logement / Voiture / Consommation, chacune avec son exemple (120 000 DT sur 20 ans, marge 2,5 ; 40 000 DT sur 7 ans, marge 3 ; 15 000 DT sur 5 ans, marge 3,5), durée bornée à 25 ou 7 ans, taux = TMM d'Orbite + marge ;
+    - résultats : mensualité, capital, intérêts, coût total ;
+    - tableaux : mensualité selon montant et durée ; effet d'une hausse du TMM (+0,5, +1, +2 points) sur 3 crédits types.
+  - **`/simulateur-assurance-vie-tunisie`** :
+    - calcul : versement, durée, rendement et salaire brut ;
+    - capital : `Projection.projeter`, sans frais ;
+    - impôt économisé chaque année : `MoteurFiscal.simuler`, avec le `revenuFiscal` de la synthèse, comme l'optimiseur fiscal ; exemple 720 DT pour 200 DT par mois et 2 500 DT brut ;
+    - tableaux : capital selon le versement et l'horizon ; économie selon le salaire.
+  - **`/calcul-cea-tunisie`** :
+    - calcul : dépôt et salaire brut ; économie, dépôt utile (`ceaUtile`), impôt minimum de 60 %, disponibilité au 1er janvier de l'année + 1 + 5 ;
+    - états : `au_dela` et `sans_impot` ;
+    - tableaux : dépôt utile selon le salaire ; CEA ou assurance vie.
+  - **Fonctions et affichage** : `PagesCalcul.simulCredit`, `assuranceVie`, `cea` (dépendent maintenant de `MoteurFiscal` et `Projection`) ; `affichage("pret" | "vie" | "cea")`. Le taux s'affiche avec 0, 1 ou 2 décimales (bug « 10 % → 1 % » corrigé par un test). Espaces insécables avant DT et %.
+  - **Navigateur** : `pages-publiques.js` lit les champs page par page (les lire tous plantait sur les autres pages). Le choix du type de crédit reprend son exemple (`data-montant`, `data-duree`, `data-marge`).
+  - **Pont** : `pontFonctions`, avec 3 fonctions d'Orbite sans chiffre.
+  - **Menu à 5 entrées (`NAV`)** : Salaire net, Crédit (simulateur et capacité), Assurance vie (simulateur et impôt), CEA, Retraite. `aria-current="page"` sur la page même, `"true"` sur la page sœur.
+  - **Liens entre pages** : chaque page renvoie vers les 6 autres, en 2 rangées de 3 sur grand écran. Le pied de l'accueil a 7 liens.
+- **Partout ailleurs** : `DATE_PAGES` au 12 oct. 2026 (toutes les pages régénérées) ; sitemap de 10 URL, toutes en `lastmod` 2026-10-12 ; CSP des 3 pages dans `_headers` (avec et sans `.html`).
+- **Tests** : 3 nouveaux tests de calcul ; le test HTML passe à 7 pages ; étape e2e « pages publiques » étendue (type de crédit, taux, menu, assurance vie non imposée, CEA au-delà du dépôt utile, téléphone pour les 7 pages).
+- **À faire par l'utilisateur après la mise en ligne** : renvoyer le sitemap dans Search Console, puis demander l'indexation des 3 nouvelles adresses (quota d'environ 10 par jour).
+
 ## 3 sexsexagies. Programme de 6 fonctionnalités + « Mon dossier banque » (12 oct.)
 
 - **Programme choisi par l'utilisateur** (12 oct., après mes 10 propositions, toutes gratuites) :

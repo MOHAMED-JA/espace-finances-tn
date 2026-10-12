@@ -1,14 +1,16 @@
 /*
- * Orbite — pages publiques (salaire net, capacité de crédit, impôt, retraite) : chiffres des mini-calculs (module pur, testé).
+ * Orbite — pages publiques (salaire net, capacité de crédit, impôt, retraite, simulateur de crédit, assurance vie, CEA) :
+ * chiffres des mini-calculs (module pur, testé).
  * Tout passe par les moteurs d'Orbite (OrbiteCalcul, OrbiteIntelligence, Retraite) : rien n'est écrit en dur. Les exemples
  * sont définis par rapport à la date du jour (âge, carrière) pour ne pas vieillir. Calcul sur l'appareil, rien n'est envoyé.
  */
 (function (racine, fabrique) {
   if (typeof module === "object" && module.exports) {
     module.exports = fabrique(require("../espace/js/orbite-calcul.js"), require("../espace/js/orbite-intelligence.js"),
-      require("../espace/js/retraite-calcul.js"), require("../moteurs/salaire/parametres.js"));
-  } else racine.PagesCalcul = fabrique(racine.OrbiteCalcul, racine.OrbiteIntelligence, racine.Retraite, racine.PARAMETRES_PAIE);
-})(typeof self !== "undefined" ? self : this, function (OC, OI, RT, P) {
+      require("../espace/js/retraite-calcul.js"), require("../moteurs/salaire/parametres.js"),
+      require("../moteurs/vie/moteur-fiscal.js"), require("../moteurs/vie/projection.js"));
+  } else racine.PagesCalcul = fabrique(racine.OrbiteCalcul, racine.OrbiteIntelligence, racine.Retraite, racine.PARAMETRES_PAIE, racine.MoteurFiscal, racine.Projection);
+})(typeof self !== "undefined" ? self : this, function (OC, OI, RT, P, MF, PR) {
   "use strict";
   var MAX = 1e6;
   var TYPES = { immo: "Logement", immo25: "Logement sur 25 ans", auto: "Voiture", conso: "Consommation" };
@@ -92,6 +94,47 @@
     return { net: s.net, brut: s.brut, quotite: cr.quotite, logement: logement, mensualiteMax: cr.mensualiteMax, gainImpot: im.gain, annee: im.annee, retraite: re.etat === "ok" ? re : null };
   }
 
+  /* Simulateur de crédit : mensualité à taux fixe (TMM + marge de la banque), intérêts et coût total.
+     Exemples par type ; durée bornée (immobilier 25 ans, autres crédits 7 ans). */
+  var CREDIT_DEF = {
+    immo: { libelle: "Logement", montant: 120000, ans: 20, marge: 2.5, max: 25 },
+    auto: { libelle: "Voiture", montant: 40000, ans: 7, marge: 3, max: 7 },
+    conso: { libelle: "Consommation", montant: 15000, ans: 5, marge: 3.5, max: 7 }
+  };
+  function simulCredit(e) {
+    var x = e || {}, t = CREDIT_DEF[x.type] ? x.type : "auto", d = CREDIT_DEF[t];
+    var montant = borne(x.montant, d.montant, 0, 1e7), ans = Math.round(borne(x.dureeAns, d.ans, 1, d.max)), marge = borne(x.marge, d.marge, 0, 15);
+    var taux = OC.TMM + marge, n = ans * 12, mens = OC.mensualitePourCapital(montant, taux, n), total = mens * n;
+    return { type: t, libelle: d.libelle, montant: montant, dureeAns: ans, dureeMois: n, dureeMax: d.max, marge: marge, tmm: OC.TMM, taux: taux,
+      mensualite: mens, interets: Math.max(0, total - montant), total: total };
+  }
+
+  /* Revenu fiscal de l'exemple (même entrée que l'optimiseur fiscal d'Orbite). */
+  function entreeFiscale(e, m) {
+    var r = synthese(e, m), s = r.sy.salaire;
+    return { revenu: s.revenuFiscal, chef: r.p.chefDeFamille, enfants: r.p.enfants, abattementTaux: s.abattementTaux, leger: true };
+  }
+  function regleProduit(cle) { return MF.regles().produits[cle]; }
+
+  /* Assurance vie : capital estimé (versements mensuels, rendement annuel net de frais) et impôt économisé chaque année. */
+  function assuranceVie(e, m0) {
+    var m = m0 || new Date(), x = e || {};
+    var versement = borne(x.versement, 200, 0, 1e5), ans = Math.round(borne(x.dureeAns, 10, 1, 40)), rendement = borne(x.rendement, 6, 0, 15);
+    var sim = MF.simuler(Object.assign(entreeFiscale(x, m), { investissementAv: versement * 12 }));
+    var pr = PR.projeter({ versement: versement, periodesParAn: 12, dureeAns: ans, rendementPct: rendement, fraisPct: 0 }), fin = pr.annees[ans];
+    var av = regleProduit("av");
+    return { versement: versement, dureeAns: ans, rendement: rendement, capital: fin.capital, verse: fin.verse, interets: Math.max(0, fin.capital - fin.verse),
+      economie: sim.economie, impot: sim.impotAvant, impotMinimumTaux: av.impotMinimumTaux, plafond: av.plafond, dureeMinimale: av.dureeMinimaleAns };
+  }
+
+  /* CEA : impôt économisé pour un dépôt de l'année, dépôt utile au maximum (au-delà, l'impôt ne baisse plus), date de déblocage. */
+  function cea(e, m0) {
+    var m = m0 || new Date(), x = e || {}, depot = borne(x.depot, 3000, 0, 1e6), c = regleProduit("cea");
+    var base = entreeFiscale(x, m), sim = MF.simuler(Object.assign({}, base, { investissementCea: depot, leger: false }));
+    return { depot: depot, economie: sim.economie, impot: sim.impotAvant, impotMinimum: sim.impotMinimumCea, impotMinimumTaux: c.impotMinimumTaux,
+      utile: Math.max(0, sim.ceaUtile || 0), plafond: c.plafond, blocage: c.dureeBlocageAns, disponible: m.getFullYear() + 1 + c.dureeBlocageAns };
+  }
+
   /* ---------- Affichage : mêmes textes pour le HTML généré (moteurs de recherche, sans JavaScript) et dans le navigateur ---------- */
   function nombre(v, dec) {
     var s = new Intl.NumberFormat("fr-FR", { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(v);
@@ -144,6 +187,33 @@
       o.jours = i.gain > 0 ? "Il reste " + i.jours + (i.jours > 1 ? " jours" : " jour") + " pour verser en " + i.annee + " (jusqu'au 31 décembre)." : "";
       o.etat = i.gain > 0 ? "ok" : "sans_impot";
       Object.assign(o, satellites(page, x, m));
+    } else if (page === "pret") {
+      var k = simulCredit(x);
+      grand(o, "mens", k.mensualite);
+      var c100 = Math.round(k.taux * 100);
+      o.taux = nombre(k.taux, c100 % 100 === 0 ? 0 : c100 % 10 === 0 ? 1 : 2) + " %";
+      o.taux_lib = "TMM " + nombre(k.tmm, 1) + " % + " + nombre(k.marge, k.marge % 1 ? 1 : 0) + (k.marge > 1 ? " points" : " point");
+      o.capital = dt(k.montant, 0); o.interets = dt(k.interets, 0); o.total = dt(k.total, 0);
+      o.duree_lib = k.dureeAns + (k.dureeAns > 1 ? " ans" : " an") + " · " + k.dureeMois + " mensualités";
+      o.parts = { capital: k.total > 0 ? k.montant / k.total : 0, interets: k.total > 0 ? k.interets / k.total : 0 };
+      o.etat = k.montant > 0 ? "ok" : "vide";
+    } else if (page === "vie") {
+      var a = assuranceVie(x, m);
+      o.cap_ent = nombre(a.capital, 0); o.cap_dec = " DT";
+      o.cap_lib = "Capital estimé dans " + a.dureeAns + (a.dureeAns > 1 ? " ans" : " an");
+      o.verse = dt(a.verse, 0); o.interets = dt(a.interets, 0); o.eco = dt(a.economie, 0);
+      o.eco_lib = a.economie > 0 ? "chaque année, tant que le salaire ne change pas" : "ce salaire n'est pas imposé : rien à économiser";
+      o.parts = { verse: a.capital > 0 ? Math.min(1, a.verse / a.capital) : 0, interets: a.capital > 0 ? a.interets / a.capital : 0 };
+      o.etat = a.versement > 0 ? "ok" : "vide";
+    } else if (page === "cea") {
+      var c2 = cea(x, m);
+      o.eco_ent = nombre(c2.economie, 0); o.eco_dec = " DT";
+      o.utile = dt(c2.utile, 0); o.impot_min = dt(c2.impotMinimum, 0);
+      o.impot_min_lib = "Impôt qui reste au minimum (" + pct(c2.impotMinimumTaux) + ")";
+      o.dispo = "1er janvier " + c2.disponible;
+      o.jauge = c2.utile > 0 ? Math.min(1, c2.depot / c2.utile) : 0;
+      o.etat = c2.impot <= 0 ? "sans_impot" : c2.depot > c2.utile + 0.5 ? "au_dela" : "ok";
+      o.au_dela = c2.depot > c2.utile + 0.5 ? "Au-delà de " + dt(c2.utile, 0) + ", un dépôt de plus ne fait plus baisser l'impôt de cette année." : "";
     } else if (page === "retraite") {
       var r = retraite(x, m);
       o.etat = r.etat === "ok" ? "ok" : "erreur";
@@ -172,6 +242,7 @@
     return t.map(function (x, i) { return { de: x.de, a: i + 1 < t.length ? t[i + 1].de : null, taux: x.taux }; });
   }
 
-  return { DEFAUT: DEFAUT, TABLE_BRUTS: TABLE_BRUTS, profil: profil, salaire: salaire, credit: credit, impot: impot, retraite: retraite, pont: pont, tableauNet: tableauNet, bareme: bareme,
+  return { DEFAUT: DEFAUT, TABLE_BRUTS: TABLE_BRUTS, CREDIT_DEF: CREDIT_DEF, profil: profil, salaire: salaire, credit: credit, impot: impot, retraite: retraite, pont: pont, tableauNet: tableauNet, bareme: bareme,
+    simulCredit: simulCredit, assuranceVie: assuranceVie, cea: cea,
     affichage: affichage, nombre: nombre, dt: dt, pct: pct, annee: P.annee };
 });
