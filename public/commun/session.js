@@ -317,7 +317,14 @@
     offertEtat: function () { return client.rpc("admin_offert_etat").then(verifier); },
     offrir: function (id, oui) { return client.rpc("admin_offrir", { p_user: id, p_offert: !!oui }).then(verifier); },
     offrirTous: function (oui) { return client.rpc("admin_offrir_tous", { p_offert: !!oui }).then(verifier); },
-    offrirNouveaux: function (oui) { return client.rpc("admin_offrir_nouveaux", { p_actif: !!oui }).then(verifier); }
+    offrirNouveaux: function (oui) { return client.rpc("admin_offrir_nouveaux", { p_actif: !!oui }).then(verifier); },
+    /* TMM du mois (point 5) : saisi par l'administrateur, appliqué à tout Orbite. mois : « AAAA-MM-01 ». */
+    tmmSaisir: function (mois, taux) { return client.rpc("admin_tmm_saisir", { p_mois: mois, p_taux: taux }).then(verifier); },
+    tmmSupprimer: function (mois) { return client.rpc("admin_tmm_supprimer", { p_mois: mois }).then(verifier); }
+  };
+  /* Historique du TMM (lecture pour tout compte connecté), du plus récent au plus ancien. */
+  var tmm = {
+    historique: function (n) { return client.rpc("tmm_historique", { p_mois: n || 24 }).then(verifier); }
   };
   /* Accord de l'utilisateur pour que l'administrateur consulte sa fiche (révocable à tout moment). */
   var partage = {
@@ -451,7 +458,7 @@
     simulations: simulations,
     abonnement: abonnement,
     avatar: avatar,
-    admin: admin, partage: partage,
+    admin: admin, partage: partage, tmm: tmm,
     parrainage: parrainage,
     assistant: assistant,
     rappelsEmail: rappelsEmail,

@@ -150,6 +150,34 @@
       finAvantMois: dernierAvant, finApresMois: mois, verdict: verdict, iraPct: ira };
   }
 
+  /* ---------- TMM ---------- */
+  /** lignes [{ mois: 'AAAA-MM-01', taux }] (ordre quelconque) → série du plus ancien au plus récent, dernier, variation du mois. */
+  function serieTMM(lignes) {
+    var s = (lignes || []).filter(function (l) { return l && /^\d{4}-\d{2}-01/.test(String(l.mois)) && num(l.taux, 0) > 0; })
+      .map(function (l) { return { mois: String(l.mois).slice(0, 10), taux: Math.round(num(l.taux, 0) * 1000) / 1000 }; })
+      .sort(function (a, b) { return a.mois < b.mois ? -1 : a.mois > b.mois ? 1 : 0; });
+    var d = s[s.length - 1] || null, p = s[s.length - 2] || null;
+    return { serie: s, dernier: d, precedent: p, variation: d && p ? Math.round((d.taux - p.taux) * 1000) / 1000 : 0,
+      min: s.length ? Math.min.apply(null, s.map(function (x) { return x.taux; })) : null, max: s.length ? Math.max.apply(null, s.map(function (x) { return x.taux; })) : null };
+  }
+  /**
+   * Effet d'une variation du TMM sur des crédits à taux variable : mensualité recalculée sur le restant dû et les mois restants.
+   * credits : profil (tauxType 'variable') ; delta en points. Sans crédit variable : l'exemple 150 000 DT, 20 ans, TMM + 2,5.
+   */
+  function effetTMM(o) {
+    var x = o || {}, delta = num(x.delta, 0), tmm = num(x.tmm, 7.5);
+    var liste = (x.credits || []).filter(function (c) { return c && c.tauxType === "variable" && num(c.mensualite, 0) > 0 && num(c.moisRestants, 0) > 0; });
+    var exemple = !liste.length;
+    if (exemple) liste = [{ libelle: "Exemple : 150 000 DT sur 20 ans à TMM + 2,5", capitalRestant: 150000, moisRestants: 240, tauxPct: tmm + 2.5, mensualite: arr(mensualite(150000, tmm + 2.5, 240)) }];
+    var lignes = liste.map(function (c) {
+      var rd = restantDu(c), n = Math.round(num(c.moisRestants, 0)), t = num(c.tauxPct, 0);
+      var avant = arr(mensualite(rd, t, n)), apres = arr(mensualite(rd, Math.max(0, t + delta), n)), plus1 = arr(mensualite(rd, t + 1, n));
+      return { libelle: c.libelle, restantDu: rd, moisRestants: n, tauxPct: t, avant: avant, apres: apres, ecart: arr(apres - avant), plusUnPoint: arr(plus1 - avant) };
+    });
+    return { exemple: exemple, lignes: lignes, ecartTotal: arr(lignes.reduce(function (s, l) { return s + l.ecart; }, 0)),
+      plusUnPointTotal: arr(lignes.reduce(function (s, l) { return s + l.plusUnPoint; }, 0)) };
+  }
+
   return { FRAIS: FRAIS, PREMIER: PREMIER, IRA_PCT: IRA_PCT, fraisPrix: fraisPrix, projet: projet, quandAcheter: quandAcheter,
-    comparer: comparer, regrouper: regrouper, restantDu: restantDu, mensualite: mensualite };
+    comparer: comparer, regrouper: regrouper, restantDu: restantDu, mensualite: mensualite, serieTMM: serieTMM, effetTMM: effetTMM };
 });

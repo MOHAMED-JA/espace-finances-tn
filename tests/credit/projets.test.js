@@ -74,3 +74,17 @@ test("regrouper : restant dû, indemnité 1,5 %, verdict honnête quand la mensu
   assert.equal(r.verdict, "mensualite_baisse_cout_monte");
   assert.equal(P.regrouper({ credits: [] }), null);
 });
+
+test("TMM : série triée, variation du mois ; effet sur un crédit variable, ou l'exemple sans crédit variable", () => {
+  const s = P.serieTMM([{ mois: "2026-10-01", taux: 7.2 }, { mois: "2026-09-01", taux: 7.45 }, { mois: "x", taux: 3 }, { mois: "2026-08-01", taux: 7.5 }]);
+  assert.deepEqual(s.serie.map((x) => x.mois), ["2026-08-01", "2026-09-01", "2026-10-01"]);
+  assert.equal(s.dernier.taux, 7.2);
+  assert.equal(s.variation, -0.25);
+  const ex = P.effetTMM({ delta: -0.25, tmm: 7.2, credits: [{ tauxType: "fixe", mensualite: 300, moisRestants: 20 }] });
+  assert.equal(ex.exemple, true);
+  assert.ok(ex.lignes[0].ecart < -20 && ex.lignes[0].ecart > -30, "baisse d'environ 25 DT : " + ex.lignes[0].ecart);
+  assert.ok(ex.lignes[0].plusUnPoint > 95 && ex.lignes[0].plusUnPoint < 105);
+  const v = P.effetTMM({ delta: 0.5, tmm: 7.5, credits: [{ libelle: "Maison", tauxType: "variable", mensualite: 1200, tauxPct: 10, moisRestants: 180 }] });
+  assert.equal(v.exemple, false);
+  assert.ok(v.ecartTotal > 0);
+});

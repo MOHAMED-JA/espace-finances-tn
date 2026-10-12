@@ -524,3 +524,10 @@
   .ce-table--offres th { grid-column: 1 / -1; }
   .ce-table--offres .nb { text-align: left; }
 }
+.tmm-cadre { padding: 8px 4px 0; border-radius: var(--r-int); background: var(--surface-2); }
+.tmm-courbe { display: block; width: 100%; height: auto; }
+.tmm-courbe__grille { stroke: var(--filet); stroke-width: 1; }
+.tmm-courbe__axe { fill: var(--encre-2); font-size: 12px; font-family: inherit; }
+.tmm-courbe__ligne { fill: none; stroke: var(--credit); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.tmm-courbe__point { fill: var(--surface); stroke: var(--credit); stroke-width: 2; }
+.tmm-courbe__dernier { fill: var(--credit); stroke: var(--surface); stroke-width: 2; }

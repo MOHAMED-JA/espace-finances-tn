@@ -1452,6 +1452,48 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => location.hash === "#credit");
   });
 
+  await etape("TMM du mois : saisi dans Administration, appliqué à tout Orbite, courbe et effet dans Crédit › Le TMM, retour au défaut", async () => {
+    faux.marquerAdmin("aziz@exemple.tn");
+    const m = new Date(), mois = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+    const ce = mois(m), avant = mois(new Date(m.getFullYear(), m.getMonth() - 1, 1));
+    await page.goto(base + "/espace/#admin");
+    await page.reload();
+    await page.waitForSelector("#admin-tmm-form", { state: "visible" });
+    await page.fill("#admin-tmm-mois", avant);
+    await page.fill("#admin-tmm-taux", "7,45");
+    await page.click('#admin-tmm-form button[type="submit"]');
+    await page.waitForFunction(() => document.querySelectorAll("#admin-tmm-liste li").length === 1);
+    await page.fill("#admin-tmm-mois", ce);
+    await page.fill("#admin-tmm-taux", "abc");
+    await page.click('#admin-tmm-form button[type="submit"]');
+    await page.waitForSelector("#admin-tmm-erreur:not([hidden])");
+    await page.fill("#admin-tmm-taux", "7,2");
+    await page.click('#admin-tmm-form button[type="submit"]');
+    await page.waitForFunction(() => document.querySelectorAll("#admin-tmm-liste li").length === 2);
+    assert(faux.tmm().get(ce + "-01") === 7.2, "TMM enregistré");
+    await page.waitForFunction(() => window.OrbiteCalcul.TMM === 7.2 && window.MoteurCredit.DEFAUTS.tmm === 7.2);
+    assert(!/Nouveau TMM/.test(await page.textContent(".toasts")), "pas d'annonce à l'administrateur qui vient de le saisir");
+    assert(/7,2 %/.test(await page.textContent("#admin-tmm-dernier")), "dernier TMM affiché");
+    await page.screenshot({ path: path.join(CAPTURES, "admin-tmm.png") });
+    await page.goto(base + "/espace/#credit?espace=tmm");
+    await page.waitForSelector("#credit-tmm:not([hidden]) .tmm-courbe");
+    const txt = await page.textContent("#credit-tmm");
+    assert(/7,2 %/.test(txt) && /−0,25 point/.test(txt), "TMM du mois et variation : " + txt.slice(0, 300));
+    assert((await page.$$("#credit-tmm .tmm-courbe circle")).length === 2, "deux points sur la courbe");
+    assert(await page.evaluate(() => JSON.parse(localStorage.getItem("orbite-tmm")).taux === 7.2), "gardé sur l'appareil");
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: path.join(CAPTURES, "credit-tmm.png") });
+    /* Nouveau TMM vu au chargement suivant : annoncé une fois. */
+    await page.evaluate(() => localStorage.setItem("orbite-tmm-vu", "2000-01-01"));
+    await page.reload();
+    await page.waitForFunction(() => /Nouveau TMM : 7,2 %/.test(document.body.textContent), null, { timeout: 15000 });
+    /* Retour au défaut quand plus rien n'est saisi. */
+    await page.goto(base + "/espace/#admin");
+    await page.waitForSelector("#admin-tmm-liste li");
+    while (await page.$("#admin-tmm-liste li button")) { const n = (await page.$$("#admin-tmm-liste li")).length; await page.click("#admin-tmm-liste li button"); await page.waitForFunction((k) => document.querySelectorAll("#admin-tmm-liste li").length === k - 1, n); }
+    await page.waitForFunction(() => window.OrbiteCalcul.TMM === 7.5 && window.MoteurCredit.DEFAUTS.tmm === 7.5 && !localStorage.getItem("orbite-tmm"));
+  });
+
   await etape("crédit : lire une offre (texte), contrôler le tableau de la banque (exemple exact, PDF avec une erreur)", async () => {
     await page.goto(base + "/espace/#credit");
     await page.waitForSelector("#cr-outil-offre");

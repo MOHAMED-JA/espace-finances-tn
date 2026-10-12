@@ -38,6 +38,8 @@ function creer() {
   let dernierAssistant = null, assistantBientot = false, dernierAuth = null;
   const alertes = [];
   const reglages = { offert_nouveaux: false };
+  /* TMM du mois (migration 0015) : mois « AAAA-MM-01 » → taux. */
+  const tmm = new Map();
   const usage = new Map();  // "type:cle" -> nombre
   /* Rappels par email (migration 0011) : plan, désinscription par jeton, confirmations demandées. */
   const rappelsEmail = new Map();  // user id -> { plan, jeton, desinscrit_le, adresse_confirmee, confirmation_adresse, confirmation_envoyee_le, confirmation_jeton }
@@ -384,6 +386,7 @@ function creer() {
     if (url.pathname === "/rest/v1/rpc/rappels_mon_etat") return repondre(route, 200, rappelsEmail.has(u.id) ? etatRappels(rappelsEmail.get(u.id)) : {});
     if (url.pathname === "/rest/v1/rpc/rappels_reactiver") { const r = ligneRappels(u.id); r.desinscrit_le = null; return repondre(route, 200, etatRappels(r)); }
     if (url.pathname === "/rest/v1/rpc/est_admin") return repondre(route, 200, admins.has(u.id));
+    if (url.pathname === "/rest/v1/rpc/tmm_historique") return repondre(route, 200, [...tmm.entries()].sort((x, y) => (x[0] < y[0] ? 1 : -1)).slice(0, corps.p_mois || 24).map(([mois, taux]) => ({ mois, taux })));
     if (url.pathname === "/rest/v1/rpc/offres_en_cours") return repondre(route, 200, FORMULES.map((f) => prixFormule(f.cle, corps.p_code)));
     if (url.pathname === "/rest/v1/rpc/verifier_code") {
       const c = codes.get(String(corps.p_code || "").trim().toUpperCase());
@@ -454,6 +457,13 @@ function creer() {
         if (!corps.p_offert && a.offert && a.offert_par) Object.assign(a, { offert: false, offert_par: null }); });
       return repondre(route, 200, etatOffert());
     }
+    if (url.pathname === "/rest/v1/rpc/admin_tmm_saisir") {
+      const t = Number(corps.p_taux), m = String(corps.p_mois || "").slice(0, 7) + "-01";
+      if (!(t > 0 && t < 30) || !/^\d{4}-\d{2}-01$/.test(m)) return repondre(route, 400, { code: "22023", message: "TMM invalide" });
+      tmm.set(m, Math.round(t * 1000) / 1000);
+      return repondre(route, 200, { mois: m, taux: tmm.get(m) });
+    }
+    if (url.pathname === "/rest/v1/rpc/admin_tmm_supprimer") { tmm.delete(String(corps.p_mois || "").slice(0, 7) + "-01"); return repondre(route, 200, null); }
     if (url.pathname === "/rest/v1/rpc/admin_offrir_nouveaux") { reglages.offert_nouveaux = !!corps.p_actif; return repondre(route, 200, etatOffert()); }
     if (url.pathname === "/rest/v1/rpc/admin_codes") {
       const l = [...parrainages.values()];
@@ -501,6 +511,7 @@ function creer() {
     abonnementDe(email) { return abonnementDe(comptes.get(email).user.id); },
     partageDe(email) { return etatPartage(comptes.get(email).user.id); },
     marquerAdmin(email) { admins.add(comptes.get(email).user.id); },
+    tmm() { return new Map(tmm); },
     dernierAssistant() { return dernierAssistant; },
     dernierAuth() { return dernierAuth; },
     assistantSansCle(v) { assistantBientot = v; },

@@ -607,6 +607,18 @@
   /* Taux du marché pour comparer les crédits déclarés (crédit « autre » : taux d'un crédit à la consommation). */
   var TAUX_MARCHE = { immo: TMM + 2.5, auto: TMM + 3, conso: TMM + 3.5, autre: TMM + 3.5 };
 
+  /* TMM du mois (point 5) : saisi par l'administrateur, il remplace la valeur par défaut dans tous les calculs. */
+  var MARGES = { immo: 2.5, immo25: 2.5, auto: 3, conso: 3.5 };
+  function definirTMM(t) {
+    var v = Number(t);
+    if (!(v > 0 && v < 30)) return false;
+    TMM = Math.round(v * 1000) / 1000;
+    CREDITS_TYPES.forEach(function (c) { if (MARGES[c.cle] != null) c.tauxPct = TMM + MARGES[c.cle]; });
+    TAUX_MARCHE = { immo: TMM + 2.5, auto: TMM + 3, conso: TMM + 3.5, autre: TMM + 3.5 };
+    API.TMM = TMM;
+    return true;
+  }
+
   /* Crédits en cours : ceux dont le taux est nettement inférieur au marché (à garder) ou supérieur (à renégocier). */
   function analyseTaux(p) {
     var bas = [], hauts = [];
@@ -1077,12 +1089,13 @@
     return sy;
   }
 
-  return {
-    TMM: TMM, CREDITS_TYPES: CREDITS_TYPES, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, pension: pension, futursRevenu: futursRevenu, lireEmail: lireEmail, lireTelephone: lireTelephone, formatTelephone: formatTelephone, contratCommence: contratCommence, normaliserChangement: normaliserChangement, normaliserScenario: normaliserScenario, MAX_SCENARIOS: MAX_SCENARIOS, MAX_CHANGEMENTS: MAX_CHANGEMENTS, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
+  var API = {
+    TMM: TMM, definirTMM: definirTMM, CREDITS_TYPES: CREDITS_TYPES, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, pension: pension, futursRevenu: futursRevenu, lireEmail: lireEmail, lireTelephone: lireTelephone, formatTelephone: formatTelephone, contratCommence: contratCommence, normaliserChangement: normaliserChangement, normaliserScenario: normaliserScenario, MAX_SCENARIOS: MAX_SCENARIOS, MAX_CHANGEMENTS: MAX_CHANGEMENTS, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
     profilParDefaut: profilParDefaut, normaliser: normaliser, creditTermine: creditTermine, age: age, etatSalaire: etatSalaire, entreeBrut: entreeBrut,
     tranche: tranche, salaire: salaire, augmentation: augmentation, calendrierPrimes: calendrierPrimes, impotRestantAnnee: impotRestantAnnee,
     capitalPourMensualite: capitalPourMensualite, mensualitePourCapital: mensualitePourCapital, capacite: capacite,
     epargnePour: epargnePour, suggestionsEpargne: suggestionsEpargne, budget: budget, estimationContrat: estimationContrat, paliersMarge: paliersMarge, tauxImmo: tauxImmo, tauxNouveaux: tauxNouveaux, echeancier: echeancier, analyseTaux: analyseTaux, sortieEndettement: sortieEndettement,
     versementPourCapital: versementPourCapital, projet: projet, conseils: conseils, synthese: synthese
   };
+  return API;
 });

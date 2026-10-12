@@ -754,6 +754,8 @@
     choisir: choisir,
     majProfil: majProfil,
     surProfil: surProfil,
+    /* Nouveau TMM (ou autre paramètre global) : tout est recalculé, sans rien enregistrer. */
+    recalculer: function () { if (profil) recalculer(); },
     profilVierge: function () { return profilVierge; },
     utilisateur: function () { return utilisateur; },
     modifie: modifie,

@@ -9,7 +9,7 @@
   var O = window.Orbite, P = window.CreditProjets, OC = window.OrbiteCalcul, doc = document;
   if (!O || !P || !OC) return;
   var $ = O.$, F = O.F;
-  var ESPACES = ["simuler", "projet", "offres", "regrouper"];
+  var ESPACES = ["simuler", "projet", "offres", "regrouper", "tmm"];
   var etat = { projet: null, offres: null, regrouper: null };
 
   /* ---------- Petits outils ---------- */
@@ -59,6 +59,7 @@
     if (cle === "projet") rendreProjet();
     if (cle === "offres") rendreOffres();
     if (cle === "regrouper") rendreRegrouper();
+    if (cle === "tmm" && window.OrbiteTMM) window.OrbiteTMM.rendreOnglet();
     requestAnimationFrame(function () { O.placerPastilles($("vue-credit")); });
   }
   function choisir(cle, focus) {

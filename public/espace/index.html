@@ -718,11 +718,13 @@
             <button type="button" role="tab" id="ce-tab-projet" aria-controls="credit-projet" aria-selected="false" tabindex="-1" data-espace="projet">Mon projet immobilier</button>
             <button type="button" role="tab" id="ce-tab-offres" aria-controls="credit-offres" aria-selected="false" tabindex="-1" data-espace="offres">Comparer mes offres</button>
             <button type="button" role="tab" id="ce-tab-regrouper" aria-controls="credit-regrouper" aria-selected="false" tabindex="-1" data-espace="regrouper">Regrouper mes crédits</button>
+            <button type="button" role="tab" id="ce-tab-tmm" aria-controls="credit-tmm" aria-selected="false" tabindex="-1" data-espace="tmm">Le TMM</button>
           </div>
           <div id="credit-racine" class="module__racine" role="tabpanel" aria-labelledby="ce-tab-simuler"><div class="squelette module__attente"></div></div>
           <div id="credit-projet" class="module__racine ce-espace" role="tabpanel" aria-labelledby="ce-tab-projet" hidden></div>
           <div id="credit-offres" class="module__racine ce-espace" role="tabpanel" aria-labelledby="ce-tab-offres" hidden></div>
           <div id="credit-regrouper" class="module__racine ce-espace" role="tabpanel" aria-labelledby="ce-tab-regrouper" hidden></div>
+          <div id="credit-tmm" class="module__racine ce-espace" role="tabpanel" aria-labelledby="ce-tab-tmm" hidden></div>
         </section>
 
         <!-- ======== Simulations ======== -->
@@ -1016,6 +1018,17 @@
                   </div>
                 </div>
                 <p class="admin__note admin__offert-astuce">Pour un seul compte : bouton « Offrir à vie » ou « Retirer » dans la liste <a href="#admin-t-liste">Comptes</a>, plus bas.</p>
+              </section>
+              <section class="panneau admin__bloc admin__tmm" aria-labelledby="admin-t-tmm">
+                <div class="admin__tete"><h2 id="admin-t-tmm">TMM du mois</h2><span class="puce puce--credit" id="admin-tmm-dernier"></span></div>
+                <p class="admin__note">Le taux publié chaque mois par la Banque centrale de Tunisie. Le dernier saisi s'applique à tout Orbite (capacité, crédit, Et si…), pour tous les comptes.</p>
+                <form class="admin__tmm-form" id="admin-tmm-form" novalidate>
+                  <div class="champ"><label for="admin-tmm-mois">Mois</label><div class="saisie"><input type="month" id="admin-tmm-mois" required></div></div>
+                  <div class="champ"><label for="admin-tmm-taux">TMM</label><div class="saisie"><input type="text" inputmode="decimal" id="admin-tmm-taux" autocomplete="off" placeholder="7,45" required><span class="saisie__unite">%</span></div></div>
+                  <button type="submit" class="bouton bouton--plein bouton--petit">Enregistrer</button>
+                </form>
+                <p class="erreur-champ" id="admin-tmm-erreur" role="alert" hidden></p>
+                <ul class="admin__tmm-liste" id="admin-tmm-liste" aria-label="TMM saisis"></ul>
               </section>
               <div class="admin__deux">
                 <section class="panneau admin__bloc" aria-labelledby="admin-t-alertes">
@@ -2158,7 +2171,7 @@
   <script src="/moteurs/vie/xlsx.js"></script>
   <script src="/moteurs/vie/releve.js"></script>
   <script src="/espace/js/module-epargne.js"></script>
-  <script src="/moteurs/credit/credit.js"></script><script src="/moteurs/credit/phrase.js"></script><script src="/moteurs/credit/audit.js"></script><script src="/espace/js/credit-documents.js"></script><script src="/espace/js/module-credit.js"></script><script src="/moteurs/credit/projets.js"></script><script src="/espace/js/credit-espaces.js"></script>
+  <script src="/moteurs/credit/credit.js"></script><script src="/espace/js/tmm.js"></script><script src="/moteurs/credit/phrase.js"></script><script src="/moteurs/credit/audit.js"></script><script src="/espace/js/credit-documents.js"></script><script src="/espace/js/module-credit.js"></script><script src="/moteurs/credit/projets.js"></script><script src="/espace/js/credit-espaces.js"></script>
   <script src="/commun/fuites.js"></script>
   <script src="/espace/js/comparer-calcul.js"></script>
   <script src="/espace/js/simulations.js"></script>
