@@ -96,9 +96,13 @@
         <button type="button" class="bouton bouton--fantome bouton--petit barre__aide" id="aide-visite" aria-label="Guide : revoir la visite guidée" title="Revoir la visite guidée"><svg aria-hidden="true"><use href="/orbite/icones.svg#boussole"/></svg><span class="barre__aide-lib" aria-hidden="true">Guide</span></button>
         <a class="pastille-acces" id="pastille-acces" href="#abonnement" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#couronne"/></svg><span id="pastille-acces-lib"></span></a>
         <div class="barre__actions" id="barre-actions" hidden>
-          <button type="button" class="bouton bouton--petit" id="reprendre-profil"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span class="bouton__lib">Reprendre mon profil</span></button>
-          <button type="button" class="bouton bouton--petit" id="ajouter-profil" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg><span class="bouton__lib">Ajouter à mon profil</span></button>
-          <button type="button" class="bouton bouton--petit" id="partager-sim" aria-haspopup="dialog"><svg aria-hidden="true"><use href="/orbite/icones.svg#partager"/></svg><span class="bouton__lib">Partager</span></button>
+          <button type="button" class="bouton bouton--petit" id="reprendre-profil" title="Reprendre mon profil"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span class="bouton__lib">Reprendre mon profil</span></button>
+          <button type="button" class="bouton bouton--petit" id="ajouter-profil" title="Ajouter à mon profil" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg><span class="bouton__lib">Ajouter à mon profil</span></button>
+          <span class="barre__histo" role="group" aria-label="Historique des modifications">
+            <button type="button" class="bouton bouton--fantome bouton--petit barre__histo-b" id="histo-annuler" aria-label="Annuler la dernière modification (Ctrl Z)" title="Annuler (Ctrl Z)" disabled><svg aria-hidden="true"><use href="/orbite/icones.svg#annuler"/></svg></button>
+            <button type="button" class="bouton bouton--fantome bouton--petit barre__histo-b" id="histo-retablir" aria-label="Rétablir la modification (Ctrl Y)" title="Rétablir (Ctrl Y)" disabled><svg aria-hidden="true"><use href="/orbite/icones.svg#retablir"/></svg></button>
+          </span>
+          <button type="button" class="bouton bouton--petit" id="partager-sim" aria-haspopup="dialog" title="Partager : lien, QR code, WhatsApp, e-mail"><svg aria-hidden="true"><use href="/orbite/icones.svg#partager"/></svg><span class="bouton__lib">Partager</span></button>
           <button type="button" class="bouton bouton--plein bouton--petit" id="enregistrer"><svg aria-hidden="true"><use href="/orbite/icones.svg#enregistrer"/></svg><span class="bouton__lib" id="enregistrer-lib">Enregistrer</span></button>
         </div>
       </header>
@@ -1131,6 +1135,16 @@
                 </div>
               </div>
             </section>
+            <section class="panneau reglage" aria-labelledby="r-lisible">
+              <div class="reglage__texte"><h2 id="r-lisible">Lisibilité</h2><p>Haute lisibilité : texte plus grand, gris plus foncés, liens soulignés et contour bien visible autour de l'élément actif. Retenue sur votre compte, sur tous vos appareils. Aussi dans Ctrl K.</p></div>
+              <div class="reglage__controle">
+                <div class="bascule" id="choix-lisible" role="radiogroup" aria-label="Lisibilité">
+                  <label><input type="radio" name="lisible" value=""><span>Normale</span></label>
+                  <label><input type="radio" name="lisible" value="oui"><span>Haute lisibilité</span></label>
+                  <i class="bascule__pastille" aria-hidden="true"></i>
+                </div>
+              </div>
+            </section>
             <section class="panneau reglage" aria-labelledby="r-mouvement">
               <div class="reglage__texte"><h2 id="r-mouvement">Animations</h2><p>Réduisez les mouvements si les animations vous gênent ; les fondus doux restent.</p></div>
               <div class="reglage__controle">
@@ -2067,6 +2081,8 @@
   <script src="/espace/js/simulations.js"></script>
   <script src="/commun/partage-lien.js"></script>
   <script src="/espace/js/partage-simulation.js"></script>
+  <script src="/espace/js/lisibilite.js"></script>
+  <script src="/espace/js/historique.js"></script>
   <script src="/espace/js/abonnement-calcul.js"></script>
   <script src="/espace/js/abonnement.js"></script>
   <script src="/espace/js/parametres.js"></script>

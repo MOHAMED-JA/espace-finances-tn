@@ -2351,6 +2351,18 @@
       };
     },
     nomParDefaut: function () { return nomScenario(sc0()); },
+    /* Annuler / rétablir (Lot 2) : tous les scénarios A, B, C et l'onglet actif. */
+    instantane: function () { return JSON.stringify({ s: S.scenarios, a: S.actif }); },
+    restaurer: function (t) {
+      var x = null;
+      try { x = JSON.parse(t); } catch (e) { x = null; }
+      if (!x || !Array.isArray(x.s) || !x.s.length || !x.s[x.a]) return false;
+      S.scenarios = x.s; S.actif = x.a; S.precedentM = null;
+      ecrireEditeur();
+      calculer(true);
+      var O = Orb(); if (O) requestAnimationFrame(function () { O.placerPastilles(racine); });
+      return true;
+    },
     /* Partage (Lot 2) : le crédit actif vers le simulateur public, montants seuls ; ce que la page ne montre pas est listé. */
     pourPartage: function () {
       var sc = sc0(), L = window.PartageLien;

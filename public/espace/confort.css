@@ -95,3 +95,39 @@ dialog.dialogue--partage { width: min(460px, calc(100vw - 24px)); }
 @media (max-width: 520px) {
   .partager__qr { flex-direction: column; align-items: flex-start; }
 }
+
+/* ---------- Annuler / rétablir (Lot 2) ---------- */
+.barre__histo { display: inline-flex; gap: 2px; }
+.barre__histo-b { width: 36px; padding: 0; }
+.barre__histo-b svg { width: 18px; height: 18px; }
+.barre__histo-b:disabled { opacity: .38; cursor: default; }
+@media (max-width: 640px) { .barre__histo { display: none; } }
+
+/* ---------- Haute lisibilité (Lot 2) ----------
+   Texte agrandi par « zoom » sur le contenu (les tailles sont en px), gris plus foncés, filets marqués, liens soulignés. */
+:root[data-lisible="oui"] { --encre-2: #20252F; --encre-3: #3B4150; --filet: #C3C9D5; --filet-fort: #9AA2B3; }
+:root[data-lisible="oui"][data-theme="dark"] { --encre-2: #E6EAF1; --encre-3: #C9CFDA; --filet: #3B4253; --filet-fort: #5A6378; }
+:root[data-lisible="oui"] .principal { zoom: 1.12; }
+:root[data-lisible="oui"] .dialogue { zoom: 1.08; }
+:root[data-lisible="oui"] .toast { zoom: 1.1; }
+@media (max-width: 640px) {
+  :root[data-lisible="oui"] .principal { zoom: 1.07; }
+  :root[data-lisible="oui"] .dialogue { zoom: 1; font-size: 105%; }
+}
+:root[data-lisible="oui"] .principal a:not(.bouton):not([class*="carte"]):not([role="tab"]) { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1.5px; }
+:root[data-lisible="oui"] :focus-visible { outline-width: 3px !important; outline-offset: 3px !important; }
+:root[data-lisible="oui"] ::placeholder { color: var(--encre-3); opacity: 1; }
+:root[data-lisible="oui"] .champ__aide, :root[data-lisible="oui"] .note { color: var(--encre-2); }
+/* Barre des modules : avec ↶ ↷ et « Partager », « Guide » et « Partager » passent en icône seule sous 1480 px. */
+@media (min-width: 641px) and (max-width: 1480px) {
+  .barre { gap: 8px; padding-left: 20px; padding-right: 20px; }
+  .barre__histo-b { width: 32px; }
+  .barre__aide:not(.barre__palette):not(.barre__apps) { width: 36px; padding: 0; justify-content: center; }
+  .barre__aide:not(.barre__palette):not(.barre__apps) .barre__aide-lib { display: none; }
+  #partager-sim { width: 36px; padding: 0; justify-content: center; }
+  #partager-sim .bouton__lib { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+@media (min-width: 641px) and (max-width: 1280px) {
+  .barre__actions .bouton:not(#enregistrer) { width: 36px; padding: 0; justify-content: center; }
+  .barre__actions .bouton:not(#enregistrer) .bouton__lib { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}

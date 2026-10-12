@@ -1228,6 +1228,59 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.click("#dlg-partager .bouton--fermer");
   });
 
+  await etape("haute lisibilité (compte, avant l'affichage, Ctrl K) ; annuler / rétablir (boutons, Ctrl Z / Ctrl Y)", async () => {
+    await page.goto(base + "/espace/#compte?onglet=preferences");
+    await page.waitForSelector("#choix-lisible", { state: "visible" });
+    await page.click('#choix-lisible label:has(input[value="oui"])');
+    assert((await page.getAttribute("html", "data-lisible")) === "oui", "lisibilité appliquée");
+    await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_lisible === "oui");
+    /* Retenue sur le compte : un autre appareil (stockage vide) l'applique au démarrage. */
+    /* La question « partager votre fiche avec l'administrateur » est traitée ailleurs : on la marque répondue. */
+    await page.evaluate(() => window.Espace.compte.preferences({ orbite_partage_demande: new Date().toISOString(), orbite_partage_reponse: "non" }));
+    await page.evaluate(() => localStorage.removeItem("ef-lisible"));
+    await page.goto(base + "/espace/#credit");
+    await page.reload();
+    await page.waitForFunction(() => document.documentElement.getAttribute("data-lisible") === "oui");
+    await page.waitForSelector("#cr-capital");
+    const lsl = await page.evaluate(() => [localStorage.getItem("ef-lisible"), Object.keys(localStorage).join(",")]);
+    assert(lsl[0] === "oui", "recopiée sur l'appareil : " + JSON.stringify(lsl));
+    await page.screenshot({ path: path.join(CAPTURES, "lisibilite-credit.png") });
+    for (const l of [1280, 1024, 800]) {
+      await page.setViewportSize({ width: l, height: 700 });
+      const deborde = await page.evaluate(() => { const b = document.getElementById("barre"); return b.scrollWidth > b.clientWidth + 1 || Array.from(b.querySelectorAll("button:not([hidden]), a:not([hidden])")).some((x) => x.offsetParent && x.getBoundingClientRect().right > window.innerWidth); });
+      await page.screenshot({ path: path.join(CAPTURES, "barre-" + l + ".png"), clip: { x: 0, y: 0, width: l, height: 80 } });
+      assert(!deborde, "barre sans débordement à " + l + " px");
+    }
+    await page.setViewportSize({ width: 1360, height: 900 });
+    /* Annuler / rétablir. */
+    const avant = Number((await page.inputValue("#cr-capital")).replace(/\D/g, ""));
+    await page.fill("#cr-capital", "90 000");
+    await page.press("#cr-capital", "Tab");
+    await page.waitForFunction(() => window.OrbiteHistorique.position().n === 2);
+    assert(!(await page.isDisabled("#histo-annuler")) && await page.isDisabled("#histo-retablir"), "annuler possible, rétablir non");
+    await page.click("#histo-annuler");
+    await page.waitForFunction((v) => Number(document.getElementById("cr-capital").value.replace(/\D/g, "")) === v, avant);
+    await page.waitForFunction(() => !document.getElementById("histo-retablir").disabled);
+    await page.click("#histo-retablir");
+    await page.waitForFunction(() => Number(document.getElementById("cr-capital").value.replace(/\D/g, "")) === 90000);
+    await page.waitForTimeout(1000);
+    await page.evaluate(() => document.activeElement && document.activeElement.blur());
+    await page.keyboard.press("Control+z");
+    await page.waitForFunction((v) => Number(document.getElementById("cr-capital").value.replace(/\D/g, "")) === v, avant);
+    await page.waitForTimeout(1000);
+    await page.keyboard.press("Control+y");
+    await page.waitForFunction(() => Number(document.getElementById("cr-capital").value.replace(/\D/g, "")) === 90000);
+    await page.waitForTimeout(1000);
+    /* Ctrl K : retour à la lisibilité normale. */
+    await page.keyboard.press("Control+k");
+    await page.waitForSelector("#dlg-palette[open]");
+    await page.fill("#palette-q", "lisibilite");
+    await page.waitForFunction(() => /lisibilité normale/.test(document.getElementById("palette-liste").textContent));
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => !document.documentElement.hasAttribute("data-lisible"));
+    await page.waitForFunction(() => !window.Orbite.utilisateur().user_metadata.orbite_lisible);
+  });
+
   await etape("crédit : lire une offre (texte), contrôler le tableau de la banque (exemple exact, PDF avec une erreur)", async () => {
     await page.goto(base + "/espace/#credit");
     await page.waitForSelector("#cr-outil-offre");

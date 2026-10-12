@@ -68,6 +68,12 @@
       action("a-export", "Exporter mes données", "Fichier JSON de tout votre profil", "exporter donnees json sauvegarde", function () { aller("#compte?onglet=donnees"); surVue("compte", function () { cliquer("exporter"); }); }),
       action("a-deconnexion", "Se déconnecter", "", "deconnexion sortir quitter", function () { cliquer("deconnexion"); })
     ];
+    /* Lot 2 : haute lisibilité, annuler / rétablir, partager. */
+    var LI = window.OrbiteLisibilite, H = window.OrbiteHistorique;
+    if (LI) L.push(action("a-lisible", LI.actif() ? "Revenir à la lisibilité normale" : "Activer la haute lisibilité", "Texte plus grand et plus contrasté, sur tous vos appareils", "lisibilite lisible lire texte grand gros taille contraste vue malvoyant accessibilite police", function () { LI.definir(!LI.actif()); }));
+    if (H && H.possible(-1)) L.push(action("a-annuler", "Annuler la dernière modification", "Ctrl Z", "annuler retour arriere defaire modification ctrl z", function () { H.annuler(); }));
+    if (H && H.possible(1)) L.push(action("a-retablir", "Rétablir la modification", "Ctrl Y", "retablir refaire ctrl y", function () { H.retablir(); }));
+    if (window.OrbitePartage && /^(salaire|credit|epargne)$/.test(O.lireRoute().vue)) L.push(action("a-partager", "Partager cette simulation", "Lien, QR code, WhatsApp, e-mail", "partager envoyer lien qr whatsapp email mail", function () { window.OrbitePartage.ouvrir(); }));
     /* Lanceur et simulateurs, ouverts dans Orbite. */
     L.push(action("a-apps", "Mes applications", "Les parties d'Orbite et les simulateurs", "applications apps lanceur outils simulateurs", function () { O.ouvrirApps(); }));
     (O.SIMULATEURS || []).forEach(function (x) {
@@ -161,7 +167,7 @@
   }
   var ICONES = { orbite: "orbite", salaire: "salaire", epargne: "epargne", credit: "credit", action: "etoile" };
   /* Une icône par entrée : la couleur dit le module, le dessin dit la chose. */
-  var ICO = { "v-orbite": "orbite", "v-profil": "profil", "v-salaire": "salaire", "v-epargne": "epargne", "v-credit": "credit", "v-progression": "hausse", "v-vie": "bouclier", "v-assistant": "etoile", "v-simulations": "liste", "v-compte": "compte", "s-retraite": "horloge", "s-objectifs": "cible", "s-annee": "etoile", "s-credits": "credit", "s-historique": "hausse", "s-budget": "epargne", "s-banque": "credit", "s-foyer": "profil", "s-fiscal": "epargne", "s-etsi": "comparer", "s-marge": "horloge", "s-preferences": "outils", "s-donnees": "telecharger", "a-salaire": "hausse", "a-nego": "cible", "a-apps": "grille", "a-dossier": "fiche", "a-fiche": "fiche", "a-visite": "boussole", "a-expert": "outils", "a-export": "telecharger", "a-deconnexion": "sortie", "m-fiscal": "horloge", "m-annee": "etoile" };
+  var ICO = { "v-orbite": "orbite", "v-profil": "profil", "v-salaire": "salaire", "v-epargne": "epargne", "v-credit": "credit", "v-progression": "hausse", "v-vie": "bouclier", "v-assistant": "etoile", "v-simulations": "liste", "v-compte": "compte", "s-retraite": "horloge", "s-objectifs": "cible", "s-annee": "etoile", "s-credits": "credit", "s-historique": "hausse", "s-budget": "epargne", "s-banque": "credit", "s-foyer": "profil", "s-fiscal": "epargne", "s-etsi": "comparer", "s-marge": "horloge", "s-preferences": "outils", "s-donnees": "telecharger", "a-salaire": "hausse", "a-nego": "cible", "a-apps": "grille", "a-dossier": "fiche", "a-fiche": "fiche", "a-visite": "boussole", "a-expert": "outils", "a-export": "telecharger", "a-deconnexion": "sortie", "a-lisible": "lisible", "a-annuler": "annuler", "a-retablir": "retablir", "a-partager": "partager", "m-fiscal": "horloge", "m-annee": "etoile" };
   function majSelection() {
     liste.querySelectorAll("[role=option]").forEach(function (li, i) { li.setAttribute("aria-selected", i === sel ? "true" : "false"); });
     var s = liste.querySelector('[aria-selected="true"]');

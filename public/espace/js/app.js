@@ -268,6 +268,7 @@
 
   function moduleCourant() { var r = lireRoute(); return MODULES[r.vue] ? r.vue : null; }
   function modifie(vue) {
+    doc.dispatchEvent(new CustomEvent("orbite:modifie", { detail: { vue: vue } }));
     var s = simulationOuverte[vue];
     if (s && moduleCourant() === vue) $("enregistrer-lib").textContent = "Mettre à jour";
   }
