@@ -160,6 +160,8 @@
       return;
     }
     etat.racine.classList.remove("visite--centre");
+    /* La rubrique peut encore bouger après l'arrivée sur sa page (rendu, polices) : on la suit. */
+    if (etat.ro && etat.observee !== cible) { if (etat.observee) etat.ro.unobserve(etat.observee); etat.ro.observe(cible); etat.observee = cible; }
     var r = cible.getBoundingClientRect(), pad = 6;
     var x = Math.max(4, r.left - pad), y = Math.max(4, r.top - pad);
     var w = Math.min(vw - 8, r.right + pad) - x, hh = Math.min(vh - 8, r.bottom + pad) - y;
@@ -253,6 +255,8 @@
     doc.body.classList.add("visite-ouverte");
     window.addEventListener("resize", placerBientot);
     window.addEventListener("scroll", placerBientot, true);
+    /* Mise en page qui change sans défilement ni redimensionnement (page qui finit de s'afficher) : halo recalé. */
+    if (window.ResizeObserver) { etat.ro = new ResizeObserver(placerBientot); etat.ro.observe(doc.body); }
     montrerChoix();
   }
 
@@ -260,6 +264,7 @@
     if (!etat) return;
     window.removeEventListener("resize", placerBientot);
     window.removeEventListener("scroll", placerBientot, true);
+    if (etat.ro) etat.ro.disconnect();
     etat.racine.remove();
     doc.body.classList.remove("visite-ouverte");
     var prec = etat.precedent, chap = etat.chap, retour = etat.retour, ailleurs = chap && location.hash !== retour;

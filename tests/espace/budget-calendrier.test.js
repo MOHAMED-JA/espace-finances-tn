@@ -16,8 +16,18 @@ test("budget : enveloppes proposées depuis le profil, le reste réparti", () =>
   assert.equal(p.logement, 450);
   assert.equal(p.epargne, 150);
   const reste = 1862 - 530 - 450 - 150;
-  assert.equal(p.courses, Math.round(reste * 0.4 / 10) * 10);
-  assert.ok(e.reduce((s, x) => s + x.prevu, 0) <= 1862 + 10);
+  assert.equal(p.courses, Math.floor(reste * 0.4 / 10) * 10);
+  const total = e.reduce((s, x) => s + x.prevu, 0);
+  assert.ok(total <= 1862 && total > 1862 - 1, "la proposition ne dépasse jamais le revenu : " + total);
+});
+
+test("budget : jamais de proposition au-dessus du revenu, quel que soit le revenu", () => {
+  for (let net = 0; net <= 6000; net += 7) {
+    const e = B.proposition({ loyer: 0, credits: [{ mensualite: 2069, moisRestants: 40 }], contrats: [] }, net, M);
+    const total = e.reduce((s, x) => s + x.prevu, 0);
+    assert.ok(total <= Math.max(net, 2069) + 1e-9, net + " → " + total);
+    if (net >= 2069) assert.ok(net - total < 1, "reste réparti au dinar près : " + net + " → " + total);
+  }
 });
 
 test("budget : reste à vivre, montant par jour jusqu'à la paie, dépassements", () => {

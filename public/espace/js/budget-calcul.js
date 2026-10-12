@@ -33,7 +33,7 @@
 
   function arr(v) { return Math.round((v + (v >= 0 ? Number.EPSILON : -Number.EPSILON)) * 1000) / 1000; }
   function num(v, d) { var n = Number(v); return isFinite(n) ? n : d; }
-  function dizaine(v) { return Math.max(0, Math.round(v / 10) * 10); }
+  function dizaine(v) { return Math.max(0, Math.floor(v / 10 + 1e-9) * 10); }
   function cleMois(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); }
 
   /** Enveloppes proposées : p = profil normalisé (crédits avec moisRestants), net = net mensuel, m = aujourd'hui. */
@@ -42,8 +42,13 @@
     (x.credits || []).forEach(function (c) { if (num(c.mensualite, 0) > 0 && !(c.moisRestants === 0 && c.dureeMois > 0)) credits += num(c.mensualite, 0); });
     (x.contrats || []).forEach(function (c) { if (!(c.anneeDebut > 0) || c.anneeDebut * 12 + (c.moisDebut || 1) - 1 <= mt.getFullYear() * 12 + mt.getMonth()) epargne += num(c.versementMensuel, 0); });
     var logement = num(x.loyer, 0) + num(x.chargesFixes, 0), reste = Math.max(0, num(net, 0) - credits - logement - epargne);
+    /* Enveloppes libres arrondies à la dizaine inférieure ; « Divers » reçoit le reste exact (au dinar inférieur) :
+       la proposition ne dépasse jamais le revenu. */
+    var libres = 0;
+    ENVELOPPES.forEach(function (e) { if (PARTS[e.cle] && e.cle !== "divers") libres += dizaine(reste * PARTS[e.cle]); });
     return ENVELOPPES.map(function (e) {
-      var prevu = e.cle === "credits" ? arr(credits) : e.cle === "logement" ? arr(logement) : e.cle === "epargne" ? arr(epargne) : dizaine(reste * (PARTS[e.cle] || 0));
+      var prevu = e.cle === "credits" ? arr(credits) : e.cle === "logement" ? arr(logement) : e.cle === "epargne" ? arr(epargne)
+        : e.cle === "divers" ? Math.max(0, Math.floor(reste - libres)) : dizaine(reste * (PARTS[e.cle] || 0));
       return { cle: e.cle, libelle: e.libelle, prevu: prevu };
     });
   }
