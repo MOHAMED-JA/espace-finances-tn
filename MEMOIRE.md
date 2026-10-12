@@ -454,6 +454,47 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 sexsexagies. Programme de 6 fonctionnalités + « Mon dossier banque » (12 oct.)
+
+- **Programme choisi par l'utilisateur** (12 oct., après mes 10 propositions, toutes gratuites) :
+  1. **Dossier banque PDF** : livré, voir ci-dessous.
+  2. Comparateur d'offres d'emploi : net réel, valeur totale sur l'année, brut à demander.
+  3. Crédits à taux variable TMM : TMM + marge, simulation d'une hausse, TMM mis à jour par l'admin.
+  4. Rachat de crédit : garder ou faire racheter, gain net après frais, pénalités et assurance.
+  5. Budget du mois par enveloppes : saisie rapide, reste à dépenser jusqu'au salaire.
+  6. Calendrier tunisien des échéances : vignette, assurance, taxes, rentrée, Aïd ; rappels Brevo et provisions.
+  - **Écartés pour l'instant** : lecture du relevé bancaire, « Mes droits de salarié », double authentification, interface en arabe.
+  - **Règle** : une maquette validée avant chaque fonctionnalité.
+- **Dossier banque**
+  - Maquette validée : https://claude.ai/artifact/8NnkuJDLwQquGkvBjZ3uE6.
+  - Choix de l'utilisateur : employeur et poste **enregistrés dans le profil** ; crédit demandé **facultatif** (sans crédit : capacité seule et montant maximum par type) ; **dossier à deux noms au choix** en mode foyer.
+  - **Moteur** `public/espace/js/dossier-calcul.js` (UMD, `window.Dossier`) : `construire(sy, demande, options, maintenant)`. Il renvoie :
+    - `demandeur`, `revenus` (revenu retenu selon `baseBanque` / `revenuBanque`, hausses prévues), `credits` (terminés exclus, reste dû estimé si absent, « env. ») ;
+    - `capacite` (plafond = quotité × revenu, disponible, endettement), `maxParType` (durée bornée à 70 ans) ;
+    - `demande` (mensualité, endettement avant → après, `respecte`, `depassement`, `capitalMax`, échéancier par année, alerte au-delà de 70 ans) ;
+    - `paliers` (« Aujourd'hui » puis `capacite.paliers` d'Orbite), `pieces` (selon salarié ou retraité, type de crédit, deux noms) ;
+    - `reference` `DB-AAAAMMJJ-XXXX`, `options` (échéancier, paliers, pièces) et `coordonnees`.
+    - Deux noms : `OrbiteIntelligence.foyer` (revenus additionnés, crédits du conjoint déduits).
+    - Durées : immobilier 300 mois au plus, auto et conso 84. Taux proposé : `OrbiteCalcul.tauxNouveaux` (choisi, sinon crédit du même type, sinon marché).
+  - **PDF** `public/espace/js/dossier-pdf.js` (`window.DossierPDF.generer(d)` → Blob) :
+    - jsPDF local chargé à la demande, Helvetica, sobre : blanc, encre bleu nuit, touche violette ;
+    - tuiles (revenu retenu, endettement après, règle des 40 % respectée ou dépassée) ;
+    - sections Demandeur, Revenus, Co-emprunteur, Crédits en cours, Crédit demandé (jauge et note de calcul) ou Capacité, Échéancier (au-delà de 12 ans : 5 premières années, « ... », 4 dernières), Capacité dans le temps, Pièces, Méthode ;
+    - pied de page « Simulation indicative… ne vaut pas accord de la banque » ;
+    - un titre de section reste avec son bloc, et un tableau n'est jamais coupé s'il tient sur une page ;
+    - `txt()` remplace les caractères hors Windows-1252 (espaces fines, →).
+  - **Interface** :
+    - bouton `#dossier-ouvrir` dans l'en-tête du module Crédit (qui passe à la ligne comme Salaire) ; lien `#credit?dossier=1` ; `Orbite.ouvrirDossier()` ;
+    - fenêtre `#dlg-dossier` (`vue-dossier.js`, `dossier.css`) : bascule Immobilier / Auto / Conso / Aucun ; montant, durée, taux prérempli avec sa source, objet ; effet en direct (jauge, verdict vert ou rouge) ; « Dossier à deux noms » si le foyer est actif ; employeur et poste ; 4 interrupteurs ; montant exigé si un type est choisi ;
+    - la saisie est gardée par type (le choix du type est traité au `change` ; l'`input` du bouton radio est ignoré, sinon le montant passait à l'autre type) ;
+    - téléchargement `dossier-banque-<réf>.pdf` puis toast « envoyé à personne ».
+  - **Profil** : champs `employeur` et `poste` (60 caractères, nettoyés) dans « Votre emploi et votre salaire », réservés aux salariés.
+  - **Tests** :
+    - `tests/espace/dossier.test.js` (10, dont la génération du PDF sous Node avec jsPDF) ; unitaires 470 ;
+    - étape e2e « dossier banque » (capacité seule, crédit en direct, montant exigé, PDF valide, employeur enregistré, téléphone sans débordement) ;
+    - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
+  - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
+
 ## 3 quinsexagies. Vidéo promotionnelle 3D « Fintech cinéma » 30 s, 16:9 + 9:16 (12 oct., livrée)
 
 - **Pourquoi** : la vidéo de 45 s a été jugée trop proche de la première (mêmes couleurs, même interface à plat). L'utilisateur veut une promo « comme celle des grandes entreprises », sur le modèle d'une vidéo TikTok de theuxda (application mobile en 3D, musique électro-pop). Choix : **musique originale dans le même style** (la chanson de la vidéo est protégée par le droit d'auteur), **style « Fintech cinéma »**, **30 s**, **16:9 (YouTube, LinkedIn) + 9:16 (Reels, TikTok, Shorts)**.

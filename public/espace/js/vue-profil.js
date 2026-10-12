@@ -147,7 +147,7 @@
     if (el.type === "radio") { if (!el.checked) return; partiel[cle] = el.value; }
     else if (el.type === "checkbox") partiel[cle] = el.checked;
     else if (el.tagName === "SELECT") partiel[cle] = el.value;
-    else if (cle === "prenom" || cle === "nom" || cle === "banque" || cle === "conjointPrenom") partiel[cle] = el.value;
+    else if (cle === "prenom" || cle === "nom" || cle === "banque" || cle === "employeur" || cle === "poste" || cle === "conjointPrenom") partiel[cle] = el.value;
     else if (el.getAttribute("data-type") === "date") {
       var ok = el.value === "" || /^\d{4}-\d{2}-\d{2}$/.test(el.value);
       el.setAttribute("aria-invalid", ok && !(el.required && !el.value) ? "false" : "true");

@@ -288,6 +288,9 @@
       anneeNaissance: dateIso(p.dateNaissance, "1930-01-01", isoDecale(16)) ? +p.dateNaissance.slice(0, 4) : entier(p.anneeNaissance, d.anneeNaissance, 1930, anneeCourante() - 16),
       situation: choix(p.situation, ["celibataire", "marie", "divorce", "veuf"], "celibataire"),
       statut: choix(p.statut, ["cdi", "cdd", "fonctionnaire", "contractuel", "autre"], "cdi"),
+      /* Facultatifs, repris dans le dossier banque. */
+      employeur: texte(p.employeur, 60),
+      poste: texte(p.poste, 60),
       /* Ancienneté calculée depuis la date d'embauche quand elle est connue. */
       anciennete: dateIso(p.dateEmbauche, "1960-01-01", isoDecale(0)) ? Math.min(50, anneesDepuis(p.dateEmbauche)) : entier(p.anciennete, d.anciennete, 0, 50),
       montant: nombre(p.montant, d.montant, 0, 1e7),

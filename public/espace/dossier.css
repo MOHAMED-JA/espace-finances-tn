@@ -1,0 +1,43 @@
+/* Orbite — fenêtre « Préparer mon dossier banque » (module Crédit). */
+
+/* En-tête du module Crédit : le bouton passe sous le titre s'il manque de place. */
+#vue-credit .module__tete { flex-wrap: wrap; }
+#vue-credit .module__tete > div { flex: 1 1 260px; min-width: 0; }
+
+.dossier__sous { margin: 4px 0 0; font-size: 13.5px; color: var(--encre-3); line-height: 1.45; }
+.dossier__corps { display: grid; gap: 18px; }
+.dossier__bloc { margin: 0; padding: 0; border: 0; min-width: 0; display: grid; gap: 12px; }
+.dossier__bloc + .dossier__bloc { padding-top: 16px; border-top: 1px solid var(--filet); }
+.dossier__lib { padding: 0; margin-bottom: 2px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--encre-3); }
+.dossier__types span { padding: 0 6px; font-size: 14px; }
+.dossier .grille-champs { gap: 12px; }
+
+/* Effet en direct : mensualité, endettement, jauge et verdict. */
+.dossier__effet { display: grid; gap: 10px; padding: 14px 16px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--filet); transition: background-color 200ms ease, border-color 200ms ease; }
+.dossier__effet[data-etat="ok"] { background: var(--succes-doux); border-color: color-mix(in srgb, var(--succes) 35%, transparent); }
+.dossier__effet[data-etat="ko"] { background: var(--erreur-doux); border-color: color-mix(in srgb, var(--erreur) 35%, transparent); }
+.dossier__ligne { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 14px; color: var(--encre-2); }
+.dossier__ligne b { font-family: var(--mono); font-size: 15px; font-weight: 600; color: var(--encre); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dossier__jauge { position: relative; height: 10px; border-radius: 999px; background: var(--filet); overflow: visible; }
+.dossier__jauge i { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 999px; transition: width 320ms var(--sortie); }
+.dossier__jauge-avant { background: var(--encre-3); }
+.dossier__jauge-apres { background: var(--succes); }
+.dossier__effet[data-etat="ko"] .dossier__jauge-apres { background: var(--erreur); }
+.dossier__seuil { position: absolute; top: -4px; bottom: -4px; left: 0; width: 0; border-right: 2px solid var(--encre); pointer-events: none; transition: width 320ms var(--sortie); }
+.dossier__verdict { margin: 0; font-size: 13.5px; font-weight: 600; line-height: 1.45; color: var(--encre-2); }
+.dossier__effet[data-etat="ok"] .dossier__verdict { color: var(--succes); }
+.dossier__effet[data-etat="ko"] .dossier__verdict { color: var(--erreur); }
+
+.dossier .interrupteur small { display: block; margin-top: 2px; font-size: 12.5px; color: var(--encre-3); line-height: 1.4; }
+.dossier .interrupteur strong { font-size: 14.5px; font-weight: 650; }
+.dossier__prive { display: flex; align-items: flex-start; gap: 8px; margin: 0; font-size: 12.5px; color: var(--encre-3); line-height: 1.45; }
+.dossier__prive svg { flex: none; width: 16px; height: 16px; margin-top: 1px; }
+#db-valider svg { width: 16px; height: 16px; }
+
+@media (max-width: 520px) {
+  .dossier .grille-champs { grid-template-columns: minmax(0, 1fr); }
+  .dossier__types span { font-size: 13px; padding: 0 2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dossier__jauge i, .dossier__seuil, .dossier__effet { transition: none; }
+}

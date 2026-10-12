@@ -25,6 +25,8 @@ async function fuites(route) {
 let reussis = 0, echecs = 0;
 
 async function etape(nom, fn) {
+  /* ETAPES=regex : ne jouer que certaines étapes (inclure celles dont elles dépendent, comme l'inscription). */
+  if (process.env.ETAPES && !new RegExp(process.env.ETAPES).test(nom)) return;
   try { await fn(); reussis++; console.log("ok - " + nom); }
   catch (e) { echecs++; console.log("not ok - " + nom + "\n    " + String(e && e.stack || e).split("\n").slice(0, Number(process.env.LIGNES || 4)).join("\n    ")); }
 }
@@ -1597,6 +1599,51 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForTimeout(300);
     assert(!/\b(AM|PM)\b/.test(await page.textContent("#partage-etat")), "heure au format français");
     await page.screenshot({ path: path.join(CAPTURES, "parametres-donnees.png") });
+  });
+
+  await etape("dossier banque : capacité seule, crédit demandé en direct, montant exigé, PDF téléchargé, employeur enregistré, téléphone", async () => {
+    await page.goto(base + "/espace/#credit");
+    await page.click("#dossier-ouvrir");
+    await page.waitForSelector("#dlg-dossier[open]");
+    assert(await page.isHidden("#db-champs"), "sans crédit précis : pas de champs de crédit");
+    assert((await page.textContent("#db-l1-lib")) === "Disponible par mois", "capacité seule");
+    assert(/Montant maximum : immobilier .+ DT, auto .+ DT, consommation .+ DT\./.test(await page.textContent("#db-verdict")) || /plafond/.test(await page.textContent("#db-verdict")), "montant maximum par type : " + await page.textContent("#db-verdict"));
+    await page.fill("#db-employeur", "Société Test SA");
+    await page.fill("#db-poste", "Analyste");
+    await page.click('#dlg-dossier label:has(input[name="db-type"][value="conso"])');
+    await page.waitForSelector("#db-champs:not([hidden])");
+    assert(/^\d+(,\d+)?$/.test(await page.inputValue("#db-taux")) && (await page.inputValue("#db-duree")) === "84", "taux et durée proposés");
+    await page.fill("#db-montant", "5 000");
+    await page.waitForFunction(() => document.getElementById("db-l1-lib").textContent === "Mensualité");
+    assert(/→/.test(await page.textContent("#db-l2")), "endettement avant → après");
+    assert(["ok", "ko"].includes(await page.getAttribute("#db-effet", "data-etat")), "verdict de la règle de la banque");
+    await page.click('#dlg-dossier label:has(input[name="db-type"][value="immo"])');
+    await page.click("#db-valider");
+    await page.waitForSelector("#db-montant-err:not([hidden])");
+    assert(await page.isVisible("#dlg-dossier[open]"), "montant exigé avant le PDF");
+    await page.click('#dlg-dossier label:has(input[name="db-type"][value="conso"])');
+    assert((await page.inputValue("#db-montant")) === "5 000", "montant gardé pour le type");
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: path.join(CAPTURES, "dossier-banque.png") });
+    const [pdf] = await Promise.all([page.waitForEvent("download"), page.click("#db-valider")]);
+    assert(/^dossier-banque-DB-\d{8}-[0-9A-Z]{4}\.pdf$/.test(pdf.suggestedFilename()), "nom du PDF : " + pdf.suggestedFilename());
+    const octets = fs.readFileSync(await pdf.path());
+    assert(octets.toString("latin1", 0, 5) === "%PDF-" && octets.length > 3000, "PDF valide : " + octets.length + " octets");
+    await page.waitForSelector("#dlg-dossier", { state: "hidden" });
+    await page.waitForFunction(() => window.Orbite.profil().employeur === "Société Test SA" && window.Orbite.profil().poste === "Analyste");
+    await page.goto(base + "/espace/#profil");
+    await page.waitForSelector("#p-employeur");
+    assert((await page.inputValue("#p-employeur")) === "Société Test SA", "employeur visible dans le profil");
+    /* Lien direct et téléphone : fenêtre sans débordement horizontal. */
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(base + "/espace/#credit?dossier=1");
+    await page.waitForSelector("#dlg-dossier[open]");
+    await page.waitForTimeout(300);
+    assert(await page.$eval("#dlg-dossier", (d) => d.scrollWidth <= d.clientWidth + 1), "fenêtre sans défilement horizontal sur téléphone");
+    await page.screenshot({ path: path.join(CAPTURES, "dossier-banque-mobile.png") });
+    await page.keyboard.press("Escape");
+    await page.waitForSelector("#dlg-dossier", { state: "hidden" });
+    await page.setViewportSize({ width: 1360, height: 900 });
   });
 
   await etape("déconnexion puis suppression définitive du compte", async () => {
