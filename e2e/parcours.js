@@ -2039,7 +2039,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(/^\+41,7/.test(t[0]) && /^\+57,2/.test(t[1]) && /^−9,9/.test(t[2]), "bilan brut / prix / pouvoir d'achat : " + t.join(" | "));
     assert(/3\s?773 DT/.test(await page.textContent("#pg-phrase")), "brut nécessaire pour garder le pouvoir d'achat");
     assert((await page.$$("#pg-etapes li")).length === 4, "4 étapes");
-    assert((await page.$$("#pg-graphe .pg-hausse")).length === 3, "3 hausses sur la courbe");
+    assert((await page.$$("#pg-graphe .og-marqueur")).length === 3, "3 hausses sur la courbe");
     assert(/moyenne depuis 2019/.test(await page.textContent("#pg-hausse-aide")), "hausse par défaut = moyenne passée");
     const brut1 = await page.textContent("#pg-r-brut");
     await page.$eval("#pg-hausse", (el) => { el.value = "8"; el.dispatchEvent(new Event("input", { bubbles: true })); });
@@ -2111,7 +2111,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.click("#pg-tab-carriere");
     await page.waitForSelector("#pg-carriere:not([hidden]) #pg-graphe svg");
     assert(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "carrière sans débordement sur téléphone");
-    assert(await page.evaluate(() => document.querySelector("#pg-graphe svg").getAttribute("viewBox") === "0 0 380 260"), "courbe adaptée au téléphone");
+    assert(await page.evaluate(() => { const v = document.querySelector("#pg-graphe svg.og-svg").getAttribute("viewBox").split(" "); return +v[2] < 520 && +v[3] === 250; }), "courbe adaptée au téléphone");
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(CAPTURES, "progression-carriere-telephone.png"), fullPage: true });
     await page.setViewportSize({ width: 1360, height: 900 });

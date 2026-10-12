@@ -41,3 +41,11 @@ test("montants compacts", () => {
   assert.equal(G.compact(1200000).replace(/\s/g, " "), "1,2 M");
   assert.equal(G.compact(7.5), "7,5");
 });
+
+test("escalier : marche en cours", () => {
+  const pts = [[2019, 1500], [2021.5, 1700], [2024, 2000]];
+  assert.equal(G.marcheA(pts, 2018), -1);
+  assert.equal(G.marcheA(pts, 2019), 0);
+  assert.equal(G.marcheA(pts, 2023.9), 1);
+  assert.equal(G.marcheA(pts, 2030), 2);
+});

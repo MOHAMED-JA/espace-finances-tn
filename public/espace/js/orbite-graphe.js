@@ -12,6 +12,7 @@
  *     zones:   [{ de, a, nom, ton: "ok" | "danger" }],  verticales: [{ x, lib }],  seuil: { y, lib },
  *     marqueurs: [{ x, y, lib, c }],  curseurX,  etiquetteFin: fn(y) | true,
  *     xmin, xmax, ymin, ymax, ticksX: [{ v, lib }] | fmtX, fmtY, fmtV, titreX: fn(x),
+ *     zonesY: [{ de, a, ton, lib, classe }], legende: false, series[].classe,
  *     titre, resume, hauteur, tableau: false | { pas, colX },  surSurvol: fn(x | null)
  *   })
  *   OrbiteGraphe.colonnes(zone, { cats: [{ lib, titre, parts: [{ v, nom, c }] }], fmtY, fmtV, titre, resume, tableau })
@@ -51,6 +52,8 @@
     while (hi - lo > 1) { var m = (lo + hi) >> 1; if (pts[m][0] < x) lo = m; else hi = m; }
     return Math.abs(pts[lo][0] - x) <= Math.abs(pts[hi][0] - x) ? lo : hi;
   }
+  /* Escalier : indice de la dernière marche commencée en x. */
+  function marcheA(pts, x) { var j = -1; for (var i = 0; i < pts.length && pts[i][0] <= x + 1e-9; i++) j = i; return j; }
   /* Tracé SVG ; « marche » : escalier (la valeur tient jusqu'au point suivant). */
   function chemin(pts, X, Y, marche) {
     var d = "";
@@ -72,7 +75,7 @@
   }
   function dt(v) { return nb(Math.round(v), 0) + " DT"; }
 
-  var PURES = { graduations: graduations, indicesX: indicesX, plusProche: plusProche, chemin: chemin, compact: compact };
+  var PURES = { graduations: graduations, indicesX: indicesX, plusProche: plusProche, marcheA: marcheA, chemin: chemin, compact: compact };
   if (!doc) return PURES;
 
   /* ---------- Rendu ---------- */
@@ -175,6 +178,12 @@
     var svg = el("svg", { class: "og-svg", viewBox: "0 0 " + W + " " + H, width: W, height: H, role: "img", "aria-labelledby": tid, tabindex: 0 });
     el("title", { id: tid }, svg).textContent = (o.titre || "Graphique") + (o.resume ? ". " + o.resume : "");
     (o.zones || []).forEach(function (z) { el("rect", { class: "og-zone og-ton-" + (z.ton || "ok"), x: X(z.de).toFixed(1), y: g.t, width: Math.max(1, X(z.a) - X(z.de)).toFixed(1), height: H - g.t - g.b }, svg); });
+    /* Zone horizontale (entre deux valeurs), par exemple « refus probable » sous zéro. */
+    (o.zonesY || []).forEach(function (z) {
+      var ya = Y(Math.min(ymax, Math.max(ymin, z.a))), yd = Y(Math.min(ymax, Math.max(ymin, z.de)));
+      el("rect", { class: "og-zone og-ton-" + (z.ton || "danger") + (z.classe ? " " + z.classe : ""), x: g.l, y: Math.min(ya, yd).toFixed(1), width: W - g.l - g.r, height: Math.abs(yd - ya).toFixed(1) }, svg);
+      if (z.lib) el("text", { class: "og-seuil__lib", x: W - g.r - 6, y: (Math.max(ya, yd) - 6).toFixed(1), "text-anchor": "end" }, svg).textContent = z.lib;
+    });
     var ax = el("g", { class: "og-axe" }, svg);
     ty.forEach(function (v) { el("line", { x1: g.l, x2: W - g.r, y1: Y(v).toFixed(1), y2: Y(v).toFixed(1) }, ax); el("text", { x: g.l - 8, y: (Y(v) + 4).toFixed(1), "text-anchor": "end" }, ax).textContent = fmtY(v); });
     var tx = (o.ticksX || graduations(xmin, xmax, 5).map(function (v) { return { v: v, lib: (o.fmtX || compact)(v) }; })).filter(function (t) { return t.v >= xmin - 1e-9 && t.v <= xmax + 1e-9; });
@@ -201,9 +210,13 @@
     });
     series.forEach(function (s) {
       if (!s.pts.length) return;
-      el("path", { class: "og-ligne og-trace-chemin " + cl(s.c) + (s.tirets ? " og-tirets" : "") + (s.pointille ? " og-pointille" : ""), pathLength: 1, d: chemin(s.pts, X, Y, s.marche) }, svg);
+      el("path", { class: "og-ligne og-trace-chemin " + cl(s.c) + (s.tirets ? " og-tirets" : "") + (s.pointille ? " og-pointille" : "") + (s.classe ? " " + s.classe : ""), pathLength: 1, d: chemin(s.pts, X, Y, s.marche) }, svg);
     });
-    (o.marqueurs || []).forEach(function (m) { var c = el("circle", { class: "og-marqueur " + cl(m.c != null ? m.c : "ok"), cx: X(m.x).toFixed(1), cy: Y(m.y).toFixed(1), r: 5 }, svg); if (m.lib) el("title", {}, c).textContent = m.lib; });
+    (o.marqueurs || []).forEach(function (m) {
+      var c = el("circle", { class: "og-marqueur " + cl(m.c != null ? m.c : "ok"), cx: X(m.x).toFixed(1), cy: Y(m.y).toFixed(1), r: 5 }, svg);
+      if (m.lib) el("title", {}, c).textContent = m.lib;
+      if (m.texte) el("text", { class: "og-marqueur__txt", x: X(m.x).toFixed(1), y: (Y(m.y) - 11).toFixed(1), "text-anchor": "middle" }, svg).textContent = m.texte;
+    });
     if (o.curseurX != null) el("line", { class: "og-curseur", x1: X(o.curseurX).toFixed(1), x2: X(o.curseurX).toFixed(1), y1: g.t, y2: H - g.b }, svg);
     if (o.etiquetteFin && series[0] && series[0].pts.length) {
       var s0 = series[0], p = s0.pts[s0.pts.length - 1];
@@ -221,7 +234,7 @@
     bandes.forEach(function (b) { if (b.nom) items.push({ nom: b.nom, c: b.c, force: b.force, type: "bande" }); });
     (o.zones || []).forEach(function (z) { if (z.nom) items.push({ nom: z.nom, ton: z.ton || "ok", type: "zone" }); });
     if ((o.marqueurs || []).length && o.nomMarqueurs) items.push({ nom: o.nomMarqueurs, c: "ok", type: "marqueur" });
-    if (items.length >= 2) zone.appendChild(legende(items));
+    if (items.length >= 2 && o.legende !== false) zone.appendChild(legende(items));
     var cadre = html("div", "og-cadre", null, zone); cadre.appendChild(svg);
     var b = bulle(cadre);
     zone.__og.w = W;
@@ -230,9 +243,12 @@
       var x = ref[i][0], lignesB = [], hautY = H;
       viseur.setAttribute("x1", X(x).toFixed(1)); viseur.setAttribute("x2", X(x).toFixed(1)); viseur.setAttribute("visibility", "visible");
       series.forEach(function (s, k) {
-        var j = plusProche(s.pts, x);
-        if (j < 0 || Math.abs(s.pts[j][0] - x) > (xmax - xmin) / Math.max(12, ref.length) * 1.01 || x < s.pts[0][0] || x > s.pts[s.pts.length - 1][0]) { mob[k].setAttribute("visibility", "hidden"); return; }
-        var y = s.pts[j][1]; mob[k].setAttribute("cx", X(s.pts[j][0]).toFixed(1)); mob[k].setAttribute("cy", Y(y).toFixed(1)); mob[k].setAttribute("visibility", "visible");
+        var dedans = s.pts.length && x >= s.pts[0][0] - 1e-9 && x <= s.pts[s.pts.length - 1][0] + 1e-9, j, px;
+        /* Escalier : la marche en cours sous le viseur ; sinon le point le plus proche (à un pas près). */
+        if (s.marche) { j = dedans ? marcheA(s.pts, x) : -1; px = x; }
+        else { j = plusProche(s.pts, x); px = j < 0 ? x : s.pts[j][0]; if (j >= 0 && Math.abs(px - x) > (xmax - xmin) / Math.max(12, ref.length) * 1.01) j = -1; }
+        if (j < 0 || !dedans) { mob[k].setAttribute("visibility", "hidden"); return; }
+        var y = s.pts[j][1]; mob[k].setAttribute("cx", X(px).toFixed(1)); mob[k].setAttribute("cy", Y(y).toFixed(1)); mob[k].setAttribute("visibility", "visible");
         hautY = Math.min(hautY, Y(y)); if (s.nom) lignesB.push({ nom: s.nom, c: s.c, tirets: s.tirets || s.pointille, val: fmtV(y) });
       });
       bandes.forEach(function (bd) {

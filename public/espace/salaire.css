@@ -191,22 +191,9 @@
   .module--salaire .detail tr { grid-template-columns: minmax(0, 1fr); }
 }
 
-.module--salaire .courbe { padding: 16px 16px 8px; }
-.module--salaire .courbe svg { width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
-.module--salaire .courbe .axe { stroke: var(--filet); }
-.module--salaire .courbe .grad { fill: var(--encre-3); font-size: 12px; font-family: var(--texte); font-variant-numeric: tabular-nums; }
-.module--salaire .courbe svg.etroit .grad { font-size: 13px; }
-.module--salaire .courbe .zone-net { fill: var(--net); opacity: .12; }
-.module--salaire .courbe .ligne-net { fill: none; stroke: var(--net); stroke-width: 3.2; stroke-linejoin: round; stroke-linecap: round; }
-.module--salaire .courbe .ligne-brut { fill: none; stroke: var(--filet-fort); stroke-width: 1.5; stroke-dasharray: 5 6; }
-.module--salaire .courbe .point { fill: var(--surface); stroke: var(--net-t); stroke-width: 3; transition: cx 160ms var(--sortie), cy 160ms var(--sortie); }
-.module--salaire .courbe .repere { stroke: var(--encre-3); stroke-dasharray: 3 4; position: static; transform: none; }
 .module--salaire .courbe__info { min-height: 48px; padding: 8px 4px; font-size: 15px; color: var(--encre-2); }
 .module--salaire .courbe__info b { font-weight: 760; color: var(--encre); }
-@media (prefers-reduced-motion: no-preference) {
-  .module--salaire .courbe .ligne-net.trace { stroke-dasharray: var(--long); stroke-dashoffset: var(--long); animation: s-tracer 900ms var(--sortie) forwards; }
-}
-@keyframes s-tracer { to { stroke-dashoffset: 0; } }
+.module--salaire .courbe { padding: 16px 16px 8px; }
 
 .module--salaire .methode { margin-top: 48px; }
 .module--salaire .methode__etapes { margin: 0 0 16px; padding-left: 20px; display: grid; gap: 6px; color: var(--encre-2); }

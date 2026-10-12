@@ -22,7 +22,8 @@
   function dateTexte(t) { var k = maintenant.getMonth() + t; return MOIS[((k % 12) + 12) % 12] + " " + (maintenant.getFullYear() + Math.floor(k / 12)); }
   function decalage(c) { return c.annee * 12 + c.mois - 1 - (maintenant.getFullYear() * 12 + maintenant.getMonth()); }
   function lire(id) { var r = F.lire($(id).value); return r.valide && !r.vide ? r.valeur : NaN; }
-  function couleur(i) { return i < 0 ? "var(--etsi-ref)" : "var(--etsi-" + LETTRES[i] + ")"; }
+  /* Palette commune des graphiques : référence en gris, scénarios A, B, C en bleu, ambre, vert. */
+  function couleur(i) { return i < 0 ? "var(--g-neutre)" : "var(--g" + (i + 1) + ")"; }
   function visible() { return !$("vue-vie").hidden && !$("vie-panneau-scenarios").hidden; }
 
   /* ---------- Données ---------- */
@@ -232,67 +233,44 @@
       var sp = cree("span", i < 0 ? "etsi-legende__ref" : ""); sp.style.setProperty("--c", couleur(i)); sp.appendChild(cree("i")); sp.appendChild(doc.createTextNode(nomDe(i + 1))); lg.appendChild(sp);
     });
   }
-  function graduations(min, max) {
-    var etendue = max - min || 1, pas = Math.pow(10, Math.floor(Math.log10(etendue / 4))), k = [1, 2, 2.5, 5, 10];
-    for (var j = 0; j < k.length; j++) if (etendue / (pas * k[j]) <= 5) { pas *= k[j]; break; }
-    var a = Math.floor(min / pas) * pas, b = Math.ceil(max / pas) * pas, out = [];
-    for (var v = a; v <= b + pas / 2; v += pas) out.push(Math.round(v * 100) / 100);
-    return out;
-  }
   function rendreGraphe() {
-    var box = $("etsi-graphe"), bulle = $("etsi-bulle");
-    Array.prototype.slice.call(box.querySelectorAll("svg.etsi-svg")).forEach(function (x) { x.remove(); });
-    if (!res) return;
-    var W = Math.max(300, box.clientWidth || 600), etroit = W < 560, H = etroit ? 240 : 300, g = { l: etroit ? 44 : 62, r: 12, t: 14, b: 40 + 6 * (liste.length + 1) };
+    var box = $("etsi-graphe"), zone = $("etsi-zone");
+    if (!zone) { zone = cree("div", "etsi-zone"); zone.id = "etsi-zone"; box.insertBefore(zone, $("etsi-bulle")); }
+    if (!res) { zone.textContent = ""; return; }
     var ind = indicateur(), series = [res.reference].concat(res.scenarios), N = HORIZON, vals = [];
     series.forEach(function (r) { for (var t = 0; t <= N; t++) vals.push(ind.v(r, t)); });
-    var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
-    if (ind.cle !== "net") mn = Math.min(0, mn);
-    var ticks = graduations(mn, mx); mn = ticks[0]; mx = ticks[ticks.length - 1];
-    var X = function (t) { return g.l + (W - g.l - g.r) * t / N; }, Y = function (v) { return g.t + (H - g.t - g.b) * (1 - (v - mn) / (mx - mn || 1)); };
-    var svg = doc.createElementNS(NS, "svg"); svg.setAttribute("class", "etsi-svg"); svg.setAttribute("viewBox", "0 0 " + W + " " + H);
-    svg.setAttribute("role", "img"); svg.setAttribute("aria-label", ind.lib + " sur 10 ans : " + series.map(function (r, k) { return nomDe(k) + " " + dt0(ind.v(r, N)) + " en " + dateTexte(N); }).join(", "));
-    function n(tag, at, cls) { var e = doc.createElementNS(NS, tag); Object.keys(at).forEach(function (k) { e.setAttribute(k, at[k]); }); if (cls) e.setAttribute("class", cls); svg.appendChild(e); return e; }
-    if (ind.cle === "marge" && mn < 0) {
-      n("rect", { x: g.l, y: Y(0), width: W - g.l - g.r, height: Y(mn) - Y(0) }, "etsi-refus");
-      var tz = n("text", { x: W - g.r - 6, y: Y(mn) - 6, "text-anchor": "end" }, "etsi-refus__txt"); tz.textContent = "au-delà de la quotité : refus probable";
-    }
-    ticks.forEach(function (v) {
-      n("line", { x1: g.l, x2: W - g.r, y1: Y(v), y2: Y(v) }, v === 0 ? "etsi-axe etsi-axe--zero" : "etsi-axe");
-      var tx = n("text", { x: g.l - 8, y: Y(v) + 4, "text-anchor": "end" }); tx.textContent = Math.abs(v) >= 10000 ? F.dt0(v / 1000) + " k" : F.dt0(v);
-    });
-    for (var a = 0; a <= 10; a += etroit ? 2 : 1) {
-      var lab = n("text", { x: X(Math.min(N, a * 12)), y: H - g.b + 16, "text-anchor": a === 0 ? "start" : a === 10 ? "end" : "middle" }); lab.textContent = String(maintenant.getFullYear() + a);
-    }
+    var mn = Math.min.apply(null, vals);
+    var marq = [];
     series.forEach(function (r, k) {
-      var d = "";
-      for (var t = 0; t <= N; t++) { var y = Y(ind.v(r, t)).toFixed(1); d += t ? "H" + X(t).toFixed(1) + "V" + y : "M" + X(0).toFixed(1) + " " + y; }
-      var p = n("path", { d: d, fill: "none" }, "etsi-ligne" + (k ? "" : " etsi-ligne--ref")); p.style.setProperty("--c", couleur(k - 1));
-    });
-    series.forEach(function (r, k) {
-      var y = H - g.b + 28 + k * 6;
       r.evenements.forEach(function (e) {
         if (!k && e.genre !== "fin" || k && e.genre === "fin") return;
-        var c = n("circle", { cx: X(Math.min(N, e.t)), cy: y, r: 2.6 }, "etsi-evt"); c.style.setProperty("--c", couleur(k - 1));
-        var ti = doc.createElementNS(NS, "title"); ti.textContent = e.date + " · " + e.lib; c.appendChild(ti);
+        var t = Math.min(N, e.t); marq.push({ x: t, y: ind.v(r, t), c: k ? k : "n", lib: e.date + " · " + e.lib });
       });
     });
-    n("line", { x1: X(T), x2: X(T), y1: g.t, y2: H - g.b }, "etsi-repere");
-    series.forEach(function (r, k) { var c = n("circle", { cx: X(T), cy: Y(ind.v(r, T)), r: 4 }, "etsi-point"); c.style.setProperty("--c", couleur(k - 1)); });
-    box.insertBefore(svg, bulle);
+    var ticks = []; for (var a = 0; a <= 10; a++) ticks.push({ v: a * 12, lib: String(maintenant.getFullYear() + a) });
+    window.OrbiteGraphe.lignes(zone, {
+      titre: ind.lib + " sur 10 ans", resume: series.map(function (r, k) { return nomDe(k) + " " + dt0(ind.v(r, N)) + " en " + dateTexte(N); }).join(", "),
+      series: series.map(function (r, k) { var pts = []; for (var t = 0; t <= N; t++) pts.push([t, ind.v(r, t)]); return { nom: nomDe(k), c: k ? k : "n", pts: pts, marche: true, classe: "etsi-ligne" + (k ? "" : " etsi-ligne--ref") }; }),
+      xmin: 0, xmax: N, ymin: ind.cle !== "net" ? Math.min(0, mn) : undefined, ticksX: ticks, curseurX: T, marqueurs: marq, legende: false,
+      zonesY: ind.cle === "marge" && mn < 0 ? [{ de: mn, a: 0, ton: "danger", lib: "au-delà de la quotité : refus probable", classe: "etsi-refus" }] : [],
+      fmtY: function (v) { return Math.abs(v) >= 10000 ? F.dt0(v / 1000) + " k" : F.dt0(v); }, fmtV: dt0, titreX: function (t) { return maj(dateTexte(Math.round(t))); },
+      tableau: { entete: "Date", pas: 12 },
+      /* Survol ou clavier : la carte des valeurs et le curseur suivent le mois visé. */
+      surSurvol: function (x) { if (x == null) return; var t = Math.round(x); if (t === T) return; T = t; $("etsi-curseur").value = String(t); majCarte(); }
+    });
+    majCarte();
+  }
+  function majCarte() {
+    if (!res) return;
+    var bulle = $("etsi-bulle"), ind = indicateur(), series = [res.reference].concat(res.scenarios);
     bulle.textContent = "";
     bulle.appendChild(cree("strong", "", maj(dateTexte(T))));
     series.forEach(function (r, k) {
       var l = cree("div"), nm = cree("span"), pt = cree("i"); pt.style.setProperty("--c", couleur(k - 1)); nm.appendChild(pt); nm.appendChild(doc.createTextNode(nomDe(k)));
       l.appendChild(nm); l.appendChild(cree("b", "", dt0(ind.v(r, T)))); bulle.appendChild(l);
     });
-    if (!etroit) { var px = X(T) / W * box.clientWidth, demi = 120; bulle.style.setProperty("--x", Math.max(demi, Math.min(box.clientWidth - demi, px + (T < 60 ? 140 : -140))) + "px"); }
     $("etsi-curseur-date").textContent = maj(dateTexte(T));
     $("etsi-curseur").setAttribute("aria-valuetext", dateTexte(T));
-    svg.addEventListener("pointermove", function (ev) {
-      var rc = svg.getBoundingClientRect(), x = (ev.clientX - rc.left) / rc.width * W, t = Math.round((x - g.l) / (W - g.l - g.r) * N);
-      if (t >= 0 && t <= N && t !== T) { T = t; $("etsi-curseur").value = String(t); rendreGraphe(); }
-    });
   }
   $("etsi-curseur").addEventListener("input", function () { T = Number(this.value); rendreGraphe(); });
 

@@ -91,7 +91,6 @@
       txt("Pour garder le pouvoir d'achat de " + b.depuis + ", il faudrait aujourd'hui "); gras(dt(b.brutPourGarder) + " " + (ret ? "brut" : "brut")); txt(", soit "); gras(dt(b.manque) + " de plus"); txt(" par mois" + (ret ? "." : " : un argument chiffré pour votre prochain entretien."));
     }
     if (b.provisoire) txt(" (Inflation " + an + " provisoire.)");
-    $("pg-leg-reel").textContent = "Ce que vaut votre " + mot + " en dinars de " + b.depuis;
     rendreInflation(b.depuis);
     rendreProjection(p, sy, c);
   }
@@ -141,100 +140,38 @@
     if (c.etapes.length) dessiner(c, pr, inf);
   }
 
-  /* ---------- Courbe : brut en escalier, valeur réelle (pointillés), projection ---------- */
-  var tracee = false, largeurDessin = null, minuterieTaille = null;
-  /* Passage téléphone ⇄ ordinateur (rotation, fenêtre redimensionnée) : la courbe est redessinée. */
+  /* ---------- Courbe : brut en escalier, valeur réelle, projection (moteur commun des graphiques) ---------- */
+  /* Retraite : la frise est redessinée quand la largeur change (rotation du téléphone). */
+  var minuterieTaille = null;
   window.addEventListener("resize", function () {
     clearTimeout(minuterieTaille);
-    minuterieTaille = setTimeout(function () {
-      if ($("vue-progression").hidden) return;
-      if (ongletActif() === "retraite") { rendreRetraite(); return; }
-      if (ongletActif() !== "carriere" || largeurDessin === null) return;
-      if (($("pg-graphe").clientWidth < 520) !== largeurDessin) rendreCarriere();
-    }, 200);
+    minuterieTaille = setTimeout(function () { if (!$("vue-progression").hidden && ongletActif() === "retraite") rendreRetraite(); }, 200);
   });
   function dessiner(c, pr, inf) {
-    var boite = $("pg-graphe"); boite.textContent = "";
-    /* Écran étroit : repère plus petit, pour des libellés lisibles une fois la courbe mise à l'échelle. */
-    var etroit = (boite.clientWidth || 680) < 520, W = etroit ? 380 : 680, H = etroit ? 260 : 300, g = etroit ? 44 : 52, d = etroit ? 10 : 18, ht = 18, bs = 34;
-    largeurDessin = etroit;
+    var boite = $("pg-graphe"), etroit = (boite.clientWidth || 680) < 520;
     var m = new Date(), an = m.getFullYear(), maintenant = an + m.getMonth() / 12;
     var x0 = c.etapes[0].annee + (c.etapes[0].mois - 1) / 12, x1 = pr[pr.length - 1].annee + 1;
-    var debut = c.bilan.depuis, ixAuj = P.indice(debut, an);
+    var debut = c.bilan.depuis, ixAuj = P.indice(debut, an), ret = retraite(), mot = ret ? "pension brute" : "salaire brut";
     var reel = c.annuel.filter(function (a) { return a.reel != null; }).map(function (a) { return [a.annee + 0.5, a.reel]; });
     var projB = pr.slice(1).map(function (q) { return [q.annee + 0.5, q.brut]; });
     var projR = pr.slice(1).map(function (q, i) { return [q.annee + 0.5, q.brut / (ixAuj * Math.pow(1 + inf, i + 1))]; });
-    var vals = c.etapes.map(function (e) { return e.brut; }).concat(reel.map(function (r) { return r[1]; }), projB.map(function (r) { return r[1]; }), projR.map(function (r) { return r[1]; }));
-    var vmax = Math.max.apply(null, vals), vmin = Math.min.apply(null, vals);
-    var pas = vmax - vmin > 6000 ? 2000 : vmax - vmin > 2500 ? 1000 : 500;
-    var min = Math.max(0, Math.floor(vmin * 0.92 / pas) * pas), max = Math.ceil(vmax * 1.04 / pas) * pas;
-    function X(a) { return g + (a - x0) / (x1 - x0) * (W - g - d); }
-    function Y(v) { return ht + (1 - (v - min) / (max - min)) * (H - ht - bs); }
-    function chemin(pts) { return "M" + pts.map(function (q) { return X(q[0]).toFixed(1) + " " + Y(q[1]).toFixed(1); }).join(" L"); }
-    var ret = retraite(), mot = ret ? "pension brute" : "salaire brut";
-    var s = svg("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Courbe du " + mot + " depuis " + c.etapes[0].annee + ", sa valeur en dinars de " + debut + " et la projection jusqu'en " + pr[pr.length - 1].annee + "." });
-    var defs = svg("defs", {}), lg = svg("linearGradient", { id: "pg-degrade", x1: "0", x2: "0", y1: "0", y2: "1" });
-    lg.appendChild(svg("stop", { offset: "0", class: "pg-stop-haut" })); lg.appendChild(svg("stop", { offset: "1", class: "pg-stop-bas" }));
-    defs.appendChild(lg); s.appendChild(defs);
-    var axe = svg("g", { class: "pg-axe" });
-    for (var v = min; v <= max + 0.1; v += pas) {
-      axe.appendChild(svg("line", { x1: g, x2: W - d, y1: Y(v), y2: Y(v) }));
-      var t = svg("text", { x: g - 8, y: Y(v) + 4, "text-anchor": "end" }); t.textContent = F.dt0(v); axe.appendChild(t);
-    }
-    var nbAns = Math.ceil(x1 - x0), saut = Math.max(1, Math.ceil(nbAns / (etroit ? 4 : 6)));
-    for (var a = Math.ceil(x0); a < x1; a += saut) { var ta = svg("text", { x: X(a + 0.5), y: H - 10, "text-anchor": "middle" }); ta.textContent = String(a); axe.appendChild(ta); }
-    s.appendChild(axe);
-    /* Brut en escalier jusqu'à aujourd'hui. */
-    var pts = [];
-    c.etapes.forEach(function (e, i) {
-      var xe = e.annee + (e.mois - 1) / 12;
-      if (i) pts.push([xe, c.etapes[i - 1].brut]);
-      pts.push([xe, e.brut]);
+    var marches = c.etapes.map(function (e) { return [e.annee + (e.mois - 1) / 12, e.brut]; }), dernier = c.etapes[c.etapes.length - 1].brut;
+    marches.push([maintenant, dernier]);
+    var vals = marches.map(function (q) { return q[1]; }).concat(reel.map(function (r) { return r[1]; }), projB.map(function (r) { return r[1]; }), projR.map(function (r) { return r[1]; }));
+    var vmin = Math.min.apply(null, vals), ticks = [];
+    for (var a = Math.ceil(x0); a < x1; a++) ticks.push({ v: a + 0.5, lib: String(a) });
+    var series = [{ nom: ret ? "Pension brute" : "Brut", c: 3, pts: marches, marche: true, aire: true }];
+    if (reel.length > 1) series.push({ nom: "En dinars de " + debut, c: 2, pts: reel, tirets: true });
+    series.push({ nom: "Projection", c: 3, pts: [[maintenant, dernier]].concat(projB), pointille: true });
+    if (reel.length) series.push({ nom: "Projection en dinars de " + debut, c: 2, pts: [reel[reel.length - 1]].concat(projR), pointille: true });
+    window.OrbiteGraphe.lignes(boite, {
+      titre: "Votre " + mot + " depuis " + c.etapes[0].annee, resume: "Courbe du " + mot + " depuis " + c.etapes[0].annee + ", sa valeur en dinars de " + debut + " et la projection jusqu'en " + pr[pr.length - 1].annee + ".",
+      series: series, xmin: x0, xmax: x1, ymin: Math.max(0, Math.floor(vmin * 0.9 / 500) * 500), ticksX: ticks, hauteur: etroit ? 250 : 300,
+      verticales: [{ x: maintenant, lib: "Aujourd'hui" }],
+      marqueurs: c.hausses.map(function (h) { return { x: h.annee + (h.mois - 1) / 12, y: h.apres, c: h.verdict === "perdu" ? "danger" : "ok", texte: signe(h.hausse), lib: "Hausse de " + signe(h.hausse) + " en " + MOIS[h.mois - 1] + " " + h.annee }; }),
+      titreX: function (x) { var y = Math.floor(x); return String(y) + (y > an ? " · projection" : ""); },
+      fmtV: dt, fmtY: function (v) { return F.dt0(v); }, tableau: { entete: "Année" }
     });
-    var dernier = c.etapes[c.etapes.length - 1].brut;
-    pts.push([maintenant, dernier]);
-    s.appendChild(svg("path", { class: "pg-aire", d: chemin(pts) + " L" + X(maintenant).toFixed(1) + " " + Y(min) + " L" + X(x0).toFixed(1) + " " + Y(min) + " Z" }));
-    var lb = svg("path", { class: "pg-l-brut", d: chemin(pts) }); s.appendChild(lb);
-    var lr = reel.length > 1 ? svg("path", { class: "pg-l-reel", d: chemin(reel) }) : null; if (lr) s.appendChild(lr);
-    s.appendChild(svg("path", { class: "pg-l-proj", d: chemin([[maintenant, dernier]].concat(projB)) }));
-    if (reel.length) s.appendChild(svg("path", { class: "pg-l-reel pg-l-reel--proj", d: chemin([reel[reel.length - 1]].concat(projR)) }));
-    var auj = svg("g", { class: "pg-aujourdhui" });
-    auj.appendChild(svg("line", { x1: X(maintenant), x2: X(maintenant), y1: ht, y2: H - bs }));
-    var tj = svg("text", { x: X(maintenant) + 6, y: ht + 10 }); tj.textContent = "Aujourd'hui"; auj.appendChild(tj); s.appendChild(auj);
-    c.hausses.forEach(function (h) {
-      var gx = svg("g", { class: "pg-hausse" + (h.verdict === "perdu" ? " pg-hausse--perdu" : "") }), xh = X(h.annee + (h.mois - 1) / 12);
-      gx.appendChild(svg("circle", { cx: xh, cy: Y(h.apres), r: 5 }));
-      var th = svg("text", { x: xh, y: Y(h.apres) - 12, "text-anchor": "middle" }); th.textContent = signe(h.hausse); gx.appendChild(th);
-      s.appendChild(gx);
-    });
-    var curseur = svg("line", { class: "pg-curseur", x1: 0, x2: 0, y1: ht, y2: H - bs }); s.appendChild(curseur);
-    boite.appendChild(s);
-    var bulle = cree("div", "pg-bulle"); bulle.setAttribute("aria-hidden", "true"); boite.appendChild(bulle);
-    /* Tracé animé à la première apparition (CSSOM : compatible avec la politique de sécurité). */
-    if (!tracee && !O.mouvementReduit.matches) {
-      [lb, lr].forEach(function (l) { if (!l) return; var L = Math.ceil(l.getTotalLength()); if (!L) return; l.style.setProperty("--long", L); l.classList.add("pg-trace"); });
-      if (lb.getTotalLength()) tracee = true;
-    }
-    function valeurs(an2) {
-      var cle = new Date(an2, 6, 1), courant = null;
-      c.etapes.forEach(function (e) { if (e.date <= cle) courant = e; });
-      if (an2 <= an) { if (!courant) return null; var ix = an2 >= debut ? P.indice(debut, an2) : null; return { brut: courant.brut, reel: ix ? courant.brut / ix : null, proj: false }; }
-      var q = pr[an2 - an]; if (!q) return null;
-      return { brut: q.brut, reel: q.brut / (ixAuj * Math.pow(1 + inf, an2 - an)), proj: true };
-    }
-    s.addEventListener("pointermove", function (e) {
-      var r = s.getBoundingClientRect(), xv = (e.clientX - r.left) / r.width * W;
-      var a2 = Math.floor(x0 + (xv - g) / (W - g - d) * (x1 - x0));
-      var vv = valeurs(a2); if (!vv) { bulle.classList.remove("pg-bulle--on"); return; }
-      bulle.textContent = "";
-      bulle.appendChild(cree("b", "", String(a2))); bulle.appendChild(doc.createTextNode(" · " + (ret ? "pension " : "brut ") + dt(vv.brut)));
-      if (vv.reel != null) { bulle.appendChild(cree("br")); bulle.appendChild(doc.createTextNode("en dinars de " + debut + " : " + dt(vv.reel))); }
-      if (vv.proj) { bulle.appendChild(cree("br")); bulle.appendChild(cree("i", "", "projection")); }
-      bulle.style.setProperty("left", (e.clientX - r.left) + "px"); bulle.style.setProperty("top", (e.clientY - r.top) + "px");
-      bulle.classList.add("pg-bulle--on");
-      var xc = X(a2 + 0.5); curseur.setAttribute("x1", xc); curseur.setAttribute("x2", xc); curseur.classList.add("pg-curseur--on");
-    });
-    s.addEventListener("pointerleave", function () { bulle.classList.remove("pg-bulle--on"); curseur.classList.remove("pg-curseur--on"); });
   }
 
   ["pg-hausse", "pg-inf"].forEach(function (id) {

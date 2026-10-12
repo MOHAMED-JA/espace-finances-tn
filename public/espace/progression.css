@@ -62,10 +62,6 @@
 .pg-bulle { position: absolute; left: 0; top: 0; pointer-events: none; transform: translate(-50%, calc(-100% - 12px)); background: var(--encre); color: var(--inverse); border-radius: 10px; padding: 7px 10px; font-size: 12px; line-height: 1.45; white-space: nowrap; opacity: 0; transition: opacity 120ms ease; z-index: 2; }
 .pg-bulle--on { opacity: 1; }
 .pg-bulle b { font-family: var(--mono); }
-.pg-legende { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--encre-2); margin-top: 8px; }
-.pg-legende span::before { content: ""; display: inline-block; width: 18px; height: 0; border-top: 2.6px solid var(--salaire); vertical-align: middle; margin-right: 6px; }
-.pg-legende .reel::before { border-top: 2.2px dashed var(--pg-prix); }
-.pg-legende .proj::before { border-top: 2.2px dotted var(--salaire); }
 #pg-bilan-plein .note { font-size: 12.5px; color: var(--encre-3); margin: 10px 0 0; }
 .pg-sources { font-size: 12.5px; color: var(--encre-3); margin-top: 12px; }
 .pg-sources summary { cursor: pointer; font-weight: 650; color: var(--encre-2); }

@@ -37,6 +37,7 @@
 .og-viseur { stroke: var(--encre-3); stroke-width: 1; }
 .og-point { fill: var(--c); stroke: var(--g-anneau); stroke-width: 2; }
 .og-marqueur { fill: var(--g-anneau); stroke: var(--c); stroke-width: 3; }
+.og-marqueur__txt { fill: var(--encre); font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--g-anneau); stroke-width: 3px; stroke-linejoin: round; }
 .og-etiquette { fill: var(--encre); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .og-barre { fill: var(--c); transition: opacity 120ms ease; }
 .og-cible { fill: transparent; }
