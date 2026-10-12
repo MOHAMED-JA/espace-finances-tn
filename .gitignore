@@ -4,3 +4,8 @@ playwright-report/
 .env*
 *.log
 .DS_Store
+
+# Vidéos promo : aperçus et bande-son régénérables (les MP4 ne sont jamais versionnés)
+promo/*/apercu/
+promo/*/*.wav
+*.mp4
