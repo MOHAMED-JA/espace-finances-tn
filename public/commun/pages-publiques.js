@@ -124,6 +124,30 @@
     });
   });
 
+  /* Simulation reçue par lien (Lot 2) : les valeurs après « # » remplissent le formulaire. Seuls des montants voyagent ;
+     rien n'est envoyé au serveur (le « # » reste dans le navigateur). */
+  (function recevoir() {
+    var L = window.PartageLien;
+    if (!L || !L.PAGES[page] || (location.hash || "").length < 2) return;
+    var v = L.decoder(page, location.hash), cles = Object.keys(v);
+    if (!cles.length) return;
+    var fmt = function (n) { return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 3 }).format(n).replace(/[\u00a0\u202f]/g, " "); };
+    cles.forEach(function (k) {
+      var el = champ(k);
+      if (k === "type" || k === "secteur") { var r = form.querySelector("input[name='" + k + "'][value='" + v[k] + "']"); if (r) r.checked = true; }
+      else if (k === "chef") { if (el) el.checked = v[k]; }
+      else if (k === "enfants") { var o = form.querySelector("output[name='enfants']"); if (o) { o.value = String(v[k]); o.textContent = String(v[k]); } }
+      else if (el && el.tagName === "INPUT") el.value = k === "duree" ? String(v[k]) : fmt(v[k]);
+    });
+    if (v.chef === false) { var o2 = form.querySelector("output[name='enfants']"); if (o2) { o2.value = "0"; o2.textContent = "0"; } }
+    var note = doc.createElement("p");
+    note.className = "calc__recu"; note.setAttribute("role", "status");
+    note.textContent = "Simulation reçue par lien : les valeurs sont remplies pour vous. Modifiez-les librement, rien n'est enregistré.";
+    var tete = form.querySelector(".calc__tete"), etiq = tete && tete.querySelector(".etiquette");
+    if (etiq) etiq.textContent = "Reçu par lien";
+    form.insertBefore(note, tete ? tete.nextSibling : form.firstChild);
+  })();
+
   placer();
   majEnfants();
   if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(placer);

@@ -61,3 +61,37 @@ dialog.dialogue--partage { width: min(460px, calc(100vw - 24px)); }
 /* Textes d'exemple dans les champs : lisibles dans les deux thèmes (gris du navigateur trop pâle en sombre),
    toujours plus discrets qu'une valeur saisie (encre principale, plus grasse). */
 .principal ::placeholder, dialog ::placeholder { color: var(--encre-3); opacity: .85; }
+
+/* ---------- Partager une simulation (Lot 2) ---------- */
+.dialogue--partager { width: min(560px, calc(100vw - 24px)); --t: var(--credit); --t-t: var(--credit-t); --t-doux: var(--credit-doux); }
+.dialogue--partager[data-teinte="salaire"] { --t: var(--salaire); --t-t: var(--salaire-t); --t-doux: var(--salaire-doux); }
+.dialogue--partager[data-teinte="epargne"] { --t: var(--epargne); --t-t: var(--epargne-t); --t-doux: var(--epargne-doux); }
+.partager { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.partager__apercu { padding: 14px 16px; border-radius: var(--r-int); background: var(--t-doux); border: 1px solid color-mix(in srgb, var(--t) 26%, transparent); display: grid; gap: 4px; }
+.partager__sur { margin: 0; font-size: 13px; color: var(--encre-2); }
+.partager__sur b { color: var(--t-t); }
+.partager__chiffre { margin: 2px 0 0; font-size: clamp(26px, 6vw, 32px); font-weight: 800; letter-spacing: -.02em; color: var(--encre); font-variant-numeric: tabular-nums; line-height: 1.1; min-height: 1.1em; }
+.partager__chiffre small { font-size: 14px; font-weight: 600; color: var(--encre-2); letter-spacing: 0; }
+.partager__second { margin: 0; font-size: 13px; color: var(--encre-2); }
+.partager__contenu { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.partager__contenu li { padding: 3px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--filet); font-size: 12.5px; font-weight: 600; color: var(--encre); }
+.partager__sensible { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--encre); cursor: pointer; }
+.partager__sensible input { margin-top: 3px; accent-color: var(--t); width: 16px; height: 16px; flex: none; }
+.partager__ecarts { border: 1px solid var(--filet); border-radius: var(--r-int); padding: 8px 12px; font-size: 13px; color: var(--encre-2); }
+.partager__ecarts summary { cursor: pointer; font-weight: 600; color: var(--encre); }
+.partager__ecarts ul { margin: 8px 0 2px; padding-left: 18px; display: grid; gap: 4px; }
+.partager__lien { display: flex; gap: 8px; align-items: center; }
+.partager__lien input { flex: 1; min-width: 0; height: 38px; padding: 0 12px; border-radius: var(--r-champ); border: 1px solid var(--filet-fort); background: var(--surface-2); color: var(--encre); font: 13px/1 var(--mono, ui-monospace, monospace); text-overflow: ellipsis; }
+.partager__lien input:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.partager__canaux { display: flex; flex-wrap: wrap; gap: 8px; }
+.partager__canaux .bouton svg { width: 16px; height: 16px; }
+.partager__qr { display: flex; gap: 16px; align-items: center; padding: 12px; border-radius: var(--r-int); background: var(--surface-2); }
+.partager__qr-image { width: 148px; height: 148px; flex: none; border-radius: 10px; overflow: hidden; background: #fff; display: grid; place-items: center; font-size: 12px; color: #333; }
+.partager__qr-image svg { width: 100%; height: 100%; display: block; }
+.partager__qr-texte { display: grid; gap: 10px; justify-items: start; font-size: 13.5px; color: var(--encre-2); }
+.partager__qr-texte p { margin: 0; }
+.partager__vie-privee { margin: 0; display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; line-height: 1.45; color: var(--encre-2); }
+.partager__vie-privee svg { width: 16px; height: 16px; flex: none; margin-top: 1px; color: var(--succes); }
+@media (max-width: 520px) {
+  .partager__qr { flex-direction: column; align-items: flex-start; }
+}

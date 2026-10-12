@@ -98,6 +98,7 @@
         <div class="barre__actions" id="barre-actions" hidden>
           <button type="button" class="bouton bouton--petit" id="reprendre-profil"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span class="bouton__lib">Reprendre mon profil</span></button>
           <button type="button" class="bouton bouton--petit" id="ajouter-profil" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg><span class="bouton__lib">Ajouter à mon profil</span></button>
+          <button type="button" class="bouton bouton--petit" id="partager-sim" aria-haspopup="dialog"><svg aria-hidden="true"><use href="/orbite/icones.svg#partager"/></svg><span class="bouton__lib">Partager</span></button>
           <button type="button" class="bouton bouton--plein bouton--petit" id="enregistrer"><svg aria-hidden="true"><use href="/orbite/icones.svg#enregistrer"/></svg><span class="bouton__lib" id="enregistrer-lib">Enregistrer</span></button>
         </div>
       </header>
@@ -1966,6 +1967,49 @@
     </form>
   </dialog>
 
+  <dialog class="dialogue dialogue--partager" id="dlg-partager" aria-labelledby="dlg-partager-titre">
+    <form method="dialog">
+      <div class="dialogue__tete"><h2 id="dlg-partager-titre">Partager cette simulation</h2></div>
+      <div class="dialogue__corps partager">
+        <section class="partager__apercu" aria-labelledby="dlg-partager-voit">
+          <p class="partager__sur" id="dlg-partager-voit">Ce que verra la personne&nbsp;: <b id="partager-page"></b></p>
+          <p class="partager__chiffre"><span id="partager-chiffre"></span> <small id="partager-chiffre-lib"></small></p>
+          <p class="partager__second" id="partager-second"></p>
+          <ul class="partager__contenu" id="partager-contenu" aria-label="Ce que contient le lien"></ul>
+        </section>
+        <label class="partager__sensible" id="partager-sensible" hidden><input type="checkbox" id="partager-sensible-case"> <span id="partager-sensible-lib"></span></label>
+        <details class="partager__ecarts" id="partager-ecarts" hidden>
+          <summary id="partager-ecarts-titre"></summary>
+          <ul id="partager-ecarts-liste"></ul>
+        </details>
+        <div class="partager__lien">
+          <label class="cache" for="partager-url">Lien de partage</label>
+          <input id="partager-url" type="text" readonly spellcheck="false">
+          <button type="button" class="bouton bouton--plein bouton--petit" id="partager-copier"><svg aria-hidden="true"><use href="/orbite/icones.svg#copier"/></svg><span id="partager-copier-lib">Copier</span></button>
+        </div>
+        <div class="partager__canaux">
+          <a class="bouton bouton--petit" id="partager-whatsapp" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true"><use href="/orbite/icones.svg#message"/></svg>WhatsApp</a>
+          <a class="bouton bouton--petit" id="partager-email"><svg aria-hidden="true"><use href="/orbite/icones.svg#enveloppe"/></svg>E-mail</a>
+          <button type="button" class="bouton bouton--petit" id="partager-qr-bouton" aria-expanded="false" aria-controls="partager-qr"><svg aria-hidden="true"><use href="/orbite/icones.svg#qr"/></svg>QR code</button>
+          <button type="button" class="bouton bouton--petit" id="partager-natif" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#partager"/></svg>Autres applications</button>
+          <a class="bouton bouton--fantome bouton--petit" id="partager-ouvrir" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/orbite/icones.svg#sortie-externe"/></svg>Voir la page</a>
+        </div>
+        <div class="partager__qr" id="partager-qr" hidden>
+          <div class="partager__qr-image" id="partager-qr-image" role="img" aria-label="QR code du lien de partage"></div>
+          <div class="partager__qr-texte">
+            <p>À scanner avec l'appareil photo d'un téléphone : la page s'ouvre déjà remplie.</p>
+            <button type="button" class="bouton bouton--petit" id="partager-qr-png"><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg>Enregistrer l'image</button>
+          </div>
+        </div>
+        <p class="partager__vie-privee"><svg aria-hidden="true"><use href="/orbite/icones.svg#cadenas"/></svg><span>Le lien ne contient que ces montants&nbsp;: ni votre nom, ni votre profil, ni votre compte. Les valeurs restent après le «&nbsp;#&nbsp;», elles ne sont jamais envoyées au serveur.</span></p>
+        <p class="erreur-champ" id="partager-erreur" role="alert" hidden></p>
+      </div>
+      <div class="dialogue__pied">
+        <button type="submit" class="bouton bouton--fermer" value="fermer">Fermer</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog class="dialogue" id="dlg-supprimer-compte" aria-labelledby="dlg-sc-titre">
     <form method="dialog">
       <div class="dialogue__tete"><h2 id="dlg-sc-titre">Supprimer définitivement votre compte&nbsp;?</h2></div>
@@ -2021,6 +2065,8 @@
   <script src="/moteurs/credit/credit.js"></script><script src="/moteurs/credit/phrase.js"></script><script src="/moteurs/credit/audit.js"></script><script src="/espace/js/credit-documents.js"></script><script src="/espace/js/module-credit.js"></script>
   <script src="/commun/fuites.js"></script>
   <script src="/espace/js/simulations.js"></script>
+  <script src="/commun/partage-lien.js"></script>
+  <script src="/espace/js/partage-simulation.js"></script>
   <script src="/espace/js/abonnement-calcul.js"></script>
   <script src="/espace/js/abonnement.js"></script>
   <script src="/espace/js/parametres.js"></script>

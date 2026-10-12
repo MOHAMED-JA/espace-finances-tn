@@ -1160,6 +1160,74 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(Number((await page.inputValue("#cr-capital")).replace(/\D/g, "")) === 120000, "montant en arabe");
   });
 
+  await etape("partage : page publique préremplie (crédit, salaire, épargne), aperçu identique, QR code, WhatsApp, e-mail, rien de personnel", async () => {
+    await page.goto(base + "/espace/#credit");
+    await page.waitForSelector("#cr-phrase");
+    await page.fill("#cr-phrase", "crédit immobilier 150 000 sur 20 ans à 9 %");
+    await page.click("#cr-phrase-ok");
+    await page.waitForFunction(() => /crédit immobilier/.test(document.getElementById("cr-phrase-aide").textContent));
+    await page.click("#partager-sim");
+    await page.waitForSelector("#dlg-partager[open]");
+    const url = await page.inputValue("#partager-url");
+    assert(url === base + "/simulateur-credit-tunisie#type=immo&montant=150000&duree=20&marge=1.5", "lien du crédit : " + url);
+    await page.waitForFunction(() => /DT/.test(document.getElementById("partager-chiffre").textContent));
+    const vu = (await page.textContent("#partager-chiffre")).trim();
+    const nom = await page.evaluate(() => { const u = window.Orbite.utilisateur(); return u && u.email; });
+    assert(!nom || url.indexOf(nom) === -1, "aucune adresse dans le lien");
+    const wa = await page.getAttribute("#partager-whatsapp", "href");
+    assert(wa.startsWith("https://wa.me/?text=") && decodeURIComponent(wa).endsWith(url), "WhatsApp : " + wa);
+    const mail = await page.getAttribute("#partager-email", "href");
+    assert(mail.startsWith("mailto:?subject=") && decodeURIComponent(mail).indexOf(url) !== -1, "e-mail : " + mail);
+    await page.click("#partager-qr-bouton");
+    await page.waitForSelector("#partager-qr-image svg path");
+    assert((await page.getAttribute("#partager-qr-image svg path", "d")).length > 500, "QR code dessiné");
+    await page.screenshot({ path: path.join(CAPTURES, "partage-credit.png") });
+    await page.click("#dlg-partager .bouton--fermer");
+    /* La page publique reçue affiche le même chiffre que l'aperçu. */
+    const pub = await contexte.newPage();
+    await pub.goto(url);
+    await pub.waitForSelector(".calc__recu");
+    await pub.waitForFunction((v) => (document.querySelector("[data-v='mens_ent']").textContent + document.querySelector("[data-v='mens_dec']").textContent).trim() === v, vu);
+    assert(await pub.isChecked("input[name='type'][value='immo']"), "type logement coché");
+    assert((await pub.inputValue("#duree")) === "20", "durée remplie");
+    await pub.screenshot({ path: path.join(CAPTURES, "partage-page-recue.png") });
+    /* Salaire : situation de famille jointe seulement sur demande ; lien malformé ignoré. */
+    await pub.goto(base + "/salaire-net-tunisie#montant=3000&secteur=public&chef=1&enfants=2&nom=Aziz");
+    await pub.waitForSelector(".calc__recu");
+    assert((await pub.inputValue("#montant")) === "3 000" && await pub.isChecked("input[name='secteur'][value='public']") && await pub.isChecked("input[name='chef']"), "salaire reçu");
+    assert((await pub.textContent("output[name='enfants']")).trim() === "2", "enfants reçus");
+    await pub.goto(base + "/calcul-cea-tunisie#depot=abc&montant=-5");
+    await pub.waitForSelector("#depot");
+    assert(!(await pub.$(".calc__recu")), "lien malformé : rien de rempli");
+    await pub.close();
+    await page.goto(base + "/espace/#salaire");
+    await page.waitForSelector("#partager");
+    await page.click("#partager");
+    await page.waitForSelector("#dlg-partager[open]");
+    const us = await page.inputValue("#partager-url");
+    assert(/\/salaire-net-tunisie#montant=\d+/.test(us) && !/chef=/.test(us), "salaire sans famille : " + us);
+    if (await page.isVisible("#partager-sensible")) {
+      await page.check("#partager-sensible-case");
+      assert(/chef=1/.test(await page.inputValue("#partager-url")), "famille jointe sur demande");
+    }
+    await page.click("#dlg-partager .bouton--fermer");
+    await page.goto(base + "/espace/#epargne");
+    await page.waitForSelector("#partager-sim");
+    await page.click("#partager-sim");
+    await page.waitForSelector("#dlg-partager[open]");
+    const ue = await page.inputValue("#partager-url");
+    assert(/\/(simulateur-assurance-vie-tunisie|calcul-cea-tunisie)#/.test(ue) && !/montant=/.test(ue), "épargne sans salaire : " + ue);
+    if (await page.isVisible("#partager-sensible")) {
+      await page.check("#partager-sensible-case");
+      assert(/montant=\d/.test(await page.inputValue("#partager-url")), "salaire joint sur demande");
+    }
+    await page.waitForFunction(() => /DT/.test(document.getElementById("partager-chiffre").textContent));
+    await page.setViewportSize({ width: 375, height: 760 });
+    await page.screenshot({ path: path.join(CAPTURES, "partage-epargne-telephone.png") });
+    await page.setViewportSize({ width: 1280, height: 860 });
+    await page.click("#dlg-partager .bouton--fermer");
+  });
+
   await etape("crédit : lire une offre (texte), contrôler le tableau de la banque (exemple exact, PDF avec une erreur)", async () => {
     await page.goto(base + "/espace/#credit");
     await page.waitForSelector("#cr-outil-offre");
