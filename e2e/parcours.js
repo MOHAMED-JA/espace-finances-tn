@@ -1475,6 +1475,13 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(!/Nouveau TMM/.test(await page.textContent(".toasts")), "pas d'annonce à l'administrateur qui vient de le saisir");
     assert(/7,2 %/.test(await page.textContent("#admin-tmm-dernier")), "dernier TMM affiché");
     await page.screenshot({ path: path.join(CAPTURES, "admin-tmm.png") });
+    /* Lien « Comptes » (rubrique de la même page) : défile jusqu'à la liste, reste dans Administration. */
+    await page.click('.admin__offert-astuce a[href="#admin-t-liste"]');
+    await page.waitForFunction(() => { const r = document.getElementById("admin-t-liste").getBoundingClientRect(); return r.top >= 0 && r.top < window.innerHeight; });
+    assert(await page.evaluate(() => location.hash === "#admin" && !document.getElementById("vue-admin").hidden), "reste dans Administration");
+    /* « Aller au contenu » non plus ne quitte pas la page. */
+    await page.evaluate(() => document.querySelector(".lien-evitement").click());
+    assert(await page.evaluate(() => location.hash === "#admin" && document.activeElement.id === "principal"), "lien d'évitement");
     await page.goto(base + "/espace/#credit?espace=tmm");
     await page.waitForSelector("#credit-tmm:not([hidden]) .tmm-courbe");
     const txt = await page.textContent("#credit-tmm");

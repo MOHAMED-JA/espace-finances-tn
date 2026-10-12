@@ -716,6 +716,8 @@ Branche `point5`. Choix validés par l'utilisateur (options conseillées) ; règ
 **Corrections après mise en ligne (12 oct.)**
 - Budget : la proposition dépassait le revenu de quelques dinars (vu sur un vrai profil : 2 769 DT prévus pour 2 768 DT), car chaque enveloppe libre était arrondie à la dizaine la plus proche. Désormais : dizaine inférieure, et « Divers » reçoit le reste exact au dinar inférieur ; un test vérifie qu'aucune proposition ne dépasse le revenu, de 0 à 6 000 DT.
 - Visite guidée : le halo est recalé quand la page finit de s'afficher (`ResizeObserver` sur la page et sur la rubrique visée), pas seulement au défilement ou au redimensionnement.
+- Visite guidée (suite, mesuré) : la rubrique pouvait encore glisser de 2 px **sans changer de taille** après l'arrivée sur la page, ce qu'aucun observateur ne voit. La visite compare sa position à chaque image pendant 1,2 s après chaque étape et recale le halo (`suivre`).
+- Liens vers une rubrique de la même page (« Comptes » dans Administration, « Comparer une offre » dans Salaire, « Aller au contenu ») : ils menaient à « Mon orbite », car le routeur lit tout ce qui suit « # » comme une page. `app.js` intercepte désormais ces liens : défilement jusqu'à la rubrique et focus, sans changer l'adresse. Contrôlé dans l'étape e2e du TMM.
 
 **Barre du haut** : actions secondaires en icône seule de 641 à 1480 px (`confort.css`), pour ne plus déborder.
 

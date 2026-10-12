@@ -214,6 +214,22 @@
     aller(0);
   }
 
+  /* Pendant 1,2 s après l'arrivée, la rubrique peut encore glisser de quelques pixels sans changer de taille
+     (fin du rendu de la page) : on compare sa position à chaque image et on recale le halo. */
+  function suivre(n) {
+    var fin = Date.now() + 1200, avant = null;
+    (function tour() {
+      if (!etat || etat.i !== n || Date.now() > fin) return;
+      var c = cibleDe(etat.etapes[n]);
+      if (c) {
+        var r = c.getBoundingClientRect(), k = Math.round(r.left) + "," + Math.round(r.top) + "," + Math.round(r.width) + "," + Math.round(r.height);
+        if (avant !== null && k !== avant) placer();
+        avant = k;
+      }
+      requestAnimationFrame(tour);
+    })();
+  }
+
   /* Ouvre la page de l'étape si besoin, puis désigne sa rubrique une fois la page affichée. */
   function aller(i) {
     if (!etat) return;
@@ -236,6 +252,7 @@
         if (r.top < 70 || r.bottom > window.innerHeight - 90) cible.scrollIntoView({ block: "center", behavior: "auto" });
       }
       placer();
+      suivre(n);
     };
     if (etape.vue && location.hash !== etape.vue) {
       etat.racine.classList.add("visite--transit");
