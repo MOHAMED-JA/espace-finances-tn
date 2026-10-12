@@ -332,6 +332,15 @@
         '<button type="button" class="bouton bouton--petit cr-dupliquer cr-supprimer" id="cr-supprimer" hidden>' + ico("poubelle") + '<span>Supprimer</span></button></div>' +
       '</div>' +
       '<div class="cr-formulaire" id="cr-formulaire" role="tabpanel" aria-labelledby="cr-tab-0">' +
+        '<div class="cr-phrase" id="cr-phrase-bloc">' +
+          '<label class="champ__lib" for="cr-phrase">Décrivez votre crédit en une phrase</label>' +
+          '<div class="cr-phrase__saisie">' +
+            '<input id="cr-phrase" type="text" autocomplete="off" spellcheck="false" enterkeyhint="done" maxlength="240" aria-describedby="cr-phrase-aide" placeholder="Ex. 150 000 sur 20 ans à TMM + 2,5 avec 30 000 d\'apport">' +
+            '<button type="button" class="cr-phrase__micro" id="cr-phrase-micro" aria-label="Dicter mon crédit" aria-pressed="false" hidden>' + ico("micro") + '</button>' +
+            '<button type="button" class="bouton bouton--credit bouton--petit cr-phrase__ok" id="cr-phrase-ok">Remplir</button>' +
+          '</div>' +
+          '<p class="champ__aide" id="cr-phrase-aide">Montant, durée, taux ou TMM + marge, apport, assurance, frais, différé… en français ou en arabe.</p>' +
+        '</div>' +
         '<fieldset class="cr-groupe"><legend class="champ__lib">Type de crédit</legend><div class="cr-puces" id="cr-types">' + puces + '</div></fieldset>' +
         champ({ id: "cr-capital", k: "capital", lib: "Montant emprunté", unite: "DT", grande: true, min: 100, max: 1e8, aide: '<span id="cr-capital-aide-txt">&nbsp;</span>' }) +
         '<div class="cr-capacite-alerte" id="cr-capacite-alerte" role="status" hidden></div>' +
