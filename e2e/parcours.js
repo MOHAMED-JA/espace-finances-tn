@@ -1486,7 +1486,8 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     /* Nouveau TMM vu au chargement suivant : annoncé une fois. */
     await page.evaluate(() => localStorage.setItem("orbite-tmm-vu", "2000-01-01"));
     await page.reload();
-    await page.waitForFunction(() => /Nouveau TMM : 7,2 %/.test(document.body.textContent), null, { timeout: 15000 });
+    try { await page.waitForFunction(() => /Nouveau TMM : 7,2 %/.test(document.body.textContent), null, { timeout: 15000 }); }
+    catch (e) { console.log("DIAG TMM", await page.evaluate(() => JSON.stringify({ vu: localStorage.getItem("orbite-tmm-vu"), tmm: window.OrbiteCalcul.TMM, hash: location.hash, toasts: (document.querySelector(".toasts") || {}).textContent, dlg: [].map.call(document.querySelectorAll("dialog[open]"), (d) => d.id), pages: 0 }))); await page.screenshot({ path: path.join(CAPTURES, "tmm-debug.png") }); throw e; }
     /* Retour au défaut quand plus rien n'est saisi. */
     await page.goto(base + "/espace/#admin");
     await page.waitForSelector("#admin-tmm-liste li");
