@@ -213,30 +213,58 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.screenshot({ path: path.join(CAPTURES, "02-orbite.png") });
   });
 
-  await etape("visite guidée : démarre après le premier pas, une seule fois, et se revoit avec « ? »", async () => {
-    await page.waitForSelector(".visite__bulle");
+  await etape("visite guidée : choix des chapitres après le premier pas, « L'essentiel » puis « Les nouveautés » avec « ? »", async () => {
+    await page.waitForSelector(".visite__bulle #visite-chapitres:not([hidden])");
+    assert(/Par quoi voulez-vous commencer/.test(await page.textContent("#visite-titre")), "écran de choix");
+    assert(await page.$eval("#visite-chap-essentiel", (b) => b.classList.contains("visite__chap--conseil") && document.activeElement === b), "nouveau venu : « L'essentiel » conseillé");
+    assert(/10 nouvelles/.test(await page.textContent("#visite-badge")), "badge des nouveautés");
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: path.join(CAPTURES, "visite-choix.png") });
+    await page.click("#visite-chap-essentiel");
     assert(/Bienvenue/.test(await page.textContent("#visite-titre")), "première étape");
-    const total = Number((await page.textContent("#visite-compteur")).match(/sur (\d+)/)[1]);
-    assert(total >= 10, "toutes les rubriques présentées");
+    assert((await page.textContent("#visite-compteur")) === "L'essentiel · 1 sur 8", "compteur du chapitre");
     await page.click("#visite-suiv");
     assert(/Mon orbite/.test(await page.textContent("#visite-titre")), "étape Mon orbite");
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(CAPTURES, "visite-orbite.png") });
     await page.keyboard.press("ArrowRight");
-    assert(/Votre fiche/.test(await page.textContent("#visite-titre")), "étape de la fiche");
-    await page.keyboard.press("ArrowRight");
+    assert(/banque peut vous prêter/.test(await page.textContent("#visite-titre")), "étape de la capacité");
     await page.keyboard.press("ArrowRight");
     assert(/Mon profil/.test(await page.textContent("#visite-titre")), "navigation au clavier");
+    assert(/fiche de paie/.test(await page.textContent("#visite-texte")), "le profil présente la fiche de paie");
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(CAPTURES, "visite-profil.png") });
-    for (let i = 4; i < total - 1; i++) await page.click("#visite-suiv");
+    for (let i = 3; i < 7; i++) await page.click("#visite-suiv");
     assert(/Terminer/.test(await page.textContent("#visite-suiv")), "dernière étape");
     await page.click("#visite-suiv");
     await page.waitForSelector(".visite", { state: "detached" });
     await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite);
     assert(faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite_visite, "visite marquée comme vue sur le compte");
+    /* « ? » : les nouveautés sont conseillées, chaque étape ouvre sa page, retour à Mon orbite à la fin. */
+    await page.click("#aide-visite");
+    await page.waitForSelector(".visite__bulle #visite-chapitres:not([hidden])");
+    assert(await page.$eval("#visite-chap-nouveautes", (b) => b.classList.contains("visite__chap--conseil")), "déjà venu : « Les nouveautés » conseillées");
+    await page.click("#visite-chap-nouveautes");
+    assert(/Lire ma fiche de paie/.test(await page.textContent("#visite-titre")), "première nouveauté : la fiche de paie");
+    await page.waitForFunction(() => location.hash === "#profil?section=salaire" && !document.querySelector(".visite--transit"));
+    /* Le halo glisse en 320 ms vers la carte « Remplir avec ma fiche de paie ». */
+    await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.getElementById("fiche-entree-profil").getBoundingClientRect(); return Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: path.join(CAPTURES, "visite-nouveautes.png") });
+    const vus = [];
+    for (let i = 1; i < 10; i++) {
+      await page.click("#visite-suiv");
+      await page.waitForFunction(() => !document.querySelector(".visite--transit"));
+      vus.push((await page.textContent("#visite-titre")) + " @ " + (await page.evaluate(() => location.hash)));
+    }
+    assert(vus.some((t) => /Retraite @ #progression\?onglet=retraite/.test(t)) && vus.some((t) => /Et si… \? @ #vie\?onglet=scenarios/.test(t)) && vus.some((t) => /Rappels @ #compte\?onglet=preferences/.test(t)), "pages ouvertes : " + vus.join(" | "));
+    await page.click("#visite-suiv");
+    await page.waitForSelector(".visite", { state: "detached" });
+    await page.waitForFunction(() => location.hash === "#orbite");
+    await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite_nouveautes === "2026-10-11");
     await page.click("#aide-visite");
     await page.waitForSelector(".visite__bulle");
+    assert(/déjà vues/.test(await page.textContent("#visite-badge")), "nouveautés marquées comme vues");
     await page.keyboard.press("Escape");
     await page.waitForSelector(".visite", { state: "detached" });
   });
@@ -599,6 +627,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     /* Visite guidée sur téléphone : bulle dans l'écran, onglets du bas désignés. */
     await pm.click("#aide-visite");
     await pm.waitForSelector(".visite__bulle");
+    await pm.click("#visite-chap-essentiel");
     for (let i = 0; i < 4; i++) await pm.click("#visite-suiv");
     await pm.waitForTimeout(500);
     const bb = await pm.evaluate(() => { const r = document.querySelector(".visite__bulle").getBoundingClientRect(); return [r.left, r.right, r.top, r.bottom]; });

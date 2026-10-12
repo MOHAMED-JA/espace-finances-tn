@@ -1,32 +1,50 @@
 /*
- * Orbite — visite guidée de la première connexion.
- * Démarre juste après le « premier pas » (le salaire saisi : les vrais chiffres sont à l'écran), une seule fois par
- * compte (user_metadata.orbite_visite). On la revoit avec le bouton « ? » de la barre ou depuis Paramètres → Préférences.
- * Une bulle désigne chaque rubrique ; sur téléphone, les rubriques absentes des onglets du bas sont présentées
- * au centre de l'écran. Clavier : flèches, Entrée, Échap.
+ * Orbite — visite guidée en deux chapitres (maquette validée le 12 oct. 2026).
+ * Elle s'ouvre toujours sur un choix : « L'essentiel » (8 étapes, proposé aux nouveaux venus) ou « Les nouveautés »
+ * (10 étapes, proposé à ceux qui ont déjà vu l'essentiel ; badge tant que cette version n'a pas été vue).
+ * Démarre juste après le « premier pas » (une fois par compte, user_metadata.orbite_visite) ; on la revoit avec le
+ * bouton « ? » de la barre ou depuis Paramètres → Préférences. Une étape peut ouvrir une autre page (« vue ») avant de
+ * désigner sa rubrique ; à la fin, on revient là où la visite a commencé. Une bulle désigne chaque rubrique ; sans
+ * cible visible (téléphone, profil vierge), la bulle est centrée. Clavier : flèches, Entrée, Échap.
  */
 (function () {
   "use strict";
   var O = window.Orbite, E = window.Espace, doc = document, $ = O.$;
+  var VERSION_NOUVEAUTES = "2026-10-11";
 
-  /* cibles : sélecteurs essayés dans l'ordre ; le premier visible est désigné. Sans cible visible, bulle centrée. */
-  var ETAPES = [
-    { titre: "Bienvenue dans Orbite", texte: "Votre salaire est au centre, et tout le reste tourne autour : impôt, épargne, crédit, projets. Cette visite vous montre chaque rubrique en une minute." },
-    { cibles: [".scene"], titre: "Mon orbite", texte: "Votre tableau de bord. Au centre, votre net du mois ; autour, vos crédits, contrats et projets en satellites. Touchez-en un pour sa fiche, puis voyagez dans le temps : vous voyez votre marge grandir à la fin de chaque crédit." },
-    { cibles: [".fiche-orbite"], titre: "Votre fiche", texte: "Vos repères du moment (tranche d'impôt, mensualité possible, impôt économisable), votre endettement et la liste de tout ce qui est en orbite. Elle suit le mois choisi dans le voyage." },
-    { cibles: ["#capacite", "#vue-orbite .requiert-naissance"], titre: "Ce que la banque peut vous prêter", texte: "Le montant possible pour un crédit immobilier, auto ou à la consommation, selon la règle de votre banque. Les taux sont modifiables juste en dessous, et le calendrier de la marge montre ce que libère chaque crédit qui se termine." },
-    { cibles: [".rail a[data-vue='profil']", ".onglets-bas a[data-vue='profil']"], titre: "Mon profil", texte: "Le cœur d'Orbite : nom, date de naissance (obligatoire pour la capacité d'emprunt), date d'embauche, famille, salaire, crédits en cours, contrats et budget. Tout est enregistré automatiquement et visible par vous seul." },
-    { cibles: [".rail a[data-vue='salaire']", ".onglets-bas a[data-vue='salaire']"], titre: "Salaire", texte: "Du brut au net au millime près : CNSS ou CNRPS, IRPP et CSS, primes, 13ᵉ mois et plus. Simulez une augmentation et voyez combien coûte votre salaire à l'employeur." },
-    { cibles: [".rail a[data-vue='epargne']", ".onglets-bas a[data-vue='epargne']"], titre: "Épargne vie & CEA", texte: "Projetez votre assurance vie et votre CEA, et voyez l'impôt que chaque versement vous fait économiser." },
-    { cibles: [".rail a[data-vue='credit']", ".onglets-bas a[data-vue='credit']"], titre: "Crédit", texte: "Simulez un crédit à taux fixe ou TMM + marge : mensualité, coût total, tableau d'amortissement, et comparez plusieurs offres." },
-    { cibles: [".rail a[data-vue='vie']", ".onglets-bas a[data-vue='profil']"], titre: "Vie & impôts", texte: "Le simulateur de vie (mariage, naissance, voiture, logement : l'effet sur votre budget) et l'optimiseur fiscal, qui indique combien verser et avant quelle date pour payer moins d'impôt. Sur téléphone, vous le trouvez dans « Moi »." },
-    { cibles: [".rail a[data-vue='assistant']", "#bulle-assistant"], titre: "Assistant", texte: "Posez vos questions en français ou en darija, par exemple « Najjem nechri karhba fi 2029 ? ». Il répond avec vos propres chiffres." },
-    { cibles: [".rail a[data-vue='simulations']"], titre: "Simulations", texte: "Toutes les simulations que vous enregistrez, à retrouver, renommer, comparer ou supprimer." },
-    { cibles: [".rail a[data-vue='compte']", ".onglets-bas a[data-vue='profil']"], titre: "Paramètres", texte: "Photo, apparence, sécurité, abonnement et vos données : export, suppression, et partage facultatif de votre fiche." },
-    { cibles: ["#aide-visite"], titre: "Revoir cette visite", texte: "Ce bouton relance la visite à tout moment. Commencez par compléter « Mon profil » : plus il est précis, plus vos conseils le sont.", fin: true }
-  ];
+  /* cibles : sélecteurs essayés dans l'ordre ; le premier visible est désigné. vue : page à ouvrir d'abord. */
+  var CHAPITRES = {
+    essentiel: {
+      nom: "L'essentiel", resume: "Votre orbite, le profil et les 3 modules · 1 minute",
+      etapes: [
+        { vue: "#orbite", titre: "Bienvenue dans Orbite", texte: "Votre salaire est au centre, et tout le reste tourne autour : impôt, épargne, crédit, projets. Voici l'essentiel en une minute." },
+        { vue: "#orbite", cibles: [".scene"], titre: "Mon orbite", texte: "Votre tableau de bord. Au centre, votre net du mois ; autour, vos crédits, contrats et projets en satellites. Touchez-en un pour sa fiche, puis voyagez dans le temps : votre marge grandit à la fin de chaque crédit." },
+        { vue: "#orbite", cibles: ["#capacite", "#vue-orbite .requiert-naissance"], titre: "Ce que la banque peut vous prêter", texte: "Le montant possible pour un crédit immobilier, auto ou à la consommation, selon la règle de votre banque, et ce que libère chaque crédit qui se termine." },
+        { vue: "#orbite", cibles: [".rail a[data-vue='profil']", ".onglets-bas a[data-vue='profil']"], titre: "Mon profil", texte: "Le cœur d'Orbite : famille, salaire, crédits, contrats et budget, enregistrés automatiquement et visibles par vous seul. Le plus rapide pour le remplir : votre fiche de paie, lue sur votre appareil." },
+        { vue: "#orbite", cibles: [".rail a[data-vue='salaire']", ".onglets-bas a[data-vue='salaire']"], titre: "Salaire", texte: "Du brut au net au millime près : CNSS ou CNRPS, IRPP et CSS, primes, 13ᵉ mois et plus. Simulez une augmentation et voyez ce que coûte votre salaire à l'employeur." },
+        { vue: "#orbite", cibles: [".rail a[data-vue='epargne']", ".onglets-bas a[data-vue='epargne']"], titre: "Épargne vie & CEA", texte: "Projetez votre assurance vie et votre CEA, et voyez l'impôt que chaque versement vous fait économiser." },
+        { vue: "#orbite", cibles: [".rail a[data-vue='credit']", ".onglets-bas a[data-vue='credit']"], titre: "Crédit", texte: "Taux fixe ou TMM + marge : mensualité, coût total, tableau d'amortissement, remboursement anticipé, et plusieurs offres comparées." },
+        { vue: "#orbite", cibles: [".rail a[data-vue='assistant']", "#bulle-assistant"], titre: "Assistant et « ? »", texte: "Posez vos questions en français ou en darija, par exemple « Najjem nechri karhba fi 2029 ? ». Le bouton « ? » relance la visite : essayez ensuite « Les nouveautés ».", fin: true }
+      ]
+    },
+    nouveautes: {
+      nom: "Les nouveautés", resume: "Fiche de paie, progression, retraite, Mon année… · 2 minutes",
+      etapes: [
+        { vue: "#profil?section=salaire", cibles: ["#fiche-entree-profil"], titre: "Lire ma fiche de paie", texte: "Photo ou PDF : Orbite lit votre fiche sur votre appareil (rien n'est envoyé), montre chaque montant trouvé, la compare à son propre calcul et met votre profil à jour en un clic." },
+        { vue: "#profil?section=salaire", cibles: ["#hs-bloc"], titre: "Historique du salaire", texte: "Chaque hausse avec sa date : l'impôt de l'année se calcule mois par mois, et une hausse annoncée s'applique toute seule à son mois." },
+        { vue: "#progression?onglet=carriere", cibles: ["#pg-carriere .pg-bilan", "#pg-tab-carriere"], titre: "Ma progression", texte: "Votre salaire face à l'inflation depuis votre embauche : le pouvoir d'achat gagné ou perdu, et le brut qu'il faudrait pour le garder." },
+        { vue: "#progression?onglet=objectifs", cibles: ["#pg-tab-objectifs"], titre: "Objectifs", texte: "Un projet, une épargne de précaution, un crédit à solder plus tôt : Orbite dit si vous êtes en avance ou en retard. « J'ai épargné » en un geste, annulable." },
+        { vue: "#progression?onglet=retraite", cibles: ["#pg-tab-retraite"], titre: "Retraite", texte: "Âge de départ et pension nette estimée selon les règles de la CNSS ou de la CNRPS, et l'épargne à prévoir pour garder votre niveau de vie." },
+        { vue: "#progression?onglet=carriere", cibles: ["#btn-annee"], titre: "Mon année en orbite", texte: "Votre bilan de l'année en quelques cartes : salaire reçu, impôt, pouvoir d'achat, crédits, épargne. L'image à partager ne montre aucun montant." },
+        { vue: "#vie?onglet=scenarios", cibles: ["#vie-tab-scenarios"], titre: "Et si… ?", texte: "Testez une décision avant de la prendre (crédit, hausse, naissance…) : jusqu'à 3 avenirs comparés sur 10 ans, puis appliquez-la à votre profil ou non." },
+        { vue: "#vie?onglet=fiscal", cibles: ["#vie-tab-fiscal"], titre: "Vie & impôts", texte: "Le simulateur de vie et l'optimiseur fiscal : combien verser, et avant quelle date, pour payer moins d'impôt cette année." },
+        { vue: "#compte?onglet=preferences", cibles: ["[aria-labelledby='r-expert']"], titre: "Mode Expert", texte: "La paie mois par mois, Mon orbite mois par mois, et vos tableaux en CSV ou en classeur Excel. À activer ici quand vous voulez tout le détail." },
+        { vue: "#compte?onglet=preferences", cibles: ["[aria-labelledby='r-rappels']"], titre: "Rappels", texte: "Fin d'un crédit, réduction de taux, date limite pour l'impôt : Orbite vous prévient sur cet appareil, ou par e-mail (réglage dans Mon profil), sans aucun montant. Et d'autres nouveautés arrivent régulièrement.", fin: true }
+      ]
+    }
+  };
 
-  var etat = null; /* { i, racine, halo, bulle, precedent } */
+  var etat = null; /* { chap, etapes, i (-1 = écran de choix), racine, halo, bulle, precedent, retour } */
 
   function visible(el) {
     if (!el) return false;
@@ -34,11 +52,15 @@
     return r.width > 0 && r.height > 0 && s.visibility !== "hidden" && s.display !== "none";
   }
   function cibleDe(etape) {
-    var l = etape.cibles || [];
+    var l = (etape && etape.cibles) || [];
     for (var k = 0; k < l.length; k++) { var el = doc.querySelector(l[k]); if (visible(el)) return el; }
     return null;
   }
   function el(tag, cls, txt) { var e = doc.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+
+  function meta() { var u = O.utilisateur && O.utilisateur(); return (u && u.user_metadata) || {}; }
+  function dejaVue() { return !!meta().orbite_visite; }
+  function nouveautesVues() { return meta().orbite_visite_nouveautes === VERSION_NOUVEAUTES; }
 
   function construire() {
     var racine = el("div", "visite"), halo = el("div", "visite__halo"), bulle = el("div", "visite__bulle");
@@ -52,18 +74,30 @@
     bulle.appendChild(tete);
     bulle.appendChild(el("h2", "visite__titre")).id = "visite-titre";
     bulle.appendChild(el("p", "visite__texte")).id = "visite-texte";
-    var points = el("div", "visite__points"); points.setAttribute("aria-hidden", "true");
-    ETAPES.forEach(function () { points.appendChild(el("i")); });
+    /* Écran de choix : deux chapitres. */
+    var choix = el("div", "visite__chapitres"); choix.id = "visite-chapitres";
+    Object.keys(CHAPITRES).forEach(function (cle) {
+      var c = CHAPITRES[cle], b = el("button", "visite__chap visite__chap--" + cle); b.type = "button"; b.id = "visite-chap-" + cle; b.dataset.chap = cle;
+      var ico = el("span", "visite__chap-ico", String(c.etapes.length)); ico.setAttribute("aria-hidden", "true");
+      var txt = el("span", "visite__chap-txt"), nom = el("b", null, c.nom);
+      if (cle === "nouveautes") { var badge = el("span", "visite__badge"); badge.id = "visite-badge"; nom.appendChild(badge); }
+      txt.appendChild(nom); txt.appendChild(el("small", null, c.resume));
+      b.appendChild(ico); b.appendChild(txt);
+      b.addEventListener("click", function () { commencer(cle); });
+      choix.appendChild(b);
+    });
+    bulle.appendChild(choix);
+    var points = el("div", "visite__points"); points.id = "visite-points"; points.setAttribute("aria-hidden", "true");
     bulle.appendChild(points);
-    var pied = el("div", "visite__pied");
+    var pied = el("div", "visite__pied"); pied.id = "visite-pied";
     var prec = el("button", "bouton bouton--petit bouton--fantome", "Précédent"); prec.type = "button"; prec.id = "visite-prec";
     var suiv = el("button", "bouton bouton--petit bouton--plein", "Suivant"); suiv.type = "button"; suiv.id = "visite-suiv";
     pied.appendChild(prec); pied.appendChild(suiv);
     bulle.appendChild(pied);
     racine.appendChild(halo); racine.appendChild(bulle);
     passer.addEventListener("click", function () { terminer(false); });
-    prec.addEventListener("click", function () { aller(etat.i - 1); });
-    suiv.addEventListener("click", function () { if (etat.i >= ETAPES.length - 1) terminer(true); else aller(etat.i + 1); });
+    prec.addEventListener("click", function () { if (etat.i <= 0) montrerChoix(); else aller(etat.i - 1); });
+    suiv.addEventListener("click", function () { if (etat.i >= etat.etapes.length - 1) terminer(true); else aller(etat.i + 1); });
     /* Un clic hors de la bulle ne ferme pas la visite (évite les fermetures accidentelles) ; Échap la ferme. */
     racine.addEventListener("keydown", clavier);
     return { racine: racine, halo: halo, bulle: bulle };
@@ -71,12 +105,18 @@
 
   function clavier(e) {
     if (e.key === "Escape") { e.preventDefault(); terminer(false); return; }
-    if (e.key === "ArrowRight") { e.preventDefault(); if (etat.i < ETAPES.length - 1) aller(etat.i + 1); return; }
-    if (e.key === "ArrowLeft") { e.preventDefault(); if (etat.i > 0) aller(etat.i - 1); return; }
+    if (etat.i >= 0 && e.key === "ArrowRight") { e.preventDefault(); if (etat.i < etat.etapes.length - 1) aller(etat.i + 1); return; }
+    if (etat.i >= 0 && e.key === "ArrowLeft") { e.preventDefault(); if (etat.i > 0) aller(etat.i - 1); return; }
+    if (etat.i < 0 && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+      e.preventDefault();
+      var bs = [].slice.call(etat.bulle.querySelectorAll(".visite__chap")), k = bs.indexOf(doc.activeElement);
+      bs[(k + (e.key === "ArrowDown" ? 1 : bs.length - 1)) % bs.length].focus();
+      return;
+    }
     if (e.key === "Tab") { /* focus gardé dans la bulle */
-      var f = [].slice.call(etat.bulle.querySelectorAll("button:not([disabled])")), a = doc.activeElement, k = f.indexOf(a);
-      if (e.shiftKey && (k <= 0)) { e.preventDefault(); f[f.length - 1].focus(); }
-      else if (!e.shiftKey && k === f.length - 1) { e.preventDefault(); f[0].focus(); }
+      var f = [].slice.call(etat.bulle.querySelectorAll("button:not([disabled])")).filter(visible), a = doc.activeElement, j = f.indexOf(a);
+      if (e.shiftKey && (j <= 0)) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && j === f.length - 1) { e.preventDefault(); f[0].focus(); }
     }
   }
 
@@ -89,9 +129,9 @@
   }
   function placer() {
     if (!etat) return;
-    var etape = ETAPES[etat.i], cible = cibleDe(etape), b = etat.bulle, h = etat.halo;
+    var etape = etat.i >= 0 ? etat.etapes[etat.i] : null, cible = cibleDe(etape), b = etat.bulle, h = etat.halo;
     var vw = doc.documentElement.clientWidth, vh = window.innerHeight, marge = 12;
-    var bw = Math.min(380, vw - 2 * 16);
+    var bw = Math.min(etat.i < 0 ? 420 : 380, vw - 2 * 16);
     b.style.width = bw + "px";
     var bh = b.offsetHeight;
     if (!cible) {
@@ -114,43 +154,87 @@
     b.style.transform = "translate(" + Math.round(bx) + "px," + Math.round(by) + "px)";
   }
 
-  function aller(i) {
-    if (!etat) return;
-    etat.i = Math.max(0, Math.min(ETAPES.length - 1, i));
-    var etape = ETAPES[etat.i], cible = cibleDe(etape);
-    $("visite-compteur").textContent = "Étape " + (etat.i + 1) + " sur " + ETAPES.length;
-    $("visite-titre").textContent = etape.titre;
-    $("visite-texte").textContent = etape.texte;
-    $("visite-prec").hidden = etat.i === 0;
-    $("visite-suiv").textContent = etat.i === 0 ? "Commencer" : etat.i === ETAPES.length - 1 ? "Terminer" : "Suivant";
-    $("visite-passer").hidden = etat.i === ETAPES.length - 1;
-    [].forEach.call(etat.bulle.querySelectorAll(".visite__points i"), function (p, k) { p.classList.toggle("actif", k === etat.i); });
+  function animerEntree() {
     etat.bulle.classList.remove("visite__bulle--entre");
     void etat.bulle.offsetWidth;
     etat.bulle.classList.add("visite__bulle--entre");
-    if (cible) {
-      var r = cible.getBoundingClientRect();
-      if (r.top < 70 || r.bottom > window.innerHeight - 90) cible.scrollIntoView({ block: "center", behavior: "auto" });
-    }
+  }
+
+  /* Écran de choix : le chapitre conseillé est mis en avant et reçoit le focus. */
+  function montrerChoix() {
+    etat.i = -1;
+    var conseil = !dejaVue() ? "essentiel" : (nouveautesVues() ? "essentiel" : "nouveautes");
+    $("visite-compteur").textContent = "Visite guidée";
+    $("visite-titre").textContent = "Par quoi voulez-vous commencer ?";
+    $("visite-texte").textContent = dejaVue() ? "Revoyez l'essentiel, ou découvrez ce qui est arrivé dans Orbite depuis votre première visite." : "Une minute pour l'essentiel. Les nouveautés se découvrent quand vous voulez, avec le bouton « ? ».";
+    $("visite-chapitres").hidden = false;
+    $("visite-points").hidden = true;
+    $("visite-pied").hidden = true;
+    $("visite-passer").hidden = false;
+    $("visite-passer").textContent = "Plus tard";
+    var badge = $("visite-badge");
+    badge.textContent = nouveautesVues() ? "déjà vues" : CHAPITRES.nouveautes.etapes.length + " nouvelles";
+    badge.classList.toggle("visite__badge--vu", nouveautesVues());
+    [].forEach.call(etat.bulle.querySelectorAll(".visite__chap"), function (b) { b.classList.toggle("visite__chap--conseil", b.dataset.chap === conseil); });
+    animerEntree();
     placer();
+    $("visite-chap-" + conseil).focus({ preventScroll: true });
+  }
+
+  function commencer(cle) {
+    etat.chap = cle;
+    etat.etapes = CHAPITRES[cle].etapes;
+    var points = $("visite-points"); points.textContent = "";
+    etat.etapes.forEach(function () { points.appendChild(el("i")); });
+    $("visite-chapitres").hidden = true;
+    $("visite-points").hidden = false;
+    $("visite-pied").hidden = false;
+    $("visite-passer").textContent = "Passer";
+    aller(0);
+  }
+
+  /* Ouvre la page de l'étape si besoin, puis désigne sa rubrique une fois la page affichée. */
+  function aller(i) {
+    if (!etat) return;
+    etat.i = Math.max(0, Math.min(etat.etapes.length - 1, i));
+    var n = etat.i, etape = etat.etapes[n], total = etat.etapes.length;
+    $("visite-compteur").textContent = CHAPITRES[etat.chap].nom + " · " + (n + 1) + " sur " + total;
+    $("visite-titre").textContent = etape.titre;
+    $("visite-texte").textContent = etape.texte;
+    $("visite-prec").textContent = n === 0 ? "Chapitres" : "Précédent";
+    $("visite-suiv").textContent = n === total - 1 ? "Terminer" : "Suivant";
+    $("visite-passer").hidden = n === total - 1;
+    [].forEach.call(etat.bulle.querySelectorAll(".visite__points i"), function (p, k) { p.classList.toggle("actif", k === n); });
+    animerEntree();
+    var montrer = function () {
+      if (!etat || etat.i !== n) return;
+      etat.racine.classList.remove("visite--transit");
+      var cible = cibleDe(etape);
+      if (cible) {
+        var r = cible.getBoundingClientRect();
+        if (r.top < 70 || r.bottom > window.innerHeight - 90) cible.scrollIntoView({ block: "center", behavior: "auto" });
+      }
+      placer();
+    };
+    if (etape.vue && location.hash !== etape.vue) {
+      etat.racine.classList.add("visite--transit");
+      location.hash = etape.vue;
+      setTimeout(montrer, 420);
+    } else montrer();
     $("visite-suiv").focus({ preventScroll: true });
   }
 
   function lancer() {
     if (etat) return;
     var c = construire();
-    etat = { i: 0, racine: c.racine, halo: c.halo, bulle: c.bulle, precedent: doc.activeElement };
-    var ouvrir = function () {
-      doc.body.appendChild(etat.racine);
-      /* Feuille de style pas encore à jour (ancienne version en cache) : on n'affiche pas une visite sans mise en forme. */
-      if (getComputedStyle(etat.racine).position !== "fixed") { etat.racine.remove(); etat = null; return; }
-      doc.body.classList.add("visite-ouverte");
-      window.addEventListener("resize", placerBientot);
-      window.addEventListener("scroll", placerBientot, true);
-      aller(0);
-    };
-    if (!/^#orbite\b|^#?$/.test(location.hash)) { location.hash = "#orbite"; setTimeout(ouvrir, 350); }
-    else ouvrir();
+    etat = { chap: null, etapes: [], i: -1, racine: c.racine, halo: c.halo, bulle: c.bulle, precedent: doc.activeElement, retour: location.hash || "#orbite" };
+    doc.body.appendChild(etat.racine);
+    /* Feuille de style pas encore à jour (ancienne version en cache) : on n'affiche pas une visite sans mise en forme. */
+    if (getComputedStyle(etat.racine).position !== "fixed") { etat.racine.remove(); etat = null; return; }
+    doc.body.classList.add("visite-ouverte");
+    window.addEventListener("resize", placerBientot);
+    window.addEventListener("scroll", placerBientot, true);
+    montrerChoix();
   }
 
   function terminer(complete) {
@@ -159,20 +243,21 @@
     window.removeEventListener("scroll", placerBientot, true);
     etat.racine.remove();
     doc.body.classList.remove("visite-ouverte");
-    var prec = etat.precedent;
+    var prec = etat.precedent, chap = etat.chap, retour = etat.retour, ailleurs = chap && location.hash !== retour;
     etat = null;
+    if (ailleurs) location.hash = retour;
     if (prec && prec.focus && doc.contains(prec)) prec.focus({ preventScroll: true });
-    marquerVue();
-    if (complete) O.toast("Bonne découverte ! Commencez par compléter « Mon profil ».");
+    marquerVue(chap, complete);
+    if (complete) O.toast(chap === "nouveautes" ? "Vous avez fait le tour des nouveautés. D'autres arrivent bientôt !" : "Bonne découverte ! Commencez par compléter « Mon profil ».");
   }
 
-  function dejaVue() {
-    var u = O.utilisateur && O.utilisateur(), m = (u && u.user_metadata) || {};
-    return !!m.orbite_visite;
-  }
-  function marquerVue() {
-    if (dejaVue()) return;
-    E.compte.preferences({ orbite_visite: new Date().toISOString() }).then(function (d) {
+  /* L'essentiel est marqué vu à la première fermeture ; les nouveautés, quand leur chapitre est parcouru jusqu'au bout. */
+  function marquerVue(chap, complete) {
+    var maj = {};
+    if (!dejaVue()) maj.orbite_visite = new Date().toISOString();
+    if (chap === "nouveautes" && complete && !nouveautesVues()) maj.orbite_visite_nouveautes = VERSION_NOUVEAUTES;
+    if (!Object.keys(maj).length) return;
+    E.compte.preferences(maj).then(function (d) {
       var u = d && (d.user || d);
       if (u && u.id) O.definirUtilisateur(u);
     }).catch(function () {});
@@ -187,5 +272,5 @@
     if (e.target.closest("#aide-visite, #param-visite")) { e.preventDefault(); lancer(); }
   });
 
-  window.OrbiteVisite = { lancer: lancer, terminer: terminer, etapes: ETAPES.length };
+  window.OrbiteVisite = { lancer: lancer, terminer: terminer, chapitres: { essentiel: CHAPITRES.essentiel.etapes.length, nouveautes: CHAPITRES.nouveautes.etapes.length } };
 })();

@@ -454,6 +454,20 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 tersexagies. Drapeau tunisien animé et visite guidée en deux chapitres (12 oct., livré)
+
+- **Demande** : un petit drapeau tunisien animé à côté du logo (accueil, connexion, puis Espace) ; visite guidée à mettre à jour avec toutes les nouveautés. Choix : drapeau qui **flotte doucement** ; visite en **deux chapitres**. Maquette validée : https://claude.ai/artifact/DkMd6TSJQBiCpzgR7TN4Sb.
+- **Drapeau** (`public/orbite/signature.css`, chargée par toutes les pages) : `<span class="drapeau" aria-hidden="true">` avec 12 `<i>` ; chaque bande affiche le même dessin SVG (data:, proportions officielles 3:2, rouge #E70013) décalé, animé en vague (`drapeau-flotte`, 4 s, délais de −0,25 s par bande), immobile si mouvement réduit. 27 × 18 px (24 × 16 dans `.marque`). Décoratif : le lien garde son nom « Orbite, accueil ». Posé sur l'accueil, la connexion, l'Espace (menu de gauche et barre du haut sur téléphone), les 4 pages publiques (via `scripts/pages-publiques.js`, puis `node scripts/pages-publiques.js`), confidentialité et CGV. Aucune violation de CSP (image en data:, autorisée par img-src).
+- **Visite guidée** (`public/espace/js/visite.js`, styles dans `app.css`) :
+  - toujours un **écran de choix** d'abord : « L'essentiel » (8 étapes) ou « Les nouveautés » (10 étapes, badge « 10 nouvelles » puis « déjà vues ») ; le chapitre conseillé est encadré et reçoit le focus (nouveau venu → essentiel ; déjà venu → nouveautés tant que la version n'est pas vue) ; flèches haut/bas entre les chapitres ;
+  - une étape peut **ouvrir sa page** (`vue`, ex. `#profil?section=salaire`, `#progression?onglet=retraite`, `#vie?onglet=scenarios`, `#compte?onglet=preferences`) : la bulle s'efface 420 ms le temps de l'affichage (`visite--transit`), puis le halo désigne la rubrique ; à la fin, retour à la page de départ ;
+  - « Chapitres » (bouton Précédent de la 1re étape) revient au choix ;
+  - comptes : `user_metadata.orbite_visite` (essentiel, à la première fermeture) et `orbite_visite_nouveautes = "2026-10-11"` (chapitre des nouveautés parcouru jusqu'au bout). **Nouvelle vague de nouveautés : ajouter les étapes et changer `VERSION_NOUVEAUTES`** pour que le badge revienne.
+  - Nouveautés de la visite : fiche de paie, historique du salaire, Ma progression, objectifs, retraite, Mon année en orbite, Et si…, Vie & impôts, mode Expert, rappels.
+- Nouveautés `2026-10-12a` ; SW `orbite-2026-10-12a`.
+- **Tests** : unitaires 460 ; e2e 50/50 (étape « visite » réécrite : choix, essentiel au clavier, nouveautés qui ouvrent chaque page et désignent la carte de la fiche de paie, retour à Mon orbite, badge « déjà vues » ; téléphone : chapitre puis étapes).
+- **En attente côté utilisateur** : son Chrome personnel est « géré » (réglage DNS sécurisé verrouillé) et le Wi-Fi n'atteint pas `txrwgqgnqdkipwtwpevl.supabase.co` (la 5G oui). Captures de `chrome://management` et `chrome://policy` demandées. Option validée sur le principe (« oui, avec maquette ») : relais gratuit Cloudflare vers Supabase par l'adresse d'Orbite ; il imposerait la connexion Google par jeton (Google Identity Services + `signInWithIdToken`), car l'adresse de retour Google de Supabase n'est pas modifiable sans domaine personnalisé payant.
+
 ## 3 duosexagies. Lot 7 « Lire ma fiche de paie » (11 oct., livré)
 
 - **Demande** : passer au lot 7 (**lot 8 abandonné par l'utilisateur** : « pas important pour moi »). Choix de l'utilisateur :

@@ -770,6 +770,25 @@ body.attente .onglets-bas a, body.attente .rail__liens a { pointer-events: none;
 .visite__points i { width: 6px; height: 6px; border-radius: 999px; background: var(--filet-fort); transition: width 240ms var(--sortie), background-color 200ms ease; }
 .visite__points i.actif { width: 18px; background: var(--credit); }
 .visite__pied { display: flex; justify-content: flex-end; gap: 8px; }
+.visite__pied[hidden], .visite__points[hidden], .visite__chapitres[hidden] { display: none; }
+/* Écran de choix : deux chapitres, le conseillé est encadré. */
+.visite__chapitres { display: grid; gap: 8px; margin: 14px 0 4px; }
+.visite__chap { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 12px; align-items: center; width: 100%; padding: 12px; border-radius: 16px; border: 1.5px solid var(--filet); background: var(--surface); color: var(--encre); font: inherit; text-align: left; cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 200ms ease, transform 160ms var(--sortie); }
+.visite__chap:hover { border-color: var(--filet-fort); }
+.visite__chap:active { transform: scale(.98); }
+.visite__chap--conseil { border-color: var(--salaire); box-shadow: 0 0 0 3px color-mix(in srgb, var(--salaire) 22%, transparent); }
+.visite__chap-ico { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; font-family: var(--affiche); font-weight: 800; font-size: 17px; }
+.visite__chap--essentiel .visite__chap-ico { background: var(--salaire-doux); color: var(--salaire-t); }
+.visite__chap--nouveautes .visite__chap-ico { background: var(--epargne-doux); color: var(--epargne-t); }
+.visite__chap-txt { display: grid; gap: 2px; min-width: 0; }
+.visite__chap-txt b { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 15px; }
+.visite__chap-txt small { font-size: 13px; color: var(--encre-3); }
+.visite__badge { padding: 1px 8px; border-radius: 999px; background: var(--epargne); color: #fff; font-size: 11px; font-weight: 700; line-height: 1.6; }
+.visite__badge--vu { background: var(--surface-3); color: var(--encre-3); }
+/* Changement de page entre deux étapes : la bulle s'efface le temps que la page s'affiche. */
+.visite--transit .visite__bulle { opacity: 0; }
+.visite__bulle, .visite__halo { transition-property: transform, width, height, opacity; }
 @media (prefers-reduced-motion: reduce) {
   .visite__halo, .visite__bulle, .visite__points i { transition: none; }
   .visite__bulle--entre { animation: none; }
