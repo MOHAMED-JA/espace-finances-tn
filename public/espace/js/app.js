@@ -637,6 +637,19 @@
     } else changer();
   }
   window.addEventListener("hashchange", function () { afficher(true); });
+  /* Lien vers une rubrique de la page (« #admin-t-liste », « #section-offres », « Aller au contenu ») : ce n'est pas
+     une page d'Orbite. On défile jusqu'à la rubrique sans changer l'adresse, sinon le routeur ouvrirait « Mon orbite ». */
+  doc.addEventListener("click", function (e) {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var a = e.target.closest && e.target.closest('a[href^="#"]'); if (!a) return;
+    var cle = a.getAttribute("href").slice(1), nom = cle.split("?")[0];
+    if (!nom || VUES.indexOf(nom) !== -1) return;
+    var cible = doc.getElementById(nom); if (!cible) return;
+    e.preventDefault();
+    if (!cible.hasAttribute("tabindex") && !/^(A|BUTTON|INPUT|SELECT|TEXTAREA)$/.test(cible.tagName)) cible.tabIndex = -1;
+    cible.scrollIntoView({ behavior: mouvementReduit.matches ? "auto" : "smooth", block: "start" });
+    cible.focus({ preventScroll: true });
+  });
 
 
   /* ---------- Thème ---------- */
