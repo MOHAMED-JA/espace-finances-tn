@@ -677,6 +677,34 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 decnonagies. Point 5 : règles sourcées et validées (12 oct.)
+
+Recherche du 12 oct. Les sites officiels (jibaya.tn, jurisitetunisie, sites des banques) sont injoignables depuis l'environnement de travail ; seuls les résumés de recherche sont disponibles. Les sources se contredisent. **Choix validés par l'utilisateur** (options conseillées) :
+
+- **Frais d'achat d'un logement neuf chez un promoteur, sous 500 000 DT** :
+  - valeurs par défaut, **toutes modifiables** :
+    - droit d'enregistrement fixe, 30 DT par page ;
+    - conservation foncière, 1 % ;
+    - inscription de l'hypothèque de la banque, 0,2 % du prêt ;
+    - notaire ou avocat, 1,5 % ;
+  - au-delà de 500 000 DT : droit progressif, avec le message « à confirmer avec le notaire » ;
+  - sources :
+    - [bigdatis 2026](https://bigdatis.com/droits-enregistrement-bien-immobilier-tunisie-2026/) ;
+    - [Abilia](https://abilia.tn/les-droits-denregistrement-dun-bien-immobilier-en-tunisie-en-2024/) ;
+    - [Tuniscope](https://www.tuniscope.com/article/437754/actualites/tunisie/immobilier-en-tunisie-2903241021) ;
+    - [droits de conservation foncière](https://www.jurisitetunisie.com/tunisie/index/cdet/droits_conservation.html) ;
+    - [Code des droits d'enregistrement 2025](https://jibaya.tn/wp-content/uploads/2025/04/Code-des-Droits-dEnregistrement-et-de-Timbre-2025.pdf) ;
+  - TVA : déjà comprise dans le prix TTC du promoteur ; 19 % au-delà de 400 000 DT.
+- **Indemnité de remboursement anticipé** (rachat) :
+  - aucun plafond légal tunisien n'a été trouvé : c'est le contrat qui fixe le montant ;
+  - valeur par défaut : **1,5 % du capital restant dû**, modifiable ;
+  - repères : la presse cite 1 à 1,5 % ; le barème d'une banque mentionnait 5 % ;
+  - source : [Managers](https://managers.tn/2024/06/20/ce-que-les-tunisiens-doivent-savoir-sur-le-remboursement-anticipe-dun-credit/).
+- **Programme « Premier logement »** : option affichée « à confirmer », avec un lien pour vérifier auprès de la banque. Paramètres modifiables :
+  - apport de 20 % financé par l'État ;
+  - plafond du prix ;
+  - taux du prêt de l'État.
+
 ## 3 noveoctogies. Lot 2 livré : partager, guider, comparer, annuler, lisibilité, document reçu (12 oct.)
 
 Branche `lot2`. Tout tourne sur l'appareil ; aucune nouvelle table, aucune migration.
