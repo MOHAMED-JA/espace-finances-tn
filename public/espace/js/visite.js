@@ -1,5 +1,5 @@
 /*
- * Orbite — visite guidée en trois chapitres (maquette validée le 12 oct. 2026, nouveautés d'octobre ajoutées le même jour, puis celles du Lot 2).
+ * Orbite — visite guidée en trois chapitres (maquette validée le 12 oct. 2026, nouveautés d'octobre ajoutées le même jour, puis celles du Lot 2 et du point 5).
  * Elle s'ouvre toujours sur un choix : « L'essentiel » (8 étapes, proposé aux nouveaux venus), « Les nouveautés »
  * (8 étapes, proposé à ceux qui ont déjà vu l'essentiel ; badge tant que cette version n'a pas été vue) et
  * « Pour aller plus loin » (10 étapes : les nouveautés précédentes).
@@ -11,7 +11,7 @@
 (function () {
   "use strict";
   var O = window.Orbite, E = window.Espace, doc = document, $ = O.$;
-  var VERSION_NOUVEAUTES = "2026-10-12b";
+  var VERSION_NOUVEAUTES = "2026-10-12c";
 
   /* cibles : sélecteurs essayés dans l'ordre ; le premier visible est désigné. vue : page à ouvrir d'abord. */
   var CHAPITRES = {
@@ -29,16 +29,16 @@
       ]
     },
     nouveautes: {
-      nom: "Les nouveautés", resume: "Simulation guidée, partager, comparer, annuler, lisibilité · 2 minutes",
+      nom: "Les nouveautés", resume: "Mon mois, projet immobilier, offres, TMM, partager, comparer · 2 minutes",
       etapes: [
+        { vue: "#mois?onglet=budget", cibles: ["#mo-ajout"], titre: "Mon mois : le budget", texte: "Des enveloppes proposées à partir de votre profil, le reste à vivre et ce que vous pouvez dépenser par jour jusqu'à la paie. Notez une dépense en une phrase : « 45 dinars d'essence »." },
+        { vue: "#mois?onglet=calendrier", cibles: ["#mo-cal-grille"], titre: "Le calendrier de l'argent", texte: "Paie, prélèvements des crédits, versements d'épargne, dernière échéance et 31 décembre sur une seule vue. « Ajouter à mon agenda » les envoie dans le calendrier du téléphone." },
+        { vue: "#credit", cibles: ["#credit-espaces"], titre: "Crédit : 4 nouveaux onglets", texte: "Mon projet immobilier (frais d'achat, crédit, quand acheter), Comparer mes offres (classées par coût total), Regrouper mes crédits, et le TMM du mois avec son effet sur vos mensualités." },
         { vue: "#credit", cibles: ["[data-guidee='credit']"], titre: "Simulation guidée", texte: "Quelques questions simples, une à la fois, puis le résultat : dans Crédit, Salaire et Épargne. Le module est rempli pour vous, tout reste modifiable." },
         { vue: "#credit", cibles: ["#partager-sim", "#vue-credit .partager-mobile"], titre: "Partager une simulation", texte: "Un lien, un QR code, WhatsApp ou un e-mail : la personne ouvre la page publique d'Orbite déjà remplie, sans compte. Seuls les montants voyagent, jamais votre nom ni votre profil." },
-        { vue: "#credit", cibles: [".barre__histo", "#palette-ouvrir"], titre: "Annuler, rétablir", texte: "Une erreur de saisie ? ↶ ou Ctrl Z revient en arrière, ↷ ou Ctrl Y rétablit, dans Crédit, Salaire et Épargne. Sur téléphone : Ctrl K (la loupe), « Annuler »." },
-        { vue: "#credit", cibles: ["#cr-outil-audit"], titre: "Envoyer un document depuis le téléphone", texte: "Orbite installée apparaît dans « Partager » : envoyez-lui une fiche de paie, le tableau de votre banque ou une offre de crédit. Orbite reconnaît le document et ouvre le bon outil, sans rien envoyer." },
-        { vue: "#credit", cibles: ["#cr-phrase-bloc"], titre: "Crédit complet", texte: "Votre crédit en une phrase ou à la voix, l'offre de la banque lue en photo, le tableau de la banque contrôlé au millime, le voyage dans le temps, et l'échéancier en PDF ou en Excel." },
         { vue: "#simulations", cibles: ["#comparer-mode"], titre: "Comparer vos simulations", texte: "Cochez 2 ou 3 simulations du même module : elles s'affichent côte à côte, et la meilleure mensualité, le coût le plus bas ou l'économie la plus haute sont marqués." },
-        { vue: "#profil?section=contrats", cibles: ["#p-jour-versement", "#sec-contrats"], titre: "Rappel de versement", texte: "Choisissez le jour du mois : Orbite vous rappelle de verser votre épargne. L'e-mail de rappel, si vous l'activez, ne contient aucun montant." },
-        { vue: "#compte?onglet=preferences", cibles: ["[aria-labelledby='r-lisible']"], titre: "Haute lisibilité", texte: "Texte plus grand, gris plus foncés, liens soulignés : un réglage retenu sur votre compte, sur tous vos appareils. Aussi dans Ctrl K. Le chapitre « Pour aller plus loin » montre les autres fonctions.", fin: true }
+        { vue: "#credit", cibles: [".barre__histo", "#palette-ouvrir"], titre: "Annuler, rétablir", texte: "Une erreur de saisie ? ↶ ou Ctrl Z revient en arrière, ↷ ou Ctrl Y rétablit, dans Crédit, Salaire et Épargne. Sur téléphone : Ctrl K (la loupe), « Annuler »." },
+        { vue: "#compte?onglet=preferences", cibles: ["[aria-labelledby='r-lisible']"], titre: "Haute lisibilité", texte: "Texte plus grand, gris plus foncés, liens soulignés : un réglage retenu sur votre compte, sur tous vos appareils. Le chapitre « Pour aller plus loin » montre les autres fonctions.", fin: true }
       ]
     },
     plus: {
@@ -55,6 +55,7 @@
         { vue: "#orbite", cibles: ["#palette-ouvrir"], titre: "Ctrl K : tout trouver", texte: "Ctrl K (⌘ K sur Mac), « / » ou la loupe : tapez quelques lettres (« kridi », « retraite », « dossier »…) pour sauter à une page, une section ou une action. Une phrase entière part à l'Assistant." },
         { vue: "#orbite", cibles: ["#apps-ouvrir"], titre: "Mes applications", texte: "Toutes les parties d'Orbite et les simulateurs (crédit, assurance vie, assurance auto, salaire) au même endroit. Un simulateur s'ouvre dans Orbite : « ← Orbite » vous ramène où vous étiez." },
         { vue: "#salaire", cibles: ["#nego-ouvrir"], titre: "Préparer ma négociation", texte: "Dites ce que vous voulez toucher : Orbite trouve le brut à demander, vos trois paliers, des arguments chiffrés et une note PDF. L'onglet « Offre reçue » juge une offre d'emploi." },
+        { vue: "#credit", cibles: ["#cr-outil-audit"], titre: "Envoyer un document depuis le téléphone", texte: "Orbite installée apparaît dans « Partager » : envoyez-lui une fiche de paie, le tableau de votre banque ou une offre de crédit. Orbite reconnaît le document et ouvre le bon outil, sans rien envoyer." },
         { vue: "#credit", cibles: ["#dossier-ouvrir"], titre: "Dossier banque", texte: "Un PDF propre à remettre à votre conseiller : revenus, charges, capacité et crédit demandé, préparés à partir de votre profil." },
         { vue: "#compte?onglet=preferences", cibles: ["[aria-labelledby='r-expert']"], titre: "Mode Expert", texte: "La paie mois par mois, Mon orbite mois par mois, et vos tableaux en CSV ou en classeur Excel. À activer ici quand vous voulez tout le détail." },
         { vue: "#compte?onglet=preferences", cibles: ["[aria-labelledby='r-rappels']"], titre: "Rappels", texte: "Fin d'un crédit, réduction de taux, date limite pour l'impôt : Orbite vous prévient sur cet appareil, ou par e-mail (réglage dans Mon profil), sans aucun montant. Et d'autres nouveautés arrivent régulièrement.", fin: true }

@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="/espace/epargne.css">
   <link rel="stylesheet" href="/espace/abonnement.css">
   <link rel="stylesheet" href="/espace/progression.css">
+  <link rel="stylesheet" href="/espace/mois.css">
   <link rel="stylesheet" href="/espace/annee.css">
   <link rel="stylesheet" href="/espace/fiche.css">
   <link rel="stylesheet" href="/espace/dossier.css">
@@ -61,6 +62,7 @@
         <li><a href="#credit" data-vue="credit" data-module="credit"><svg aria-hidden="true"><use href="/orbite/icones.svg#credit"/></svg><span>Crédit</span></a></li>
         <li><a href="#vie" data-vue="vie"><svg aria-hidden="true"><use href="/orbite/icones.svg#cible"/></svg><span>Vie &amp; impôts</span></a></li>
         <li><a href="#progression" data-vue="progression"><svg aria-hidden="true"><use href="/orbite/icones.svg#hausse"/></svg><span>Ma progression</span></a></li>
+        <li><a href="#mois" data-vue="mois"><svg aria-hidden="true"><use href="/orbite/icones.svg#calendrier"/></svg><span>Mon mois</span></a></li>
         <li><a href="#assistant" data-vue="assistant"><svg aria-hidden="true"><use href="/orbite/icones.svg#etoile"/></svg><span>Assistant</span></a></li>
       </ul>
       <p class="rail__titre" id="rail-perso">Mon espace</p>
@@ -356,6 +358,7 @@
             <nav class="sous-nav" aria-label="Mon espace">
               <a class="bouton bouton--petit" href="#vie"><svg aria-hidden="true"><use href="/orbite/icones.svg#cible"/></svg>Vie &amp; impôts</a>
               <a class="bouton bouton--petit" href="#progression"><svg aria-hidden="true"><use href="/orbite/icones.svg#hausse"/></svg>Ma progression</a>
+              <a class="bouton bouton--petit" href="#mois"><svg aria-hidden="true"><use href="/orbite/icones.svg#calendrier"/></svg>Mon mois</a>
               <a class="bouton bouton--petit" href="#simulations"><svg aria-hidden="true"><use href="/orbite/icones.svg#liste"/></svg>Mes simulations</a>
               <a class="bouton bouton--petit" href="#compte"><svg aria-hidden="true"><use href="/orbite/icones.svg#compte"/></svg>Compte</a>
             </nav>
@@ -713,7 +716,18 @@
               <button type="button" class="bouton bouton--petit" id="dossier-ouvrir"><svg aria-hidden="true"><use href="/orbite/icones.svg#fiche"/></svg>Préparer mon dossier banque</button>
             </div>
           </header>
-          <div id="credit-racine" class="module__racine"><div class="squelette module__attente"></div></div>
+          <div class="onglets credit-espaces" role="tablist" aria-label="Espaces du crédit" id="credit-espaces">
+            <button type="button" role="tab" id="ce-tab-simuler" aria-controls="credit-racine" aria-selected="true" data-espace="simuler">Simuler</button>
+            <button type="button" role="tab" id="ce-tab-projet" aria-controls="credit-projet" aria-selected="false" tabindex="-1" data-espace="projet">Mon projet immobilier</button>
+            <button type="button" role="tab" id="ce-tab-offres" aria-controls="credit-offres" aria-selected="false" tabindex="-1" data-espace="offres">Comparer mes offres</button>
+            <button type="button" role="tab" id="ce-tab-regrouper" aria-controls="credit-regrouper" aria-selected="false" tabindex="-1" data-espace="regrouper">Regrouper mes crédits</button>
+            <button type="button" role="tab" id="ce-tab-tmm" aria-controls="credit-tmm" aria-selected="false" tabindex="-1" data-espace="tmm">Le TMM</button>
+          </div>
+          <div id="credit-racine" class="module__racine" role="tabpanel" aria-labelledby="ce-tab-simuler"><div class="squelette module__attente"></div></div>
+          <div id="credit-projet" class="module__racine ce-espace" role="tabpanel" aria-labelledby="ce-tab-projet" hidden></div>
+          <div id="credit-offres" class="module__racine ce-espace" role="tabpanel" aria-labelledby="ce-tab-offres" hidden></div>
+          <div id="credit-regrouper" class="module__racine ce-espace" role="tabpanel" aria-labelledby="ce-tab-regrouper" hidden></div>
+          <div id="credit-tmm" class="module__racine ce-espace" role="tabpanel" aria-labelledby="ce-tab-tmm" hidden></div>
         </section>
 
         <!-- ======== Simulations ======== -->
@@ -1007,6 +1021,17 @@
                   </div>
                 </div>
                 <p class="admin__note admin__offert-astuce">Pour un seul compte : bouton « Offrir à vie » ou « Retirer » dans la liste <a href="#admin-t-liste">Comptes</a>, plus bas.</p>
+              </section>
+              <section class="panneau admin__bloc admin__tmm" aria-labelledby="admin-t-tmm">
+                <div class="admin__tete"><h2 id="admin-t-tmm">TMM du mois</h2><span class="puce puce--credit" id="admin-tmm-dernier"></span></div>
+                <p class="admin__note">Le taux publié chaque mois par la Banque centrale de Tunisie. Le dernier saisi s'applique à tout Orbite (capacité, crédit, Et si…), pour tous les comptes.</p>
+                <form class="admin__tmm-form" id="admin-tmm-form" novalidate>
+                  <div class="champ"><label for="admin-tmm-mois">Mois</label><div class="saisie"><input type="month" id="admin-tmm-mois" required></div></div>
+                  <div class="champ"><label for="admin-tmm-taux">TMM</label><div class="saisie"><input type="text" inputmode="decimal" id="admin-tmm-taux" autocomplete="off" placeholder="7,45" required><span class="saisie__unite">%</span></div></div>
+                  <button type="submit" class="bouton bouton--plein bouton--petit">Enregistrer</button>
+                </form>
+                <p class="erreur-champ" id="admin-tmm-erreur" role="alert" hidden></p>
+                <ul class="admin__tmm-liste" id="admin-tmm-liste" aria-label="TMM saisis"></ul>
               </section>
               <div class="admin__deux">
                 <section class="panneau admin__bloc" aria-labelledby="admin-t-alertes">
@@ -1428,6 +1453,88 @@
             </div>
           </div>
         </section>
+        <!-- ======== Mon mois : budget et calendrier (point 5) ======== -->
+        <section class="vue" id="vue-mois" data-vue="mois" aria-labelledby="titre-mois" hidden>
+          <header class="vue__tete mo-tete">
+            <div>
+              <h1 id="titre-mois">Mon mois</h1>
+              <p class="vue__sous">Votre budget par enveloppe et toutes les dates d'argent du mois : paie, prélèvements, versements.</p>
+            </div>
+            <div class="mo-onglets" role="tablist" aria-label="Mon mois" data-o="budget">
+              <i aria-hidden="true"></i>
+              <button type="button" role="tab" id="mo-tab-budget" aria-controls="mo-budget" aria-selected="true" data-onglet="budget">Budget</button>
+              <button type="button" role="tab" id="mo-tab-calendrier" aria-controls="mo-calendrier" aria-selected="false" tabindex="-1" data-onglet="calendrier">Calendrier</button>
+            </div>
+          </header>
+
+          <!-- ============ Budget ============ -->
+          <div class="mo-panneau" id="mo-budget" role="tabpanel" aria-labelledby="mo-tab-budget">
+            <div class="mo-mois-nav" role="group" aria-label="Mois du budget">
+              <button type="button" class="bouton bouton--icone bouton--petit" id="mo-b-prec" aria-label="Mois précédent"><svg aria-hidden="true"><use href="/orbite/icones.svg#retour"/></svg></button>
+              <b id="mo-b-mois" aria-live="polite"></b>
+              <button type="button" class="bouton bouton--icone bouton--petit" id="mo-b-suiv" aria-label="Mois suivant"><svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></button>
+            </div>
+            <div class="mo-grille">
+              <section class="panneau mo-reste" aria-labelledby="mo-t-reste">
+                <h2 id="mo-t-reste">Reste à vivre</h2>
+                <p class="mo-reste__chiffre chiffre" id="mo-reste"></p>
+                <p class="mo-reste__jour" id="mo-par-jour"></p>
+                <div class="mo-jauge" aria-hidden="true"><i id="mo-jauge"></i></div>
+                <dl class="mo-totaux">
+                  <div><dt>Revenu du mois</dt><dd class="chiffre" id="mo-net"></dd></div>
+                  <div><dt>Prévu</dt><dd class="chiffre" id="mo-prevu"></dd></div>
+                  <div><dt>Dépensé</dt><dd class="chiffre" id="mo-depense"></dd></div>
+                </dl>
+                <p class="mo-alerte" id="mo-alerte" role="status" hidden></p>
+              </section>
+              <section class="panneau mo-ajout" aria-labelledby="mo-t-ajout">
+                <h2 id="mo-t-ajout">Noter une dépense</h2>
+                <p class="panneau__sous">En une phrase : « 45 dinars d'essence », « café 3,5 », « ٢٠ دينار خضرة ». Orbite range le montant dans la bonne enveloppe.</p>
+                <form class="mo-ajout__form" id="mo-ajout" novalidate>
+                  <div class="champ champ--large"><label for="mo-phrase">Dépense</label><div class="saisie"><input id="mo-phrase" type="text" maxlength="80" autocomplete="off" placeholder="45 dinars d'essence" aria-describedby="mo-phrase-aide"></div><span class="champ__aide" id="mo-phrase-aide" aria-live="polite"></span></div>
+                  <div class="champ"><label for="mo-env">Enveloppe</label><div class="saisie"><select id="mo-env"></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
+                  <button type="submit" class="bouton bouton--plein" id="mo-ajouter"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg>Ajouter</button>
+                </form>
+                <p class="ce-note"><svg aria-hidden="true"><use href="/orbite/icones.svg#cadenas"/></svg><span>Seuls les totaux par enveloppe sont gardés, dans votre profil. L'import d'un relevé bancaire viendra plus tard.</span></p>
+              </section>
+            </div>
+            <section class="panneau mo-env-panneau" aria-labelledby="mo-t-env">
+              <div class="mo-env-tete">
+                <div><h2 id="mo-t-env">Enveloppes</h2><p class="panneau__sous" id="mo-env-sous"></p></div>
+                <button type="button" class="bouton bouton--fantome bouton--petit" id="mo-env-reinit" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#annuler"/></svg>Revenir à la proposition</button>
+              </div>
+              <ul class="mo-env" id="mo-env-liste" role="list"></ul>
+            </section>
+          </div>
+
+          <!-- ============ Calendrier ============ -->
+          <div class="mo-panneau" id="mo-calendrier" role="tabpanel" aria-labelledby="mo-tab-calendrier" hidden>
+            <div class="mo-mois-nav" role="group" aria-label="Mois du calendrier">
+              <button type="button" class="bouton bouton--icone bouton--petit" id="mo-c-prec" aria-label="Mois précédent"><svg aria-hidden="true"><use href="/orbite/icones.svg#retour"/></svg></button>
+              <b id="mo-c-mois" aria-live="polite"></b>
+              <button type="button" class="bouton bouton--icone bouton--petit" id="mo-c-suiv" aria-label="Mois suivant"><svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></button>
+              <button type="button" class="bouton bouton--petit mo-ics" id="mo-ics"><svg aria-hidden="true"><use href="/orbite/icones.svg#calendrier"/></svg><span>Ajouter à mon agenda</span></button>
+            </div>
+            <div class="mo-grille mo-grille--cal">
+              <section class="panneau mo-cal" aria-labelledby="mo-c-mois">
+                <p class="mo-cal__resume" id="mo-cal-resume"></p>
+                <div class="mo-cal__grille" id="mo-cal-grille" aria-hidden="true"></div>
+                <ul class="mo-legende" role="list">
+                  <li data-t="paie">Paie</li><li data-t="credit">Crédit</li><li data-t="epargne">Épargne</li><li data-t="fiscal">Impôt</li><li data-t="rappel">Rappel</li>
+                </ul>
+              </section>
+              <section class="panneau mo-agenda" aria-labelledby="mo-t-agenda">
+                <h2 id="mo-t-agenda">Dates du mois</h2>
+                <ol class="mo-agenda__liste" id="mo-agenda" role="list"></ol>
+                <p class="mo-vide" id="mo-agenda-vide" hidden>Aucune date d'argent ce mois-ci.</p>
+              </section>
+            </div>
+            <details class="panneau mo-dates" id="mo-dates">
+              <summary><svg aria-hidden="true"><use href="/orbite/icones.svg#outils"/></svg><span>Régler les dates<small>Jour de paie, jour de prélèvement de chaque crédit, jour de versement de l'épargne.</small></span></summary>
+              <div class="mo-dates__champs" id="mo-dates-champs"></div>
+            </details>
+          </div>
+        </section>
       </main>
     </div>
 
@@ -1439,7 +1546,7 @@
       <a href="#salaire" data-vue="salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#salaire"/></svg><span data-lib-salaire>Salaire</span></a>
       <a href="#epargne" data-vue="epargne"><svg aria-hidden="true"><use href="/orbite/icones.svg#epargne"/></svg><span>Épargne</span></a>
       <a href="#credit" data-vue="credit"><svg aria-hidden="true"><use href="/orbite/icones.svg#credit"/></svg><span>Crédit</span></a>
-      <a href="#profil" data-vue="profil" data-vues="profil simulations compte abonnement vie progression"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span>Moi</span></a>
+      <a href="#profil" data-vue="profil" data-vues="profil simulations compte abonnement vie progression mois"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span>Moi</span></a>
     </nav>
   </div>
 
@@ -1475,6 +1582,7 @@
         <div class="champ"><label>Type de taux</label><div class="saisie"><select data-c="tauxType"><option value="">Non précisé</option><option value="fixe">Fixe</option><option value="variable">Variable (TMM + marge)</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
         <div class="champ"><label>Dernière réduction : mois</label><div class="saisie"><select data-c="reductionMois"><option value="0">—</option><option value="1">Janvier</option><option value="2">Février</option><option value="3">Mars</option><option value="4">Avril</option><option value="5">Mai</option><option value="6">Juin</option><option value="7">Juillet</option><option value="8">Août</option><option value="9">Septembre</option><option value="10">Octobre</option><option value="11">Novembre</option><option value="12">Décembre</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
         <div class="champ"><label>Dernière réduction : année</label><div class="saisie"><input data-c="reductionAnnee" data-type="entier" type="text" inputmode="numeric" maxlength="4" placeholder="Jamais"></div></div>
+        <div class="champ"><label>Jour du prélèvement</label><div class="saisie"><input data-c="jourPrelevement" data-type="entier" type="text" inputmode="numeric" maxlength="2" placeholder="Ex. 5"></div><span class="champ__aide">Pour le calendrier de Mon mois</span></div>
       </div>
       <p class="ligne-liste__info ligne-liste__info--credit" data-echeancier aria-live="polite">Indiquez la date de début et la durée : Orbite calcule les échéances restantes et la date de fin.</p>
       <p class="ligne-liste__info ligne-liste__info--credit" data-reduction aria-live="polite" hidden></p>
@@ -2123,6 +2231,7 @@
   <script src="/moteurs/vie/projection.js"></script>
   <script src="/moteurs/vie/scenario.js"></script>
   <script src="/moteurs/salaire/pension.js"></script>
+  <script src="/espace/js/budget-calcul.js"></script>
   <script src="/espace/js/orbite-calcul.js"></script>
   <script src="/espace/js/orbite-intelligence.js"></script>
   <script src="/espace/js/assistant-local.js"></script>
@@ -2149,7 +2258,7 @@
   <script src="/moteurs/vie/xlsx.js"></script>
   <script src="/moteurs/vie/releve.js"></script>
   <script src="/espace/js/module-epargne.js"></script>
-  <script src="/moteurs/credit/credit.js"></script><script src="/moteurs/credit/phrase.js"></script><script src="/moteurs/credit/audit.js"></script><script src="/espace/js/credit-documents.js"></script><script src="/espace/js/module-credit.js"></script>
+  <script src="/moteurs/credit/credit.js"></script><script src="/espace/js/tmm.js"></script><script src="/moteurs/credit/phrase.js"></script><script src="/moteurs/credit/audit.js"></script><script src="/espace/js/credit-documents.js"></script><script src="/espace/js/module-credit.js"></script><script src="/moteurs/credit/projets.js"></script><script src="/espace/js/credit-espaces.js"></script>
   <script src="/commun/fuites.js"></script>
   <script src="/espace/js/comparer-calcul.js"></script>
   <script src="/espace/js/simulations.js"></script>
@@ -2173,6 +2282,8 @@
   <script src="/espace/js/progression-calcul.js"></script>
   <script src="/espace/js/retraite-calcul.js"></script>
   <script src="/espace/js/vue-progression.js"></script>
+  <script src="/espace/js/calendrier-calcul.js"></script>
+  <script src="/espace/js/vue-mois.js"></script>
   <script src="/espace/js/annee-calcul.js"></script>
   <script src="/espace/js/vue-annee.js"></script>
   <script src="/espace/js/fiche-lecture.js"></script>

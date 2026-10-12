@@ -271,8 +271,8 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(await page.$eval("#visite-chap-nouveautes", (b) => b.classList.contains("visite__chap--conseil")), "déjà venu : « Les nouveautés » conseillées");
     assert(await page.isVisible("#visite-chap-plus"), "chapitre « Pour aller plus loin »");
     await page.click("#visite-chap-nouveautes");
-    assert(/Simulation guidée/.test(await page.textContent("#visite-titre")), "première nouveauté : la simulation guidée");
-    await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.querySelector("[data-guidee='credit']").getBoundingClientRect(); return location.hash === "#credit" && !document.querySelector(".visite--transit") && Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
+    assert(/Mon mois : le budget/.test(await page.textContent("#visite-titre")), "première nouveauté : Mon mois");
+    await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.getElementById("mo-ajout").getBoundingClientRect(); return location.hash === "#mois?onglet=budget" && !document.querySelector(".visite--transit") && Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
     await page.waitForTimeout(400);
     await page.screenshot({ path: path.join(CAPTURES, "visite-nouveautes.png") });
     const vus = [];
@@ -281,12 +281,12 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
       await page.waitForFunction(() => !document.querySelector(".visite--transit"));
       vus.push((await page.textContent("#visite-titre")) + " @ " + (await page.evaluate(() => location.hash)));
     }
-    assert(vus.some((t) => /Partager une simulation @ #credit/.test(t)) && vus.some((t) => /Comparer vos simulations @ #simulations/.test(t)) && vus.some((t) => /Rappel de versement @ #profil/.test(t)) && vus.some((t) => /Haute lisibilité @ #compte\?onglet=preferences/.test(t)), "pages ouvertes : " + vus.join(" | "));
+    assert(vus.some((t) => /calendrier de l'argent @ #mois\?onglet=calendrier/.test(t)) && vus.some((t) => /4 nouveaux onglets @ #credit/.test(t)) && vus.some((t) => /Partager une simulation @ #credit/.test(t)) && vus.some((t) => /Comparer vos simulations @ #simulations/.test(t)) && vus.some((t) => /Haute lisibilité @ #compte\?onglet=preferences/.test(t)), "pages ouvertes : " + vus.join(" | "));
     await page.screenshot({ path: path.join(CAPTURES, "visite-credit.png") });
     await page.click("#visite-suiv");
     await page.waitForSelector(".visite", { state: "detached" });
     await page.waitForFunction(() => location.hash === "#orbite");
-    await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite_nouveautes === "2026-10-12b");
+    await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite_nouveautes === "2026-10-12c");
     /* « Pour aller plus loin » : les nouveautés précédentes, fiche de paie d'abord. */
     await page.click("#aide-visite");
     await page.waitForSelector(".visite__bulle #visite-chapitres:not([hidden])");
@@ -296,7 +296,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => location.hash === "#profil?section=salaire" && !document.querySelector(".visite--transit"));
     await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.getElementById("fiche-entree-profil").getBoundingClientRect(); return Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
     const vus2 = [];
-    for (let i = 1; i < 14; i++) {
+    for (let i = 1; i < 15; i++) {
       await page.click("#visite-suiv");
       await page.waitForFunction(() => !document.querySelector(".visite--transit"));
       vus2.push((await page.textContent("#visite-titre")) + " @ " + (await page.evaluate(() => location.hash)));
@@ -1245,7 +1245,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     const lsl = await page.evaluate(() => [localStorage.getItem("ef-lisible"), Object.keys(localStorage).join(",")]);
     assert(lsl[0] === "oui", "recopiée sur l'appareil : " + JSON.stringify(lsl));
     await page.screenshot({ path: path.join(CAPTURES, "lisibilite-credit.png") });
-    for (const l of [1280, 1024, 800]) {
+    for (const l of [1440, 1366, 1280, 1024, 800]) {
       await page.setViewportSize({ width: l, height: 700 });
       const deborde = await page.evaluate(() => { const b = document.getElementById("barre"); return b.scrollWidth > b.clientWidth + 1 || Array.from(b.querySelectorAll("button:not([hidden]), a:not([hidden])")).some((x) => x.offsetParent && x.getBoundingClientRect().right > window.innerWidth); });
       await page.screenshot({ path: path.join(CAPTURES, "barre-" + l + ".png"), clip: { x: 0, y: 0, width: l, height: 80 } });
@@ -1393,6 +1393,186 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.selectOption("#p-jour-versement", "0");
     await page.waitForFunction(() => window.Orbite.profil().jourVersement === 0);
     await page.evaluate((m) => { window.ModuleCredit.restaurer(m.c); window.ModuleSalaire.charger(m.s); window.ModuleEpargne.charger(m.e); ["credit", "salaire", "epargne"].forEach((v) => window.Orbite.detacherSimulation(v)); }, avantModules);
+  });
+
+  await etape("crédit, point 5 : projet immobilier (frais, capacité, quand acheter), comparer mes offres (classement, enregistrement), regrouper mes crédits", async () => {
+    await page.goto(base + "/espace/#credit?espace=projet");
+    await page.waitForSelector("#credit-projet:not([hidden]) #ce-prix");
+    assert(await page.isHidden("#credit-racine"), "un seul onglet affiché");
+    await page.fill("#ce-prix", "250 000");
+    await page.fill("#ce-apport", "50 000");
+    await page.fill("#ce-ans", "20");
+    await page.fill("#ce-taux", "10");
+    await page.waitForFunction(() => document.querySelectorAll("#ce-projet-res .ce-table tbody tr").length === 5);
+    const lignes = await page.$$eval("#ce-projet-res .ce-table tbody tr", (t) => t.map((r) => r.textContent));
+    assert(/enregistrement.*180,000/.test(lignes[0].replace(/\s/g, " ")) && /2 500,000/.test(lignes[1].replace(/\s/g, " ")), "frais : " + lignes.join(" | "));
+    const credit = await page.evaluate(() => { const C = window.CreditProjets.projet({ prix: 250000, apport: 50000, mois: 240, tauxPct: 10 }); return Math.round(C.credit); });
+    await page.waitForFunction((c) => document.getElementById("ce-projet-res").textContent.replace(/\s/g, "").includes(String(c)), credit, { timeout: 5000 })
+      .catch(async () => { throw new Error("crédit nécessaire affiché (" + credit + ") : " + (await page.textContent("#ce-projet-res")).slice(0, 200)); });
+    assert(await page.isVisible("#ce-projet-res .ce-quand"), "quand pourrai-je acheter");
+    await page.check("#ce-premier");
+    await page.waitForFunction(() => /Prêt de l'État/.test(document.getElementById("ce-projet-res").textContent));
+    await page.uncheck("#ce-premier");
+    await page.screenshot({ path: path.join(CAPTURES, "credit-projet.png") });
+    await page.click("#ce-projet-simuler");
+    await page.waitForFunction(() => location.hash === "#credit" && !document.getElementById("credit-racine").hidden);
+    const e = await page.evaluate(() => window.ModuleCredit.etat());
+    assert(new RegExp("c=" + credit + "(&|$)").test(e) && /m=240/.test(e), "crédit du projet simulé : " + e);
+    /* Comparer mes offres. */
+    await page.click("#ce-tab-offres");
+    await page.waitForSelector("#credit-offres:not([hidden]) .ce-offre");
+    await page.fill("#ce-o-capital", "150 000");
+    await page.fill("#ce-o-ans", "20");
+    await page.click("#ce-offre-plus");
+    await page.fill('#credit-offres .ce-offre[data-i="2"] [data-o="taux"]', "2,75");
+    await page.waitForFunction(() => document.querySelectorAll("#ce-offres-res .ce-table tbody tr").length === 3);
+    assert((await page.$$("#ce-offres-res .ce-meilleure")).length === 1, "une offre la moins chère");
+    assert(/TMM \+1 point/.test(await page.textContent("#ce-offres-res")), "effet d'un point de TMM");
+    await page.screenshot({ path: path.join(CAPTURES, "credit-offres.png") });
+    const avant = faux.simulations().length;
+    await page.click("#ce-offres-enregistrer");
+    await page.waitForFunction((n) => document.querySelector(".toast") && /3 offres enregistrées/.test(document.body.textContent), avant);
+    assert(faux.simulations().length === avant + 3 && faux.simulations().some((x) => x.nom === "Offre Banque A" && x.outil === "credit"), "offres enregistrées");
+    /* Regrouper mes crédits : deux crédits fictifs ajoutés au profil le temps de l'étape. */
+    const creditsAvant = await page.evaluate(() => JSON.stringify(window.Orbite.profil().credits));
+    await page.evaluate(() => window.Orbite.majProfil({ credits: window.Orbite.profil().credits.concat([
+      { libelle: "Crédit auto démo", type: "auto", mensualite: 320, tauxPct: 10, moisRestants: 30 },
+      { libelle: "Crédit conso démo", type: "conso", mensualite: 210, tauxPct: 11, moisRestants: 17, capitalRestant: 3292 }]) }));
+    await page.click("#ce-tab-regrouper");
+    await page.waitForSelector("#credit-regrouper:not([hidden]) .cr-section-tete");
+    if (await page.$("#credit-regrouper [data-cr]")) {
+      if (!(await page.isChecked("#credit-regrouper [data-cr]"))) await page.check("#credit-regrouper [data-cr]");
+      await page.waitForSelector("#ce-reg-res .cr-stats");
+      assert(/Nouvelle mensualité/.test(await page.textContent("#ce-reg-res")) && /Indemnité/.test(await page.textContent("#ce-reg-res")), "regroupement calculé");
+      await page.screenshot({ path: path.join(CAPTURES, "credit-regrouper.png") });
+    } else assert(false, "crédits du profil absents du regroupement");
+    await page.evaluate((c) => window.Orbite.majProfil({ credits: JSON.parse(c) }), creditsAvant);
+    await page.keyboard.press("Home");
+    await page.click("#ce-tab-simuler");
+    await page.waitForFunction(() => location.hash === "#credit");
+  });
+
+  await etape("TMM du mois : saisi dans Administration, appliqué à tout Orbite, courbe et effet dans Crédit › Le TMM, retour au défaut", async () => {
+    faux.marquerAdmin("aziz@exemple.tn");
+    const m = new Date(), mois = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+    const ce = mois(m), avant = mois(new Date(m.getFullYear(), m.getMonth() - 1, 1));
+    await page.goto(base + "/espace/#admin");
+    await page.reload();
+    await page.waitForSelector("#admin-tmm-form", { state: "visible" });
+    await page.fill("#admin-tmm-mois", avant);
+    await page.fill("#admin-tmm-taux", "7,45");
+    await page.click('#admin-tmm-form button[type="submit"]');
+    await page.waitForFunction(() => document.querySelectorAll("#admin-tmm-liste li").length === 1);
+    await page.fill("#admin-tmm-mois", ce);
+    await page.fill("#admin-tmm-taux", "abc");
+    await page.click('#admin-tmm-form button[type="submit"]');
+    await page.waitForSelector("#admin-tmm-erreur:not([hidden])");
+    await page.fill("#admin-tmm-taux", "7,2");
+    await page.click('#admin-tmm-form button[type="submit"]');
+    await page.waitForFunction(() => document.querySelectorAll("#admin-tmm-liste li").length === 2);
+    assert(faux.tmm().get(ce + "-01") === 7.2, "TMM enregistré");
+    await page.waitForFunction(() => window.OrbiteCalcul.TMM === 7.2 && window.MoteurCredit.DEFAUTS.tmm === 7.2);
+    assert(!/Nouveau TMM/.test(await page.textContent(".toasts")), "pas d'annonce à l'administrateur qui vient de le saisir");
+    assert(/7,2 %/.test(await page.textContent("#admin-tmm-dernier")), "dernier TMM affiché");
+    await page.screenshot({ path: path.join(CAPTURES, "admin-tmm.png") });
+    await page.goto(base + "/espace/#credit?espace=tmm");
+    await page.waitForSelector("#credit-tmm:not([hidden]) .tmm-courbe");
+    const txt = await page.textContent("#credit-tmm");
+    assert(/7,2 %/.test(txt) && /−0,25 point/.test(txt), "TMM du mois et variation : " + txt.slice(0, 300));
+    assert((await page.$$("#credit-tmm .tmm-courbe circle")).length === 2, "deux points sur la courbe");
+    assert(await page.evaluate(() => JSON.parse(localStorage.getItem("orbite-tmm")).taux === 7.2), "gardé sur l'appareil");
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: path.join(CAPTURES, "credit-tmm.png") });
+    /* Nouveau TMM vu au chargement suivant : annoncé une fois. */
+    await page.evaluate(() => localStorage.setItem("orbite-tmm-vu", "2000-01-01"));
+    /* L'annonce dure 4,8 s dès le chargement : on la guette dès le début de la navigation, pas après l'événement « load ». */
+    await Promise.all([
+      page.waitForSelector('.toast:has-text("Nouveau TMM : 7,2 %")', { state: "attached", timeout: 20000 }),
+      page.reload({ waitUntil: "commit" })
+    ]);
+    /* Retour au défaut quand plus rien n'est saisi. */
+    await page.goto(base + "/espace/#admin");
+    await page.waitForSelector("#admin-tmm-liste li");
+    while (await page.$("#admin-tmm-liste li button")) { const n = (await page.$$("#admin-tmm-liste li")).length; await page.click("#admin-tmm-liste li button"); await page.waitForFunction((k) => document.querySelectorAll("#admin-tmm-liste li").length === k - 1, n); }
+    await page.waitForFunction(() => window.OrbiteCalcul.TMM === 7.5 && window.MoteurCredit.DEFAUTS.tmm === 7.5 && !localStorage.getItem("orbite-tmm"));
+  });
+
+  await etape("Mon mois : budget proposé, dépense en une phrase annulable, enveloppe réglée, calendrier, dates, agenda .ics, téléphone", async () => {
+    const avant = await page.evaluate(() => JSON.stringify({ credits: window.Orbite.profil().credits, contrats: window.Orbite.profil().contrats, budget: window.Orbite.profil().budget, jourPaie: window.Orbite.profil().jourPaie, loyer: window.Orbite.profil().loyer }));
+    await page.evaluate(() => window.Orbite.majProfil({ loyer: 450, jourPaie: 25, budget: { enveloppes: [], mois: {} },
+      credits: [{ libelle: "Auto démo", type: "auto", mensualite: 320, capitalRestant: 9000, tauxPct: 10, moisRestants: 31, jourPrelevement: 5 },
+        { libelle: "Conso démo", type: "conso", mensualite: 210, capitalRestant: 400, tauxPct: 12, moisRestants: 2 }],
+      contrats: [{ type: "av", versementMensuel: 150, moisDebut: 1, anneeDebut: 2020 }] }, { immediat: true }));
+    await page.goto(base + "/espace/#mois?onglet=budget");
+    await page.waitForSelector("#mo-budget:not([hidden]) .mo-ligne");
+    assert((await page.$$("#mo-env-liste .mo-ligne")).length === 8, "8 enveloppes");
+    const prevuCredits = await page.textContent('.mo-ligne[data-cle="credits"] .mo-ligne__chiffres');
+    assert(/530 DT/.test(prevuCredits.replace(/\s/g, " ")), "crédits prévus : " + prevuCredits);
+    assert(/Proposition/.test(await page.textContent("#mo-env-sous")), "proposition affichée");
+    /* Une phrase → la bonne enveloppe ; annulable. */
+    await page.fill("#mo-phrase", "45 dinars d'essence");
+    await page.waitForFunction(() => document.getElementById("mo-env").value === "transport" && /45 DT → Transport/.test(document.getElementById("mo-phrase-aide").textContent.replace(/\s/g, " ")));
+    await page.click("#mo-ajouter");
+    await page.waitForFunction(() => { const b = window.Orbite.profil().budget, k = window.BudgetCalcul.cleMois(new Date()); return b.mois[k] && b.mois[k].transport === 45 && b.enveloppes.length === 8; });
+    await page.fill("#mo-phrase", "٢٠ دينار خضرة");
+    await page.press("#mo-phrase", "Enter");
+    await page.waitForFunction(() => { const k = window.BudgetCalcul.cleMois(new Date()); return window.Orbite.profil().budget.mois[k].courses === 20; });
+    await page.click('.toast:has-text("ajoutés à « Courses »") button:has-text("Annuler")');
+    await page.waitForFunction(() => { const k = window.BudgetCalcul.cleMois(new Date()); return !window.Orbite.profil().budget.mois[k].courses; });
+    await page.fill("#mo-phrase", "bonjour");
+    await page.click("#mo-ajouter");
+    assert(/Montant non reconnu/.test(await page.textContent("#mo-phrase-aide")), "phrase sans montant refusée");
+    /* Enveloppe réglée : dépassement signalé. */
+    await page.click('[data-modifier="loisirs"]');
+    await page.fill("#mo-p-loisirs", "50");
+    await page.fill("#mo-d-loisirs", "80");
+    await page.click('#mo-edit-loisirs button[type="submit"]');
+    await page.waitForSelector('.mo-ligne--depasse[data-cle="loisirs"]');
+    assert(/Loisirs et sorties \(\+30 DT\)/.test((await page.textContent("#mo-alerte")).replace(/\s/g, " ")), "alerte de dépassement");
+    assert(!/Proposition/.test(await page.textContent("#mo-env-sous")), "le plan devient le budget");
+    assert(/jours?, soit .* par jour/.test(await page.textContent("#mo-par-jour")), "montant par jour jusqu'à la paie");
+    await page.click('[data-modifier="credits"]');
+    await page.click('[data-paye="credits"]');
+    await page.waitForFunction(() => { const k = window.BudgetCalcul.cleMois(new Date()); return window.Orbite.profil().budget.mois[k].credits === 530; });
+    await page.click("#mo-b-prec");
+    assert(/^0 \//.test((await page.textContent('.mo-ligne[data-cle="transport"] .mo-ligne__chiffres')).replace(/\s/g, " ")), "le mois précédent repart de zéro");
+    await page.click("#mo-b-suiv");
+    await page.screenshot({ path: path.join(CAPTURES, "mois-budget.png"), fullPage: true });
+    /* Calendrier : échéances du mois, jour à préciser, dernière échéance le mois suivant. */
+    await page.click("#mo-tab-calendrier");
+    await page.waitForSelector("#mo-calendrier:not([hidden]) .mo-evt");
+    const agenda = (await page.textContent("#mo-agenda")).replace(/\s/g, " ");
+    assert(/Auto démo/.test(agenda) && /Conso démo/.test(agenda) && /Versement d'épargne/.test(agenda) && /Paie/.test(agenda), "agenda : " + agenda.slice(0, 300));
+    assert(/Prélèvements : 680 DT/.test((await page.textContent("#mo-cal-resume")).replace(/\s/g, " ")), "total des prélèvements");
+    assert(await page.$('.mo-evt[data-jour="25"][data-t="paie"]'), "paie le 25");
+    await page.click("#mo-agenda [data-dates]");
+    await page.waitForSelector("#mo-dates[open] #mo-jour-credit-1");
+    await page.selectOption("#mo-jour-credit-1", "10");
+    await page.waitForFunction(() => window.Orbite.profil().credits[1].jourPrelevement === 10);
+    await page.waitForSelector('.mo-evt[data-jour="10"][data-t="credit"]');
+    await page.click("#mo-c-suiv");
+    await page.waitForFunction(() => /Dernière échéance : Conso démo/.test(document.getElementById("mo-agenda").textContent));
+    await page.click('.mo-cal__case--evt[data-jour="10"]');
+    await page.waitForSelector('.mo-evt--vu[data-jour="10"]');
+    await page.click("#mo-c-prec");
+    await page.screenshot({ path: path.join(CAPTURES, "mois-calendrier.png"), fullPage: true });
+    const [ics] = await Promise.all([page.waitForEvent("download"), page.click("#mo-ics")]);
+    const txt = fs.readFileSync(await ics.path(), "utf8");
+    assert(ics.suggestedFilename() === "orbite-calendrier.ics" && /^BEGIN:VCALENDAR/.test(txt) && (txt.match(/BEGIN:VEVENT/g) || []).length > 20 && /SUMMARY:Auto démo · 320\\,000 DT/.test(txt), "fichier agenda");
+    /* Palette et téléphone. */
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(base + "/espace/#mois?onglet=budget");
+    await page.waitForSelector("#mo-budget:not([hidden]) .mo-ligne");
+    const deborde = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+    assert(!deborde, "pas de défilement horizontal sur téléphone");
+    assert(await page.getAttribute('.onglets-bas a[data-vue="profil"]', "aria-current") === "page", "onglet « Moi » actif");
+    await page.screenshot({ path: path.join(CAPTURES, "mois-budget-mobile.png"), fullPage: true });
+    await page.click("#mo-tab-calendrier");
+    await page.waitForSelector("#mo-calendrier:not([hidden]) .mo-evt");
+    assert(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), "calendrier sans débordement");
+    await page.screenshot({ path: path.join(CAPTURES, "mois-calendrier-mobile.png"), fullPage: true });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.evaluate((a) => window.Orbite.majProfil(JSON.parse(a), { immediat: true }), avant);
   });
 
   await etape("crédit : lire une offre (texte), contrôler le tableau de la banque (exemple exact, PDF avec une erreur)", async () => {

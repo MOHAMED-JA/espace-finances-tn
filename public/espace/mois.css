@@ -1,0 +1,141 @@
+/* Orbite — « Mon mois » : budget par enveloppe et calendrier de l'argent (point 5). */
+.mo-tete { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.mo-onglets { position: relative; display: inline-grid; grid-template-columns: 1fr 1fr; padding: 4px; border-radius: 999px; background: var(--surface); box-shadow: var(--ombre-1); border: 1px solid var(--filet); }
+.mo-onglets button { position: relative; z-index: 1; font: inherit; font-size: 14px; font-weight: 650; border: 0; background: none; color: var(--encre-3); min-height: 38px; padding: 0 22px; border-radius: 999px; cursor: pointer; transition: color 200ms ease; }
+.mo-onglets button[aria-selected="true"] { color: var(--inverse); }
+.mo-onglets button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.mo-onglets i { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px); border-radius: 999px; background: var(--encre); transition: transform 360ms var(--sortie); }
+.mo-onglets[data-o="calendrier"] i { transform: translateX(100%); }
+
+.mo-panneau { display: grid; gap: 18px; }
+.mo-mois-nav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mo-mois-nav b { min-width: 9.5em; text-align: center; font-size: 16px; }
+.mo-mois-nav .bouton[disabled] { opacity: .35; pointer-events: none; }
+.mo-mois-nav #mo-b-prec svg, .mo-mois-nav #mo-c-prec svg { transform: none; }
+.mo-ics { margin-left: auto; }
+.mo-grille { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); align-items: start; }
+
+/* ---------- Reste à vivre ---------- */
+.mo-reste { display: grid; gap: 10px; }
+.mo-reste h2 { font-size: 15px; color: var(--encre-2); font-weight: 650; }
+.mo-reste__chiffre { margin: 0; font-size: clamp(34px, 5vw, 46px); line-height: 1.05; font-weight: 800; letter-spacing: -.02em; color: var(--encre); }
+.mo-reste__chiffre--negatif { color: var(--erreur); }
+.mo-reste__jour { margin: 0; color: var(--encre-2); font-size: 14.5px; line-height: 1.5; }
+.mo-jauge { height: 10px; border-radius: 999px; background: var(--filet); overflow: hidden; }
+.mo-jauge i { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--epargne), var(--salaire)); transition: width 500ms var(--sortie); }
+.mo-jauge--alerte i { background: var(--erreur); }
+.mo-totaux { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 4px 0 0; }
+.mo-totaux div { padding: 10px 12px; border-radius: var(--r-int); background: var(--fond); min-width: 0; }
+.mo-totaux dt { font-size: 12.5px; color: var(--encre-3); }
+.mo-totaux dd { margin: 2px 0 0; font-weight: 750; font-size: 15px; overflow: hidden; text-overflow: ellipsis; }
+.mo-alerte { margin: 0; padding: 10px 12px; border-radius: var(--r-int); background: var(--erreur-doux); color: var(--encre); font-size: 13.5px; line-height: 1.5; }
+
+/* ---------- Noter une dépense ---------- */
+.mo-ajout { display: grid; gap: 12px; }
+.mo-ajout__form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 13em) auto; gap: 10px; align-items: start; }
+.mo-ajout__form .bouton { margin-top: 24px; }
+.mo-aide--erreur { color: var(--erreur); }
+
+/* ---------- Enveloppes ---------- */
+.mo-env-tete { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+.mo-env { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.mo-ligne { padding: 10px 4px; border-bottom: 1px solid var(--filet); display: grid; gap: 8px; }
+.mo-ligne:last-child { border-bottom: 0; }
+.mo-ligne__tete { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 12px; align-items: center; }
+.mo-ligne__ico { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; background: var(--epargne-doux); color: var(--epargne-t); }
+.mo-ligne[data-cle="credits"] .mo-ligne__ico { background: var(--credit-doux); color: var(--credit-t); }
+.mo-ligne[data-cle="logement"] .mo-ligne__ico, .mo-ligne[data-cle="divers"] .mo-ligne__ico { background: var(--salaire-doux); color: var(--salaire-t); }
+.mo-ligne[data-cle="loisirs"] .mo-ligne__ico, .mo-ligne[data-cle="transport"] .mo-ligne__ico { background: var(--ambre-doux); color: var(--ambre-t); }
+.mo-ligne__ico svg { width: 19px; height: 19px; }
+.mo-ligne__nom { display: grid; gap: 2px; min-width: 0; }
+.mo-ligne__nom b { font-weight: 700; }
+.mo-ligne__nom small { color: var(--encre-3); font-size: 12.5px; }
+.mo-ligne--depasse .mo-ligne__nom small { color: var(--erreur); font-weight: 650; }
+.mo-ligne__chiffres { color: var(--encre-3); font-size: 14px; }
+.mo-ligne__chiffres b { color: var(--encre); font-size: 15px; }
+.mo-ligne__modifier[aria-expanded="true"] { background: var(--encre); color: var(--inverse); }
+.mo-ligne__barre { height: 5px; margin-left: 48px; border-radius: 999px; background: var(--filet); overflow: hidden; }
+.mo-ligne__barre i { display: block; height: 100%; border-radius: inherit; background: var(--epargne); transition: width 420ms var(--sortie); }
+.mo-ligne--depasse .mo-ligne__barre i { background: var(--erreur); }
+.mo-ligne__edition { margin-left: 48px; display: grid; grid-template-columns: repeat(2, minmax(0, 12em)) auto; gap: 10px; align-items: end; }
+.mo-ligne__edition[hidden] { display: none; }
+.mo-ligne__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---------- Calendrier ---------- */
+.mo-grille--cal { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+.mo-cal { display: grid; gap: 14px; }
+.mo-cal__resume { margin: 0; font-weight: 650; color: var(--encre-2); }
+.mo-cal__grille { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.mo-cal__jsem { text-align: center; font-size: 12px; color: var(--encre-3); font-weight: 650; padding-bottom: 4px; }
+.mo-cal__case { position: relative; aspect-ratio: 1 / .9; border-radius: 12px; background: var(--fond); display: grid; align-content: space-between; padding: 6px; min-width: 0; }
+.mo-cal__case--vide { background: transparent; }
+.mo-cal__case b { font-size: 13px; font-weight: 650; color: var(--encre-2); }
+.mo-cal__case--evt { cursor: pointer; background: var(--surface); box-shadow: inset 0 0 0 1px var(--filet-fort); }
+.mo-cal__case--evt:hover { box-shadow: inset 0 0 0 1.5px var(--encre-3); }
+.mo-cal__case--auj b { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--encre); color: var(--inverse); }
+.mo-cal__case--vu { box-shadow: inset 0 0 0 2px var(--encre); }
+.mo-cal__points { display: flex; gap: 3px; flex-wrap: wrap; }
+.mo-cal__points i, .mo-legende li::before, .mo-evt__type::before { width: 8px; height: 8px; border-radius: 50%; background: var(--encre-3); flex: none; }
+.mo-cal__points i { display: block; }
+[data-t="paie"] { --t: var(--succes); }
+[data-t="prime"] { --t: var(--succes); }
+[data-t="credit"], [data-t="fin"] { --t: var(--credit); }
+[data-t="epargne"] { --t: var(--epargne); }
+[data-t="fiscal"] { --t: var(--ambre); }
+[data-t="rappel"] { --t: var(--encre-2); }
+.mo-cal__points i[data-t], .mo-legende li[data-t]::before, .mo-evt[data-t] .mo-evt__type::before { background: var(--t); }
+.mo-legende { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--encre-3); }
+.mo-legende li { display: inline-flex; align-items: center; gap: 6px; }
+.mo-legende li::before { content: ""; display: block; }
+
+.mo-agenda { display: grid; gap: 10px; }
+.mo-agenda__liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 560px; overflow: auto; }
+.mo-evt { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: var(--r-int); background: var(--fond); transition: box-shadow 200ms ease; }
+.mo-evt--vu { box-shadow: inset 0 0 0 2px var(--encre); }
+.mo-evt__date { display: grid; justify-items: center; width: 40px; }
+.mo-evt__date b { font-size: 18px; line-height: 1.1; }
+.mo-evt__date small { font-size: 11.5px; color: var(--encre-3); }
+.mo-evt__corps { display: grid; gap: 2px; min-width: 0; }
+.mo-evt__titre { font-weight: 650; overflow-wrap: anywhere; }
+.mo-evt__type { display: inline-flex; align-items: center; gap: 5px; margin-right: 8px; font-style: normal; font-size: 11.5px; font-weight: 700; color: var(--encre-3); text-transform: uppercase; letter-spacing: .04em; }
+.mo-evt__type::before { content: ""; display: block; }
+.mo-evt__corps small { color: var(--encre-3); font-size: 12.5px; }
+.mo-evt__montant { font-size: 14.5px; }
+.mo-evt[data-t="paie"] .mo-evt__montant { color: var(--succes); }
+.mo-vide { margin: 0; color: var(--encre-3); }
+.mo-lien { border: 0; background: none; padding: 0; font: inherit; color: var(--encre); font-weight: 650; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.mo-lien:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+
+.mo-dates summary { display: flex; gap: 12px; align-items: center; cursor: pointer; font-weight: 700; list-style: none; }
+.mo-dates summary::-webkit-details-marker { display: none; }
+.mo-dates summary svg { width: 20px; height: 20px; flex: none; color: var(--encre-2); }
+.mo-dates summary small { display: block; font-weight: 500; color: var(--encre-3); font-size: 12.5px; }
+.mo-dates__champs { display: grid; grid-template-columns: repeat(auto-fill, minmax(14em, 1fr)); gap: 12px; margin-top: 16px; }
+
+@media (max-width: 900px) {
+  .mo-grille, .mo-grille--cal { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .mo-tete { align-items: stretch; }
+  .mo-onglets { display: grid; width: 100%; }
+  .mo-ajout__form { grid-template-columns: minmax(0, 1fr); }
+  .mo-ajout__form .bouton { margin-top: 0; justify-self: stretch; }
+  .mo-totaux { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .mo-totaux div:first-child { grid-column: 1 / -1; }
+  .mo-ligne__tete { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .mo-ligne__chiffres { grid-column: 2; grid-row: 2; }
+  .mo-ligne__modifier { grid-column: 3; grid-row: 1 / span 2; }
+  .mo-ligne__barre, .mo-ligne__edition { margin-left: 0; }
+  .mo-ligne__edition { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .mo-ligne__actions { grid-column: 1 / -1; }
+  .mo-ics { margin-left: 0; width: 100%; justify-content: center; }
+  .mo-mois-nav { justify-content: center; }
+  .mo-cal__case { padding: 4px; border-radius: 9px; }
+  .mo-cal__case b { font-size: 12px; }
+  .mo-cal__case--auj b { width: 20px; height: 20px; }
+  .mo-cal__points i { width: 6px; height: 6px; }
+  .mo-agenda__liste { max-height: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mo-onglets i, .mo-jauge i, .mo-ligne__barre i, .mo-evt { transition: none !important; }
+}

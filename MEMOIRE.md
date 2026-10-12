@@ -677,6 +677,73 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centies. Point 5 livré : projet immobilier, offres, regroupement, TMM, Mon mois (12 oct.)
+
+Branche `point5`. Choix validés par l'utilisateur (options conseillées) ; règles chiffrées : voir 3 decnonagies.
+
+**Crédit : 5 onglets** (`public/espace/js/credit-espaces.js`, moteur pur `public/moteurs/credit/projets.js`, testé)
+- Onglets `Simuler | Mon projet immobilier | Comparer mes offres | Regrouper mes crédits | Le TMM` ; route `#credit?espace=projet|offres|regrouper|tmm` ; aussi dans Ctrl K.
+- **Projet immobilier** (premier logement, achat chez un promoteur) :
+  - frais d'achat détaillés (`CreditProjets.fraisPrix`), tous modifiables ;
+  - crédit nécessaire = besoin ÷ (1 − (hypothèque + dossier) / 100) ;
+  - « Quand acheter ? » : le mois où l'apport et la capacité suffisent ;
+  - option « Premier logement » affichée « à confirmer ».
+- **Comparer mes offres** : classées par **coût total** ; lecture d'une offre en photo ou PDF ; chaque offre peut être enregistrée comme simulation de crédit.
+- **Regrouper** : crédit immobilier facultatif ; IRA de 1,5 % du capital restant (modifiable) ; verdict `gagnant`, `moins_cher_mensualite_plus_haute`, `mensualite_baisse_cout_monte` ou `perdant`.
+
+**TMM du mois** (`public/espace/js/tmm.js`, migration `supabase/migrations/0015_tmm.sql`)
+- Table `tmm_mensuel` (mois au 1er, taux 0 à 30), RLS et tous les droits retirés ; lecture par `tmm_historique(24)` ; saisie et suppression par l'admin (`admin_tmm_saisir` refuse un mois futur, `admin_tmm_supprimer`).
+- Administration › « TMM du mois » ; le dernier taux s'applique à tout Orbite (`OrbiteCalcul.definirTMM`, `Orbite.recalculer()`), gardé sur l'appareil (`orbite-tmm`) ; annoncé une fois au chargement suivant ; sans historique, retour au défaut 7,5 %.
+- Onglet Crédit › Le TMM : courbe 24 mois, effet de la dernière variation et d'un point de plus sur les crédits variables (sans crédit variable : exemple de 150 000 DT sur 20 ans à TMM + 2,5).
+
+**Mon mois** (nouvelle page du menu, route `#mois?onglet=budget|calendrier`, `vue-mois.js`, `mois.css`)
+- **Budget** (`budget-calcul.js`, pur, testé) :
+  - 8 enveloppes : crédits, logement et charges, courses, transport, santé, loisirs, épargne, divers ;
+  - proposées depuis le profil tant que l'utilisateur n'en a modifié aucune (crédits, loyer + charges, épargne ; le reste réparti 40 / 15 / 8 / 12 / 25 %) ;
+  - reste à vivre et montant **par jour jusqu'à la paie** (aujourd'hui compris, jour de paie non) ; alertes de dépassement et de plan supérieur au revenu ;
+  - dépense en une phrase (`BudgetCalcul.phrase`) : français, darija, chiffres arabes, « mille » / « k » ; enveloppe devinée, modifiable ;
+  - **seuls les totaux par enveloppe** sont gardés, dans `profil.budget` (`{ enveloppes, mois: { "AAAA-MM": { cle: montant } } }`, 12 derniers mois) ; chaque changement s'annule depuis le message ; l'import d'un relevé viendra plus tard.
+- **Calendrier** (`calendrier-calcul.js`, pur, testé) :
+  - paie et versements en plus (13ᵉ mois, calendrier des primes), échéances des crédits et dernière échéance, versements d'épargne, 31 décembre, rappels déjà en place (essai, abonnement, objectifs… via `window.OrbiteRappels.liste()`) ;
+  - mois en cours et 11 suivants ; total des prélèvements ;
+  - « Régler les dates » : jour de paie, jour de prélèvement de chaque crédit, jour de versement de l'épargne (qui règle aussi son rappel) ;
+  - « Ajouter à mon agenda » : fichier `.ics` de 12 mois, créé sur l'appareil.
+- Profil : nouveaux champs `jourPaie` (0 = dernier jour), `credits[].jourPrelevement` (0 = non précisé, aussi dans Mon profil › Crédits) et `budget` (normalisé seulement si `budget-calcul.js` est chargé, donc pas sur les pages publiques).
+- Accès : rail « Mon mois », onglet « Moi » sur téléphone, Mon profil, Ctrl K (« Noter une dépense », « Calendrier de l'argent »).
+- Icônes ajoutées : `panier`, `calendrier`.
+
+**Barre du haut** : actions secondaires en icône seule de 641 à 1480 px (`confort.css`), pour ne plus déborder.
+
+**Livraison** : SW `orbite-2026-10-12k`, Nouveautés `2026-10-12i`, visite « Les nouveautés » `2026-10-12c` (Mon mois, calendrier, onglets du Crédit en premier) ; « Envoyer un document » passe dans « Pour aller plus loin ». Unitaires 535 ; étapes e2e « crédit, point 5 », « TMM du mois », « Mon mois ».
+
+## 3 decnonagies. Point 5 : règles sourcées et validées (12 oct.)
+
+Recherche du 12 oct. Les sites officiels (jibaya.tn, jurisitetunisie, sites des banques) sont injoignables depuis l'environnement de travail ; seuls les résumés de recherche sont disponibles. Les sources se contredisent. **Choix validés par l'utilisateur** (options conseillées) :
+
+- **Frais d'achat d'un logement neuf chez un promoteur, sous 500 000 DT** :
+  - valeurs par défaut, **toutes modifiables** :
+    - droit d'enregistrement fixe, 30 DT par page ;
+    - conservation foncière, 1 % ;
+    - inscription de l'hypothèque de la banque, 0,2 % du prêt ;
+    - notaire ou avocat, 1,5 % ;
+  - au-delà de 500 000 DT : droit progressif, avec le message « à confirmer avec le notaire » ;
+  - sources :
+    - [bigdatis 2026](https://bigdatis.com/droits-enregistrement-bien-immobilier-tunisie-2026/) ;
+    - [Abilia](https://abilia.tn/les-droits-denregistrement-dun-bien-immobilier-en-tunisie-en-2024/) ;
+    - [Tuniscope](https://www.tuniscope.com/article/437754/actualites/tunisie/immobilier-en-tunisie-2903241021) ;
+    - [droits de conservation foncière](https://www.jurisitetunisie.com/tunisie/index/cdet/droits_conservation.html) ;
+    - [Code des droits d'enregistrement 2025](https://jibaya.tn/wp-content/uploads/2025/04/Code-des-Droits-dEnregistrement-et-de-Timbre-2025.pdf) ;
+  - TVA : déjà comprise dans le prix TTC du promoteur ; 19 % au-delà de 400 000 DT.
+- **Indemnité de remboursement anticipé** (rachat) :
+  - aucun plafond légal tunisien n'a été trouvé : c'est le contrat qui fixe le montant ;
+  - valeur par défaut : **1,5 % du capital restant dû**, modifiable ;
+  - repères : la presse cite 1 à 1,5 % ; le barème d'une banque mentionnait 5 % ;
+  - source : [Managers](https://managers.tn/2024/06/20/ce-que-les-tunisiens-doivent-savoir-sur-le-remboursement-anticipe-dun-credit/).
+- **Programme « Premier logement »** : option affichée « à confirmer », avec un lien pour vérifier auprès de la banque. Paramètres modifiables :
+  - apport de 20 % financé par l'État ;
+  - plafond du prix ;
+  - taux du prêt de l'État.
+
 ## 3 noveoctogies. Lot 2 livré : partager, guider, comparer, annuler, lisibilité, document reçu (12 oct.)
 
 Branche `lot2`. Tout tourne sur l'appareil ; aucune nouvelle table, aucune migration.
@@ -1419,6 +1486,8 @@ Branche `lot2`. Tout tourne sur l'appareil ; aucune nouvelle table, aucune migra
    - ~~connexion Google refusée pour un autre compte (11 oct.)~~ : **résolu tout seul**. La femme de l'utilisateur a vu « Accès bloqué : erreur d'autorisation, Erreur 400 : invalid_request » sur accounts.google.com (Android, Chrome) à 17 h 13 ; journaux Supabase : cette tentative s'est arrêtée chez Google (aucun retour `/callback`), puis la suivante, même adresse IP, à 17 h 16, a réussi (`user_signedup`, fournisseur google, 17 h 17). Rien à corriger dans Orbite (appel `signInWithOAuth` standard, d'autres comptes passent). Si cela revient : ouvrir le lien directement dans Chrome (pas depuis Messenger / Facebook), réessayer, ou créer le compte par email + mot de passe ; lire « détails de l'erreur » pour la cause exacte.
 
 ## 5. Pièges connus
+
+- **Script chargé avant ses dépendances et `orbite:pret`** (corrigé le 12 oct.) : entre deux balises `<script>`, le navigateur exécute d'autres tâches ; la session peut donc être prête (`Orbite.pret`, événement `orbite:pret`) avant qu'un script plus bas ne s'abonne, ou avant qu'un module dont il dépend ne soit chargé. Toujours écrire `if (O.pret) demarrer(); else doc.addEventListener("orbite:pret", demarrer, { once: true });`, et si une dépendance chargée plus loin manque encore, attendre `DOMContentLoaded` au lieu d'abandonner (`tmm.js` dépend de `projets.js`). Un formulaire doit être relié dès le chargement (sinon le navigateur l'envoie et recharge la page) et ne jamais écraser une valeur déjà saisie.
 
 - **Déploiement Cloudflare (12 oct.)** : du 11 au 12 octobre, rien n'était en ligne. Le build de `main` échouait à l'étape « Deploying » : `npx wrangler deploy` recevait `504 Gateway Timeout` de l'API Cloudflare, un incident côté Cloudflare. Un simple **« Retry build »** dans le tableau de bord (Workers & Pages › espace-finances-tn › Deployments) a suffi. Après chaque fusion, il faut demander à l'utilisateur si le build est vert : je n'ai pas accès au site en ligne. Les builds des branches de PR échouent en 0 s, sans conséquence pour la production (`preview_urls: false`). Pour vérifier : `/espace/js/palette.js` doit répondre, pas la page 404.
 - Thème sombre : `:root[data-theme="dark"] .bascule__pastille` (spécificité 0,3,0) écrase les règles locales à deux classes. Sur l'accueil, la pastille blanche de l'aperçu devenait foncée avec un texte foncé : c'était illisible (corrigé le 8 oct.). axe ne l'avait pas détecté, car la pastille est un élément superposé. Vérification : le script `bascules.js` (bloc-notes) calcule le contraste de chaque option sélectionnée en clair et en sombre ; attention, `color-mix` renvoie `color(srgb …)` avec des valeurs entre 0 et 1.

@@ -90,7 +90,8 @@
     conso: { nom: "Consommation", long: "Crédit consommation", icone: "salaire" },
     libre: { nom: "Libre", long: "Crédit", icone: "crayon" }
   };
-  var TMM_REF = MC.DEFAUTS.tmm;
+  /* TMM du mois : lu à chaque usage (il peut changer après la connexion, voir tmm.js). */
+  function tmmRef() { return MC.DEFAUTS.tmm; }
   var AGE_MAX = MC.DEFAUTS.ageMax;
   var LETTRES = ["A", "B", "C"];
 
@@ -109,7 +110,7 @@
     if (tp !== null) pr = { mois: pr.mois, taux: tp, tmm: null };
     return {
       type: type, capital: capital, mois: pr.mois,
-      mode: pr.tmm ? "tmm" : "fixe", taux: pr.taux, tmm: pr.tmm ? pr.tmm.tmm : TMM_REF, marge: pr.tmm ? pr.tmm.marge : 3,
+      mode: pr.tmm ? "tmm" : "fixe", taux: pr.taux, tmm: pr.tmm ? pr.tmm.tmm : tmmRef(), marge: pr.tmm ? pr.tmm.marge : 3,
       dateDebut: premierMoisSuivant(), periodicite: 1, amort: "constant",
       apport: { on: false, prix: 0, apport: 0 },
       variation: { on: false, delta: 1, des: 13 },
@@ -1576,7 +1577,7 @@
     stress: {
       suit: true,
       html: function () {
-        var e = d0().e, tmm = e.tmm ? e.tmm.tmm : TMM_REF, marge = e.tmm ? e.tmm.marge : Math.max(0, MC.arrondi6(e.taux - TMM_REF));
+        var e = d0().e, tmm = e.tmm ? e.tmm.tmm : tmmRef(), marge = e.tmm ? e.tmm.marge : Math.max(0, MC.arrondi6(e.taux - tmmRef()));
         var seuil = S.emp.net > 0 ? Math.max(0, S.emp.net * S.emp.quotiteNet - S.emp.charges) : 0;
         return '<p class="cr-texte cr-texte--doux" data-stress-base></p><div class="cr-grille-champs">' +
           champ({ c: "tmm", t: "taux", lib: "TMM de départ", unite: "%", valeur: formater("taux", tmm), min: 0, max: 30 }) +

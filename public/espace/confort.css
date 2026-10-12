@@ -127,7 +127,7 @@ dialog.dialogue--partage { width: min(460px, calc(100vw - 24px)); }
   #partager-sim { width: 36px; padding: 0; justify-content: center; }
   #partager-sim .bouton__lib { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
-@media (min-width: 641px) and (max-width: 1280px) {
+@media (min-width: 641px) and (max-width: 1480px) {
   .barre__actions .bouton:not(#enregistrer) { width: 36px; padding: 0; justify-content: center; }
   .barre__actions .bouton:not(#enregistrer) .bouton__lib { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
@@ -232,3 +232,10 @@ dialog.dialogue--partage { width: min(460px, calc(100vw - 24px)); }
   #partager-sim { display: none; }
   .partager-mobile { display: inline-flex; }
 }
+
+/* ---------- Administration : TMM du mois (point 5) ---------- */
+.admin__tmm-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+.admin__tmm-form .champ { min-width: 150px; flex: 1 1 150px; }
+.admin__tmm-liste { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; max-height: 260px; overflow: auto; }
+.admin__tmm-liste li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 10px; font-size: 14px; }
+.admin__tmm-liste li:nth-child(odd) { background: var(--surface-2); }

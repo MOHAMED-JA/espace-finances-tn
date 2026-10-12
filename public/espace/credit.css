@@ -473,3 +473,61 @@
 .module--credit .cr-temps__barre { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
 .module--credit .cr-temps__barre span { display: block; height: 100%; width: var(--p, 0%); border-radius: inherit; background: linear-gradient(90deg, var(--credit), var(--salaire)); transition: width 120ms linear; }
 @media (prefers-reduced-motion: reduce) { .module--credit .cr-temps__barre span { transition: none; } }
+
+/* ---------- Point 5 : onglets du Crédit (projet, offres, regroupement) ---------- */
+.credit-espaces { margin: 4px 0 18px; }
+.ce-panneau { display: grid; gap: 18px; }
+.ce-grille { display: grid; gap: 22px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: start; }
+@media (max-width: 960px) { .ce-grille { grid-template-columns: minmax(0, 1fr); } }
+.ce-champs { display: grid; gap: 14px; min-width: 0; }
+.ce-resultat { display: grid; gap: 14px; min-width: 0; }
+.ce-regles summary span small { display: block; font-weight: 500; color: var(--encre-2); font-size: 12.5px; }
+.ce-table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+.ce-table caption { text-align: left; font-weight: 700; color: var(--encre); padding-bottom: 8px; }
+.ce-table th, .ce-table td { padding: 9px 10px; border-bottom: 1px solid var(--filet); text-align: left; vertical-align: top; }
+.ce-table thead th { font-size: 12.5px; color: var(--encre-2); font-weight: 650; }
+.ce-table tbody th { font-weight: 650; color: var(--encre); }
+.ce-table td { color: var(--encre-2); }
+.ce-table td small { display: block; font-size: 12px; color: var(--encre-3); }
+.ce-table .nb { text-align: right; white-space: nowrap; }
+.ce-table tfoot th, .ce-table tfoot td { border-bottom: 0; font-weight: 700; color: var(--encre); }
+.ce-meilleure th, .ce-meilleure td { background: var(--succes-doux); }
+.ce-badge { display: inline-flex; align-items: center; gap: 4px; margin-right: 8px; padding: 2px 8px; border-radius: 999px; background: var(--succes); color: #fff; font-size: 11.5px; font-weight: 700; }
+.ce-badge svg { width: 12px; height: 12px; }
+.ce-barre { display: block; height: 4px; margin-top: 6px; border-radius: 4px; background: var(--filet); overflow: hidden; }
+.ce-barre i { display: block; height: 100%; width: var(--l, 0%); background: var(--credit); border-radius: inherit; }
+.ce-quand { display: flex; gap: 12px; padding: 14px 16px; border-radius: var(--r-int); background: var(--credit-doux); }
+.ce-quand svg { width: 22px; height: 22px; flex: none; color: var(--credit-t); }
+.ce-quand p { margin: 4px 0 0; color: var(--encre-2); }
+.ce-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ce-note { display: flex; gap: 8px; margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--encre-2); }
+.ce-note svg { width: 16px; height: 16px; flex: none; margin-top: 2px; }
+.ce-offres { display: grid; gap: 12px; }
+.ce-offre { margin: 0; padding: 14px; border: 1px solid var(--filet); border-radius: var(--r-int); display: grid; gap: 12px; min-width: 0; }
+.ce-offre legend { display: flex; align-items: center; gap: 8px; padding: 0 6px; }
+.ce-offre__lettre { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 8px; background: var(--credit-doux); color: var(--credit-t); font-weight: 800; font-size: 13px; }
+.ce-offre__nom { border: 0; border-bottom: 1px dashed var(--filet-fort); background: transparent; font: inherit; font-weight: 700; color: var(--encre); padding: 2px 0; min-width: 0; width: 16ch; }
+.ce-offre__nom:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ce-offre__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ce-offre__etat { font-size: 13px; color: var(--encre-2); }
+.ce-credits { margin: 0; padding: 0; border: 0; display: grid; gap: 8px; }
+.ce-credits legend { font-weight: 700; margin-bottom: 8px; }
+.ce-credit { display: flex; gap: 12px; align-items: center; padding: 10px 14px; border-radius: var(--r-int); border: 1.5px solid var(--filet); cursor: pointer; }
+.ce-credit:has(input:checked) { border-color: var(--credit); background: var(--credit-doux); }
+.ce-credit input { width: 18px; height: 18px; accent-color: var(--credit); flex: none; }
+.ce-credit span { display: grid; gap: 2px; }
+.ce-credit small { color: var(--encre-2); }
+@media (max-width: 640px) {
+  .ce-table--offres thead { display: none; }
+  .ce-table--offres tr { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--filet); }
+  .ce-table--offres th, .ce-table--offres td { border: 0; padding: 6px 8px; }
+  .ce-table--offres th { grid-column: 1 / -1; }
+  .ce-table--offres .nb { text-align: left; }
+}
+.tmm-cadre { padding: 8px 4px 0; border-radius: var(--r-int); background: var(--surface-2); }
+.tmm-courbe { display: block; width: 100%; height: auto; }
+.tmm-courbe__grille { stroke: var(--filet); stroke-width: 1; }
+.tmm-courbe__axe { fill: var(--encre-2); font-size: 12px; font-family: inherit; }
+.tmm-courbe__ligne { fill: none; stroke: var(--credit); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.tmm-courbe__point { fill: var(--surface); stroke: var(--credit); stroke-width: 2; }
+.tmm-courbe__dernier { fill: var(--credit); stroke: var(--surface); stroke-width: 2; }
