@@ -454,6 +454,19 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 quinsexagies. Vidéo promotionnelle 3D « Fintech cinéma » 30 s, 16:9 + 9:16 (12 oct., livrée)
+
+- **Pourquoi** : la vidéo de 45 s a été jugée trop proche de la première (mêmes couleurs, même interface à plat). L'utilisateur veut une promo « comme celle des grandes entreprises », sur le modèle d'une vidéo TikTok de theuxda (application mobile en 3D, musique électro-pop). Choix : **musique originale dans le même style** (la chanson de la vidéo est protégée par le droit d'auteur), **style « Fintech cinéma »**, **30 s**, **16:9 (YouTube, LinkedIn) + 9:16 (Reels, TikTok, Shorts)**.
+- **Livrables** : `orbite-3d-16x9.mp4` (1920 × 1080) et `orbite-3d-9x16.mp4` (1080 × 1920), 60 i/s, H.264 2 passes ~4,7 Mb/s + AAC, −14 LUFS, chacun sous 30 Mo (limite d'envoi). **Non versionnés** (`*.mp4`, `*.wav`).
+- **Sources** `promo/video3/` (régénérables) :
+  - `captures.js` : vraies captures d'Orbite avec le **profil fictif** « Aziz Démo » (2 700 + 300 DT brut, célibataire, embauché en 2014, crédit auto 520 DT/mois). Deux sessions : ordinateur 1440 × 900 (×2) et mobile 390 × 844 (×3). Faux Turnstile, `bypassCSP` pour masquer toasts et visite. Écrit `captures/d-*.png` (écrans ordinateur), `m-*.png` (écrans mobile), `c-*.png` (cartes découpées).
+  - `scene.html` : scène **Three.js 0.160** (copie locale dans `lib/`, licence MIT jointe, aucun CDN). Ordinateur portable en métal (`RoundedBoxGeometry`, charnière qui s'ouvre de 2,0 à 4,6 s, écran qui affiche les captures), téléphone, cartes de verre flottantes, carte macro « 2 161,884 DT », poussière lumineuse. Éclairage `RoomEnvironment`, post-traitement `BokehPass` (profondeur de champ) + `UnrealBloomPass` + `OutputPass`. Caméra par images clés interpolées. Textes en surimpression sur un calque 2D, ajustés à 90 % de la largeur ; voile sombre en haut et en bas pour la lisibilité. Format vertical : caméra reculée (×1,7) et objets resserrés (x × 0,5). `render(t)` déterministe.
+  - `rendu.js <h|v> all 60 sortie.mp4 4` (Chromium + SwiftShader, ~1,2 s par image, environ 35 min par format) ou `rendu.js <h|v> preview t…`.
+  - `musique.py` : 30 s, 120 BPM, ré majeur (si m–sol–ré–la), mélodie pincée, basse en octaves à contretemps ; impacts à 4,6 s (logo), 11,6 s (« Au millime près. ») et 27 s (final) ; montées à 2,0, 10,8 et 25,8 s ; roulement de caisse claire 26,2–27 s ; fondu 28,4–30 s.
+  - Assemblage : `ffmpeg -i images.mp4 -i musique.wav -map 0:v -map 1:a -c:v copy -af loudnorm=I=-14:TP=-1.5:LRA=11 -c:a aac -b:a 256k -shortest -movflags +faststart`, puis copie 2 passes pour rester sous 30 Mo.
+- **Déroulé** : « Votre argent. Enfin clair. » (l'ordinateur s'ouvre) → logo Orbite + drapeau qui flotte → « Tout votre argent. Un seul écran. » (les cartes sortent de l'écran) → « Au millime près. » (macro sur le net, flou de profondeur) → « Votre fiche de paie, vérifiée. Rien n'est envoyé. » → « Sur ordinateur. Et dans votre poche. » (le téléphone se lève) → « Votre avenir, calculé. » → final : Orbite, « Votre salaire au centre. Tout le reste en orbite. », « Découvrez Orbite », adresse, « Conçue en Tunisie · Powered by Mohamed Aziz Jaouadi ».
+- Règle tenue : **aucune mention de prix, d'essai, d'offre ni de parrainage** ; profil fictif uniquement.
+
 ## 3 quatersexagies. Vidéo promotionnelle 45 s « Robuste. Précise. Tunisienne. » (12 oct., livrée)
 
 - **Demande** : vidéo moderne qui donne l'impression de robustesse d'une application unique en Tunisie, avec des nouveautés en continu. Choix : **45 s, 16:9 seulement (YouTube et LinkedIn)**, **musique + textes animés** (français + touche de darija). Storyboard validé dans la maquette https://claude.ai/artifact/DkMd6TSJQBiCpzgR7TN4Sb.
