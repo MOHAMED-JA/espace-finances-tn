@@ -1483,10 +1483,13 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.evaluate(() => document.querySelector(".lien-evitement").click());
     assert(await page.evaluate(() => location.hash === "#admin" && document.activeElement.id === "principal"), "lien d'évitement");
     await page.goto(base + "/espace/#credit?espace=tmm");
-    await page.waitForSelector("#credit-tmm:not([hidden]) .tmm-courbe");
+    await page.waitForSelector("#credit-tmm:not([hidden]) .tmm-cadre .og-svg");
     const txt = await page.textContent("#credit-tmm");
     assert(/7,2 %/.test(txt) && /−0,25 point/.test(txt), "TMM du mois et variation : " + txt.slice(0, 300));
-    assert((await page.$$("#credit-tmm .tmm-courbe circle")).length === 2, "deux points sur la courbe");
+    assert((await page.$$("#credit-tmm .tmm-cadre .og-tableau tbody tr")).length === 2, "deux mois dans le tableau du graphique");
+    /* Graphique commun : bulle au clavier sur le dernier mois. */
+    await page.focus("#credit-tmm .tmm-cadre .og-svg");
+    await page.waitForFunction(() => { const b = document.querySelector("#credit-tmm .og-bulle"); return b && !b.hidden && /7,2\s?%/.test(b.textContent); });
     assert(await page.evaluate(() => JSON.parse(localStorage.getItem("orbite-tmm")).taux === 7.2), "gardé sur l'appareil");
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(CAPTURES, "credit-tmm.png") });
@@ -2036,7 +2039,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(/^\+41,7/.test(t[0]) && /^\+57,2/.test(t[1]) && /^−9,9/.test(t[2]), "bilan brut / prix / pouvoir d'achat : " + t.join(" | "));
     assert(/3\s?773 DT/.test(await page.textContent("#pg-phrase")), "brut nécessaire pour garder le pouvoir d'achat");
     assert((await page.$$("#pg-etapes li")).length === 4, "4 étapes");
-    assert((await page.$$("#pg-graphe .pg-hausse")).length === 3, "3 hausses sur la courbe");
+    assert((await page.$$("#pg-graphe .og-marqueur")).length === 3, "3 hausses sur la courbe");
     assert(/moyenne depuis 2019/.test(await page.textContent("#pg-hausse-aide")), "hausse par défaut = moyenne passée");
     const brut1 = await page.textContent("#pg-r-brut");
     await page.$eval("#pg-hausse", (el) => { el.value = "8"; el.dispatchEvent(new Event("input", { bubbles: true })); });
@@ -2108,7 +2111,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.click("#pg-tab-carriere");
     await page.waitForSelector("#pg-carriere:not([hidden]) #pg-graphe svg");
     assert(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "carrière sans débordement sur téléphone");
-    assert(await page.evaluate(() => document.querySelector("#pg-graphe svg").getAttribute("viewBox") === "0 0 380 260"), "courbe adaptée au téléphone");
+    assert(await page.evaluate(() => { const v = document.querySelector("#pg-graphe svg.og-svg").getAttribute("viewBox").split(" "); return +v[2] < 520 && +v[3] === 250; }), "courbe adaptée au téléphone");
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(CAPTURES, "progression-carriere-telephone.png"), fullPage: true });
     await page.setViewportSize({ width: 1360, height: 900 });
@@ -2647,6 +2650,72 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.keyboard.press("Escape");
     assert(ouverts.every((u) => u.startsWith("https://mohamed-ja.github.io/")), "seuls les simulateurs sont chargés");
     await page.unroute("https://mohamed-ja.github.io/**");
+  });
+
+  await etape("graphiques unifiés : même moteur partout, bulle au clavier, « Voir le tableau », couleurs claires et sombres, téléphone", async () => {
+    const themeAvant = await page.getAttribute("html", "data-theme");
+    const verifier = async (vue, sel, nom) => {
+      await page.goto(base + "/espace/#" + vue);
+      await page.waitForSelector(sel + " .og-svg", { timeout: 15000 });
+      await page.focus(sel + " .og-svg");
+      await page.waitForFunction((s) => { const b = document.querySelector(s + " .og-bulle"); return b && !b.hidden && b.textContent.length > 4; }, sel);
+      await page.keyboard.press("ArrowLeft");
+      const t = page.locator(sel + " .og-tableau summary").first();
+      if (await t.count()) {
+        await t.click();
+        await page.waitForFunction((s) => document.querySelector(s + " .og-tableau[open]") && document.querySelectorAll(s + " .og-tableau tbody tr").length > 1, sel);
+        await page.locator(sel + " .og-tableau summary").first().click();
+      }
+      return nom;
+    };
+    const vus = [];
+    vus.push(await verifier("salaire", "#courbe", "salaire"));
+    await page.screenshot({ path: path.join(CAPTURES, "graphe-salaire.png") });
+    /* Légende : chaque série a sa clé de couleur (trait), pas seulement son nom. */
+    assert((await page.$$("#courbe .og-legende .og-cle--ligne")).length === 2, "clés de légende du salaire");
+    vus.push(await verifier("credit", "#cr-gr-zone", "crédit"));
+    await page.locator("#cr-gr-zone").scrollIntoViewIfNeeded();
+    await page.screenshot({ path: path.join(CAPTURES, "graphe-credit.png") });
+    await page.click("#cr-gr-tab-annee");
+    await page.waitForSelector("#cr-gr-zone .og-colonne");
+    await page.focus("#cr-gr-zone .og-svg");
+    await page.waitForFunction(() => { const b = document.querySelector("#cr-gr-zone .og-bulle"); return b && !b.hidden && /Capital/.test(b.textContent); });
+    await page.waitForTimeout(1400);
+    assert(await page.evaluate(() => getComputedStyle(document.querySelector("#cr-gr-zone .og-barre")).opacity === "1"), "colonnes visibles après l'apparition");
+    await page.screenshot({ path: path.join(CAPTURES, "graphe-credit-annees.png") });
+    await page.click("#cr-gr-tab-crd");
+    await page.goto(base + "/espace/#epargne?versement=250");
+    await page.waitForSelector("#ep-g-courbe .og-svg", { timeout: 15000 });
+    vus.push("épargne");
+    /* Mode sombre : couleurs de séries recalées (pas les mêmes qu'en clair). */
+    const clair = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--g1").trim());
+    await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+    const sombre = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--g1").trim());
+    assert(clair.toUpperCase() === "#2F5BEA" && sombre.toUpperCase() === "#5A82F2", "palette claire puis sombre : " + clair + " / " + sombre);
+    await page.goto(base + "/espace/#credit");
+    await page.waitForSelector("#cr-gr-zone .og-svg");
+    await page.locator("#cr-gr-zone").scrollIntoViewIfNeeded();
+    await page.waitForTimeout(1400);
+    await page.screenshot({ path: path.join(CAPTURES, "graphe-credit-sombre.png") });
+    await page.evaluate((t) => { if (t) document.documentElement.setAttribute("data-theme", t); else document.documentElement.removeAttribute("data-theme"); }, themeAvant);
+    /* Téléphone : graphiques à la largeur de l'écran, étiquettes sans chevauchement, pas de défilement horizontal. */
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (const [vue, sel] of [["salaire", "#courbe"], ["credit", "#cr-gr-zone"]]) {
+      await page.goto(base + "/espace/#" + vue);
+      await page.waitForSelector(sel + " .og-svg");
+      await page.waitForTimeout(300);
+      const r = await page.evaluate((s) => {
+        const svg = document.querySelector(s + " .og-svg"), xs = [...svg.querySelectorAll(".og-axe text")].filter((t) => t.getAttribute("text-anchor") !== "end" || +t.getAttribute("y") > 100).map((t) => t.getBoundingClientRect()).filter((b) => b.width);
+        const bas = xs.filter((b) => b.top > svg.getBoundingClientRect().bottom - 30).sort((a, b) => a.left - b.left);
+        let chevauche = false; for (let i = 1; i < bas.length; i++) if (bas[i].left < bas[i - 1].right - 1) chevauche = true;
+        return { deborde: document.documentElement.scrollWidth > window.innerWidth + 1, chevauche, w: svg.getBoundingClientRect().width };
+      }, sel);
+      assert(!r.deborde && !r.chevauche && r.w <= 390, vue + " sur téléphone : " + JSON.stringify(r));
+    }
+    await page.locator("#cr-gr-zone").scrollIntoViewIfNeeded();
+    await page.screenshot({ path: path.join(CAPTURES, "graphe-credit-telephone.png") });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    assert(vus.length === 3, "graphiques vus : " + vus.join(", "));
   });
 
   await etape("déconnexion puis suppression définitive du compte", async () => {

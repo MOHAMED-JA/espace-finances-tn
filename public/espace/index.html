@@ -15,6 +15,7 @@
   <link rel="preload" href="/orbite/polices/bricolage-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/orbite/orbite.css">
   <link rel="stylesheet" href="/espace/app.css">
+  <link rel="stylesheet" href="/espace/graphe.css">
   <link rel="stylesheet" href="/espace/salaire.css">
   <link rel="stylesheet" href="/espace/credit.css">
   <link rel="stylesheet" href="/espace/epargne.css">
@@ -678,7 +679,7 @@
 
           <section class="section" id="section-courbe" aria-labelledby="titre-courbe">
             <div class="section__tete"><h2 id="titre-courbe">Votre net selon le brut</h2><p>Glissez le doigt ou la souris sur la courbe, ou utilisez les flèches du clavier : chaque point est un calcul complet.</p></div>
-            <div class="section__corps"><div class="panneau courbe"><svg id="courbe" viewBox="0 0 640 320" role="img" aria-labelledby="titre-courbe courbe-info" tabindex="0"></svg><p class="courbe__info" id="courbe-info" aria-live="polite"></p></div></div>
+            <div class="section__corps"><div class="panneau courbe"><div id="courbe" class="courbe__zone"></div><p class="courbe__info" id="courbe-info" aria-live="polite"></p></div></div>
           </section>
 
           <details class="depliant methode">
@@ -1341,7 +1342,6 @@
                 </div>
                 <p class="pg-phrase" id="pg-phrase"></p>
                 <div class="pg-graphe" id="pg-graphe"></div>
-                <div class="pg-legende" aria-hidden="true"><span>Brut réel (historique)</span><span class="reel" id="pg-leg-reel">Ce que vaut votre brut en dinars de départ</span><span class="proj">Projection</span></div>
                 <p class="note">Le pouvoir d'achat est calculé sur le <b>brut</b> (indépendant des changements d'impôt). Le net affiché est calculé au barème actuel.</p>
                 <details class="pg-sources"><summary>Inflation utilisée et sources</summary>
                   <div class="pg-table"><table id="pg-inflation"></table></div>
@@ -2235,6 +2235,7 @@
   <script src="/espace/js/orbite-calcul.js"></script>
   <script src="/espace/js/orbite-intelligence.js"></script>
   <script src="/espace/js/assistant-local.js"></script>
+  <script src="/espace/js/orbite-graphe.js"></script>
   <script src="/espace/js/app.js"></script>
   <script src="/espace/js/orbite-systeme.js"></script>
   <script src="/espace/js/scene-orbite.js"></script>

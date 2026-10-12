@@ -37,35 +37,6 @@
 
 /* Courbe */
 .pg-graphe { position: relative; margin-top: 16px; touch-action: pan-y; }
-.pg-graphe svg { display: block; width: 100%; height: auto; overflow: visible; }
-.pg-axe text { font-family: var(--mono); font-size: 11px; fill: var(--encre-3); }
-.pg-axe line { stroke: var(--filet); }
-.pg-stop-haut { stop-color: var(--salaire); stop-opacity: .22; }
-.pg-stop-bas { stop-color: var(--salaire); stop-opacity: 0; }
-.pg-aire { fill: url(#pg-degrade); }
-.pg-l-brut { fill: none; stroke: var(--salaire); stroke-width: 2.6; stroke-linejoin: round; }
-.pg-l-reel { fill: none; stroke: var(--pg-prix); stroke-width: 2.2; stroke-dasharray: 6 5; }
-.pg-l-reel--proj { opacity: .45; }
-.pg-l-proj { fill: none; stroke: var(--salaire); stroke-width: 2.2; stroke-dasharray: 2 5; opacity: .9; }
-.pg-trace { stroke-dasharray: var(--long); stroke-dashoffset: var(--long); animation: pg-trace 1.6s var(--sortie) forwards; }
-.pg-l-reel.pg-trace { animation-delay: .25s; }
-@keyframes pg-trace { to { stroke-dashoffset: 0; } }
-.pg-l-reel.pg-trace { animation-name: pg-trace-pointille; }
-@keyframes pg-trace-pointille { 0% { stroke-dashoffset: var(--long); stroke-dasharray: var(--long); } 99% { stroke-dashoffset: 0; stroke-dasharray: var(--long); } 100% { stroke-dashoffset: 0; stroke-dasharray: 6 5; } }
-.pg-hausse circle { fill: var(--surface); stroke: var(--salaire); stroke-width: 2.4; }
-.pg-hausse text { font-family: var(--mono); font-size: 11px; font-weight: 600; fill: var(--salaire-t); }
-.pg-hausse--perdu circle { stroke: var(--ambre); }
-.pg-aujourdhui line { stroke: var(--encre-3); stroke-dasharray: 3 4; }
-.pg-aujourdhui text { font-size: 11px; font-weight: 700; fill: var(--encre-3); }
-.pg-curseur { stroke: var(--encre-3); stroke-width: 1; opacity: 0; transition: opacity 120ms ease; }
-.pg-curseur--on { opacity: .5; }
-.pg-bulle { position: absolute; left: 0; top: 0; pointer-events: none; transform: translate(-50%, calc(-100% - 12px)); background: var(--encre); color: var(--inverse); border-radius: 10px; padding: 7px 10px; font-size: 12px; line-height: 1.45; white-space: nowrap; opacity: 0; transition: opacity 120ms ease; z-index: 2; }
-.pg-bulle--on { opacity: 1; }
-.pg-bulle b { font-family: var(--mono); }
-.pg-legende { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--encre-2); margin-top: 8px; }
-.pg-legende span::before { content: ""; display: inline-block; width: 18px; height: 0; border-top: 2.6px solid var(--salaire); vertical-align: middle; margin-right: 6px; }
-.pg-legende .reel::before { border-top: 2.2px dashed var(--pg-prix); }
-.pg-legende .proj::before { border-top: 2.2px dotted var(--salaire); }
 #pg-bilan-plein .note { font-size: 12.5px; color: var(--encre-3); margin: 10px 0 0; }
 .pg-sources { font-size: 12.5px; color: var(--encre-3); margin-top: 12px; }
 .pg-sources summary { cursor: pointer; font-weight: 650; color: var(--encre-2); }

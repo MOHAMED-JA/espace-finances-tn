@@ -1,0 +1,94 @@
+/* Orbite — style commun des graphiques (moteur orbite-graphe.js). Palette validée : clair sur #FFFFFF, sombre sur #10131C
+   (bande de luminosité, saturation, séparation pour les daltoniens, contraste ≥ 3:1). Ordre fixe : bleu, ambre, vert, violet. */
+:root {
+  --g1: #2F5BEA; --g2: #D9730D; --g3: #0E9F6E; --g4: #7C3AED;
+  --g-neutre: #8B93A7; --g-ok: #067647; --g-danger: #D92D20;
+  --g-grille: #E9ECF2; --g-axe: #5E6577; --g-anneau: var(--surface); --g-lavis: .10;
+  /* Panneaux toujours sombres (résultat du Crédit) : teintes sombres, quel que soit le thème. */
+  --g1-sombre: #5A82F2; --g2-sombre: #D27A2C; --g3-sombre: #1FAD79; --g4-sombre: #9B70EE; --g-neutre-sombre: #7D869B;
+}
+:root[data-theme="dark"] {
+  --g1: #5A82F2; --g2: #D27A2C; --g3: #1FAD79; --g4: #9B70EE;
+  --g-neutre: #7D869B; --g-ok: #47CD89; --g-danger: #FF8A80;
+  --g-grille: #1E2330; --g-axe: #959CAD; --g-lavis: .10;
+}
+.og { position: relative; min-width: 0; }
+.og-cadre { position: relative; }
+.og-svg { display: block; width: 100%; height: auto; overflow: visible; font-family: var(--texte); touch-action: pan-y; }
+.og-svg:focus { outline: none; }
+.og-svg:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; border-radius: 8px; }
+.og-axe line { stroke: var(--g-grille); stroke-width: 1; }
+.og-axe text { fill: var(--g-axe); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+
+/* Couleurs des séries (trait, remplissage, clé de légende). */
+.og-c1 { --c: var(--g1); } .og-c2 { --c: var(--g2); } .og-c3 { --c: var(--g3); } .og-c4 { --c: var(--g4); }
+.og-cn { --c: var(--g-neutre); } .og-cok { --c: var(--g-ok); } .og-cdanger { --c: var(--g-danger); }
+.og-ligne { fill: none; stroke: var(--c); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.og-ligne.og-tirets { stroke-dasharray: 6 5; }
+.og-ligne.og-pointille { stroke-dasharray: 1.5 4.5; }
+.og-aire { fill: var(--c); opacity: var(--g-lavis); stroke: none; }
+.og-bande { fill: var(--c); stroke: none; }
+.og-bande.og-force-large { opacity: .12; } .og-bande.og-force-etroite { opacity: .24; }
+.og-zone { stroke: none; }
+.og-zone.og-ton-ok { fill: color-mix(in srgb, var(--g-ok) 12%, transparent); }
+.og-zone.og-ton-danger { fill: color-mix(in srgb, var(--g-danger) 10%, transparent); }
+.og-seuil { stroke: var(--encre-2); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.og-seuil__lib, .og-verticale__lib { fill: var(--encre-2); font-size: 11.5px; font-weight: 650; }
+.og-verticale { stroke: var(--encre-3); stroke-width: 1; stroke-dasharray: 3 4; }
+.og-curseur { stroke: var(--encre); stroke-width: 1.5; }
+.og-viseur { stroke: var(--encre-3); stroke-width: 1; }
+.og-point { fill: var(--c); stroke: var(--g-anneau); stroke-width: 2; }
+.og-marqueur { fill: var(--g-anneau); stroke: var(--c); stroke-width: 3; }
+.og-marqueur__txt { fill: var(--encre); font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--g-anneau); stroke-width: 3px; stroke-linejoin: round; }
+.og-etiquette { fill: var(--encre); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.og-barre { fill: var(--c); transition: opacity 120ms ease; }
+.og-cible { fill: transparent; }
+.og-colonnes.og-survol .og-colonne .og-barre { opacity: .45; }
+.og-colonnes.og-survol .og-colonne.og-actif .og-barre { opacity: 1; }
+
+/* Légende : trait pour une courbe, carré pour une barre ou une bande, texte à l'encre (jamais à la couleur de la série). */
+.og-legende { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--encre-2); }
+.og-legende li { display: inline-flex; align-items: center; gap: 7px; }
+.og-cle { display: inline-block; flex: none; }
+.og-cle--ligne { width: 16px; height: 0; border-top: 2px solid var(--c); border-radius: 2px; }
+.og-cle--ligne.og-tirets { border-top-style: dashed; }
+.og-cle--ligne.og-pointille { border-top-style: dotted; border-top-width: 3px; }
+.og-cle--barre, .og-cle--bande, .og-cle--zone { width: 10px; height: 10px; border-radius: 3px; background: var(--c); }
+.og-cle--bande.og-force-large { background: color-mix(in srgb, var(--c) 22%, transparent); }
+.og-cle--bande.og-force-etroite { background: color-mix(in srgb, var(--c) 40%, transparent); }
+.og-cle--zone.og-ton-ok { background: color-mix(in srgb, var(--g-ok) 22%, transparent); outline: 1px solid color-mix(in srgb, var(--g-ok) 45%, transparent); }
+.og-cle--zone.og-ton-danger { background: color-mix(in srgb, var(--g-danger) 18%, transparent); outline: 1px solid color-mix(in srgb, var(--g-danger) 45%, transparent); }
+.og-cle--marqueur { width: 10px; height: 10px; border-radius: 50%; border: 3px solid var(--c); box-sizing: border-box; }
+
+/* Bulle : la valeur en gras, le nom à côté ; au survol et au clavier. */
+.og-bulle { position: absolute; z-index: 3; pointer-events: none; min-width: 150px; max-width: min(280px, 100%); background: var(--surface); color: var(--encre); border: 1px solid var(--filet); box-shadow: var(--ombre-2); border-radius: 12px; padding: 9px 11px; font-size: 12.5px; line-height: 1.35; }
+.og-bulle__titre { color: var(--encre-3); font-weight: 650; margin-bottom: 4px; }
+.og-bulle__ligne { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; align-items: center; gap: 8px; margin-top: 3px; }
+.og-bulle__cle { width: 12px; height: 0; border-top: 2px solid var(--c); }
+.og-bulle__cle.og-tirets { border-top-style: dashed; }
+.og-bulle__cle--bande { height: 8px; border: 0; border-radius: 2px; background: color-mix(in srgb, var(--c) 35%, transparent); }
+.og-bulle__nom { color: var(--encre-2); overflow-wrap: anywhere; }
+.og-bulle__val { font-weight: 750; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* « Voir le tableau ». */
+.og-tableau { margin-top: 8px; font-size: 13px; }
+.og-tableau summary { cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 650; color: var(--encre-2); padding: 4px 10px; border: 1px solid var(--filet); border-radius: 999px; list-style: none; }
+.og-tableau summary::-webkit-details-marker { display: none; }
+.og-tableau summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.og-tableau[open] summary { margin-bottom: 8px; }
+.og-tableau table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.og-tableau th, .og-tableau td { padding: 6px 8px; border-bottom: 1px solid var(--filet); text-align: left; }
+.og-tableau thead th { font-size: 12px; color: var(--encre-3); font-weight: 650; }
+.og-tableau .nb { text-align: right; white-space: nowrap; }
+.og-tableau[open] { max-height: 360px; overflow: auto; }
+
+/* Tracé à la première apparition. */
+@media (prefers-reduced-motion: no-preference) {
+  .og-attente .og-trace-chemin { stroke-dasharray: 1 1; stroke-dashoffset: 1; }
+  .og-attente .og-aire, .og-attente .og-bande, .og-attente .og-barre { opacity: 0; }
+  .og-trace .og-trace-chemin:not(.og-tirets):not(.og-pointille) { stroke-dasharray: 1 1; animation: og-trace 1100ms var(--sortie) both; }
+  .og-trace .og-aire, .og-trace .og-bande, .og-trace .og-barre, .og-trace .og-tirets, .og-trace .og-pointille { animation: og-apparait 800ms ease 150ms both; }
+}
+@keyframes og-trace { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes og-apparait { from { opacity: 0; } }
+@media (forced-colors: active) { .og-ligne, .og-barre, .og-aire { forced-color-adjust: none; } }

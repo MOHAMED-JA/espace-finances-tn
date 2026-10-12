@@ -272,7 +272,6 @@
         '<div id="ep-proj-corps" class="ep-proj-grille"><div class="ep-proj-gauche">' +
           '<ul class="ep-scen" id="ep-scen"></ul>' +
           '<div class="ep-graphe" id="ep-g-proj"></div>' +
-          '<div class="ep-legende" aria-hidden="true"><span class="l-bande">Prudent – dynamique</span><span class="l-med">Médian</span><span class="l-verse">Versements cumulés</span><span class="l-reel" id="ep-leg-reel" hidden>Médian en dinars constants</span></div>' +
           '<div class="ep-curseur ep-curseur--annee"><div class="ep-curseur__haut"><label for="ep-annee-lue">Lire une année</label><output id="ep-annee-lue-val" for="ep-annee-lue"></output></div><input type="range" class="curseur" id="ep-annee-lue" min="0" max="15" step="1" value="15"><p class="ep-graphe__info" id="ep-lecture" aria-live="polite"></p></div>' +
           '</div><div class="ep-proj-droite"><div id="ep-proj-lignes"></div>' +
           '<h3 class="ep-sous-titre">Face à une épargne classique</h3>' +
@@ -492,62 +491,32 @@
   /* ===================================================================
      Graphiques SVG
      =================================================================== */
-  function largeur(el) { return Math.max(280, Math.round(el.clientWidth || el.getBoundingClientRect().width || 600)); }
   function joli(v) {
     if (!(v > 0)) return 1;
     var p = Math.pow(10, Math.floor(Math.log10(v))), n = v / p;
     return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p;
   }
-  function chemin(pts) { return pts.map(function (p, i) { return (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1); }).join(""); }
 
-  /* o = { el, aria, xMax, yMax, entier, hauteur, series: [{ type: 'ligne'|'aire'|'bande', pts | haut+bas, cls, anime }], verticales, points, horizontales, curseurX } */
+  /* Graphiques : moteur commun (orbite-graphe.js). Couleur de l'Épargne : violet (4) ; versements cumulés en gris
+     pointillé ; dinars constants en ambre (2). o = { el, titre, aria, entier, series: [{ type: 'ligne'|'aire'|'bande', pts | haut+bas,
+     nom, c, tirets, force }], verticales: [{ x, lib }], points: [{ x, y, lib }], horizontales: [{ y, lib }], curseurX, titreX, fmtX, tableau, surSurvol } */
   function graphe(o) {
-    var W = largeur(o.el), H = o.hauteur || (W < 520 ? 220 : 260);
-    var M = { g: W < 420 ? 44 : 54, d: 14, h: 14, b: 30 };
-    var yMax = joli(o.yMax), xMax = o.xMax || 1;
-    function X(v) { return M.g + v / xMax * (W - M.g - M.d); }
-    function Y(v) { return M.h + (1 - v / yMax) * (H - M.h - M.b); }
-    var s = '<svg viewBox="0 0 ' + W + " " + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + esc(o.aria) + '" class="ep-svg' + (o.anime ? " ep-trace" : "") + '" focusable="false">';
-    for (var i = 0; i <= 4; i++) {
-      var vy = yMax * i / 4, yy = Y(vy).toFixed(1);
-      s += '<line class="ep-g-grille" x1="' + M.g + '" x2="' + (W - M.d) + '" y1="' + yy + '" y2="' + yy + '"/>';
-      s += '<text class="ep-g-txt" x="' + (M.g - 8) + '" y="' + yy + '" dy="4" text-anchor="end">' + court(vy) + "</text>";
-    }
-    var pas = o.entier ? Math.max(1, Math.ceil(xMax / (W < 420 ? 4 : 8))) : xMax / 4;
-    for (var vx = 0; vx <= xMax + 1e-9; vx += pas) {
-      s += '<text class="ep-g-txt" x="' + X(vx).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' + (o.entier ? String(Math.round(vx)) : court(vx)) + "</text>";
-    }
+    var series = [], bandes = [];
     (o.series || []).forEach(function (se) {
-      if (se.type === "bande") {
-        var haut = se.haut.map(function (p) { return [X(p[0]), Y(p[1])]; }), bas = se.bas.map(function (p) { return [X(p[0]), Y(p[1])]; }).reverse();
-        s += '<path class="' + se.cls + ' ep-anim-aire" d="' + chemin(haut) + bas.map(function (p) { return "L" + p[0].toFixed(1) + " " + p[1].toFixed(1); }).join("") + 'Z"/>';
-      } else if (se.type === "aire") {
-        var pts = se.pts.map(function (p) { return [X(p[0]), Y(p[1])]; });
-        s += '<path class="' + se.cls + ' ep-anim-aire" d="' + chemin(pts) + "L" + pts[pts.length - 1][0].toFixed(1) + " " + Y(0).toFixed(1) + "L" + pts[0][0].toFixed(1) + " " + Y(0).toFixed(1) + 'Z"/>';
-      } else {
-        s += '<path class="' + se.cls + (se.anime !== false ? " ep-anim" : "") + '" pathLength="1" d="' + chemin(se.pts.map(function (p) { return [X(p[0]), Y(Math.min(p[1], yMax))]; })) + '"/>';
-      }
+      if (se.type === "bande") bandes.push({ nom: se.nom, c: se.c || 4, force: se.force || "large", haut: se.haut, bas: se.bas });
+      else if (se.type === "aire") { var l = series.filter(function (x) { return x.pts === se.pts; })[0]; if (l) l.aire = true; else series.push({ nom: se.nom, c: se.c || 4, pts: se.pts, aire: true }); }
+      else { var deja = series.filter(function (x) { return x.pts === se.pts; })[0]; if (deja) { deja.nom = se.nom || deja.nom; } else series.push({ nom: se.nom, c: se.c || 4, pts: se.pts, tirets: se.tirets }); }
     });
-    (o.horizontales || []).forEach(function (h) {
-      if (!(h.y > 0) || h.y > yMax) return;
-      var yh = Y(h.y).toFixed(1);
-      s += '<line class="' + h.cls + '" x1="' + M.g + '" x2="' + (W - M.d) + '" y1="' + yh + '" y2="' + yh + '"/><text class="ep-g-lib" x="' + (W - M.d) + '" y="' + yh + '" dy="-6" text-anchor="end">' + esc(h.lib) + "</text>";
+    var h = (o.horizontales || []).filter(function (x) { return x.y > 0; })[0];
+    window.OrbiteGraphe.lignes(o.el, {
+      titre: o.titre, resume: o.aria, series: series, bandes: bandes, xmin: 0, xmax: o.xMax, ymin: 0, hauteur: o.hauteur,
+      verticales: (o.verticales || []).filter(function (v) { return v.lib && v.x >= 0 && v.x <= o.xMax; }),
+      curseurX: o.curseurX, seuil: h ? { y: h.y, lib: h.lib } : null,
+      marqueurs: (o.points || []).map(function (p) { return { x: p.x, y: p.y, lib: p.lib, c: 4 }; }),
+      fmtY: court, fmtV: dt0, fmtX: o.fmtX || (o.entier ? function (v) { return String(Math.round(v)); } : court),
+      ticksX: o.entier ? Array.apply(null, { length: Math.round(o.xMax) + 1 }).map(function (_, i) { return { v: i, lib: String(i) }; }) : null, titreX: o.titreX, tableau: o.tableau, surSurvol: o.surSurvol
     });
-    (o.verticales || []).forEach(function (v) {
-      if (!(v.x >= 0) || v.x > xMax) return;
-      var xv = X(v.x).toFixed(1);
-      s += '<line class="' + v.cls + '" x1="' + xv + '" x2="' + xv + '" y1="' + M.h + '" y2="' + (H - M.b) + '"/>';
-      if (v.lib) s += '<text class="ep-g-lib" x="' + xv + '" y="' + (M.h + 10) + '" dx="' + (X(v.x) > W - 90 ? -6 : 6) + '" text-anchor="' + (X(v.x) > W - 90 ? "end" : "start") + '">' + esc(v.lib) + "</text>";
-    });
-    (o.points || []).forEach(function (p) {
-      s += '<circle class="' + p.cls + '" cx="' + X(p.x).toFixed(1) + '" cy="' + Y(Math.min(p.y, yMax)).toFixed(1) + '" r="' + (p.r || 6) + '"/>';
-    });
-    s += "</svg>";
-    o.el.innerHTML = s;
-    return { X: X, Y: Y, W: W, H: H };
   }
-  var tracesFaits = {};
-  function animerUneFois(cle) { if (tracesFaits[cle] || reduit.matches) return false; tracesFaits[cle] = true; return true; }
 
   function rendreCourbe() {
     var s = res.sim, el = $("ep-g-courbe");
@@ -559,10 +528,11 @@
     var eco = economiePour(inv);
     graphe({
       el: el, aria: "Courbe de l'économie d'impôt selon l'assurance vie versée par an : " + dt(eco) + " pour " + dt(inv) + ", optimal à " + dt(s.optimal) + ".",
-      xMax: xMax, yMax: yMax, anime: animerUneFois("courbe"),
-      series: [{ type: "aire", pts: pts, cls: "ep-c-aire" }, { type: "ligne", pts: pts, cls: "ep-c-ligne" }],
-      verticales: s.optimal > 0 ? [{ x: s.optimal, cls: "ep-c-opt", lib: "Optimal " + court(s.optimal) }] : [],
-      points: inv > 0 ? [{ x: Math.min(inv, xMax), y: eco, cls: "ep-c-point" }] : []
+      titre: "Économie d'impôt selon le montant versé", xMax: xMax,
+      series: [{ type: "aire", pts: pts, nom: "Économie d'impôt" }, { type: "ligne", pts: pts, nom: "Économie d'impôt" }],
+      verticales: s.optimal > 0 ? [{ x: s.optimal, lib: "Optimal " + court(s.optimal) }] : [],
+      points: inv > 0 ? [{ x: Math.min(inv, xMax), y: eco, lib: "Votre versement : " + dt(inv) + " par an, " + dt(eco) + " d'économie" }] : [],
+      titreX: function (v) { return "Versement de " + dt0(v) + " par an"; }, tableau: { entete: "Versement par an", pas: 4 }
     });
     $("ep-g-courbe-info").textContent = inv > 0
       ? "Avec " + dt(inv) + " par an en assurance vie : " + dt(eco) + " d'économie." + (s.optimal > 0 && inv < s.optimal - 1 ? " L'économie augmente jusqu'à " + dt(s.optimal) + " par an." : s.optimal > 0 && inv > s.optimal + 1 ? " Au-delà de " + dt(s.optimal) + ", le supplément ne réduit plus l'impôt." : "")
@@ -626,7 +596,7 @@
     $("ep-scen").innerHTML = ["prudent", "median", "dynamique"].map(function (k) {
       return '<li class="ep-scen--' + k + '"><span>' + NOMS_SCEN[k] + " · " + esc(libelleTaux(c, k)) + "</span><strong>" + esc(dt0(c.sc[k].capitalFinal)) + "</strong></li>";
     }).join("");
-    dessinerProjection(!instant ? false : animerUneFois("proj"));
+    dessinerProjection();
     var curseur = $("ep-annee-lue");
     var garder = curseur.getAttribute("data-touche") === "1" && Number(curseur.value) <= e.dureeAns;
     curseur.max = String(e.dureeAns);
@@ -640,28 +610,30 @@
     }).join("") + '<p class="ep-cmp__bilan">' + (c.avantage >= 0 ? "Avantage sur l'épargne classique : " : "Écart avec l'épargne classique : ") + "<strong>" + esc(signe(c.avantage, dt0)) + "</strong></p>";
     poserR($("ep-comparatif"));
   }
-  var geoProj = null;
   function dessinerProjection(anime) {
     var c = res, sc = c.sc, e = c.etat;
     function serie(p, cle) { return p.annees.map(function (a) { return [a.annee, a[cle]]; }); }
     var yMax = Math.max(sc.dynamique.capitalFinal, c.med.totalVerse, 1);
     sc.dynamique.annees.forEach(function (a) { yMax = Math.max(yMax, a.capital); });
     var series = [
-      { type: "bande", haut: serie(sc.dynamique, "capital"), bas: serie(sc.prudent, "capital"), cls: "ep-p-bande" },
-      { type: "ligne", pts: serie(sc.median, "verse"), cls: "ep-p-verse", anime: false },
-      { type: "ligne", pts: serie(sc.prudent, "capital"), cls: "ep-p-bord" },
-      { type: "ligne", pts: serie(sc.dynamique, "capital"), cls: "ep-p-bord" }
+      { type: "ligne", pts: serie(sc.median, "capital"), nom: "Médian", c: 4 },
+      { type: "bande", haut: serie(sc.dynamique, "capital"), bas: serie(sc.prudent, "capital"), nom: "Prudent – dynamique", c: 4 },
+      { type: "ligne", pts: serie(sc.median, "verse"), nom: "Versements cumulés", c: "n", tirets: true }
     ];
-    if (e.inflationPct > 0) series.push({ type: "ligne", pts: serie(sc.median, "capitalReel"), cls: "ep-p-reel", anime: false });
-    series.push({ type: "ligne", pts: serie(sc.median, "capital"), cls: "ep-p-med" });
-    $("ep-leg-reel").hidden = !(e.inflationPct > 0);
+    if (e.inflationPct > 0) series.push({ type: "ligne", pts: serie(sc.median, "capitalReel"), nom: "Médian en dinars d'aujourd'hui", c: 2, tirets: true });
     var a = Number($("ep-annee-lue").value);
     if (!(a >= 0 && a <= e.dureeAns)) a = e.dureeAns;
-    geoProj = graphe({
+    graphe({
       el: $("ep-g-proj"), aria: "Capital constitué année par année : prudent " + dt0(sc.prudent.capitalFinal) + ", médian " + dt0(sc.median.capitalFinal) + ", dynamique " + dt0(sc.dynamique.capitalFinal) + " au terme.",
-      xMax: e.dureeAns, yMax: yMax, entier: true, anime: anime, series: series,
-      verticales: [{ x: a, cls: "ep-p-curseur" }],
-      points: [{ x: a, y: sc.median.annees[a].capital, cls: "ep-p-point", r: 5 }]
+      titre: "Capital constitué année par année", xMax: e.dureeAns, entier: true, series: series, curseurX: a,
+      titreX: function (v) { return v ? "Fin de l'année " + Math.round(v) : "Au départ"; }, tableau: { entete: "Année" },
+      /* Survol ou clavier : le curseur « Lire une année » et la phrase suivent l'année visée. */
+      surSurvol: function (x) {
+        if (x == null) return;
+        var cur = $("ep-annee-lue"), an = Math.round(x);
+        if (Number(cur.value) === an) return;
+        cur.value = String(an); cur.setAttribute("data-touche", "1"); majCurseur(cur); lireAnnee();
+      }
     });
   }
   function lireAnnee() {
@@ -1013,8 +985,7 @@
   CONSTRUIRE.mc = function () {
     return '<div class="ep-champs">' + champ("ep-mc-vav", "Volatilité assurance vie", null, "p", "points", "Écart-type annuel, jamais sous le taux garanti", ' value="1,5" data-outil-champ') +
       champ("ep-mc-vcea", "Volatilité CEA", null, "p", "points", "Actions : 15 à 20 points", ' value="15" data-outil-champ') + champ("ep-mc-obj", "Capital visé", null, "m", "DT", "Facultatif : probabilité de l'atteindre", ' placeholder="Ex. 100 000" data-outil-champ') + "</div>" +
-      '<p class="ep-erreur" id="ep-mc-err" role="alert" hidden></p><div id="ep-mc-phrases" class="ep-phrases" aria-live="polite"></div><div class="ep-graphe" id="ep-g-mc"></div>' +
-      '<div class="ep-legende" aria-hidden="true"><span class="l-mc1">8 cas sur 10</span><span class="l-mc2">1 cas sur 2</span><span class="l-med">Médiane</span><span class="l-verse">Versements cumulés</span></div>';
+      '<p class="ep-erreur" id="ep-mc-err" role="alert" hidden></p><div id="ep-mc-phrases" class="ep-phrases" aria-live="polite"></div><div class="ep-graphe" id="ep-g-mc"></div>';
   };
   var mc = { cle: null, res: null, minuterie: null };
   function calculerMc() {
@@ -1046,10 +1017,11 @@
     var yMax = Math.max(Math.max.apply(null, cent.p90), c.med.totalVerse, m.objectif || 0);
     graphe({
       el: $("ep-g-mc"), aria: "Éventail de 5 000 trajectoires : dans 8 cas sur 10, entre " + dt0(m.finalP10) + " et " + dt0(m.finalP90) + " au terme.",
-      xMax: c.etat.dureeAns, yMax: yMax, entier: true, anime: animerUneFois("mc"),
-      series: [{ type: "bande", haut: pts(cent.p90), bas: pts(cent.p10), cls: "ep-mc-b1" }, { type: "bande", haut: pts(cent.p75), bas: pts(cent.p25), cls: "ep-mc-b2" },
-        { type: "ligne", pts: c.med.annees.map(function (a) { return [a.annee, a.verse]; }), cls: "ep-p-verse", anime: false }, { type: "ligne", pts: pts(cent.p50), cls: "ep-p-med" }],
-      horizontales: m.objectif > 0 ? [{ y: m.objectif, cls: "ep-mc-obj", lib: "Objectif" }] : []
+      titre: "Éventail de 5 000 trajectoires", xMax: c.etat.dureeAns, entier: true,
+      series: [{ type: "ligne", pts: pts(cent.p50), nom: "Médiane", c: 4 }, { type: "bande", haut: pts(cent.p90), bas: pts(cent.p10), nom: "8 cas sur 10", c: 4, force: "large" }, { type: "bande", haut: pts(cent.p75), bas: pts(cent.p25), nom: "1 cas sur 2", c: 4, force: "etroite" },
+        { type: "ligne", pts: c.med.annees.map(function (a) { return [a.annee, a.verse]; }), nom: "Versements cumulés", c: "n", tirets: true }],
+      horizontales: m.objectif > 0 ? [{ y: m.objectif, lib: "Objectif" }] : [],
+      titreX: function (v) { return v ? "Fin de l'année " + Math.round(v) : "Au départ"; }, tableau: { entete: "Année" }
     });
   }
   MAJ.mc = function () { clearTimeout(mc.minuterie); mc.minuterie = setTimeout(afficherMc, 300); };
@@ -1522,17 +1494,6 @@
     if (ev.key === "Home") k = "eco"; if (ev.key === "End") k = "cap";
     choisirOnglet(k);
     $(k === "eco" ? "ep-tab-eco" : "ep-tab-cap").focus();
-  });
-
-  /* Pointeur sur le graphique de projection : lit l'année la plus proche */
-  $("ep-g-proj").addEventListener("pointermove", function (ev) {
-    if (!geoProj || !res || !res.actif) return;
-    var svg = this.querySelector("svg"); if (!svg) return;
-    var rect = svg.getBoundingClientRect(), x = (ev.clientX - rect.left) * geoProj.W / rect.width;
-    var n = res.etat.dureeAns, a = borne(Math.round((x - geoProj.X(0)) / (geoProj.X(n) - geoProj.X(0)) * n), 0, n);
-    var c = $("ep-annee-lue");
-    if (Number(c.value) === a) return;
-    c.value = String(a); c.setAttribute("data-touche", "1"); majCurseur(c); dessinerProjection(false); lireAnnee();
   });
 
   /* Relevé PDF */

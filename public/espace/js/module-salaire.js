@@ -16,7 +16,6 @@
   var O = window.OrbiteCalcul;
   function $(id) { return doc.getElementById(id); }
   var mouvementReduit = window.matchMedia ? matchMedia("(prefers-reduced-motion: reduce)") : { matches: false };
-  var NS = "http://www.w3.org/2000/svg";
 
   /* ---------- Formats ---------- */
   function nbsp(s) { return s.replace(/ /g, " "); }
@@ -485,95 +484,48 @@
     }).join("");
   }
 
-  /* ---------- Courbe net = f(brut) ---------- */
-  var courbe = { points: [], index: 0, xmax: 1 };
-  var G = { g: 52, d: 16, h: 14, b: 34, l: 640, H: 320 };
-  var courbeTracee = false;
-  function el(nom, attrs, parent) { var e = doc.createElementNS(NS, nom); Object.keys(attrs).forEach(function (k) { e.setAttribute(k, attrs[k]); }); if (parent) parent.appendChild(e); return e; }
-  function pasRond(etendue, nb) { var brut = etendue / nb, p = Math.pow(10, Math.floor(Math.log10(brut))), q = brut / p; return (q < 1.5 ? 1 : q < 3.5 ? 2 : q < 7.5 ? 5 : 10) * p; }
+  /* ---------- Courbe net = f(brut) : moteur commun des graphiques ---------- */
+  var courbe = { points: [], actuel: null };
   function rendreCourbe(calc) {
     var mensuel = calc.r.periode === "mensuel";
     var entree = JSON.parse(JSON.stringify(calc.entree));
     if (mensuel) entree.nombreSalaires = P.versements.minimum;
-    var actuel = entree.montant;
-    var svg = $("courbe");
-    var etroit = svg.parentNode.clientWidth < 560;
-    G.l = etroit ? 360 : 640; G.H = etroit ? 280 : 320; G.g = etroit ? 46 : 52;
-    svg.setAttribute("viewBox", "0 0 " + G.l + " " + G.H);
-    svg.classList.toggle("etroit", etroit);
-    var cible = Math.max(actuel * 2.5, mensuel ? 3000 : 36000);
-    var pas = pasRond(cible, etroit ? 4 : 5);
-    var xmax = Math.ceil(cible / pas) * pas;
+    var actuel = entree.montant, zone = $("courbe");
+    var etroit = (zone.clientWidth || 640) < 560;
+    var cible = Math.max(actuel * 2.5, mensuel ? 3000 : 36000), pas = window.OrbiteGraphe.graduations(0, cible, etroit ? 4 : 5);
+    var xmax = pas[pas.length - 1];
     var pts = C.courbeNetBrut(entree, P, { min: 0, max: xmax, points: etroit ? 91 : 121 });
-    /* Le point de la situation est calculé exactement, puis inséré dans l'échantillon */
+    /* Le point de la situation est calculé exactement, puis inséré dans l'échantillon. */
     var exact = C.courbeNetBrut(entree, P, { min: actuel, max: actuel + 1e-6, points: 2 })[0];
     var plus = 0;
     while (plus < pts.length && pts[plus].brut < actuel) plus++;
     pts.splice(plus, 0, exact);
-    courbe.points = pts; courbe.xmax = xmax; courbe.index = plus;
-    svg.textContent = "";
-    var W = G.l - G.g - G.d, H = G.H - G.h - G.b;
-    function X(v) { return G.g + v / xmax * W; }
-    function Y(v) { return G.h + H - v / xmax * H; }
-    courbe.X = X; courbe.Y = Y;
-    for (var t = 0; t <= xmax + 1e-9; t += pas) {
-      el("line", { x1: G.g, x2: G.g + W, y1: Y(t), y2: Y(t), "class": "axe" }, svg);
-      el("text", { x: G.g - 8, y: Y(t) + 4, "text-anchor": "end", "class": "grad" }, svg).textContent = dt0(t);
-      el("text", { x: X(t), y: G.H - 10, "text-anchor": "middle", "class": "grad" }, svg).textContent = dt0(t);
-    }
-    el("path", { d: "M" + X(0) + " " + Y(0) + "L" + X(xmax) + " " + Y(xmax), "class": "ligne-brut" }, svg);
-    var d = pts.map(function (p, i) { return (i ? "L" : "M") + X(p.brut).toFixed(1) + " " + Y(p.net).toFixed(1); }).join("");
-    el("path", { d: d + "L" + X(xmax).toFixed(1) + " " + Y(0) + "L" + X(0) + " " + Y(0) + "Z", "class": "zone-net" }, svg);
-    var ligne = el("path", { d: d, "class": "ligne-net" }, svg);
-    if (!courbeTracee && courbeVisible) { courbeTracee = true; tracer(ligne); }
-    courbe.ligne = ligne;
-    courbe.repere = el("line", { "class": "repere" }, svg);
-    courbe.point = el("circle", { r: 7, "class": "point" }, svg);
-    lireCourbe(plus, true);
+    courbe.points = pts; courbe.actuel = exact;
+    var per = mensuel ? "par mois" : "par an";
+    window.OrbiteGraphe.lignes(zone, {
+      titre: "Votre net selon le salaire de base", resume: "Net " + per + " pour chaque salaire de base " + per + " de 0 à " + dt0(xmax) + " DT ; votre situation : " + dt3(exact.brut) + " DT de base, " + dt3(exact.net) + " DT net.",
+      series: [{ nom: "Net", c: 3, aire: true, pts: pts.map(function (p) { return [p.brut, p.net]; }) }, { nom: "Base = net (sans retenue)", c: "n", tirets: true, pts: [[0, 0], [xmax, xmax]] }],
+      xmin: 0, xmax: xmax, ymin: 0, ymax: xmax, hauteur: etroit ? 260 : 300, curseurX: exact.brut,
+      marqueurs: [{ x: exact.brut, y: exact.net, c: 3, lib: "Votre situation : " + dt3(exact.brut) + " DT de base, " + dt3(exact.net) + " DT net" }],
+      fmtX: dt0, fmtY: dt0, fmtV: function (v) { return dt0(v) + " DT"; }, titreX: function (x) { return "Salaire de base " + dt0(x) + " DT " + per; },
+      tableau: { entete: "Salaire de base", pas: Math.ceil(pts.length / 12) },
+      /* La phrase sous la courbe suit le survol et le clavier, puis revient à votre situation. */
+      surSurvol: function (x) {
+        if (x == null) { lireCourbe(courbe.actuel, true); return; }
+        var best = courbe.points[0];
+        courbe.points.forEach(function (p) { if (Math.abs(p.brut - x) < Math.abs(best.brut - x)) best = p; });
+        lireCourbe(best, false);
+      }
+    });
+    lireCourbe(exact, true);
   }
-  function tracer(ligne) {
-    if (mouvementReduit.matches || !ligne.getTotalLength) return;
-    ligne.style.setProperty("--long", String(Math.ceil(ligne.getTotalLength())));
-    ligne.classList.add("trace");
-  }
-  function lireCourbe(i, actuel) {
-    var p = courbe.points[i];
+  function lireCourbe(p, actuel) {
     if (!p) return;
-    courbe.index = i;
-    var x = courbe.X(p.brut), y = courbe.Y(p.net);
-    courbe.point.setAttribute("cx", x); courbe.point.setAttribute("cy", y);
-    courbe.repere.setAttribute("x1", x); courbe.repere.setAttribute("x2", x);
-    courbe.repere.setAttribute("y1", y); courbe.repere.setAttribute("y2", courbe.Y(0));
     var per = radio("periode") === "mensuel" ? "par mois" : "par an";
     $("courbe-info").innerHTML = (actuel ? "Votre situation : " : "Pour ") + "<b>" + dt3(p.brut) + " DT</b> de salaire de base " + per + ", <b>" + dt3(p.net) + " DT</b> net. Taux marginal d'impôt : " + pct(p.tauxMarginal) + ".";
   }
-  (function brancherCourbe() {
-    var svg = $("courbe");
-    function depuisPointeur(e) {
-      if (!courbe.points.length) return;
-      var rect = svg.getBoundingClientRect();
-      var x = (e.clientX - rect.left) / rect.width * G.l;
-      var v = (x - G.g) / (G.l - G.g - G.d) * courbe.xmax;
-      var best = 0;
-      courbe.points.forEach(function (p, i) { if (Math.abs(p.brut - v) < Math.abs(courbe.points[best].brut - v)) best = i; });
-      lireCourbe(best, false);
-    }
-    svg.addEventListener("pointermove", depuisPointeur);
-    svg.addEventListener("pointerdown", depuisPointeur);
-    svg.addEventListener("keydown", function (e) {
-      var i = courbe.index;
-      if (e.key === "ArrowRight" || e.key === "ArrowUp") i = Math.min(courbe.points.length - 1, i + 1);
-      else if (e.key === "ArrowLeft" || e.key === "ArrowDown") i = Math.max(0, i - 1);
-      else if (e.key === "Home") i = 0;
-      else if (e.key === "End") i = courbe.points.length - 1;
-      else return;
-      e.preventDefault();
-      lireCourbe(i, false);
-    });
-  })();
 
   /* ---------- Apparitions au défilement (une fois) ---------- */
-  var courbeVisible = false;
   if ("IntersectionObserver" in window && !mouvementReduit.matches) {
     grille.classList.add("attente");
     var obs = new IntersectionObserver(function (entrees) {
@@ -587,11 +539,10 @@
           requestAnimationFrame(function () { grille.classList.remove("attente"); });
           setTimeout(function () { Array.prototype.forEach.call(grille.children, function (c) { c.style.transitionDelay = ""; }); }, 1400);
         }
-        if (s.id === "section-courbe") { courbeVisible = true; if (courbe.ligne && !courbeTracee) { courbeTracee = true; tracer(courbe.ligne); } }
       });
     }, { threshold: 0.18 });
     R.querySelectorAll(".section").forEach(function (s) { s.classList.add("a-reveler"); obs.observe(s); });
-  } else courbeVisible = true;
+  }
 
   /* ---------- Cycle de calcul ---------- */
   var adresseTimer = null;
