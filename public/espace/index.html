@@ -713,7 +713,16 @@
               <button type="button" class="bouton bouton--petit" id="dossier-ouvrir"><svg aria-hidden="true"><use href="/orbite/icones.svg#fiche"/></svg>Préparer mon dossier banque</button>
             </div>
           </header>
-          <div id="credit-racine" class="module__racine"><div class="squelette module__attente"></div></div>
+          <div class="onglets credit-espaces" role="tablist" aria-label="Espaces du crédit" id="credit-espaces">
+            <button type="button" role="tab" id="ce-tab-simuler" aria-controls="credit-racine" aria-selected="true" data-espace="simuler">Simuler</button>
+            <button type="button" role="tab" id="ce-tab-projet" aria-controls="credit-projet" aria-selected="false" tabindex="-1" data-espace="projet">Mon projet immobilier</button>
+            <button type="button" role="tab" id="ce-tab-offres" aria-controls="credit-offres" aria-selected="false" tabindex="-1" data-espace="offres">Comparer mes offres</button>
+            <button type="button" role="tab" id="ce-tab-regrouper" aria-controls="credit-regrouper" aria-selected="false" tabindex="-1" data-espace="regrouper">Regrouper mes crédits</button>
+          </div>
+          <div id="credit-racine" class="module__racine" role="tabpanel" aria-labelledby="ce-tab-simuler"><div class="squelette module__attente"></div></div>
+          <div id="credit-projet" class="module__racine ce-espace" role="tabpanel" aria-labelledby="ce-tab-projet" hidden></div>
+          <div id="credit-offres" class="module__racine ce-espace" role="tabpanel" aria-labelledby="ce-tab-offres" hidden></div>
+          <div id="credit-regrouper" class="module__racine ce-espace" role="tabpanel" aria-labelledby="ce-tab-regrouper" hidden></div>
         </section>
 
         <!-- ======== Simulations ======== -->
@@ -2149,7 +2158,7 @@
   <script src="/moteurs/vie/xlsx.js"></script>
   <script src="/moteurs/vie/releve.js"></script>
   <script src="/espace/js/module-epargne.js"></script>
-  <script src="/moteurs/credit/credit.js"></script><script src="/moteurs/credit/phrase.js"></script><script src="/moteurs/credit/audit.js"></script><script src="/espace/js/credit-documents.js"></script><script src="/espace/js/module-credit.js"></script>
+  <script src="/moteurs/credit/credit.js"></script><script src="/moteurs/credit/phrase.js"></script><script src="/moteurs/credit/audit.js"></script><script src="/espace/js/credit-documents.js"></script><script src="/espace/js/module-credit.js"></script><script src="/moteurs/credit/projets.js"></script><script src="/espace/js/credit-espaces.js"></script>
   <script src="/commun/fuites.js"></script>
   <script src="/espace/js/comparer-calcul.js"></script>
   <script src="/espace/js/simulations.js"></script>

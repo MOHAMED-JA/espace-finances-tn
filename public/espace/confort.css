@@ -127,7 +127,7 @@ dialog.dialogue--partage { width: min(460px, calc(100vw - 24px)); }
   #partager-sim { width: 36px; padding: 0; justify-content: center; }
   #partager-sim .bouton__lib { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
-@media (min-width: 641px) and (max-width: 1280px) {
+@media (min-width: 641px) and (max-width: 1480px) {
   .barre__actions .bouton:not(#enregistrer) { width: 36px; padding: 0; justify-content: center; }
   .barre__actions .bouton:not(#enregistrer) .bouton__lib { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }

@@ -1245,7 +1245,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     const lsl = await page.evaluate(() => [localStorage.getItem("ef-lisible"), Object.keys(localStorage).join(",")]);
     assert(lsl[0] === "oui", "recopiée sur l'appareil : " + JSON.stringify(lsl));
     await page.screenshot({ path: path.join(CAPTURES, "lisibilite-credit.png") });
-    for (const l of [1280, 1024, 800]) {
+    for (const l of [1440, 1366, 1280, 1024, 800]) {
       await page.setViewportSize({ width: l, height: 700 });
       const deborde = await page.evaluate(() => { const b = document.getElementById("barre"); return b.scrollWidth > b.clientWidth + 1 || Array.from(b.querySelectorAll("button:not([hidden]), a:not([hidden])")).some((x) => x.offsetParent && x.getBoundingClientRect().right > window.innerWidth); });
       await page.screenshot({ path: path.join(CAPTURES, "barre-" + l + ".png"), clip: { x: 0, y: 0, width: l, height: 80 } });
@@ -1393,6 +1393,63 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.selectOption("#p-jour-versement", "0");
     await page.waitForFunction(() => window.Orbite.profil().jourVersement === 0);
     await page.evaluate((m) => { window.ModuleCredit.restaurer(m.c); window.ModuleSalaire.charger(m.s); window.ModuleEpargne.charger(m.e); ["credit", "salaire", "epargne"].forEach((v) => window.Orbite.detacherSimulation(v)); }, avantModules);
+  });
+
+  await etape("crédit, point 5 : projet immobilier (frais, capacité, quand acheter), comparer mes offres (classement, enregistrement), regrouper mes crédits", async () => {
+    await page.goto(base + "/espace/#credit?espace=projet");
+    await page.waitForSelector("#credit-projet:not([hidden]) #ce-prix");
+    assert(await page.isHidden("#credit-racine"), "un seul onglet affiché");
+    await page.fill("#ce-prix", "250 000");
+    await page.fill("#ce-apport", "50 000");
+    await page.fill("#ce-ans", "20");
+    await page.fill("#ce-taux", "10");
+    await page.waitForFunction(() => document.querySelectorAll("#ce-projet-res .ce-table tbody tr").length === 5);
+    const lignes = await page.$$eval("#ce-projet-res .ce-table tbody tr", (t) => t.map((r) => r.textContent));
+    assert(/enregistrement.*180,000/.test(lignes[0].replace(/\s/g, " ")) && /2 500,000/.test(lignes[1].replace(/\s/g, " ")), "frais : " + lignes.join(" | "));
+    const credit = await page.evaluate(() => { const C = window.CreditProjets.projet({ prix: 250000, apport: 50000, mois: 240, tauxPct: 10 }); return Math.round(C.credit); });
+    await page.waitForFunction((c) => document.getElementById("ce-projet-res").textContent.replace(/\s/g, "").includes(String(c)), credit, { timeout: 5000 })
+      .catch(async () => { throw new Error("crédit nécessaire affiché (" + credit + ") : " + (await page.textContent("#ce-projet-res")).slice(0, 200)); });
+    assert(await page.isVisible("#ce-projet-res .ce-quand"), "quand pourrai-je acheter");
+    await page.check("#ce-premier");
+    await page.waitForFunction(() => /Prêt de l'État/.test(document.getElementById("ce-projet-res").textContent));
+    await page.uncheck("#ce-premier");
+    await page.screenshot({ path: path.join(CAPTURES, "credit-projet.png") });
+    await page.click("#ce-projet-simuler");
+    await page.waitForFunction(() => location.hash === "#credit" && !document.getElementById("credit-racine").hidden);
+    const e = await page.evaluate(() => window.ModuleCredit.etat());
+    assert(new RegExp("c=" + credit + "(&|$)").test(e) && /m=240/.test(e), "crédit du projet simulé : " + e);
+    /* Comparer mes offres. */
+    await page.click("#ce-tab-offres");
+    await page.waitForSelector("#credit-offres:not([hidden]) .ce-offre");
+    await page.fill("#ce-o-capital", "150 000");
+    await page.fill("#ce-o-ans", "20");
+    await page.click("#ce-offre-plus");
+    await page.fill('#credit-offres .ce-offre[data-i="2"] [data-o="taux"]', "2,75");
+    await page.waitForFunction(() => document.querySelectorAll("#ce-offres-res .ce-table tbody tr").length === 3);
+    assert((await page.$$("#ce-offres-res .ce-meilleure")).length === 1, "une offre la moins chère");
+    assert(/TMM \+1 point/.test(await page.textContent("#ce-offres-res")), "effet d'un point de TMM");
+    await page.screenshot({ path: path.join(CAPTURES, "credit-offres.png") });
+    const avant = faux.simulations().length;
+    await page.click("#ce-offres-enregistrer");
+    await page.waitForFunction((n) => document.querySelector(".toast") && /3 offres enregistrées/.test(document.body.textContent), avant);
+    assert(faux.simulations().length === avant + 3 && faux.simulations().some((x) => x.nom === "Offre Banque A" && x.outil === "credit"), "offres enregistrées");
+    /* Regrouper mes crédits : deux crédits fictifs ajoutés au profil le temps de l'étape. */
+    const creditsAvant = await page.evaluate(() => JSON.stringify(window.Orbite.profil().credits));
+    await page.evaluate(() => window.Orbite.majProfil({ credits: window.Orbite.profil().credits.concat([
+      { libelle: "Crédit auto démo", type: "auto", mensualite: 320, tauxPct: 10, moisRestants: 30 },
+      { libelle: "Crédit conso démo", type: "conso", mensualite: 210, tauxPct: 11, moisRestants: 17, capitalRestant: 3292 }]) }));
+    await page.click("#ce-tab-regrouper");
+    await page.waitForSelector("#credit-regrouper:not([hidden]) .cr-section-tete");
+    if (await page.$("#credit-regrouper [data-cr]")) {
+      if (!(await page.isChecked("#credit-regrouper [data-cr]"))) await page.check("#credit-regrouper [data-cr]");
+      await page.waitForSelector("#ce-reg-res .cr-stats");
+      assert(/Nouvelle mensualité/.test(await page.textContent("#ce-reg-res")) && /Indemnité/.test(await page.textContent("#ce-reg-res")), "regroupement calculé");
+      await page.screenshot({ path: path.join(CAPTURES, "credit-regrouper.png") });
+    } else assert(false, "crédits du profil absents du regroupement");
+    await page.evaluate((c) => window.Orbite.majProfil({ credits: JSON.parse(c) }), creditsAvant);
+    await page.keyboard.press("Home");
+    await page.click("#ce-tab-simuler");
+    await page.waitForFunction(() => location.hash === "#credit");
   });
 
   await etape("crédit : lire une offre (texte), contrôler le tableau de la banque (exemple exact, PDF avec une erreur)", async () => {
