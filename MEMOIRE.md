@@ -677,6 +677,26 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 octoseptuagies. Lot 2 et point 5 : décisions du 12 oct. (à livrer)
+
+- **Vidéo 4 livrée** (12 oct.) : `orbite-video-3d-linkedin-youtube.mp4`, 30 s, 1920 × 1080, 60 i/s, −14 LUFS, 26 Mo (voir « 3 quinseptuagies »).
+- **Lot 2** (validé dans la maquette https://claude.ai/artifact/DfKbFaPFpPDD6ei3Z1GgKJ) :
+  - **partage** d'une simulation (lien, QR code, WhatsApp, e-mail) : le lien ouvre une **page publique préremplie**, sans compte. Il contient les montants, jamais le nom ni le profil ;
+  - **simulation guidée** (« Me guider ») dans **Crédit, Salaire et Épargne** ;
+  - **haute lisibilité** : réglage dans **Paramètres › Préférences**, retrouvé aussi par **Ctrl K** (« lisibilité »), gardé sur le compte. Texte plus grand, contraste renforcé, animations coupées ;
+  - **recevoir un PDF partagé** (application installée, « Partager → Orbite ») : Orbite reconnaît la **fiche de paie**, le **tableau de la banque** ou l'**offre**, et ouvre le bon outil ;
+  - restent aussi : comparer 2 ou 3 simulations enregistrées, rappel de versement mensuel, annuler et rétablir.
+- **Point 5** (maquette https://claude.ai/artifact/R72uvGBAemjcuZu8qT8tY1) : les **6 fonctions validées avec les choix conseillés** :
+  - **projet immobilier** : premier logement et achat auprès d'un promoteur, nouvel onglet dans Crédit ;
+  - **comparateur d'offres** : classement par coût total, offres enregistrées dans mes simulations ;
+  - **suivi du TMM** : historique sur 24 mois ;
+  - **rachat de crédits** : crédit immobilier inclus au choix ;
+  - **budget du mois** : totaux par enveloppe, import de relevé plus tard ;
+  - **calendrier** : nouvelle page du menu.
+- **Règles** : les taux des frais d'achat (droits d'enregistrement, conservation foncière, acte) et les indemnités de remboursement anticipé, je les **source et l'utilisateur les valide avant tout codage**.
+- **TMM** : saisi chaque mois par l'administrateur dans **Administration** (champ « TMM du mois »), appliqué à tout Orbite.
+- **Loi de finances 2027** : on attend le texte officiel (JORT).
+
 ## 3 septseptuagies. Visite guidée en trois chapitres (12 oct.)
 
 - **Demande** : mettre la visite guidée à jour avec les nouveautés (ordre validé : Lot 1 → visite → Lot 2 → point 5).
