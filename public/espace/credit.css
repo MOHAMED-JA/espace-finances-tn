@@ -219,45 +219,8 @@
 /* ---------- Graphiques ---------- */
 .module--credit .cr-graphe { position: relative; min-height: 120px; }
 .module--credit .cr-graphe--outil { margin-top: 14px; }
-.module--credit .cr-svg { width: 100%; height: auto; overflow: visible; font-family: var(--texte); }
-.module--credit .cr-axe line { stroke: var(--filet); stroke-width: 1; }
-.module--credit .cr-axe text { fill: var(--encre-3); font-size: 11.5px; font-variant-numeric: tabular-nums; }
-.module--credit .cr-ligne { fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
-.module--credit .cr-ligne--pointille { stroke-width: 2; stroke-dasharray: 5 5; }
-.module--credit .cr-aire { opacity: .14; }
-.module--credit .cr-serie--capital { stroke: var(--cr-capital); fill: var(--cr-capital); background: var(--cr-capital); }
-.module--credit .cr-serie--interet { stroke: var(--cr-interet); fill: var(--cr-interet); background: var(--cr-interet); }
-.module--credit .cr-serie--assurance { stroke: var(--cr-assurance); fill: var(--cr-assurance); background: var(--cr-assurance); }
-.module--credit .cr-serie--sans { stroke: var(--cr-frais); background: var(--cr-frais); }
-.module--credit .cr-serie--sc0 { stroke: var(--cr-sc0); background: var(--cr-sc0); }
-.module--credit .cr-serie--sc1 { stroke: var(--cr-sc1); background: var(--cr-sc1); }
-.module--credit .cr-serie--sc2 { stroke: var(--cr-sc2); background: var(--cr-sc2); }
-.module--credit path.cr-ligne { fill: none; }
-.module--credit .cr-barre { stroke: none; }
-.module--credit .cr-bande--large { fill: color-mix(in srgb, var(--cr-capital) 14%, transparent); background: color-mix(in srgb, var(--cr-capital) 18%, transparent); }
-.module--credit .cr-bande--etroite { fill: color-mix(in srgb, var(--cr-capital) 26%, transparent); background: color-mix(in srgb, var(--cr-capital) 34%, transparent); }
-.module--credit .cr-zone { fill: var(--cr-zone); }
-.module--credit .cr-zone-leg { background: var(--cr-zone); outline: 1px solid color-mix(in srgb, var(--succes) 40%, transparent); }
-.module--credit .cr-seuil { stroke: var(--encre-2); stroke-width: 1.5; stroke-dasharray: 4 4; }
-.module--credit .cr-seuil__lib { fill: var(--encre-2); font-size: 12px; font-weight: 650; }
-.module--credit .cr-marqueur { fill: var(--surface); stroke-width: 3; }
 .module--credit .cr-marqueur--reduction, .module--credit .cr-point--reduction { stroke: var(--succes); background: var(--succes); }
-.module--credit .cr-curseur-x { stroke: var(--encre); stroke-width: 1.5; }
-.module--credit .cr-point--pointille { height: 3px; border-radius: 2px; }
-.module--credit .cr-legende--graphe { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px 18px; }
-.module--credit .cr-legende--graphe li { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--encre-2); }
 .module--credit .cr-graphe__resume { margin-top: 10px; font-size: 14px; color: var(--encre-2); line-height: 1.5; }
-@media (prefers-reduced-motion: no-preference) {
-  .module--credit .cr-anim-attente .cr-trace { stroke-dasharray: 1 1; stroke-dashoffset: 1; }
-  .module--credit .cr-anim-attente .cr-aire, .module--credit .cr-anim-attente .cr-bande, .module--credit .cr-anim-attente .cr-barre { opacity: 0; }
-  .module--credit .cr-anim .cr-trace { stroke-dasharray: 1 1; animation: cr-trace 1100ms var(--sortie) both; }
-  .module--credit .cr-anim .cr-ligne--pointille { animation-name: cr-apparait; stroke-dasharray: 5 5; }
-  .module--credit .cr-anim .cr-aire, .module--credit .cr-anim .cr-bande { animation: cr-apparait 900ms ease 200ms both; }
-  .module--credit .cr-anim .cr-barre { transform-box: fill-box; transform-origin: bottom; animation: cr-pousse 700ms var(--sortie) both; }
-}
-@keyframes cr-trace { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
-@keyframes cr-apparait { from { opacity: 0; } }
-@keyframes cr-pousse { from { transform: scaleY(0); } }
 
 /* ---------- Comparaison ---------- */
 .module--credit .cr-cmp th small { display: block; font-weight: 500; color: var(--encre-3); font-size: 12px; margin-top: 2px; }
