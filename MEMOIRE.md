@@ -454,6 +454,43 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 terseptuagies. Confort et administration : accès offert à vie, partage demandé, rouge, lisibilité (12 oct.)
+
+- **Demande** : dans Administration, offrir un abonnement gratuit à vie à un compte, à tous les comptes existants, ou aux comptes créés à l'avenir ; « Partager ma fiche avec l'administrateur » activé par défaut pour tous ; boutons Fermer et Déconnexion en rouge ; tout lisible, surtout en mode sombre ; la pastille d'Administration doit disparaître après un moment et revenir seulement avec de nouvelles données.
+- **Choix validés** :
+  - accès à vie **retirable** ;
+  - partage : **demandé à chacun, « Partager » en avant**. Pas de case cochée d'avance : la loi organique 2004-63 exige un accord exprès ;
+  - pastille visible **1 minute**.
+- **Accès offert à vie** (migration `0014_offert_a_vie.sql`) :
+  - c'est l'état « offert » qui existait déjà (`abonnements.offert`, `mon_acces()` → `offert`) ; ajout de `offert_par` (`compte`, `tous`, `nouveaux`) et `offert_le` ;
+  - table `reglages` (RLS, aucun accès direct), clé `offert_nouveaux` ;
+  - `creer_abonnement()` (déclencheur d'inscription) donne l'accès offert quand ce réglage est actif ;
+  - fonctions réservées à l'admin (`exiger_admin()`) : `admin_offert_etat()`, `admin_offrir(p_user, p_offert)`, `admin_offrir_tous(p_offert)`, `admin_offrir_nouveaux(p_actif)` ;
+  - retirer remet `offert` à faux sans toucher `essai_fin` ni `fin` : le compte retrouve son essai ou son abonnement payé ;
+  - « Retirer à tous » ne retire que les accès donnés par ces fonctions (`offert_par` non vide). Un accès offert avant (`offert_par` vide) se retire compte par compte ;
+  - `admin_tableau()` renvoie aussi `id` et `offert_par` par compte, `offert_nouveaux` et `offerts_admin`.
+- **Interface admin** (`admin.js`) :
+  - panneau « Accès offert à vie » après « Abonnements et revenus » : interrupteur pour les nouveaux comptes, boutons « Offrir à tous » et « Retirer à tous » avec confirmation dans `#dlg-offert` (nombre de comptes concernés) ;
+  - colonne « Accès à vie » dans « Comptes » : « Offrir à vie » ou « Retirer », avec l'origine (offert à ce compte, à tous, à l'inscription, ou avant cette fonction).
+- **Demande de partage** (`partage-demande.js`, `#dlg-partage`) :
+  - posée **une fois** par compte, au lancement qui suit le premier pas (jamais pendant le premier pas, la visite ou une autre fenêtre : elle attend son tour) ;
+  - pas posée à l'admin, ni à un compte qui partage déjà ;
+  - « Partager ma fiche » (bouton plein, focus) appelle `partage_admin_definir(true)` ; « Pas maintenant » et Échap ne partagent rien ;
+  - la réponse est retenue dans `user_metadata.orbite_partage_demande` (date) et `orbite_partage_reponse` (`oui` / `non`) : pas de nouvelle demande ;
+  - Paramètres se met à jour (événement `orbite:partage`).
+- **Rouge** (`confort.css`, classe `bouton--fermer`) : déconnexion de la barre, « Me déconnecter partout », « Se déconnecter » de l'écran d'acceptation, Fermer de la fiche admin, des applications, de la lecture de fiche, de la négociation, du reçu fiscal, de l'histoire de l'année ; « Fermer » des notifications d'erreur (`toast__fermer`). « Annuler » reste neutre.
+- **Pastille Administration** :
+  - visible 1 minute, puis s'efface ; la date de la dernière inscription montrée est gardée dans `localStorage` (`orbite_admin_pastille_vu`) ;
+  - elle revient seulement pour des inscriptions plus récentes, avec leur nombre ;
+  - vérification toutes les 90 s tant que la page est visible, et au retour sur l'onglet ;
+  - les « +N » après « Actualiser » s'effacent aussi au bout d'une minute.
+- **Lisibilité** :
+  - nouveau script `e2e/lisibilite.js` : contraste WCAG AA de chaque texte visible de 16 vues, de la barre, du rail et de 4 fenêtres, en clair puis en sombre ;
+  - corrigé : « obligatoire » en sombre (2,1 → 9:1), textes d'exemple des champs (gris du navigateur trop pâle en sombre) ;
+  - résultat : 0 texte sous le seuil. Les captures sombres ont aussi été relues à l'œil.
+- **Versions** : SW `orbite-2026-10-12g`, Nouveautés `2026-10-12f` (« Plus confortable à lire »).
+- **Tests** : 3 étapes e2e (demande de partage refusée puis jamais redemandée ; partage accepté après « Quoi de neuf » ; accès à vie un compte, tous, nouveaux, et pastille d'une minute avec horloge simulée dans une session à part) → 57/57.
+
 ## 3 duoseptuagies. Tout dans Orbite : bilan des simulateurs, lanceur d'applications (12 oct.)
 
 - **Demande** : l'utilisateur trouve dans les simulateurs de crédit et d'assurance vie des options absentes d'Orbite. Il veut tout dans une seule application, et pouvoir ouvrir les simulateurs depuis Orbite sans passer d'une application à l'autre.
@@ -639,6 +676,18 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - étape e2e « dossier banque » (capacité seule, crédit en direct, montant exigé, PDF valide, employeur enregistré, téléphone sans débordement) ;
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
+
+## 3 quinseptuagies. Vidéo 4 : « Orbite » en 3D, 30 s, 16:9 (12 oct., livrée)
+
+- **Demande** (12 oct.) : une vidéo promotionnelle 3D pour LinkedIn et YouTube, inspirée d'une nouvelle vidéo TikTok (ordinateur portable dans le noir, écran qui raconte l'histoire, volets lumineux entre les plans, musique électro). Storyboard de 8 plans validé dans la maquette https://claude.ai/artifact/DfKbFaPFpPDD6ei3Z1GgKJ (« 30 s, storyboard validé »).
+- **Livrable** : `orbite-video4-16x9.mp4` (1920 × 1080, 60 i/s, H.264 + AAC, −14 LUFS, sous 30 Mo). **Non versionné** (`*.mp4`, `*.wav`).
+- **Sources** `promo/video4/` (régénérables) :
+  - `scene.html` : Three.js 0.160 en local (`lib/`, licence MIT), ordinateur portable en métal dans une pièce sombre, sol miroir, `UnrealBloomPass`. L'écran est un canevas 2D de 1600 × 1000 redessiné à chaque image ; la lumière de la pièce prend la couleur moyenne de l'écran. Plan 4 : une seconde scène 3D (noyau, anneau, satellites) rendue dans l'écran. Plans 7–8 : le logo éclate en pixels 3D puis se reforme. Calque 2D devant pour l'adresse et la signature (petit drapeau tunisien devant « Conçue en Tunisie »). `render(t)` déterministe ;
+  - `rendu.js preview [--h 540] t…` (aperçus dans `apercu/`) ou `rendu.js all 60 sortie.mp4 4 1080` (4 onglets ; ajoute `musique.wav` s'il existe) ;
+  - `musique.py` : 30 s synthétisées, 120 BPM, ré majeur, reprend les instruments de `video3`. Frappes au clavier calées sur les deux saisies, battement de cœur, impacts à 3,0 (envoi), 17,0 (« 1 seule application »), 23,0 (explosion), 25,45 (logo reformé), 27,0 (final), compteur qui ralentit 15,7–17,0, icônes qui tombent, cloches sur le drapeau ; fondu 28,6–30.
+- **Déroulé** : question « Combien je touche vraiment ? » tapée puis envoyée → courbe brut → net, « 2 161,884 DT net par mois » → pistes de montage (crédit auto qui se termine en avril 2029, « +520 DT par mois » d'épargne) → noyau 3D et satellites → compteur LED « 1 seule application » → lanceur (Crédit, Assurance vie, Assurance auto, Salaire) puis palette Ctrl K « assurance auto » → le logo éclate et se reforme, drapeau qui ondule → Orbite, « Votre salaire au centre. Tout le reste en orbite. », adresse, signature.
+- **Corrections du 12 oct.** : caméra plus proche et visée plus haute (l'écran ne touche plus le bord du haut), textes de l'écran agrandis, pistes décalées pour des étiquettes plus grandes, pastille « avril 2029 » moins lumineuse, éclat du final réduit, touches « Ctrl K » dans le bon ordre.
+- Règle tenue : aucune mention de prix, d'essai, d'offre ni de parrainage ; chiffres du profil fictif.
 
 ## 3 quinsexagies. Vidéo promotionnelle 3D « Fintech cinéma » 30 s, 16:9 + 9:16 (12 oct., livrée)
 
@@ -1208,6 +1257,8 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - Lancer l'e2e : `CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome NODE_PATH=/home/user/portail-rh/node_modules node e2e/parcours.js`.
 
 - Les sous-agents s'arrêtent à la limite d'utilisation : toujours vérifier les fichiers partiels avant de relancer.
+- E2e et demande de partage (12 oct.) : un compte qui a déjà un profil voit `#dlg-partage` au lancement suivant (après « Quoi de neuf »). Un nouveau compte de test avec profil doit soit répondre à la fenêtre, soit porter `orbite_partage_demande` dans ses métadonnées. Le compte admin n'est jamais interrogé.
+- Audit de lisibilité : `CHROMIUM=… NODE_PATH=/home/user/portail-rh/node_modules PLAYWRIGHT_CORE=/home/user/portail-rh/node_modules/playwright-core node e2e/lisibilite.js` (options `VUES=`, `JSON=`, `CAPTURES_LISIBILITE=`). Les onglets et bascules à pastille glissante sont classés « incertains » (le fond réel est un élément frère) : les vérifier avec `bascules.js` ou à l'œil.
 - Les captures pleine page Playwright décalent les éléments `sticky` : vérifier aussi la capture de la fenêtre.
 - Les boutons radio des `.bascule` sont invisibles : en test, cliquer le `label`, ou utiliser `check(..., {force:true})`.
 - Le faux Supabase (`e2e/faux-supabase.js`) gère `updateUser({data})`, donc les métadonnées.

@@ -13,6 +13,9 @@
     abonnement: "Abonnement", compte: "Paramètres", admin: "Administration", vie: "Simulateur de vie", foyer: "Foyer", assistant: "Assistant", fiscal: "Optimiseur fiscal" };
   var ETATS = { essai: "Essai", actif: "Abonné", offert: "Offert", expire: "Expiré" };
   var estAdmin = false, donnees = null, periode = 30, ecarts = {}, nbContacts = null;
+  /* Pastille du rail : visible une minute, puis masquée ; elle revient dès qu'une inscription plus récente arrive. */
+  var PASTILLE_MS = 60000, SONDAGE_MS = 90000, CLE_VU = "orbite_admin_pastille_vu";
+  var minuteriePastille = null, minuterieEcarts = null, sondage = null;
 
   function cree(tag, cls, txt) { var e = doc.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
   function dt(millimes) { return F.dt0(millimes / 1000) + " DT"; }
@@ -53,6 +56,7 @@
     note.hidden = !t.paiements_test;
     note.textContent = t.paiements_test ? t.paiements_test + " paiement" + (t.paiements_test > 1 ? "s" : "") + " de test (simulé" + (t.paiements_test > 1 ? "s" : "") + ") non compté" + (t.paiements_test > 1 ? "s" : "") + " dans les revenus." : "";
     rendreInscriptions(t.inscriptions_30j || [], t.maintenant);
+    rendreOffert(t);
     rendreComptes();
   }
 
@@ -77,9 +81,9 @@
     var q = ($("admin-recherche").value || "").trim().toLowerCase(), tb = $("admin-comptes");
     tb.textContent = "";
     var liste = (donnees.utilisateurs || []).filter(function (u) { return !q || (u.nom || "").toLowerCase().indexOf(q) !== -1 || (u.email || "").toLowerCase().indexOf(q) !== -1; });
-    if (!liste.length) { var tr0 = cree("tr"); var td0 = cree("td", "admin__vide", "Aucun compte."); td0.colSpan = 5; tr0.appendChild(td0); tb.appendChild(tr0); return; }
+    if (!liste.length) { var tr0 = cree("tr"); var td0 = cree("td", "admin__vide", "Aucun compte."); td0.colSpan = 6; tr0.appendChild(td0); tb.appendChild(tr0); return; }
     liste.forEach(function (u) {
-      var tr = cree("tr"), c = cree("td"), aujourd = u.derniere_connexion && new Date(u.derniere_connexion).toDateString() === new Date().toDateString();
+      var tr = cree("tr", u.etat === "offert" ? "admin__ligne--offerte" : null), c = cree("td"), aujourd = u.derniere_connexion && new Date(u.derniere_connexion).toDateString() === new Date().toDateString();
       c.appendChild(cree("strong", null, u.nom || "Sans nom"));
       c.appendChild(cree("small", null, u.email || ""));
       tr.appendChild(c);
@@ -91,9 +95,70 @@
       st.appendChild(puce);
       if (u.testeur) st.appendChild(cree("small", null, "testeur"));
       tr.appendChild(st);
+      tr.appendChild(celluleOffert(u));
       tb.appendChild(tr);
     });
   }
+
+  /* ---------- Accès offert à vie (migration 0014) ---------- */
+  var ORIGINES = { compte: "offert à ce compte", tous: "offert à tous", nouveaux: "offert à l'inscription" };
+  function celluleOffert(u) {
+    var td = cree("td", "admin__offrir"), offert = u.etat === "offert", nom = u.nom || u.email || "ce compte";
+    if (!u.id) { td.textContent = "—"; return td; }
+    var b = cree("button", "bouton bouton--petit bouton--fantome", offert ? "Retirer" : "Offrir à vie");
+    b.type = "button"; b.setAttribute("data-offrir", offert ? "0" : "1"); b.setAttribute("data-id", u.id);
+    b.setAttribute("aria-label", (offert ? "Retirer l'accès offert à " : "Offrir l'accès à vie à ") + nom);
+    td.appendChild(b);
+    if (offert) td.appendChild(cree("small", null, u.offert_par ? ORIGINES[u.offert_par] || "offert" : "offert avant cette fonction"));
+    return td;
+  }
+  function rendreOffert(t) {
+    var inter = $("admin-offert-nouveaux"), nb = t.offerts || 0;
+    inter.checked = !!t.offert_nouveaux;
+    $("admin-offert-nouveaux-lib").textContent = t.offert_nouveaux ? "Comptes créés à partir de maintenant : offert" : "Comptes créés à partir de maintenant";
+    $("admin-offert-nb").textContent = nb ? nb + " compte" + (nb > 1 ? "s" : "") : "";
+    $("admin-retirer-tous").disabled = !t.offerts_admin;
+    $("admin-offrir-tous").disabled = !!t.inscrits && nb >= t.inscrits;
+  }
+  /* Confirmation dans une vraie fenêtre (jamais confirm()), avec le nombre de comptes concernés. */
+  function confirmerOffert(titre, texte, ok) {
+    var d = $("dlg-offert");
+    $("dlg-offert-titre").textContent = titre;
+    $("dlg-offert-texte").textContent = texte;
+    $("dlg-offert-ok").textContent = ok;
+    d.returnValue = "";
+    return new Promise(function (fin) {
+      d.addEventListener("close", function () { fin(d.returnValue === "ok"); }, { once: true });
+      d.showModal();
+    });
+  }
+  function appliquerOffert(promesse, message, btn) {
+    if (btn) btn.disabled = true;
+    return promesse.then(function () { E.toast(message, { type: "ok" }); return E.admin.tableau(); })
+      .then(function (t) { donnees = t; rendreTableau(t); })
+      .catch(function (x) { E.toast(E.modele.messageErreur(x), { erreur: true }); })
+      .finally(function () { if (btn) btn.disabled = false; if (donnees) rendreOffert(donnees); });
+  }
+  $("admin-offert-nouveaux").addEventListener("change", function () {
+    var oui = this.checked;
+    appliquerOffert(E.admin.offrirNouveaux(oui), oui ? "Les nouveaux comptes recevront l'accès offert à vie." : "Les nouveaux comptes recommencent par l'essai gratuit.", this);
+  });
+  $("admin-offrir-tous").addEventListener("click", function () {
+    var btn = this, n = donnees ? Math.max(0, donnees.inscrits - (donnees.offerts || 0)) : 0;
+    confirmerOffert("Offrir l'accès à vie à tous les comptes ?", n + " compte" + (n > 1 ? "s" : "") + " recevr" + (n > 1 ? "ont" : "a") + " toutes les fonctions d'Orbite sans limite de durée. Leur essai ou leur abonnement payé reste enregistré : il reprend si vous retirez l'accès.", "Offrir à tous")
+      .then(function (oui) { if (oui) appliquerOffert(E.admin.offrirTous(true), "Accès offert à vie à tous les comptes.", btn); });
+  });
+  $("admin-retirer-tous").addEventListener("click", function () {
+    var btn = this, n = donnees ? donnees.offerts_admin || 0 : 0;
+    confirmerOffert("Retirer l'accès offert à tous ?", n + " compte" + (n > 1 ? "s" : "") + " retrouver" + (n > 1 ? "ont" : "a") + " leur essai ou leur abonnement payé (souvent expiré). Un accès offert avant cette fonction n'est pas touché.", "Retirer à tous")
+      .then(function (oui) { if (oui) appliquerOffert(E.admin.offrirTous(false), "Accès offert retiré.", btn); });
+  });
+  $("admin-comptes").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-offrir]");
+    if (!b) return;
+    var oui = b.getAttribute("data-offrir") === "1";
+    appliquerOffert(E.admin.offrir(b.getAttribute("data-id"), oui), oui ? "Accès offert à vie." : "Accès offert retiré.", b);
+  });
 
   function rendreAlertes(liste) {
     var ol = $("admin-alertes"), nonLues = liste.filter(function (a) { return !a.lue; }).length;
@@ -107,13 +172,38 @@
       ol.appendChild(li);
     });
     $("admin-lues").hidden = !nonLues;
-    badge(nonLues);
+    pastille(liste);
   }
-  function badge(n) {
-    var b = $("badge-admin");
-    b.hidden = !n;
-    b.textContent = n ? String(n) : "";
-    b.setAttribute("aria-label", n ? n + " nouvelle" + (n > 1 ? "s" : "") + " inscription" + (n > 1 ? "s" : "") : "");
+  function lireVu() { try { return localStorage.getItem(CLE_VU) || ""; } catch (e) { return ""; } }
+  function ecrireVu(iso) { try { localStorage.setItem(CLE_VU, iso); } catch (e) { /* navigation privée : la pastille revient au prochain chargement */ } }
+  /* Inscriptions non lues plus récentes que la dernière pastille montrée : une minute à l'écran, puis plus rien
+     jusqu'à la prochaine inscription. */
+  function pastille(liste) {
+    var vu = lireVu(), nouvelles = (liste || []).filter(function (a) { return !a.lue && a.cree_le && a.cree_le > vu; });
+    var b = $("badge-admin"), n = nouvelles.length;
+    if (!n) { clearTimeout(minuteriePastille); minuteriePastille = null; b.hidden = true; b.textContent = ""; b.removeAttribute("aria-label"); return; }
+    var derniere = nouvelles.reduce(function (m, a) { return a.cree_le > m ? a.cree_le : m; }, "");
+    var deja = !b.hidden && b.getAttribute("data-derniere") === derniere;
+    b.classList.remove("rail__badge--sortie");
+    b.hidden = false;
+    b.textContent = String(n);
+    b.setAttribute("data-derniere", derniere);
+    b.setAttribute("aria-label", n + " nouvelle" + (n > 1 ? "s" : "") + " inscription" + (n > 1 ? "s" : ""));
+    if (deja && minuteriePastille) return;
+    clearTimeout(minuteriePastille);
+    minuteriePastille = setTimeout(function () {
+      minuteriePastille = null;
+      ecrireVu(derniere);
+      b.classList.add("rail__badge--sortie");
+      setTimeout(function () { if (b.classList.contains("rail__badge--sortie")) { b.hidden = true; b.classList.remove("rail__badge--sortie"); } }, 420);
+    }, PASTILLE_MS);
+  }
+  function sonder() {
+    if (!estAdmin || doc.visibilityState !== "visible") return;
+    E.admin.alertes().then(function (l) {
+      if ($("vue-admin") && !$("vue-admin").hidden && location.hash.indexOf("#admin") === 0) rendreAlertes(l || []);
+      else pastille(l || []);
+    }).catch(function () {});
   }
 
   function rendreClassement(ol, liste) {
@@ -277,6 +367,9 @@
         contacts: avant.contacts == null ? 0 : nbContacts - avant.contacts } : {};
       rendreTableau(donnees);
       rendreAlertes(r[1] || []);
+      /* Les « +N » de l'actualisation s'effacent aussi après une minute. */
+      clearTimeout(minuterieEcarts);
+      if (avant) minuterieEcarts = setTimeout(function () { ecarts = {}; if (donnees) rendreTableau(donnees); }, PASTILLE_MS);
       var heure = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" }).format(new Date()), maj = $("admin-maj");
       maj.textContent = "Mis à jour à " + heure;
       if (avant) {
@@ -315,8 +408,11 @@
       $("rail-admin").hidden = !oui;
       $("param-admin").hidden = !oui;
       if (!oui) return;
-      /* Pastille des nouvelles inscriptions dès l'ouverture d'Orbite. */
-      E.admin.alertes().then(function (l) { badge((l || []).filter(function (a) { return !a.lue; }).length); }).catch(function () {});
+      /* Pastille des nouvelles inscriptions dès l'ouverture d'Orbite, puis toutes les 90 s tant que la page est visible. */
+      E.admin.alertes().then(function (l) { pastille(l || []); }).catch(function () {});
+      clearInterval(sondage);
+      sondage = setInterval(sonder, SONDAGE_MS);
+      doc.addEventListener("visibilitychange", sonder);
       if (location.hash.indexOf("#admin") === 0) { $("admin-refus").hidden = true; $("admin-corps").hidden = false; charger(); }
     });
   }

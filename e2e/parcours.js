@@ -294,6 +294,24 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector(".visite", { state: "detached" });
   });
 
+  await etape("partage de la fiche : demandé une fois au lancement suivant, rien de coché, « Partager ma fiche » en avant, « Pas maintenant » retenu", async () => {
+    await page.reload();
+    await page.waitForSelector("#dlg-partage[open]", { timeout: 15000 });
+    assert(await page.$eval("#dlg-partage-oui", (b) => b.classList.contains("bouton--plein") && /Partager ma fiche/.test(b.textContent)), "« Partager ma fiche » mis en avant");
+    assert(await page.$eval("#dlg-partage-non", (b) => !b.classList.contains("bouton--plein") && /Pas maintenant/.test(b.textContent)), "« Pas maintenant » en second");
+    assert(!(await page.$("#dlg-partage input")), "aucune case cochée d'avance");
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: path.join(CAPTURES, "partage-demande.png") });
+    await page.click("#dlg-partage-non");
+    await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_partage_demande);
+    const m = faux.comptes.get("aziz@exemple.tn").user.user_metadata;
+    assert(m.orbite_partage_reponse === "non" && !faux.partageDe("aziz@exemple.tn").accorde, "réponse retenue, rien partagé sans accord");
+    await page.reload();
+    await page.waitForSelector(".rail");
+    await page.waitForTimeout(3500);
+    assert(!(await page.isVisible("#dlg-partage")), "pas redemandé");
+  });
+
   await etape("capacité : bascule net → brut", async () => {
     const net = chiffre(await page.textContent("#cap-mensualite"));
     await page.check('input[name="base-capacite"][value="brut"]', { force: true });
@@ -837,6 +855,108 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(!faux.partageDe("aziz@exemple.tn").accorde, "accord retiré");
     await page.goto(base + "/espace/#admin");
     await page.waitForFunction(() => /Aucun compte n'a encore partagé/.test(document.getElementById("admin-fiches").textContent));
+  });
+
+  await etape("partage accepté depuis la demande : accord enregistré, fiche visible par l'admin, Paramètres à jour", async () => {
+    faux.ajouterCompte("partage@exemple.tn", "Partage-compte-2026!", { full_name: "Aziz Démo", orbite_consentement: VERSION_ACCORD,
+      orbite: { prenom: "Aziz", nom: "Démo", dateNaissance: "1992-03-08", salaireBrut: 2400 } });
+    const ctx4 = await navigateur.newContext({ viewport: { width: 1280, height: 900 } });
+    await ctx4.route(SUPABASE + "/**", (r) => faux.gerer(r));
+    await ctx4.route("https://api.pwnedpasswords.com/**", fuites);
+    const p4 = await ctx4.newPage();
+    suivre(p4);
+    await p4.goto(base + "/connexion.html");
+    await p4.fill("#email", "partage@exemple.tn");
+    await p4.fill("#mdp", "Partage-compte-2026!");
+    await p4.click("#envoyer");
+    await p4.waitForURL(/\/espace\//);
+    /* Les notes « Quoi de neuf » passent d'abord ; la demande attend que la fenêtre soit fermée. */
+    await p4.waitForSelector("#dlg-nouveautes[open]");
+    await p4.waitForTimeout(3000);
+    assert(!(await p4.isVisible("#dlg-partage")), "jamais deux fenêtres à la fois");
+    await p4.click('#dlg-nouveautes button[value="ok"]');
+    await p4.waitForSelector("#dlg-partage[open]", { timeout: 15000 });
+    await p4.click("#dlg-partage-oui");
+    await p4.waitForSelector("#dlg-partage", { state: "hidden" });
+    await p4.waitForFunction(() => /fiche est partagée/.test([...document.querySelectorAll(".toast")].map((t) => t.textContent).join(" ")));
+    assert(faux.partageDe("partage@exemple.tn").accorde, "accord enregistré sur le serveur");
+    await p4.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_partage_reponse === "oui");
+    await p4.goto(base + "/espace/#compte?onglet=donnees");
+    await p4.waitForFunction(() => document.getElementById("partage-admin").checked && /Partage activé/.test(document.getElementById("partage-etat").textContent));
+    await ctx4.close();
+    await page.goto(base + "/espace/#admin");
+    await page.reload();
+    await page.waitForFunction(() => /Démo/.test(document.getElementById("admin-fiches").textContent));
+  });
+
+  await etape("accès offert à vie : un compte, tous les comptes, les nouveaux comptes ; retirable ; pastille d'une minute", async () => {
+    await page.goto(base + "/espace/#admin");
+    await page.waitForSelector("#admin-corps:not([hidden])");
+    await page.waitForFunction(() => document.querySelectorAll("#admin-comptes [data-offrir]").length >= 3);
+    /* Un compte. */
+    await page.click('#admin-comptes tr:has-text("autre@exemple.tn") [data-offrir="1"]');
+    await page.waitForSelector('#admin-comptes tr:has-text("autre@exemple.tn") [data-offrir="0"]');
+    assert(faux.abonnementDe("autre@exemple.tn").offert && faux.abonnementDe("autre@exemple.tn").offert_par === "compte", "accès offert à ce compte");
+    assert(/offert à ce compte/.test(await page.textContent('#admin-comptes tr:has-text("autre@exemple.tn")')), "origine affichée");
+    await page.click('#admin-comptes tr:has-text("autre@exemple.tn") [data-offrir="0"]');
+    await page.waitForSelector('#admin-comptes tr:has-text("autre@exemple.tn") [data-offrir="1"]');
+    assert(!faux.abonnementDe("autre@exemple.tn").offert, "accès retiré");
+    /* Tous les comptes : confirmation dans une fenêtre, annulable. */
+    await page.click("#admin-offrir-tous");
+    await page.waitForSelector("#dlg-offert[open]");
+    await page.click('#dlg-offert button[value="annuler"]');
+    assert(!faux.abonnementDe("autre@exemple.tn").offert, "annuler ne change rien");
+    await page.click("#admin-offrir-tous");
+    await page.waitForSelector("#dlg-offert[open]");
+    assert(/comptes? recevr/.test(await page.textContent("#dlg-offert-texte")), "nombre de comptes concernés");
+    await page.click("#dlg-offert-ok");
+    await page.waitForFunction(() => document.querySelectorAll('#admin-comptes [data-offrir="1"]').length === 0);
+    assert([...faux.comptes.values()].every(({ user }) => faux.abonnementDe(user.email).offert), "tous les comptes offerts");
+    assert(await page.isDisabled("#admin-offrir-tous"), "plus rien à offrir");
+    await page.screenshot({ path: path.join(CAPTURES, "admin-offert.png"), fullPage: true });
+    await page.click("#admin-retirer-tous");
+    await page.waitForSelector("#dlg-offert[open]");
+    await page.click("#dlg-offert-ok");
+    await page.waitForFunction(() => document.querySelectorAll('#admin-comptes [data-offrir="0"]').length === 0);
+    assert(faux.abonnementDe("aziz@exemple.tn").fin && !faux.abonnementDe("aziz@exemple.tn").offert, "l'abonnement payé reste enregistré");
+    /* Nouveaux comptes. */
+    await page.click('label:has(#admin-offert-nouveaux)');
+    await page.waitForFunction(() => document.getElementById("admin-offert-nouveaux").checked && /offert/.test(document.getElementById("admin-offert-nouveaux-lib").textContent));
+    faux.ajouterCompte("avie@exemple.tn", "Avie-compte-2026!", { full_name: "À vie" });
+    assert(faux.abonnementDe("avie@exemple.tn").offert && faux.abonnementDe("avie@exemple.tn").offert_par === "nouveaux", "nouveau compte offert dès l'inscription");
+    await page.click('label:has(#admin-offert-nouveaux)');
+    await page.waitForFunction(() => !document.getElementById("admin-offert-nouveaux").checked);
+    faux.ajouterCompte("essai@exemple.tn", "Essai-compte-2026!", { full_name: "Essai" });
+    assert(!faux.abonnementDe("essai@exemple.tn").offert, "réglage coupé : de nouveau l'essai");
+    /* Pastille : les deux inscriptions la font revenir, puis elle s'efface seule au bout d'une minute. */
+    /* Horloge simulée dans une session à part (le reste du parcours garde l'heure réelle). */
+    const ctx5 = await navigateur.newContext({ viewport: { width: 1280, height: 900 } });
+    await ctx5.route(SUPABASE + "/**", (r) => faux.gerer(r));
+    await ctx5.route("https://api.pwnedpasswords.com/**", fuites);
+    const p5 = await ctx5.newPage();
+    suivre(p5);
+    await p5.clock.install();
+    await p5.goto(base + "/connexion.html");
+    await p5.fill("#email", "aziz@exemple.tn");
+    await p5.fill("#mdp", "Tunis-2026-solide");
+    await p5.click("#envoyer");
+    await p5.waitForURL(/\/espace\//);
+    await p5.waitForSelector("#badge-admin:not([hidden])");
+    assert(+(await p5.textContent("#badge-admin")).trim() >= 2, "inscriptions non lues, dont les deux nouvelles");
+    await p5.clock.runFor(61000);
+    await p5.waitForSelector("#badge-admin", { state: "hidden" });
+    await p5.reload();
+    await p5.waitForSelector("#rail-admin:not([hidden])");
+    await p5.waitForTimeout(800);
+    assert(await p5.isHidden("#badge-admin"), "une pastille déjà montrée une minute ne revient pas");
+    faux.ajouterCompte("plus@exemple.tn", "Plus-compte-2026!", { full_name: "Plus" });
+    await p5.clock.runFor(91000);
+    await p5.waitForSelector("#badge-admin:not([hidden])");
+    assert((await p5.textContent("#badge-admin")).trim() === "1", "revient avec la seule nouvelle inscription");
+    await ctx5.close();
+    await page.goto(base + "/espace/#admin");
+    await page.click("#admin-lues");
+    await page.waitForSelector("#badge-admin", { state: "hidden" });
   });
 
   await etape("codes promo, offre de lancement et parrainage (un mois offert à chacun)", async () => {

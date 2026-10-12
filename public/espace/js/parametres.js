@@ -209,6 +209,8 @@
       .catch(function (x) { c.checked = !oui; c.disabled = false; E.toast(E.modele.messageErreur(x), { erreur: true }); });
   });
   doc.addEventListener("orbite:vue", function (e) { if (e.detail.vue === "compte") chargerPartage(); });
+  /* Accord donné depuis la demande (partage-demande.js). */
+  doc.addEventListener("orbite:partage", function (e) { rendrePartage(e.detail); });
 
   function demarrer() { remplir(); O.rafraichirAvatar(); chargerPartage(); }
   if (O.pret) demarrer();

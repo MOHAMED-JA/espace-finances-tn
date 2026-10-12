@@ -37,6 +37,7 @@ function creer() {
   const compteParId = (id) => [...comptes.values()].find((c) => c.user.id === id);
   let dernierAssistant = null, assistantBientot = false, dernierAuth = null;
   const alertes = [];
+  const reglages = { offert_nouveaux: false };
   const usage = new Map();  // "type:cle" -> nombre
   /* Rappels par email (migration 0011) : plan, désinscription par jeton, confirmations demandées. */
   const rappelsEmail = new Map();  // user id -> { plan, jeton, desinscrit_le, adresse_confirmee, confirmation_adresse, confirmation_envoyee_le, confirmation_jeton }
@@ -109,6 +110,7 @@ function creer() {
       user_metadata: meta || {}
     };
     comptes.set(email, { user, mdp });
+    if (reglages.offert_nouveaux) abonnements.set(user.id, { essai_fin: new Date(Date.now() + 3 * 86400000).toISOString(), fin: null, formule: null, offert: true, offert_par: "nouveaux", testeur: false });
     alertes.unshift({ id: alertes.length + 1, type: "inscription", libelle: email, cree_le: new Date().toISOString(), lue: false });
     profils.set(user.id, { id: user.id, nom_affiche: (meta && meta.full_name) || email.split("@")[0], cree_le: new Date().toISOString() });
     return user;
@@ -410,10 +412,11 @@ function creer() {
     if (url.pathname === "/rest/v1/rpc/compter_usage") { const k = corps.p_type + ":" + corps.p_cle; usage.set(k, (usage.get(k) || 0) + 1); return repondre(route, 204); }
     if (url.pathname.indexOf("/rest/v1/rpc/admin_") === 0 && !admins.has(u.id)) return repondre(route, 403, { code: "42501", message: "Réservé à l'administrateur" });
     if (url.pathname === "/rest/v1/rpc/admin_tableau") {
-      const liste = [...comptes.values()].map(({ user }) => ({ nom: (user.user_metadata || {}).nom || "", email: user.email, methode: "email", inscrit_le: user.created_at, derniere_connexion: user.last_sign_in_at || user.created_at, etat: acces(user.id).etat, formule: abonnementDe(user.id).formule, testeur: !!abonnementDe(user.id).testeur }));
+      const liste = [...comptes.values()].map(({ user }) => ({ id: user.id, offert_par: abonnementDe(user.id).offert_par || null, nom: (user.user_metadata || {}).nom || "", email: user.email, methode: "email", inscrit_le: user.created_at, derniere_connexion: user.last_sign_in_at || user.created_at, etat: acces(user.id).etat, formule: abonnementDe(user.id).formule, testeur: !!abonnementDe(user.id).testeur }));
       const n = liste.length;
       return repondre(route, 200, { maintenant: new Date().toISOString(), inscrits: n, nouveaux_jour: n, nouveaux_7j: n, nouveaux_30j: n, connectes_jour: n, connectes_7j: n,
-        essais: liste.filter((x) => x.etat === "essai").length, abonnes: liste.filter((x) => x.etat === "actif").length, offerts: 0, expires: liste.filter((x) => x.etat === "expire").length,
+        essais: liste.filter((x) => x.etat === "essai").length, abonnes: liste.filter((x) => x.etat === "actif").length, offerts: liste.filter((x) => x.etat === "offert").length,
+        offerts_admin: liste.filter((x) => x.etat === "offert" && x.offert_par).length, offert_nouveaux: reglages.offert_nouveaux, expires: liste.filter((x) => x.etat === "expire").length,
         par_formule: {}, revenus_total: 0, revenus_30j: 0, paiements_30j: 0, paiements_test: paiements.filter((p) => p.statut === "paye").length,
         essais_termines: 0, convertis: 0, desabonnes: 0, inscriptions_30j: [{ jour: new Date().toISOString().slice(0, 10), n }], utilisateurs: liste, alertes_non_lues: alertes.filter((a) => !a.lue).length });
     }
@@ -434,6 +437,24 @@ function creer() {
       return repondre(route, 200, { id: c.id, email: c.email, inscrit_le: c.created_at, derniere_connexion: c.last_sign_in_at || c.created_at, accorde_le: partages.get(c.id), profil: (c.user_metadata || {}).orbite || {} });
     }
     if (url.pathname === "/rest/v1/rpc/admin_alertes_liste") return repondre(route, 200, alertes);
+    /* Accès offert à vie (migration 0014) : retirer remet l'essai ou l'abonnement payé tel quel. */
+    const etatOffert = () => { const l = [...comptes.values()].map(({ user }) => abonnementDe(user.id));
+      return { nouveaux: reglages.offert_nouveaux, offerts: l.filter((a) => a.offert).length, offerts_admin: l.filter((a) => a.offert && a.offert_par).length, comptes: l.length }; };
+    if (url.pathname === "/rest/v1/rpc/admin_offert_etat") return repondre(route, 200, etatOffert());
+    if (url.pathname === "/rest/v1/rpc/admin_offrir") {
+      if (!compteParId(corps.p_user)) return repondre(route, 400, { code: "22023", message: "Compte introuvable" });
+      const a = abonnementDe(corps.p_user);
+      if (corps.p_offert && !a.offert) Object.assign(a, { offert: true, offert_par: "compte" });
+      if (!corps.p_offert && a.offert) Object.assign(a, { offert: false, offert_par: null });
+      return repondre(route, 200, etatOffert());
+    }
+    if (url.pathname === "/rest/v1/rpc/admin_offrir_tous") {
+      [...comptes.values()].forEach(({ user }) => { const a = abonnementDe(user.id);
+        if (corps.p_offert && !a.offert) Object.assign(a, { offert: true, offert_par: "tous" });
+        if (!corps.p_offert && a.offert && a.offert_par) Object.assign(a, { offert: false, offert_par: null }); });
+      return repondre(route, 200, etatOffert());
+    }
+    if (url.pathname === "/rest/v1/rpc/admin_offrir_nouveaux") { reglages.offert_nouveaux = !!corps.p_actif; return repondre(route, 200, etatOffert()); }
     if (url.pathname === "/rest/v1/rpc/admin_codes") {
       const l = [...parrainages.values()];
       return repondre(route, 200, { codes: [...codes.values()], parrainages: l.length, parrainages_recompenses: l.filter((x) => x.recompense).length, parrains_actifs: new Set(l.map((x) => x.parrain)).size });
