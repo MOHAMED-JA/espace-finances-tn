@@ -54,3 +54,28 @@
 .doc-barre { height: auto; min-height: var(--barre, 64px); padding-block: 10px; }
 .entete__ligne { padding-block: 10px; }
 @media (max-width: 480px) { .entete__ligne .signature__pre { display: none; } .entete__ligne .signature { gap: 8px; padding: 5px 8px 5px 5px; } .entete__ligne .signature__mono { width: 28px; height: 28px; font-size: 11px; } }
+
+/* ---------- Drapeau tunisien à côté du logo (11 oct. 2026) ----------
+   12 bandes verticales du même dessin (proportions officielles 3:2), décalées en vague :
+   le drapeau flotte lentement, une vague toutes les 4 s. Image en data: (autorisée par img-src, aucune requête).
+   Immobile si l'appareil demande moins d'animations. Décoratif (aria-hidden) : le lien garde son nom. */
+.drapeau { --dl: 27px; --dh: 18px; display: inline-flex; flex: none; width: var(--dl); height: var(--dh); margin-left: 2px; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .35)); }
+.drapeau i { flex: 1; height: 100%; background-repeat: no-repeat; background-size: var(--dl) var(--dh);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-60 -40 120 80'%3E%3Cpath fill='%23E70013' d='M-60-40H60v80H-60z'/%3E%3Ccircle fill='%23fff' r='20'/%3E%3Ccircle fill='%23E70013' r='15'/%3E%3Ccircle fill='%23fff' cx='4' r='12'/%3E%3Cpath fill='%23E70013' d='M-5 0l16.281-5.29L1.22 8.56V-8.56L11.28 5.29z'/%3E%3C/svg%3E");
+  animation: drapeau-flotte 4s ease-in-out infinite; }
+.drapeau i:first-child { border-radius: 2px 0 0 2px; }
+.drapeau i:last-child { border-radius: 0 2px 2px 0; }
+.drapeau i:nth-child(2) { background-position: calc(var(--dl) / -12) 0; animation-delay: -.25s; }
+.drapeau i:nth-child(3) { background-position: calc(var(--dl) / -12 * 2) 0; animation-delay: -.5s; }
+.drapeau i:nth-child(4) { background-position: calc(var(--dl) / -12 * 3) 0; animation-delay: -.75s; }
+.drapeau i:nth-child(5) { background-position: calc(var(--dl) / -12 * 4) 0; animation-delay: -1s; }
+.drapeau i:nth-child(6) { background-position: calc(var(--dl) / -12 * 5) 0; animation-delay: -1.25s; }
+.drapeau i:nth-child(7) { background-position: calc(var(--dl) / -12 * 6) 0; animation-delay: -1.5s; }
+.drapeau i:nth-child(8) { background-position: calc(var(--dl) / -12 * 7) 0; animation-delay: -1.75s; }
+.drapeau i:nth-child(9) { background-position: calc(var(--dl) / -12 * 8) 0; animation-delay: -2s; }
+.drapeau i:nth-child(10) { background-position: calc(var(--dl) / -12 * 9) 0; animation-delay: -2.25s; }
+.drapeau i:nth-child(11) { background-position: calc(var(--dl) / -12 * 10) 0; animation-delay: -2.5s; }
+.drapeau i:nth-child(12) { background-position: calc(var(--dl) / -12 * 11) 0; animation-delay: -2.75s; }
+@keyframes drapeau-flotte { 0%, 100% { transform: translateY(-.9px); filter: brightness(1.06); } 50% { transform: translateY(.9px); filter: brightness(.86); } }
+.marque .drapeau, .marque--orbite .drapeau { --dl: 24px; --dh: 16px; }
+@media (prefers-reduced-motion: reduce) { .drapeau i { animation: none; } }
