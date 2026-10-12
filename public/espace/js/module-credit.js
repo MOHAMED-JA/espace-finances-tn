@@ -339,7 +339,7 @@
             '<button type="button" class="cr-phrase__micro" id="cr-phrase-micro" aria-label="Dicter mon crédit" aria-pressed="false" hidden>' + ico("micro") + '</button>' +
             '<button type="button" class="bouton bouton--credit bouton--petit cr-phrase__ok" id="cr-phrase-ok">Remplir</button>' +
           '</div>' +
-          '<p class="champ__aide" id="cr-phrase-aide">Montant, durée, taux ou TMM + marge, apport, assurance, frais, différé… en français ou en arabe.</p>' +
+          '<p class="champ__aide" id="cr-phrase-aide" aria-live="polite">Montant, durée, taux ou TMM + marge, apport, assurance, frais, différé… en français ou en arabe.</p>' +
         '</div>' +
         '<fieldset class="cr-groupe"><legend class="champ__lib">Type de crédit</legend><div class="cr-puces" id="cr-types">' + puces + '</div></fieldset>' +
         champ({ id: "cr-capital", k: "capital", lib: "Montant emprunté", unite: "DT", grande: true, min: 100, max: 1e8, aide: '<span id="cr-capital-aide-txt">&nbsp;</span>' }) +
@@ -2253,10 +2253,93 @@
   };
 
   /* ===================================================================
+     Crédit décrit en une phrase, écrite ou dictée (moteurs/credit/phrase.js)
+     =================================================================== */
+  var AIDE_PHRASE = "Montant, durée, taux ou TMM + marge, apport, assurance, frais, différé… en français ou en arabe.";
+  function appliquerPhrase(texte) {
+    var aide = $("cr-phrase-aide"), res = window.CreditPhrase ? window.CreditPhrase.analyser(texte) : { resume: [] };
+    aide.classList.remove("cr-phrase__aide--ok", "cr-phrase__aide--erreur");
+    if (!res.resume.length) {
+      aide.textContent = "Je n'ai rien reconnu. Exemple : « 150 000 sur 20 ans à 9 % ».";
+      aide.classList.add("cr-phrase__aide--erreur");
+      return false;
+    }
+    var sc = sc0();
+    /* Description complète (montant et durée) : les options non citées repartent de zéro */
+    if ((res.capital != null || res.prix != null) && res.mois != null) {
+      sc.periodicite = 1; sc.amort = "constant"; sc.differe.on = false; sc.assurance.on = false; sc.frais.on = false;
+      sc.ras = []; sc.versement.on = false; sc.variation.on = false; sc.reduction = false;
+    }
+    if (res.type && TYPES[res.type]) sc.type = res.type;
+    if (res.periodicite) sc.periodicite = res.periodicite;
+    if (res.amort) sc.amort = res.amort;
+    if (res.mois != null) sc.mois = Math.max(sc.periodicite, Math.min(300, Math.round(res.mois / sc.periodicite) * sc.periodicite));
+    if (res.differe) sc.differe = { on: true, mois: res.differe.mois, type: res.differe.type };
+    if (res.tmm) { sc.mode = "tmm"; if (isFinite(res.tmm.tmm)) sc.tmm = res.tmm.tmm; sc.marge = res.tmm.marge; }
+    else if (res.taux != null) { sc.mode = "fixe"; sc.taux = res.taux; }
+    if (res.assurance != null) sc.assurance = { on: true, taux: res.assurance, base: sc.assurance.base || "crd" };
+    if (res.fraisPct != null) { sc.frais.on = true; sc.frais.dossierPct = res.fraisPct; }
+    if (res.prix != null && res.apport != null) { sc.apport = { on: true, prix: arr(res.prix), apport: arr(res.apport) }; sc.capital = arr(res.prix - res.apport); }
+    else if (res.capital != null) { sc.apport.on = false; sc.capital = arr(res.capital); }
+    if (res.capital != null || res.prix != null) { S.cible = null; sc.capitalSaisi = true; }
+    apresDuree(sc);
+    ecrireEditeur();
+    majVisibilite();
+    calculer(true);
+    signalerModif();
+    aide.textContent = "Compris : " + res.resume.join(" · ") + ".";
+    aide.classList.add("cr-phrase__aide--ok");
+    var O = Orb();
+    if (O && O.puceVolante && S.dernier) O.puceVolante($("cr-phrase"), $("cr-res-m"), dt0(premiereEcheance(S.dernier.r)), "credit");
+    if (O) requestAnimationFrame(function () { O.placerPastilles(racine); });
+    return true;
+  }
+  /* Micro : reconnaissance vocale du navigateur, seulement si elle existe. Elle passe par le service du navigateur
+     (Google pour Chrome, Microsoft pour Edge) : c'est dit avant le premier usage, et rien ne part avant l'appui. */
+  var dictee = null;
+  function arreterDictee() { if (dictee) { try { dictee.abort(); } catch (e) {} dictee = null; } var b = $("cr-phrase-micro"); b.setAttribute("aria-pressed", "false"); b.classList.remove("cr-phrase__micro--ecoute"); }
+  function brancherPhrase() {
+    var champ = $("cr-phrase"), ok = $("cr-phrase-ok"), micro = $("cr-phrase-micro"), aide = $("cr-phrase-aide");
+    ok.addEventListener("click", function () { appliquerPhrase(champ.value); });
+    champ.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); appliquerPhrase(champ.value); } });
+    champ.addEventListener("input", function () { if (!champ.value) { aide.textContent = AIDE_PHRASE; aide.classList.remove("cr-phrase__aide--ok", "cr-phrase__aide--erreur"); } });
+    var Reco = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Reco) return;
+    micro.hidden = false;
+    micro.title = "Dicter mon crédit : votre voix est transcrite par le service vocal de votre navigateur (Google ou Microsoft).";
+    micro.addEventListener("click", function () {
+      if (dictee) { arreterDictee(); return; }
+      var deja = false; try { deja = localStorage.getItem("orbite_dictee_ok") === "1"; } catch (e) {}
+      if (!deja) {
+        aide.textContent = "Votre voix sera transcrite par le service vocal de votre navigateur (Google ou Microsoft), puis Orbite remplit le crédit. Appuyez de nouveau sur le micro pour commencer.";
+        aide.classList.remove("cr-phrase__aide--ok", "cr-phrase__aide--erreur");
+        try { localStorage.setItem("orbite_dictee_ok", "1"); } catch (e) {}
+        return;
+      }
+      var r = new Reco(); dictee = r;
+      r.lang = /[\u0600-\u06ff]/.test(champ.value) ? "ar-TN" : "fr-FR"; r.interimResults = true; r.maxAlternatives = 1;
+      micro.setAttribute("aria-pressed", "true"); micro.classList.add("cr-phrase__micro--ecoute");
+      aide.textContent = "J'écoute… dites par exemple « 150 000 sur 20 ans à 9 % ».";
+      var final = "";
+      r.onresult = function (ev) {
+        var txt = ""; for (var i = 0; i < ev.results.length; i++) { txt += ev.results[i][0].transcript; if (ev.results[i].isFinal) final = txt; }
+        champ.value = txt;
+      };
+      r.onerror = function (ev) {
+        aide.textContent = ev.error === "not-allowed" || ev.error === "service-not-allowed" ? "Micro refusé : autorisez-le dans le navigateur, ou écrivez la phrase." : ev.error === "network" ? "Dictée indisponible hors connexion : écrivez la phrase." : "Je n'ai pas entendu. Réessayez ou écrivez la phrase.";
+        aide.classList.add("cr-phrase__aide--erreur");
+      };
+      r.onend = function () { var avait = dictee === r; arreterDictee(); if (avait && (final || champ.value)) appliquerPhrase(final || champ.value); };
+      try { r.start(); } catch (e) { arreterDictee(); }
+    });
+  }
+
+  /* ===================================================================
      Démarrage
      =================================================================== */
   construire();
   brancher();
+  brancherPhrase();
   ecrireEditeur();
   ecrireEmprunteur();
   calculer(false);

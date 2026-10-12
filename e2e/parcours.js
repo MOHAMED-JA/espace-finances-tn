@@ -1127,6 +1127,27 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => /Après l'échéance n° (2[0-9]|3[0-9])/.test(document.querySelector('[data-ra-date="0"]').textContent));
   });
 
+  await etape("crédit en une phrase : montant, durée, taux, assurance et type compris ; phrase vide de sens refusée ; arabe", async () => {
+    await page.goto(base + "/espace/#credit");
+    await page.waitForSelector("#cr-phrase");
+    await page.fill("#cr-phrase", "Crédit voiture de 45 000 DT sur 60 mois à 10,5 % assurance 0,4 %");
+    await page.press("#cr-phrase", "Enter");
+    await page.waitForFunction(() => /Compris/.test(document.getElementById("cr-phrase-aide").textContent));
+    const aide = await page.textContent("#cr-phrase-aide");
+    assert(/crédit auto/.test(aide) && /45\u202f000/.test(aide) && /5 ans/.test(aide) && /10,5/.test(aide) && /assurance 0,4/.test(aide), "résumé : " + aide);
+    assert(Number((await page.inputValue("#cr-capital")).replace(/\D/g, "")) === 45000, "montant rempli");
+    const e = await page.evaluate(() => window.ModuleCredit.etat());
+    assert(/(^|&)m=60(&|$)/.test(e) && /(^|&)t=10\.5(&|$)/.test(e) && /ty=auto/.test(e) && /as=0\.4/.test(e), "durée, taux, type et assurance appliqués : " + e);
+    await page.screenshot({ path: path.join(CAPTURES, "credit-phrase.png") });
+    await page.fill("#cr-phrase", "bonjour Orbite");
+    await page.click("#cr-phrase-ok");
+    await page.waitForFunction(() => /rien reconnu/.test(document.getElementById("cr-phrase-aide").textContent));
+    await page.fill("#cr-phrase", "قرض سكن ١٢٠ ألف على ٢٠ سنة بنسبة ٨٪");
+    await page.click("#cr-phrase-ok");
+    await page.waitForFunction(() => /crédit immobilier/.test(document.getElementById("cr-phrase-aide").textContent));
+    assert(Number((await page.inputValue("#cr-capital")).replace(/\D/g, "")) === 120000, "montant en arabe");
+  });
+
   await etape("simulation → profil : crédit ajouté (puis annulé), épargne ajoutée depuis « Enregistrer »", async () => {
     await page.goto(base + "/espace/#credit?type=auto&capital=40000&mois=60&taux=9");
     await page.waitForSelector("#ajouter-profil", { state: "visible" });

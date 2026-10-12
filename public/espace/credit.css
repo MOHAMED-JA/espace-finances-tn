@@ -421,3 +421,22 @@
 .cr-capacites__ligne strong { font-weight: 600; white-space: nowrap; }
 .cr-capacites__ligne--actif { border-color: var(--credit); background: var(--credit-doux); }
 .cr-capacites__ligne--actif strong { color: var(--credit-t); }
+
+/* ---------- Crédit décrit en une phrase, écrite ou dictée ---------- */
+.module--credit .cr-phrase { display: grid; gap: 8px; margin-bottom: 18px; padding: 14px; border-radius: var(--r-int); background: linear-gradient(135deg, color-mix(in srgb, var(--credit) 9%, var(--surface-2)), var(--surface-2)); border: 1px solid color-mix(in srgb, var(--credit) 22%, var(--filet)); }
+.module--credit .cr-phrase__saisie { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.module--credit .cr-phrase__saisie input { flex: 1 1 auto; min-width: 0; min-height: 46px; padding: 0 14px; border: 1px solid var(--filet); border-radius: var(--r-champ); background: var(--surface); color: var(--encre); font: 500 16px/1.3 var(--texte); }
+.module--credit .cr-phrase__saisie input:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; border-color: transparent; }
+.module--credit .cr-phrase__micro { flex: none; width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--filet); background: var(--surface); color: var(--credit-t); display: grid; place-items: center; cursor: pointer; transition: background-color 160ms ease, transform 140ms var(--sortie); }
+.module--credit .cr-phrase__micro svg { width: 20px; height: 20px; }
+.module--credit .cr-phrase__micro:hover { background: var(--credit-doux); }
+.module--credit .cr-phrase__micro:active { transform: scale(var(--appui)); }
+.module--credit .cr-phrase__micro:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.module--credit .cr-phrase__micro--ecoute { background: var(--erreur); border-color: var(--erreur); color: #fff; animation: cr-ecoute 1.2s ease-in-out infinite; }
+.module--credit .cr-phrase__micro--ecoute:hover { background: var(--erreur); }
+@keyframes cr-ecoute { 50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--erreur) 22%, transparent); } }
+.module--credit .cr-phrase__ok { flex: none; min-height: 46px; }
+.module--credit .cr-phrase__aide--ok { color: var(--succes); font-weight: 600; }
+.module--credit .cr-phrase__aide--erreur { color: var(--erreur); font-weight: 600; }
+@media (max-width: 420px) { .module--credit .cr-phrase__saisie { flex-wrap: wrap; } .module--credit .cr-phrase__saisie input { flex-basis: 100%; } .module--credit .cr-phrase__ok { flex: 1; } }
+@media (prefers-reduced-motion: reduce) { .module--credit .cr-phrase__micro--ecoute { animation: none; } }
