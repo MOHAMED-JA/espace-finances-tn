@@ -68,6 +68,12 @@
       action("a-export", "Exporter mes données", "Fichier JSON de tout votre profil", "exporter donnees json sauvegarde", function () { aller("#compte?onglet=donnees"); surVue("compte", function () { cliquer("exporter"); }); }),
       action("a-deconnexion", "Se déconnecter", "", "deconnexion sortir quitter", function () { cliquer("deconnexion"); })
     ];
+    /* Lanceur et simulateurs, ouverts dans Orbite. */
+    L.push(action("a-apps", "Mes applications", "Les parties d'Orbite et les simulateurs", "applications apps lanceur outils simulateurs", function () { O.ouvrirApps(); }));
+    (O.SIMULATEURS || []).forEach(function (x) {
+      L.push({ id: "a-sim-" + x.cle, groupe: "Simulateurs", titre: x.titre, sous: "S'ouvre dans Orbite", mots: x.mots, teinte: x.cle === "vie" ? "epargne" : x.cle === "credit" ? "credit" : x.cle === "salaire" ? "salaire" : "action", ico: x.ico, fin: "Entrée",
+        faire: function () { O.ouvrirSimulateur(x.cle); } });
+    });
     if (retraite) L = L.filter(function (x) { return x.id !== "a-fiche"; });
     if (!O.negociationPossible || !O.negociationPossible()) L = L.filter(function (x) { return x.id !== "a-nego"; });
     return L;
@@ -105,7 +111,7 @@
       return { e: e, score: t.indexOf(mots[0]) === 0 ? 0 : t.indexOf(mots[0]) >= 0 ? 1 : 2 };
     }).filter(Boolean);
     /* Un groupe par titre : le groupe qui a le meilleur résultat passe devant (à égalité : Vues, Sections, Actions). */
-    var ORDRE = { Vues: 0, Sections: 1, Actions: 2 }, meilleur = {};
+    var ORDRE = { Vues: 0, Sections: 1, Actions: 2, Simulateurs: 3 }, meilleur = {};
     trouves.forEach(function (x) { var g = x.e.groupe; if (meilleur[g] == null || x.score < meilleur[g]) meilleur[g] = x.score; });
     trouves = trouves.sort(function (a, b) {
       var ga = a.e.groupe, gb = b.e.groupe;
@@ -155,7 +161,7 @@
   }
   var ICONES = { orbite: "orbite", salaire: "salaire", epargne: "epargne", credit: "credit", action: "etoile" };
   /* Une icône par entrée : la couleur dit le module, le dessin dit la chose. */
-  var ICO = { "v-orbite": "orbite", "v-profil": "profil", "v-salaire": "salaire", "v-epargne": "epargne", "v-credit": "credit", "v-progression": "hausse", "v-vie": "bouclier", "v-assistant": "etoile", "v-simulations": "liste", "v-compte": "compte", "s-retraite": "horloge", "s-objectifs": "cible", "s-annee": "etoile", "s-credits": "credit", "s-historique": "hausse", "s-budget": "epargne", "s-banque": "credit", "s-foyer": "profil", "s-fiscal": "epargne", "s-etsi": "comparer", "s-marge": "horloge", "s-preferences": "outils", "s-donnees": "telecharger", "a-salaire": "hausse", "a-nego": "cible", "a-dossier": "fiche", "a-fiche": "fiche", "a-visite": "boussole", "a-expert": "outils", "a-export": "telecharger", "a-deconnexion": "sortie", "m-fiscal": "horloge", "m-annee": "etoile" };
+  var ICO = { "v-orbite": "orbite", "v-profil": "profil", "v-salaire": "salaire", "v-epargne": "epargne", "v-credit": "credit", "v-progression": "hausse", "v-vie": "bouclier", "v-assistant": "etoile", "v-simulations": "liste", "v-compte": "compte", "s-retraite": "horloge", "s-objectifs": "cible", "s-annee": "etoile", "s-credits": "credit", "s-historique": "hausse", "s-budget": "epargne", "s-banque": "credit", "s-foyer": "profil", "s-fiscal": "epargne", "s-etsi": "comparer", "s-marge": "horloge", "s-preferences": "outils", "s-donnees": "telecharger", "a-salaire": "hausse", "a-nego": "cible", "a-apps": "grille", "a-dossier": "fiche", "a-fiche": "fiche", "a-visite": "boussole", "a-expert": "outils", "a-export": "telecharger", "a-deconnexion": "sortie", "m-fiscal": "horloge", "m-annee": "etoile" };
   function majSelection() {
     liste.querySelectorAll("[role=option]").forEach(function (li, i) { li.setAttribute("aria-selected", i === sel ? "true" : "false"); });
     var s = liste.querySelector('[aria-selected="true"]');
