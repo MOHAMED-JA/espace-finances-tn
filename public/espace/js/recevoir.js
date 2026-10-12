@@ -120,6 +120,8 @@
       setTimeout(function () { montrer(liste); }, 300);
     });
   }
-  doc.addEventListener("orbite:pret", demarrer, { once: true });
+  /* Au démarrage (après la redirection du service worker), ou si l'adresse passe à #recevoir dans une page déjà ouverte. */
+  if (O.pret) demarrer(); else doc.addEventListener("orbite:pret", demarrer, { once: true });
+  window.addEventListener("hashchange", function () { if (O.pret && /^#recevoir/.test(location.hash)) demarrer(); });
   window.OrbiteRecevoir = { montrer: montrer };
 })();

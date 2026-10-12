@@ -1433,9 +1433,13 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
       return "page";
     }, octets);
     assert(parSw !== "page" ? parSw === "service worker" : true, "dépôt par le service worker : " + parSw);
+    /* Chargement complet de la page, comme après la redirection du service worker. */
+    await page.goto(base + "/cgv.html");
     await page.goto(base + "/espace/#recevoir");
-    await page.reload();
-    await page.waitForSelector("#dlg-recevoir[open]");
+    await page.waitForSelector("#dlg-recevoir[open]", { timeout: 20000 }).catch(async () => {
+      const d = await page.evaluate(async () => [location.href, await caches.has("orbite-recus"), Array.from(document.querySelectorAll(".toast")).map((t) => t.textContent), Array.from(document.querySelectorAll("dialog[open]")).map((x) => x.id), !!window.OrbiteRecevoir, window.Orbite && window.Orbite.pret]);
+      throw new Error("fenêtre du document reçu absente : " + JSON.stringify(d));
+    });
     await page.waitForSelector("#recevoir-resultat:not([hidden])", { timeout: 60000 });
     assert(/tableau d'amortissement/.test(await page.textContent("#recevoir-type")), "tableau reconnu : " + await page.textContent("#recevoir-type"));
     assert(!(await page.evaluate(() => caches.has("orbite-recus"))), "cache des documents reçus vidé");
@@ -1453,7 +1457,6 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
       await c.put("/__orbite/recu/liste", new Response(JSON.stringify({ n: 1, t: Date.now() })));
     }, photo);
     await page.goto(base + "/espace/#recevoir");
-    await page.reload();
     await page.waitForSelector("#dlg-recevoir[open]", { timeout: 20000 }).catch(async () => {
       const d = await page.evaluate(async () => [location.href, await caches.has("orbite-recus"), Array.from(document.querySelectorAll(".toast")).map((t) => t.textContent), Array.from(document.querySelectorAll("dialog[open]")).map((x) => x.id), !!window.OrbiteRecevoir, window.Orbite && window.Orbite.pret]);
       throw new Error("fenêtre du document reçu absente : " + JSON.stringify(d));
@@ -1471,7 +1474,6 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
       await c.put("/__orbite/recu/liste", new Response(JSON.stringify({ n: 1, t: Date.now() })));
     }, fiche);
     await page.goto(base + "/espace/#recevoir");
-    await page.reload();
     await page.waitForSelector("#recevoir-resultat:not([hidden])", { timeout: 60000 });
     assert(/fiche de paie/.test(await page.textContent("#recevoir-type")), "fiche reconnue : " + await page.textContent("#recevoir-type"));
     await page.click("#recevoir-action");
