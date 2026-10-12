@@ -4,11 +4,13 @@
   --g1: #2F5BEA; --g2: #D9730D; --g3: #0E9F6E; --g4: #7C3AED;
   --g-neutre: #8B93A7; --g-ok: #067647; --g-danger: #D92D20;
   --g-grille: #E9ECF2; --g-axe: #5E6577; --g-anneau: var(--surface); --g-lavis: .10;
+  /* Panneaux toujours sombres (résultat du Crédit) : teintes sombres, quel que soit le thème. */
+  --g1-sombre: #5A82F2; --g2-sombre: #D27A2C; --g3-sombre: #1FAD79; --g4-sombre: #9B70EE; --g-neutre-sombre: #7D869B;
 }
 :root[data-theme="dark"] {
   --g1: #5A82F2; --g2: #D27A2C; --g3: #1FAD79; --g4: #9B70EE;
   --g-neutre: #7D869B; --g-ok: #47CD89; --g-danger: #FF8A80;
-  --g-grille: #1E2330; --g-axe: #959CAD; --g-lavis: .14;
+  --g-grille: #1E2330; --g-axe: #959CAD; --g-lavis: .10;
 }
 .og { position: relative; min-width: 0; }
 .og-cadre { position: relative; }

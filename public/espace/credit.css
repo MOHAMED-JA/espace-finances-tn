@@ -1,25 +1,17 @@
 /* Orbite — module Crédit. Toutes les règles sont limitées à .module--credit. Voir DESIGN.md. */
 
+/* Couleurs des séries : palette commune des graphiques (graphe.css), claire ou sombre selon le thème. */
 .module--credit {
-  --cr-capital: var(--credit);
-  --cr-interet: #C76A00;
-  --cr-assurance: #0E8A7E;
-  --cr-frais: #8C93A5;
-  --cr-sc0: var(--credit);
-  --cr-sc1: #C76A00;
-  --cr-sc2: #0E8A7E;
+  --cr-capital: var(--g1);
+  --cr-interet: var(--g2);
+  --cr-assurance: var(--g3);
+  --cr-frais: var(--g-neutre);
+  --cr-sc0: var(--g1);
+  --cr-sc1: var(--g2);
+  --cr-sc2: var(--g3);
   --cr-zone: color-mix(in srgb, var(--succes) 14%, transparent);
 }
-:root[data-theme="dark"] .module--credit {
-  --cr-capital: #7EA2FF;
-  --cr-interet: #F5B70A;
-  --cr-assurance: #2ED3B7;
-  --cr-frais: #6B7387;
-  --cr-sc0: #7EA2FF;
-  --cr-sc1: #F5B70A;
-  --cr-sc2: #2ED3B7;
-  --cr-zone: color-mix(in srgb, var(--succes) 18%, transparent);
-}
+:root[data-theme="dark"] .module--credit { --cr-zone: color-mix(in srgb, var(--succes) 18%, transparent); }
 
 /* ---------- Mise en page ---------- */
 .module--credit .module__racine { display: grid; gap: 20px; }
@@ -188,10 +180,10 @@
 .module--credit .cr-repartition__titre strong { color: var(--cosmos-encre); font-weight: 700; }
 .module--credit .cr-pile-barre { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: rgba(255, 255, 255, .08); gap: 2px; }
 .module--credit .cr-seg { display: block; height: 100%; width: var(--l, 0%); min-width: 0; transition: width 700ms var(--ressort); }
-.module--credit .cr-seg--capital, .module--credit .cr-resultat .cr-point--capital { background: #7EA2FF; }
-.module--credit .cr-seg--interet, .module--credit .cr-resultat .cr-point--interet { background: #F5B70A; }
-.module--credit .cr-seg--assurance, .module--credit .cr-resultat .cr-point--assurance { background: #2ED3B7; }
-.module--credit .cr-seg--frais, .module--credit .cr-resultat .cr-point--frais { background: #B4BBCB; }
+.module--credit .cr-seg--capital, .module--credit .cr-resultat .cr-point--capital { background: var(--g1-sombre); }
+.module--credit .cr-seg--interet, .module--credit .cr-resultat .cr-point--interet { background: var(--g2-sombre); }
+.module--credit .cr-seg--assurance, .module--credit .cr-resultat .cr-point--assurance { background: var(--g3-sombre); }
+.module--credit .cr-seg--frais, .module--credit .cr-resultat .cr-point--frais { background: var(--g-neutre-sombre); }
 .module--credit .cr-legende { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px 16px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .module--credit .cr-legende li { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 4px 8px; font-size: 13.5px; }
 .module--credit .cr-resultat .cr-legende li { color: var(--cosmos-encre-2); }

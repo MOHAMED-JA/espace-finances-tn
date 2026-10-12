@@ -123,7 +123,7 @@
     var ul = html("ul", "og-legende"); ul.setAttribute("role", "list");
     items.forEach(function (it) {
       var li = html("li", null, null, ul), k = html("span", "og-cle og-cle--" + (it.type || type) + " " + cl(it.c) + (it.tirets ? " og-tirets" : "") + (it.pointille ? " og-pointille" : "") + (it.ton ? " og-ton-" + it.ton : "") + (it.force ? " og-force-" + it.force : ""));
-      k.setAttribute("aria-hidden", "true"); li.appendChild(doc.createTextNode(it.nom));
+      k.setAttribute("aria-hidden", "true"); li.appendChild(k); li.appendChild(doc.createTextNode(it.nom));
     });
     return ul;
   }

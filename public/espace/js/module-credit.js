@@ -420,7 +420,7 @@
             '<button type="button" role="tab" id="cr-gr-tab-crd" aria-selected="true" aria-controls="cr-gr-zone" data-graphe="crd">Capital restant dû</button>' +
             '<button type="button" role="tab" id="cr-gr-tab-annee" aria-selected="false" aria-controls="cr-gr-zone" data-graphe="annee" tabindex="-1">Intérêts et capital par an</button>' +
           '</div></div>' +
-        '<div class="cr-graphe cr-anim-attente" id="cr-gr-zone" role="tabpanel" aria-labelledby="cr-gr-tab-crd"></div>' +
+        '<div class="cr-graphe" id="cr-gr-zone" role="tabpanel" aria-labelledby="cr-gr-tab-crd"></div>' +
         '<p class="cr-graphe__resume" id="cr-gr-resume"></p>' +
       '</section>' +
       '<section class="panneau cr-comparaison" id="cr-comparaison" aria-labelledby="cr-cmp-titre" hidden>' +

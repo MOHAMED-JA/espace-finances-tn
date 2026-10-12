@@ -677,6 +677,26 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centunies. Graphiques unifiés (12 oct.)
+
+Maquette validée par l'utilisateur (« Oui, applique partout »). Branche `graphiques`.
+
+- **Moteur commun** `public/espace/js/orbite-graphe.js` (`window.OrbiteGraphe`, fonctions pures testées sous Node : `graduations`, `indicesX`, `plusProche`, `marcheA`, `chemin`, `compact`) + `public/espace/graphe.css`.
+  - `lignes(zone, o)` : courbes, aires, escaliers (`marche`), bandes, zones verticales (`zones`) et horizontales (`zonesY`), seuil, lignes verticales, marqueurs (avec courte étiquette `texte`), curseur, étiquette de fin.
+  - `colonnes(zone, o)` : colonnes empilées (24 px au plus, bouts arrondis, 2 px entre segments).
+  - Partout : grille fine, légende dès deux séries (`legende: false` pour la couper), bulle au survol **et au clavier** (← →, Maj pour aller vite, Origine/Fin), `surSurvol(x)` pour relier une lecture extérieure, phrase-résumé (`<title>`), « Voir le tableau » (`tableau: false` quand un tableau existe déjà, comme l'amortissement), tracé à la première apparition (rien si mouvement réduit), nouveau rendu automatique quand la largeur change (`ResizeObserver`).
+  - Couleurs par classes `og-c1…og-c4`, `og-cn` (neutre), `og-cok`, `og-cdanger` : aucun `style=""` (CSP).
+- **Palette** validée par le script de contrôle (bande de luminosité, saturation, séparation pour les daltoniens, contraste ≥ 3:1), ordre fixe :
+  - clair (sur #FFFFFF) : `#2F5BEA` bleu, `#D9730D` ambre, `#0E9F6E` vert, `#7C3AED` violet ;
+  - sombre (sur #10131C) : `#5A82F2`, `#D27A2C`, `#1FAD79`, `#9B70EE` ;
+  - l'ancienne palette échouait (bleu Crédit ≈ violet Épargne, ambre et vert trop pâles, rien ne changeait en sombre).
+  - Une seule série prend la couleur du module : Crédit et TMM bleu (1), Salaire vert (3), Épargne violet (4).
+- **Migrés** : TMM ; Crédit (capital restant dû, colonnes annuelles, scénarios, évolution possible du TMM, louer ou acheter, règle des 8 %) ; Épargne (économie selon le versement, projection, éventail de 5 000 trajectoires) ; Ma progression › Carrière ; Et si… ; courbe du Salaire. Les anciens moteurs locaux et légendes HTML sont retirés.
+- **Barres et jauges** sur la palette : `--cr-*` (Crédit, panneau du résultat en teintes sombres fixes `--g*-sombre`), `--net/--cnss/--irpp/--css` (Salaire ; texte foncé sur le vert, contraste vérifié), anneau du budget de Mon orbite, cartes A/B/C d'Et si….
+- Non concernés : scènes canvas (planète, accueil, connexion), PDF.
+- **Corrections trouvées en route** : la clé de couleur des légendes n'était pas ajoutée (vu sur capture, contrôlé par l'e2e) ; sur téléphone étroit (≤ 430 px) la pastille « Essai » ne garde que sa couronne (la barre du haut débordait).
+- Tests : `tests/espace/orbite-graphe.test.js` ; étape e2e « graphiques unifiés » (bulle au clavier, tableau, palette claire puis sombre, téléphone sans débordement ni chevauchement des étiquettes, colonnes visibles).
+
 ## 3 centies. Point 5 livré : projet immobilier, offres, regroupement, TMM, Mon mois (12 oct.)
 
 Branche `point5`. Choix validés par l'utilisateur (options conseillées) ; règles chiffrées : voir 3 decnonagies.

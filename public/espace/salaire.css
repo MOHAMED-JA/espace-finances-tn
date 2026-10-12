@@ -1,17 +1,19 @@
 /* Orbite — module Salaire (reprend le calculateur « Lumineux et vivant », dans le système Orbite). */
 
+/* Net, CNSS, IRPP, CSS : palette commune des graphiques (vert, bleu, violet, ambre), claire ou sombre selon le thème. */
 .module--salaire {
-  --net: #19C37D;  --net-t: var(--salaire-t); --net-doux: var(--salaire-doux);
-  --cnss: #3B82F6; --cnss-t: #1D5FD0; --cnss-doux: #E1ECFE;
-  --irpp: #7C3AED; --irpp-t: #6D28D9; --irpp-doux: #EEE6FD;
-  --css: #F5B70A;  --css-t: #8A6100;  --css-doux: #FDF2CF;
-  --sur-net: #0A0D14; --sur-cnss: #0A0D14; --sur-irpp: #FFFFFF; --sur-css: #0A0D14;
+  --net: var(--g3);  --net-t: var(--salaire-t); --net-doux: var(--salaire-doux);
+  --cnss: var(--g1); --cnss-t: #1D5FD0; --cnss-doux: #E1ECFE;
+  --irpp: var(--g4); --irpp-t: #6D28D9; --irpp-doux: #EEE6FD;
+  --css: var(--g2);  --css-t: #8A5A00; --css-doux: #FDF2CF;
+  --sur-net: #0A0D14; --sur-cnss: #FFFFFF; --sur-irpp: #FFFFFF; --sur-css: #0A0D14;
   --distance: 14px;
 }
 :root[data-theme="dark"] .module--salaire {
   --cnss-t: #7AA9FF; --cnss-doux: #13213A;
   --irpp-t: #B49CFF; --irpp-doux: #221839;
   --css-t: #FACC4B;  --css-doux: #2D250D;
+  --sur-cnss: #0A0D14; --sur-irpp: #0A0D14;
 }
 @media (prefers-reduced-motion: reduce) { .module--salaire { --distance: 0px; } }
 
