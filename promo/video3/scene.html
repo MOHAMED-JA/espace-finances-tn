@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Orbite · vidéo 3D</title>
+<style>html,body{margin:0;background:#05060B}canvas{display:block}#gl{position:absolute;left:-99999px}</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.min.js", "three/addons/": "./lib/addons/" } }</script>
+</head>
+<body><canvas id="gl"></canvas><canvas id="c"></canvas>
+<script type="module">
+/* ===== Orbite — vidéo « Fintech cinéma » en vraie 3D (Three.js), 30 s, 16:9 et 9:16.
+   render(t) est déterministe : il pose la caméra, les appareils et les cartes à l'instant t, rend la 3D
+   (lumière bloom, profondeur de champ), puis dessine les textes par-dessus sur un canevas 2D. ===== */
+import * as THREE from "three";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { BokehPass } from "three/addons/postprocessing/BokehPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+
+const COL = { ink: "#F4F6FB", ink2: "#B9C0D0", mut: "#7F889C", sal: "#12B76A", salL: "#4ADE80", epa: "#7A5AF8", epaL: "#A78BFA", cre: "#2F5BEA", creL: "#7EA2FF", ale: "#FDB022", tn: "#E70013" };
+let W = 1920, H = 1080, V = false;   /* V : format vertical 9:16 */
+const GL = document.getElementById("gl"), C = document.getElementById("c");
+let X = null, textCanvas = null;   /* calque des textes, posé sur la 3D */
+const TX = {}, IMG = {};
+let renderer, scene, camera, composer, bloom, bokeh, env;
+const O = {};   /* objets de la scène */
+
+/* ---------- utilitaires ---------- */
+const cl = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const seg = (t, a, b) => cl((t - a) / (b - a));
+const eo = x => 1 - Math.pow(1 - x, 3);
+const eo5 = x => 1 - Math.pow(1 - x, 5);
+const eio = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const eio5 = x => x < .5 ? 16 * Math.pow(x, 5) : 1 - Math.pow(-2 * x + 2, 5) / 2;
+const back = x => { const c1 = 1.4, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const lerp = (a, b, k) => a + (b - a) * k;
+const v3 = (x, y, z) => new THREE.Vector3(x, y, z);
+function rgba(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${n >> 8 & 255},${n & 255},${a})`; }
+/* Interpolation par images clés : [[t, valeur], …] avec lissage entre deux clés. */
+function kf(t, keys, ease = eio) {
+  if (t <= keys[0][0]) return keys[0][1];
+  for (let i = 1; i < keys.length; i++) {
+    if (t <= keys[i][0]) { const [t0, a] = keys[i - 1], [t1, b] = keys[i], k = (keys[i][2] || ease)((t - t0) / (t1 - t0));
+      return Array.isArray(a) ? a.map((v, j) => lerp(v, b[j], k)) : lerp(a, b, k); }
+  }
+  return keys[keys.length - 1][1];
+}
+
+/* ---------- géométrie ---------- */
+function rectArrondi(w, h, r) {
+  const s = new THREE.Shape(), x = -w / 2, y = -h / 2;
+  s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + h - r);
+  s.quadraticCurveTo(x + w, y + h, x + w - r, y + h); s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+  s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+  const g = new THREE.ShapeGeometry(s, 12), p = g.attributes.position, uv = g.attributes.uv;
+  for (let i = 0; i < p.count; i++) uv.setXY(i, (p.getX(i) + w / 2) / w, (p.getY(i) + h / 2) / h);
+  return g;
+}
+function ecran(tex, w, h, r) {
+  const m = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
+  return new THREE.Mesh(rectArrondi(w, h, r), m);
+}
+/* Carte de verre : l'image de l'interface dans un cadre lumineux, qui flotte. */
+function carte(tex, w, couleur) {
+  const img = tex.image, h = w * img.height / img.width, g = new THREE.Group();
+  const halo = new THREE.Mesh(rectArrondi(w + .06, h + .06, .09), new THREE.MeshBasicMaterial({ color: new THREE.Color(couleur), transparent: true, opacity: .35, toneMapped: false, depthWrite: false }));
+  halo.position.z = -.004;
+  const face = new THREE.Mesh(rectArrondi(w, h, .07), new THREE.MeshBasicMaterial({ map: tex, transparent: true, toneMapped: false }));
+  g.add(halo); g.add(face); g.userData = { face, halo, h };
+  return g;
+}
+function texteTexture(lignes, w, h, fond) {
+  const c = document.createElement("canvas"); c.width = w; c.height = h; const x = c.getContext("2d");
+  if (fond) { x.fillStyle = fond; x.beginPath(); x.roundRect(0, 0, w, h, 60); x.fill();
+    const gr = x.createLinearGradient(0, 0, w, h); gr.addColorStop(0, "rgba(255,255,255,.28)"); gr.addColorStop(.5, "rgba(255,255,255,.04)"); gr.addColorStop(1, "rgba(255,255,255,.16)");
+    x.lineWidth = 6; x.strokeStyle = gr; x.beginPath(); x.roundRect(3, 3, w - 6, h - 6, 58); x.stroke(); }
+  lignes.forEach(l => { x.font = `${l.w || 800} ${l.s}px ${l.f || "Brico"}`; x.fillStyle = l.c || COL.ink; x.textAlign = l.a || "left"; x.letterSpacing = (l.ls || 0) + "px"; x.fillText(l.t, l.x, l.y); });
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
+
+/* ---------- construction ---------- */
+function construire() {
+  renderer = new THREE.WebGLRenderer({ canvas: GL, antialias: true, preserveDrawingBuffer: true, powerPreference: "high-performance" });
+  renderer.setPixelRatio(1); renderer.setSize(W, H, false);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  scene = new THREE.Scene();
+  const pm = new THREE.PMREMGenerator(renderer); env = pm.fromScene(new RoomEnvironment(), .04).texture;
+  scene.environment = env;
+  scene.background = fondTexture();
+  camera = new THREE.PerspectiveCamera(V ? 46 : 28, W / H, .05, 200);
+
+  /* lumières : clé froide, contre-jours vert et violet (les couleurs d'Orbite) */
+  scene.add(new THREE.AmbientLight(0x8090b0, .25));
+  const cle = new THREE.DirectionalLight(0xdfe8ff, 1.6); cle.position.set(3, 6, 5); scene.add(cle);
+  O.rimV = new THREE.PointLight(0x7A5AF8, 30, 20, 1.6); O.rimV.position.set(-4, 2.5, -3); scene.add(O.rimV);
+  O.rimG = new THREE.PointLight(0x12B76A, 26, 20, 1.6); O.rimG.position.set(4.5, 1.5, -2.5); scene.add(O.rimG);
+
+  const metal = new THREE.MeshStandardMaterial({ color: 0x2b303e, metalness: .92, roughness: .3, envMapIntensity: 1.2 });
+  const noir = new THREE.MeshStandardMaterial({ color: 0x07080d, metalness: .2, roughness: .55 });
+
+  /* Ordinateur portable : socle, clavier, pavé tactile, écran articulé. */
+  const lap = new THREE.Group();
+  const socle = new THREE.Mesh(new RoundedBoxGeometry(3.3, .09, 2.3, 4, .04), metal); lap.add(socle);
+  const clavier = new THREE.Mesh(rectArrondi(2.86, 1.02, .05), noir); clavier.rotation.x = -Math.PI / 2; clavier.position.set(0, .046, -.42); lap.add(clavier);
+  const touches = new THREE.Group();
+  for (let r = 0; r < 5; r++) for (let k = 0; k < 14; k++) { const tq = new THREE.Mesh(new THREE.BoxGeometry(.165, .012, .15), new THREE.MeshStandardMaterial({ color: 0x151824, metalness: .3, roughness: .6 }));
+    tq.position.set(-1.33 + k * .205, .052, -.82 + r * .19); touches.add(tq); }
+  lap.add(touches);
+  const pave = new THREE.Mesh(rectArrondi(1.1, .62, .06), new THREE.MeshStandardMaterial({ color: 0x232838, metalness: .8, roughness: .25 })); pave.rotation.x = -Math.PI / 2; pave.position.set(0, .046, .58); lap.add(pave);
+  const charniere = new THREE.Group(); charniere.position.set(0, .045, -1.12); lap.add(charniere);
+  const couvercle = new THREE.Mesh(new RoundedBoxGeometry(3.3, 2.12, .06, 4, .03), metal); couvercle.position.set(0, 1.06, -.0); charniere.add(couvercle);
+  const cadre = new THREE.Mesh(rectArrondi(3.22, 2.04, .06), noir); cadre.position.set(0, 1.06, .031); charniere.add(cadre);
+  O.ecranOrdi = ecran(TX["d-orbite"], 3.04, 1.9, .02); O.ecranOrdi.position.set(0, 1.07, .033); charniere.add(O.ecranOrdi);
+  /* logo gravé au dos */
+  const logoDos = new THREE.Mesh(new THREE.RingGeometry(.16, .2, 48), new THREE.MeshStandardMaterial({ color: 0x9aa6c4, metalness: 1, roughness: .15 }));
+  logoDos.position.set(0, 1.06, -.032); logoDos.rotation.y = Math.PI; charniere.add(logoDos);
+  O.lap = lap; O.charniere = charniere; scene.add(lap);
+  /* ombre douce */
+  const om = document.createElement("canvas"); om.width = om.height = 256; const ox = om.getContext("2d"), og = ox.createRadialGradient(128, 128, 10, 128, 128, 128);
+  og.addColorStop(0, "rgba(0,0,0,.75)"); og.addColorStop(1, "rgba(0,0,0,0)"); ox.fillStyle = og; ox.fillRect(0, 0, 256, 256);
+  O.ombre = new THREE.Mesh(new THREE.PlaneGeometry(5.5, 3.6), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(om), transparent: true, depthWrite: false }));
+  O.ombre.rotation.x = -Math.PI / 2; O.ombre.position.y = -.06; scene.add(O.ombre);
+
+  /* Téléphone */
+  const tel = new THREE.Group();
+  tel.add(new THREE.Mesh(new RoundedBoxGeometry(.8, 1.66, .085, 6, .12), metal));
+  const verre = new THREE.Mesh(rectArrondi(.77, 1.63, .11), noir); verre.position.z = .0435; tel.add(verre);
+  O.ecranTel = ecran(TX["m-orbite"], .728, 1.576, .09); O.ecranTel.position.z = .045; tel.add(O.ecranTel);
+  const ile = new THREE.Mesh(rectArrondi(.2, .055, .027), new THREE.MeshBasicMaterial({ color: 0x000000 })); ile.position.set(0, .73, .046); tel.add(ile);
+  O.tel = tel; scene.add(tel);
+
+  /* Cartes de l'interface qui sortent de l'écran */
+  O.cartes = [["c-systeme", 1.15, COL.creL], ["c-pouvoir", 1.55, COL.salL], ["c-controle", 1.05, COL.ale], ["c-marge", 1.6, COL.epaL]].map(([n, w, c]) => { const k = carte(TX[n], w, c); scene.add(k); return k; });
+  /* Carte macro « net au millime » */
+  const tNet = texteTexture([{ t: "NET PAR MOIS", s: 54, w: 600, f: "JB", c: COL.salL, ls: 8, x: 110, y: 170 },
+    { t: "2 161,884", s: 250, w: 800, x: 100, y: 430 }, { t: "DT", s: 120, w: 800, c: COL.salL, x: 1290, y: 430 },
+    { t: "CNSS 290,400 · IRPP 535,001 · CSS 12,715", s: 52, w: 500, f: "Mona", c: COL.ink2, x: 110, y: 560 }], 1600, 680, "rgba(16,20,32,.92)");
+  O.net = new THREE.Mesh(rectArrondi(1.9, .81, .07), new THREE.MeshBasicMaterial({ map: tNet, transparent: true, toneMapped: false })); scene.add(O.net);
+  /* Particules (poussière lumineuse) */
+  const n = 600, pos = new Float32Array(n * 3), r = mulberry(9);
+  for (let i = 0; i < n; i++) { pos[i * 3] = (r() - .5) * 26; pos[i * 3 + 1] = (r() - .5) * 14 + 2; pos[i * 3 + 2] = (r() - .5) * 26 - 4; }
+  const pg = new THREE.BufferGeometry(); pg.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  O.poussiere = new THREE.Points(pg, new THREE.PointsMaterial({ color: 0xbfd0ff, size: .025, transparent: true, opacity: .55, depthWrite: false }));
+  scene.add(O.poussiere);
+
+  composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  bokeh = new BokehPass(scene, camera, { focus: 6, aperture: .0004, maxblur: .008 }); composer.addPass(bokeh);
+  bloom = new UnrealBloomPass(new THREE.Vector2(W, H), .45, .6, .82); composer.addPass(bloom);
+  composer.addPass(new OutputPass());
+}
+function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function fondTexture() {
+  const c = document.createElement("canvas"); c.width = 1024; c.height = 1024; const x = c.getContext("2d");
+  const g = x.createLinearGradient(0, 0, 0, 1024); g.addColorStop(0, "#0A0E2A"); g.addColorStop(.6, "#070918"); g.addColorStop(1, "#030409");
+  x.fillStyle = g; x.fillRect(0, 0, 1024, 1024);
+  /* lueurs colorées : violet en haut à gauche, vert à droite, bleu au centre bas */
+  [["rgba(122,90,248,.32)", 180, 220, 520], ["rgba(18,183,106,.22)", 900, 420, 460], ["rgba(47,91,234,.26)", 520, 860, 560]].forEach(([col, cx, cy, r]) => {
+    const rg = x.createRadialGradient(cx, cy, 0, cx, cy, r); rg.addColorStop(0, col); rg.addColorStop(1, "rgba(0,0,0,0)"); x.fillStyle = rg; x.fillRect(0, 0, 1024, 1024); });
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+
+/* ---------- textes (canevas 2D par-dessus la 3D) ---------- */
+function police(s, w = 800, f = "Brico") { X.font = `${w} ${s}px ${f}`; }
+/* Taille ramenée pour tenir dans 90 % de la largeur. */
+function ajuste(s, size, o) { police(size, o.w || 800, o.f || "Brico"); X.letterSpacing = (o.ls == null ? -size * .035 : o.ls) + "px"; const m = X.measureText(s).width; return m > W * .9 ? size * W * .9 / m : size; }
+function titre(s, x, y, size, k, o = {}) {
+  if (k <= 0) return;
+  if (!o.mot) size = ajuste(s, size, o);
+  X.save(); police(size, o.w || 800, o.f || "Brico"); X.letterSpacing = (o.ls == null ? -size * .035 : o.ls) + "px";
+  X.textAlign = o.a || "center"; X.globalAlpha = cl(k * 1.6) * (o.alpha == null ? 1 : o.alpha);
+  const e = eo5(cl(k)); X.translate(x, y + (1 - e) * size * .35);
+  X.filter = k < 1 ? `blur(${((1 - e) * 10).toFixed(1)}px)` : "none";
+  if (o.grad) { const m = X.measureText(s).width, x0 = o.a === "left" ? 0 : -m / 2; const g = X.createLinearGradient(x0, 0, x0 + m, 0); o.grad.forEach((c, i) => g.addColorStop(i / (o.grad.length - 1), c)); X.fillStyle = g; }
+  else X.fillStyle = o.c || COL.ink;
+  if (o.glow) { X.shadowColor = o.glow; X.shadowBlur = 40; }
+  X.fillText(s, 0, 0); X.restore();
+}
+/* Mot par mot, sur le temps. */
+function mots(s, x, y, size, k, o = {}) {
+  size = ajuste(s, size, o); o = { ...o, mot: true };
+  const ws = s.split(" "); police(size, o.w || 800, o.f || "Brico"); X.letterSpacing = (-size * .035) + "px";
+  const sp = X.measureText(" ").width, larg = ws.map(w => X.measureText(w).width), tot = larg.reduce((a, b) => a + b, 0) + sp * (ws.length - 1);
+  let cx = (o.a === "left" ? x : x - tot / 2);
+  ws.forEach((w, i) => { const kk = cl(k * (ws.length * .6 + 1) - i * .6); titre(w, cx + larg[i] / 2, y, size, kk, { ...o, a: "center" }); cx += larg[i] + sp; });
+}
+function drapeau(cx, cy, w, t, k) {
+  if (k <= 0) return; const h = w * 2 / 3, n = 30, sw = w / n, img = IMG.drapeau;
+  X.save(); X.globalAlpha = cl(k * 1.5); X.shadowColor = rgba(COL.tn, .5); X.shadowBlur = 30;
+  for (let i = 0; i < n; i++) { const ph = t * 2.6 - i * .32, dy = Math.sin(ph) * h * .045 * (i / n * .8 + .2);
+    X.drawImage(img, i * img.width / n, 0, img.width / n + 1, img.height, cx - w / 2 + i * sw, cy - h / 2 + dy, sw + 1, h);
+    X.fillStyle = `rgba(0,0,0,${(.14 - .14 * Math.cos(ph)) * 1.4})`; X.fillRect(cx - w / 2 + i * sw, cy - h / 2 + dy, sw + 1, h); }
+  X.restore();
+}
+function faireDrapeau() {
+  const c = document.createElement("canvas"); c.width = 600; c.height = 400; const x = c.getContext("2d");
+  x.fillStyle = COL.tn; x.fillRect(0, 0, 600, 400); x.translate(300, 200); x.scale(5, 5);
+  x.fillStyle = "#fff"; x.beginPath(); x.arc(0, 0, 20, 0, 7); x.fill(); x.fillStyle = COL.tn; x.beginPath(); x.arc(0, 0, 15, 0, 7); x.fill();
+  x.fillStyle = "#fff"; x.beginPath(); x.arc(4, 0, 12, 0, 7); x.fill();
+  x.fillStyle = COL.tn; x.beginPath(); x.moveTo(-5, 0); x.lineTo(11.281, -5.29); x.lineTo(1.22, 8.56); x.lineTo(1.22, -8.56); x.lineTo(11.28, 5.29); x.closePath(); x.fill();
+  return c;
+}
+
+/* ---------- mise en scène (30 s) ---------- */
+/* Positions par défaut hors champ. */
+function cacher(o) { o.visible = false; }
+function poser(t) {
+  const L = O.lap, T = O.tel;
+  [T, O.net, ...O.cartes].forEach(cacher); L.visible = true; O.ombre.visible = true;
+  /* ouverture du couvercle 2,2 → 4,6 s */
+  O.charniere.rotation.x = kf(t, [[2.0, Math.PI / 2 - .02], [4.6, -.2, eio5]]);
+  L.position.set(0, 0, 0); L.rotation.set(0, 0, 0);
+  /* caméra : macro sur le métal → révélation → plongée dans l'écran → cartes → téléphone → final */
+  const camK = [
+    [0, [2.6, .55, 2.8, .2, .1, .4]], [2.0, [1.6, .9, 3.6, 0, .2, 0]], [4.8, [0, 1.3, 5.6, 0, .85, 0]],
+    [7.0, [-1.1, 1.45, 5.3, 0, .9, 0]], [10.5, [-.5, 1.3, 6.3, -.05, 1.05, .3]], [13.5, [.15, 1.1, 4.3, .1, 1.0, 1.2]],
+    [17.0, [1.3, 1.45, 5.8, .3, 1.2, 0]], [20.5, [2.0, 1.45, 5.5, .9, 1.22, .5]], [24.5, [-.9, 1.5, 6.0, .4, 1.25, .3]], [27.0, [0, 1.85, 8.2, .2, 1.05, 0]], [30, [0, 1.9, 8.6, .2, 1.05, 0]]];
+  const c = kf(t, camK);
+  if (V) { c[2] *= 1.7; c[0] *= .45; c[4] += .1; }
+  camera.position.set(c[0], c[1], c[2]); camera.lookAt(c[3], c[4], c[5]);
+  /* lumières qui respirent */
+  O.rimV.intensity = 30 + 10 * Math.sin(t * .8); O.rimG.intensity = 26 + 8 * Math.cos(t * .7);
+  O.poussiere.rotation.y = t * .02;
+  /* écran de l'ordinateur : Mon orbite, puis le module Salaire et la progression */
+  O.ecranOrdi.material.map = t < 14.5 ? TX["d-orbite"] : t < 20 ? TX["d-salaire"] : TX["d-progression"];
+  /* cartes qui sortent de l'écran (7 → 11 s), en couches */
+  const sorties = [[v3(-1.55, 1.55, .9), .2], [v3(1.6, 1.45, 1.1), -.18], [v3(-1.35, .45, 1.3), .14], [v3(1.45, .35, .8), -.12]];
+  O.cartes.forEach((k, i) => {
+    const a = seg(t, 7.0 + i * .35, 8.6 + i * .35), z = seg(t, 13.0, 14.0);
+    if (a <= 0 || i === 2 && t > 14.5) return;
+    if (i === 2 && t > 7 && t < 14.5) {}   /* la carte du contrôle revient plus tard */
+    k.visible = true; const e = eo5(a), [p, ry] = sorties[i];
+    const depart = v3(lerp(-1.2, 1.2, i / 3), 1.07, .05);
+    k.position.copy(depart.clone().lerp(p, e)); k.position.y += Math.sin(t * 1.3 + i) * .03 * e;
+    k.rotation.set(-.05 * e, ry * e, 0); k.scale.setScalar(.85 * lerp(.35, 1, e) * (1 - .9 * eio(z)));
+    k.userData.face.material.opacity = cl(a * 2) * (1 - z); k.userData.halo.material.opacity = .35 * cl(a * 2) * (1 - z);
+    if (z >= 1) k.visible = false;
+  });
+  /* carte macro du net (11,5 → 14,5 s) */
+  const kn = seg(t, 10.8, 11.8), sn = seg(t, 14.2, 14.8);
+  if (kn > 0 && sn < 1) { O.net.visible = true; O.net.position.set(lerp(.6, .1, eo5(kn)), 1.05, 1.25); O.net.rotation.set(-.04, lerp(-.5, -.08, eo5(kn)) + t * .01, 0);
+    O.net.material.opacity = cl(kn * 2) * (1 - sn); }
+  /* fiche de paie : la carte du contrôle arrive devant l'écran (14,5 → 18 s) */
+  const kc = seg(t, 14.6, 15.6), sc = seg(t, 17.6, 18.2);
+  if (kc > 0 && sc < 1) { const k = O.cartes[2]; k.visible = true; k.scale.setScalar(1.25 * lerp(.6, 1, eo5(kc)));
+    k.position.set(lerp(2.2, 1.0, eo5(kc)), .82, 1.4); k.rotation.set(0, lerp(-.6, -.18, eo5(kc)), 0);
+    k.userData.face.material.opacity = cl(kc * 2) * (1 - sc); k.userData.halo.material.opacity = .4 * cl(kc * 2) * (1 - sc); }
+  /* téléphone : monte devant l'ordinateur (18 → 21 s), puis reste au final */
+  const kt = seg(t, 18.0, 20.0);
+  if (kt > 0) { T.visible = true; const e = eo5(kt);
+    T.position.set(lerp(2.6, 1.95, e), lerp(-1.4, .95, e), lerp(1.6, 1.0, e)); T.rotation.set(lerp(.5, -.04, e), lerp(-.9, -.32, e) + Math.sin(t * .6) * .03, lerp(.2, .02, e));
+    O.ecranTel.material.map = t < 23 ? TX["m-orbite"] : TX["m-annee"]; }
+  /* cartes autour du téléphone (22 → 26 s) : progression et calendrier de la marge */
+  [[1, v3(-1.35, .95, 1.2), .28], [3, v3(2.6, .55, .7), -.35]].forEach(([i, p, ry], j) => {
+    const a = seg(t, 21.8 + j * .4, 23.0 + j * .4), s = seg(t, 26.2, 26.9); if (a <= 0 || s >= 1) return;
+    const k = O.cartes[i]; k.visible = true; const e = eo5(a); k.position.set(p.x, p.y + (1 - e) * -.6 + Math.sin(t + j) * .03, p.z); k.rotation.set(0, ry, 0);
+    k.scale.setScalar(.75 * lerp(.5, 1, e)); k.userData.face.material.opacity = cl(a * 2) * (1 - s); k.userData.halo.material.opacity = .35 * cl(a * 2) * (1 - s); });
+  /* format vertical : téléphone et cartes ramenés vers le centre */
+  if (V) [T, O.net, ...O.cartes].forEach(o => { if (o.visible) o.position.x *= .5; });
+  /* profondeur de champ : forte sur la macro du net */
+  const macro = seg(t, 11, 12) * (1 - seg(t, 13.8, 14.5));
+  bokeh.uniforms.focus.value = camera.position.distanceTo(macro > 0 ? O.net.position : v3(0, 1, 0));
+  bokeh.uniforms.aperture.value = lerp(.00012, .0009, macro) + (t < 2 ? .0012 * (1 - t / 2) : 0);
+  bokeh.uniforms.maxblur.value = .01;
+  bloom.strength = lerp(.42, .18, macro); bloom.threshold = .86;
+  renderer.toneMappingExposure = 1.05 * (t < 1.2 ? eo(t / 1.2) : 1) * (t > 29.4 ? 1 - seg(t, 29.4, 30) * .6 : 1);
+}
+function textes(t) {
+  X.clearRect(0, 0, W, H);
+  const cx = W / 2, s = V ? 1.25 : 1, y0 = V ? H * .2 : H * .17;
+  titre("Votre argent.", cx, y0 + 40 * s, 120 * s, seg(t, .5, 1.1) * (1 - seg(t, 2.6, 3.0)));
+  titre("Enfin clair.", cx, y0 + 170 * s, 120 * s, seg(t, 1.1, 1.7) * (1 - seg(t, 2.6, 3.0)), { grad: [COL.salL, COL.creL, COL.epaL] });
+  /* logo + drapeau à l'ouverture de l'écran */
+  const kl = seg(t, 4.4, 5.0) * (1 - seg(t, 6.6, 7.0));
+  if (kl > 0) { const yy = V ? H * .78 : H * .86; police(110 * s); const m = X.measureText("Orbite").width;
+    titre("Orbite", cx - 60 * s, yy, 110 * s, kl); drapeau(cx + m / 2 + 20 * s, yy - 38 * s, 96 * s, t, kl); }
+  mots("Tout votre argent. Un seul écran.", cx, V ? H * .12 : H * .12, (V ? 78 : 76) * s, seg(t, 7.4, 8.4) * (1 - seg(t, 10.4, 10.8)));
+  mots("Au millime près.", cx, V ? H * .16 : H * .14, 92 * s, seg(t, 11.6, 12.4) * (1 - seg(t, 14.0, 14.4)), { grad: [COL.ink, COL.salL] });
+  mots("Votre fiche de paie, vérifiée.", cx, V ? H * .14 : H * .13, 80 * s, seg(t, 15.0, 15.8) * (1 - seg(t, 17.6, 18.0)));
+  titre("Rien n'est envoyé.", cx, V ? H * .14 + 100 * s : H * .13 + 90, 44 * s, seg(t, 16.0, 16.6) * (1 - seg(t, 17.6, 18.0)), { w: 600, f: "Mona", c: COL.salL });
+  mots("Sur ordinateur.", cx, V ? H * .12 : H * .13, 86 * s, seg(t, 18.4, 19.0) * (1 - seg(t, 21.4, 21.8)));
+  mots("Et dans votre poche.", cx, V ? H * .12 + 110 * s : H * .13 + 104, 86 * s, seg(t, 19.4, 20.0) * (1 - seg(t, 21.4, 21.8)), { grad: [COL.creL, COL.epaL] });
+  mots("Votre avenir, calculé.", cx, V ? H * .12 : H * .13, 90 * s, seg(t, 22.4, 23.2) * (1 - seg(t, 26.0, 26.4)));
+  /* final */
+  const kf1 = seg(t, 27.0, 27.6);
+  if (kf1 > 0) { const yy = V ? H * .14 : H * .16; police(140 * s); const m = X.measureText("Orbite").width;
+    titre("Orbite", cx - 70 * s, yy, 140 * s, kf1); drapeau(cx + m / 2 + 10 * s, yy - 48 * s, 120 * s, t, seg(t, 27.3, 27.9));
+    titre("Votre salaire au centre. Tout le reste en orbite.", cx, yy + 80 * s, 40 * s, seg(t, 27.6, 28.2), { w: 600, f: "Mona", c: COL.ink2, ls: 0 });
+    const yb = V ? H * .86 : H * .82; titre("Découvrez Orbite", cx, yb, 56 * s, seg(t, 28.0, 28.5), { grad: [COL.salL, COL.creL, COL.epaL] });
+    titre("espace-finances-tn.jaouadimohamedaziz.workers.dev", cx, yb + 60 * s, 26 * s, seg(t, 28.3, 28.8), { w: 600, f: "JB", c: COL.creL, ls: 0 });
+    titre("Conçue en Tunisie · Powered by Mohamed Aziz Jaouadi", cx, yb + 110 * s, 24 * s, seg(t, 28.5, 29.0), { w: 600, f: "Mona", c: COL.mut, ls: 0 }); }
+}
+function render(t) {
+  poser(t); composer.render(); textes(t);
+  const F = C.getContext("2d"); F.globalCompositeOperation = "source-over";
+  F.drawImage(GL, 0, 0);
+  /* voile sombre en haut (et en bas en vertical) pour que les titres restent lisibles sur les interfaces */
+  const vh = V ? .3 : .34, vg = F.createLinearGradient(0, 0, 0, H * vh); vg.addColorStop(0, "rgba(3,4,10,.82)"); vg.addColorStop(1, "rgba(3,4,10,0)");
+  F.fillStyle = vg; F.fillRect(0, 0, W, H * vh);
+  const bg = F.createLinearGradient(0, H * (V ? .74 : .78), 0, H); bg.addColorStop(0, "rgba(3,4,10,0)"); bg.addColorStop(1, "rgba(3,4,10,.7)");
+  F.fillStyle = bg; F.fillRect(0, H * (V ? .74 : .78), W, H);
+  F.drawImage(textCanvas, 0, 0);
+  /* vignette + grain léger */
+  const v = F.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .4, W / 2, H / 2, Math.max(W, H) * .8); v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,.45)");
+  F.fillStyle = v; F.fillRect(0, 0, W, H);
+}
+async function setup(fmt) {
+  V = fmt === "v"; W = V ? 1080 : 1920; H = V ? 1920 : 1080;
+  C.width = W; C.height = H; GL.width = W; GL.height = H;
+  textCanvas = document.createElement("canvas"); textCanvas.width = W; textCanvas.height = H;
+  X = textCanvas.getContext("2d");
+  const ff = [["Brico", "polices/bricolage-latin.woff2", "200 800"], ["Brico", "polices/bricolage-latin-ext.woff2", "200 800"],
+    ["Mona", "polices/mona-sans-latin-standard-normal.woff2", "200 900"], ["Mona", "polices/mona-sans-latin-ext-standard-normal.woff2", "200 900"], ["JB", "polices/jetbrains-mono-var.woff2", "100 800"]];
+  for (const [f, u, w] of ff) { const fc = new FontFace(f, `url(${u})`, { weight: w }); await fc.load(); document.fonts.add(fc); }
+  const noms = ["d-orbite", "d-salaire", "d-progression", "m-orbite", "m-annee", "c-systeme", "c-pouvoir", "c-controle", "c-marge"];
+  const loader = new THREE.TextureLoader();
+  for (const n of noms) { const tx = await loader.loadAsync(`captures/${n}.png`); tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 8; tx.generateMipmaps = true; TX[n] = tx; }
+  IMG.drapeau = faireDrapeau();
+  construire();
+  return true;
+}
+window.setup = setup; window.render = render;
+</script></body></html>
