@@ -1888,6 +1888,81 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.keyboard.press("Escape");
   });
 
+  await etape("lanceur : parties d'Orbite, simulateur ouvert dans Orbite (cadre isolé), retour, état gardé, palette, lien direct, téléphone", async () => {
+    /* Les simulateurs (GitHub Pages) sont remplacés par une page locale : le parcours tourne sans réseau. */
+    const ouverts = [];
+    await page.route("https://mohamed-ja.github.io/**", (r) => {
+      ouverts.push(r.request().url());
+      r.fulfill({ status: 200, contentType: "text/html; charset=utf-8",
+        body: "<!doctype html><meta charset=utf-8><title>Simulateur</title><body><h1 id=t>Simulateur de test</h1><input id=champ><p id=dans></p><script>document.getElementById('dans').textContent = window.self !== window.top ? 'dans-orbite' : 'seul';</script>" });
+    });
+    await page.goto(base + "/espace/#orbite");
+    await page.waitForSelector("#apps-ouvrir");
+    await page.click("#apps-ouvrir");
+    await page.waitForSelector("#dlg-apps[open]");
+    assert((await page.$$eval("#apps-orbite .apps__app", (l) => l.length)) >= 7, "parties d'Orbite");
+    assert((await page.$$eval("#apps-sim .apps__app", (l) => l.length)) === 4, "4 simulateurs");
+    /* Une partie d'Orbite : simple navigation. */
+    await page.click('#apps-orbite a[href="#credit"]');
+    await page.waitForFunction(() => location.hash === "#credit" && !document.getElementById("dlg-apps").open);
+    /* Un simulateur : plein écran dans Orbite, cadre isolé. */
+    await page.click("#apps-ouvrir");
+    await page.click('#apps-sim [data-sim="auto"]');
+    await page.waitForSelector("#dlg-simulateur[open]");
+    assert((await page.textContent("#sim-titre")) === "Simulateur d'assurance automobile", "titre");
+    assert((await page.getAttribute("#sim-externe", "href")) === "https://mohamed-ja.github.io/simulateur-Assurance-Automobile/", "lien « Ouvrir à part »");
+    const cadre = await page.$("#dlg-simulateur iframe:not([hidden])");
+    assert(/allow-scripts/.test(await cadre.getAttribute("sandbox")) && !/allow-top-navigation/.test(await cadre.getAttribute("sandbox")), "bac à sable sans navigation de la page Orbite");
+    const f = await cadre.contentFrame();
+    await f.waitForSelector("#t");
+    assert((await f.textContent("#dans")) === "dans-orbite", "le simulateur sait qu'il est ouvert dans Orbite");
+    await page.waitForSelector("#sim-attente", { state: "hidden" });
+    await f.fill("#champ", "gardé");
+    /* Retour : « ← Orbite », on reste sur la même vue ; l'état du simulateur est gardé. */
+    await page.click("#sim-retour");
+    await page.waitForSelector("#dlg-simulateur", { state: "hidden" });
+    assert((await page.evaluate(() => location.hash)) === "#credit", "retour sur la vue d'avant");
+    await page.evaluate(() => window.Orbite.ouvrirSimulateur("auto"));
+    await page.waitForSelector("#dlg-simulateur[open]");
+    assert((await (await (await page.$("#dlg-simulateur iframe:not([hidden])")).contentFrame()).inputValue("#champ")) === "gardé", "état du simulateur gardé");
+    /* Bouton « retour » du navigateur : ferme le simulateur. */
+    await page.goBack();
+    await page.waitForSelector("#dlg-simulateur", { state: "hidden" });
+    assert((await page.evaluate(() => location.hash)) === "#credit", "retour du navigateur : on reste dans Orbite");
+    /* Palette : « assurance vie » ouvre le simulateur. */
+    await page.keyboard.press("Control+k");
+    await page.fill("#palette-q", "simulateur assurance vie");
+    await page.waitForFunction(() => document.querySelector('#palette-liste [data-id="a-sim-vie"]'));
+    await page.click('#palette-liste [data-id="a-sim-vie"]');
+    await page.waitForSelector("#dlg-simulateur[open]");
+    assert((await page.textContent("#sim-titre")) === "Simulateur d'assurance vie et CEA", "simulateur depuis la palette");
+    await page.click("#sim-retour");
+    await page.waitForSelector("#dlg-simulateur", { state: "hidden" });
+    /* Lien direct, puis téléphone. */
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(base + "/espace/#orbite?simulateur=credit");
+    await page.waitForSelector("#dlg-simulateur[open]");
+    assert((await page.evaluate(() => location.hash)) === "#orbite", "paramètre retiré de l'adresse");
+    await page.waitForSelector("#sim-attente", { state: "hidden" });
+    assert(await page.$eval("#dlg-simulateur", (d) => Math.abs(d.getBoundingClientRect().height - innerHeight) < 2 && d.scrollWidth <= d.clientWidth + 1), "plein écran sans débordement");
+    await page.screenshot({ path: path.join(CAPTURES, "simulateur-dans-orbite-mobile.png") });
+    await page.click("#sim-retour");
+    await page.click("#apps-ouvrir");
+    await page.waitForSelector("#dlg-apps[open]");
+    await page.waitForTimeout(250);
+    assert(await page.$eval("#dlg-apps", (d) => d.getBoundingClientRect().bottom <= innerHeight + 1 && d.scrollWidth <= d.clientWidth + 1), "feuille basse dans l'écran");
+    await page.screenshot({ path: path.join(CAPTURES, "lanceur-mobile.png") });
+    await page.keyboard.press("Escape");
+    await page.setViewportSize({ width: 1360, height: 900 });
+    await page.goto(base + "/espace/#orbite");
+    await page.click("#apps-ouvrir");
+    await page.waitForTimeout(250);
+    await page.screenshot({ path: path.join(CAPTURES, "lanceur.png") });
+    await page.keyboard.press("Escape");
+    assert(ouverts.every((u) => u.startsWith("https://mohamed-ja.github.io/")), "seuls les simulateurs sont chargés");
+    await page.unroute("https://mohamed-ja.github.io/**");
+  });
+
   await etape("déconnexion puis suppression définitive du compte", async () => {
     await page.goto(base + "/espace/#compte?onglet=donnees");
     await page.waitForSelector("#supprimer-compte");

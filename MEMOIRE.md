@@ -454,6 +454,35 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 duoseptuagies. Tout dans Orbite : bilan des simulateurs, lanceur d'applications (12 oct.)
+
+- **Demande** : l'utilisateur trouve dans les simulateurs de crédit et d'assurance vie des options absentes d'Orbite. Il veut tout dans une seule application, et pouvoir ouvrir les simulateurs depuis Orbite sans passer d'une application à l'autre.
+- **Bilan** (maquette https://claude.ai/artifact/DfKbFaPFpPDD6ei3Z1GgKJ) : tous les calculs des deux simulateurs sont déjà dans Orbite. Restent 11 fonctions à ajouter et 3 présentes en partie ; les 9 fonctions pour conseillers en agence ne sont pas reprises.
+- **Validé le 12 oct.** :
+  - **lot 1, crédit complet** : saisie en une phrase et à la voix, voyage dans le temps et analyse visuelle, lire une offre bancaire en photo, audit du tableau de la banque depuis un PDF ou une photo avec rapport PDF, échéancier en PDF et en Excel, lettre en Word ;
+  - **lot 2** : partage par lien, QR, WhatsApp et e-mail ; simulation guidée ; comparer 2 ou 3 simulations enregistrées ; rappel de versement mensuel ; annuler et rétablir ; haute lisibilité ; recevoir un PDF partagé ;
+  - **lot 3** : Orbite en arabe ;
+  - **lanceur** : les simulateurs s'ouvrent **dans Orbite** ;
+  - **fonctions pour conseillers** (mode conseiller, agence, logo, présentation client, second écran, proposition commerciale, portefeuille, « Être rappelé », statistiques) : **laissées dans les simulateurs** ;
+  - **vidéo 3D** de 30 s selon le storyboard de la maquette.
+- **Lanceur** (`lanceur.js`, `lanceur.css`) :
+  - icône `grille` `#apps-ouvrir` dans la barre, après la loupe ;
+  - fenêtre `#dlg-apps` : 8 parties d'Orbite (Négociation et Dossier banque passent par leur vue) et 4 simulateurs, marqués d'un petit cercle ;
+  - un simulateur s'ouvre dans `#dlg-simulateur`, en plein écran, dans une iframe en bac à sable (`allow-scripts allow-same-origin allow-forms allow-downloads allow-popups allow-popups-to-escape-sandbox allow-modals`, `referrerpolicy=no-referrer`). Pas de navigation de la page Orbite. Origine différente, donc le simulateur ne voit ni le compte ni le profil ;
+  - « ← Orbite » ou le bouton retour du téléphone (`history.pushState`, puis `popstate`) ramènent à la vue d'avant ; « Ouvrir à part » ouvre un nouvel onglet ;
+  - chaque iframe est gardée tant que la page est ouverte, donc l'état du simulateur est conservé ;
+  - attente animée ; message « hors connexion », et après 12 s « prend du temps » ;
+  - lien direct `#<vue>?simulateur=credit|vie|auto|salaire` ; API `Orbite.ouvrirApps()`, `Orbite.ouvrirSimulateur(clé)`, `Orbite.SIMULATEURS` ;
+  - palette : « Mes applications » et un groupe « Simulateurs » (`a-sim-<clé>`, comptés dans les récents) ;
+  - sur un écran de 440 px ou moins, le titre de la barre est masqué (les onglets du bas le donnent).
+- **CSP** : `frame-src https://mohamed-ja.github.io` ajouté à la seule règle `/espace/*` de `_headers`.
+- **Simulateurs** (branche `dans-orbite` de simulateur-credit, simulateur-assurance-vie, simulateur-Assurance-Automobile, portail-rh/calculateur-salaire) :
+  - un petit script dans `<head>` ajoute la classe `dans-orbite` quand la page est dans un cadre ;
+  - une règle CSS masque alors la bande Orbite, la carte Orbite, la carte « Ce net, et ensuite ? » et les liens vers `workers.dev` ;
+  - caches des services workers montés (crédit `2026-10-12-2`, vie `simulateur-av-v15`, auto `2026-10-12b`, salaire `calc-salaire-v15`).
+- **Versions** : SW `orbite-2026-10-12f`, Nouveautés `2026-10-12e` (applications, négociateur, palette, raccourcis).
+- **Tests** : étape e2e « lanceur ». Les simulateurs y sont remplacés par une page locale (`page.route`) : navigation, cadre isolé, état gardé, bouton retour du navigateur, palette, lien direct, téléphone.
+
 ## 3 unseptuagies. Négociateur de salaire (12 oct.)
 
 - **Maquette** https://claude.ai/artifact/Wu7rFqSwpMcPWMFhokqDG4 (calculée par le vrai moteur de paie, profil fictif « Aziz Démo »). **Validée** le 12 oct. avec : entrées « Partout », note PDF « Les deux au choix », onglet « Offre reçue » « Maintenant ».
@@ -1171,6 +1200,7 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 
 ## 5. Pièges connus
 
+- **Déploiement Cloudflare (12 oct.)** : du 11 au 12 octobre, rien n'était en ligne. Le build de `main` échouait à l'étape « Deploying » : `npx wrangler deploy` recevait `504 Gateway Timeout` de l'API Cloudflare, un incident côté Cloudflare. Un simple **« Retry build »** dans le tableau de bord (Workers & Pages › espace-finances-tn › Deployments) a suffi. Après chaque fusion, il faut demander à l'utilisateur si le build est vert : je n'ai pas accès au site en ligne. Les builds des branches de PR échouent en 0 s, sans conséquence pour la production (`preview_urls: false`). Pour vérifier : `/espace/js/palette.js` doit répondre, pas la page 404.
 - Thème sombre : `:root[data-theme="dark"] .bascule__pastille` (spécificité 0,3,0) écrase les règles locales à deux classes. Sur l'accueil, la pastille blanche de l'aperçu devenait foncée avec un texte foncé : c'était illisible (corrigé le 8 oct.). axe ne l'avait pas détecté, car la pastille est un élément superposé. Vérification : le script `bascules.js` (bloc-notes) calcule le contraste de chaque option sélectionnée en clair et en sombre ; attention, `color-mix` renvoie `color(srgb …)` avec des valeurs entre 0 et 1.
 
 - Responsive : le script `resp.js` (dans le bloc-notes de la session) vérifie 7 largeurs (320 à 1920) × 7 vues. Les budgets passent par des requêtes de conteneur (`.budget`, `.cr-resultat`, `.cr-groupe`). Toujours mettre `minmax(0, 1fr)` sur les grilles d'une seule colonne qui contiennent du texte ou des boutons longs.

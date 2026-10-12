@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="/espace/dossier.css">
   <link rel="stylesheet" href="/espace/negociateur.css">
   <link rel="stylesheet" href="/espace/palette.css">
+  <link rel="stylesheet" href="/espace/lanceur.css">
   <link rel="stylesheet" href="/orbite/signature.css">
   <script src="/commun/config.js"></script>
   <script src="/commun/garde.js"></script>
@@ -90,6 +91,7 @@
         <p class="barre__titre" id="barre-titre" aria-hidden="true">Mon orbite</p>
         <span class="barre__etat temoin" id="etat-enregistrement" hidden></span>
         <button type="button" class="bouton bouton--fantome bouton--petit barre__aide barre__palette" id="palette-ouvrir" aria-label="Rechercher ou agir (Ctrl K)" title="Rechercher ou agir : Ctrl K, ou /"><svg aria-hidden="true"><use href="/orbite/icones.svg#recherche"/></svg><kbd aria-hidden="true">Ctrl K</kbd></button>
+        <button type="button" class="bouton bouton--fantome bouton--petit barre__aide barre__apps" id="apps-ouvrir" aria-label="Mes applications" aria-haspopup="dialog" title="Mes applications et simulateurs"><svg aria-hidden="true"><use href="/orbite/icones.svg#grille"/></svg></button>
         <button type="button" class="bouton bouton--fantome bouton--petit barre__aide" id="aide-visite" aria-label="Guide : revoir la visite guidée" title="Revoir la visite guidée"><svg aria-hidden="true"><use href="/orbite/icones.svg#boussole"/></svg><span class="barre__aide-lib" aria-hidden="true">Guide</span></button>
         <a class="pastille-acces" id="pastille-acces" href="#abonnement" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#couronne"/></svg><span id="pastille-acces-lib"></span></a>
         <div class="barre__actions" id="barre-actions" hidden>
@@ -1579,6 +1581,28 @@
     <p class="palette__pied"><span><kbd>↑</kbd> <kbd>↓</kbd> choisir</span><span><kbd>Entrée</kbd> ouvrir</span><span><kbd>Esc</kbd> fermer</span><span>Une phrase entière ? Elle part à l'Assistant.</span></p>
   </dialog>
 
+  <!-- Lanceur d'applications : les parties d'Orbite et les simulateurs, ouverts sans quitter Orbite (maquette validée le 12 oct. 2026) -->
+  <dialog class="apps" id="dlg-apps" aria-labelledby="apps-titre">
+    <div class="apps__tete"><h2 id="apps-titre">Mes applications</h2><button type="button" class="bouton bouton--fantome bouton--icone bouton--petit" id="apps-fermer" aria-label="Fermer"><svg aria-hidden="true"><use href="/orbite/icones.svg#fermer"/></svg></button></div>
+    <p class="apps__lib" id="apps-lib-orbite">Dans Orbite</p>
+    <ul class="apps__grille" id="apps-orbite" aria-labelledby="apps-lib-orbite"></ul>
+    <p class="apps__lib" id="apps-lib-sim">Simulateurs Orbite</p>
+    <ul class="apps__grille" id="apps-sim" aria-labelledby="apps-lib-sim"></ul>
+    <p class="apps__pied">Un simulateur s'ouvre ici, dans Orbite, sans nouvel onglet. Aussi dans Ctrl K : « assurance auto ».</p>
+  </dialog>
+
+  <!-- Simulateur ouvert dans Orbite : cadre isolé (il ne voit ni le compte ni le profil) -->
+  <dialog class="simulateur" id="dlg-simulateur" aria-labelledby="sim-titre">
+    <div class="simulateur__barre">
+      <button type="button" class="simulateur__retour" id="sim-retour"><svg aria-hidden="true"><use href="/orbite/icones.svg#retour"/></svg><span>Orbite</span></button>
+      <h2 class="simulateur__titre" id="sim-titre"></h2>
+      <a class="simulateur__externe" id="sim-externe" href="#" target="_blank" rel="noopener noreferrer"><span class="simulateur__externe-lib">Ouvrir à part</span><svg aria-hidden="true"><use href="/orbite/icones.svg#sortie-externe"/></svg><span class="cache">(nouvel onglet)</span></a>
+    </div>
+    <div class="simulateur__corps" id="sim-corps">
+      <div class="simulateur__attente" id="sim-attente" role="status"><span class="simulateur__rond" aria-hidden="true"></span><span id="sim-attente-lib">Ouverture du simulateur…</span></div>
+    </div>
+  </dialog>
+
   <!-- Négociateur de salaire : brut à demander, paliers, arguments, note PDF (maquette validée le 12 oct. 2026) -->
   <dialog class="dialogue nego" id="dlg-nego" aria-labelledby="ng-titre">
     <form method="dialog" id="form-nego" novalidate>
@@ -1967,6 +1991,7 @@
   <script src="/espace/js/vue-dossier.js"></script>
   <script src="/espace/js/vue-negociateur.js"></script>
   <script src="/espace/js/palette.js"></script>
+  <script src="/espace/js/lanceur.js"></script>
   <script src="/espace/js/vue-fiche.js"></script>
   <script src="/espace/js/rappels-calcul.js"></script>
   <script src="/espace/js/nouveautes.js"></script>

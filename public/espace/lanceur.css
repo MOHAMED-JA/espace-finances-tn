@@ -1,0 +1,56 @@
+/* Orbite — lanceur d'applications et simulateur ouvert dans Orbite. */
+
+/* Fenêtre « Mes applications » : sous la barre, à droite, sur ordinateur ; feuille basse sur téléphone. */
+dialog.apps { width: min(420px, calc(100vw - 24px)); max-height: min(82vh, 640px); margin: 64px 24px auto auto; padding: 14px; border: 1px solid var(--filet); border-radius: 20px; background: var(--surface); color: var(--encre); box-shadow: var(--ombre-3); overflow: auto; }
+dialog.apps[open] { animation: apps-entre 160ms var(--sortie); }
+@keyframes apps-entre { from { opacity: 0; transform: translateY(-6px) scale(.98); } }
+dialog.apps::backdrop { background: rgba(7, 9, 15, .28); }
+@media (max-width: 640px) { dialog.apps { margin: auto 12px 12px; width: calc(100vw - 24px); } }
+.apps__tete { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.apps__tete h2 { font-size: 17px; }
+.apps__lib { margin: 10px 0 4px; font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--encre-3); }
+.apps__grille { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.apps__app { width: 100%; display: grid; justify-items: center; align-content: start; gap: 6px; padding: 10px 4px; border: 0; border-radius: 12px; background: transparent; color: var(--encre-2); font: 600 12px/1.25 var(--texte); text-align: center; text-decoration: none; cursor: pointer; transition: background-color 140ms ease, transform 140ms var(--sortie); }
+.apps__app:hover { background: var(--surface-2); color: var(--encre); }
+.apps__app:active { transform: scale(var(--appui)); }
+.apps__app:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.apps__ico { position: relative; width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; color: #fff; background: var(--c); box-shadow: 0 6px 14px -8px var(--c); }
+.apps__ico svg { width: 21px; height: 21px; }
+.apps__nom { overflow-wrap: break-word; max-width: 100%; }
+.apps__app--cosmos { --c: #0A0D16; } .apps__app--salaire { --c: var(--salaire); } .apps__app--epargne { --c: var(--epargne); }
+.apps__app--credit { --c: var(--credit); } .apps__app--ambre { --c: var(--ambre); }
+/* Petit cercle : un simulateur, qui s'ouvre dans Orbite. */
+.apps__app--sim .apps__ico::after { content: ""; position: absolute; right: -3px; bottom: -3px; width: 13px; height: 13px; border-radius: 50%; background: var(--surface); border: 2px solid var(--c); }
+.apps__pied { margin: 10px 0 0; padding-top: 10px; border-top: 1px solid var(--filet); font-size: 12.5px; color: var(--encre-3); line-height: 1.45; }
+:root[data-theme="dark"] .apps__app--cosmos { --c: #2A3145; }
+
+/* Simulateur : plein écran, barre de retour, cadre isolé. */
+dialog.simulateur { width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: var(--fond); color: var(--encre); }
+dialog.simulateur[open] { display: grid; grid-template-rows: auto minmax(0, 1fr); animation: sim-entre 220ms var(--sortie); }
+@keyframes sim-entre { from { opacity: 0; transform: translateY(12px); } }
+dialog.simulateur::backdrop { background: var(--fond); }
+.simulateur__barre { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 16px; padding-top: max(8px, env(safe-area-inset-top)); background: var(--surface); border-bottom: 1px solid var(--filet); }
+.simulateur__retour { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px 0 10px; border: 0; border-radius: 999px; background: var(--encre); color: var(--surface); font: 650 14px var(--texte); cursor: pointer; transition: transform 140ms var(--sortie); }
+.simulateur__retour:active { transform: scale(var(--appui)); }
+.simulateur__retour svg { width: 16px; height: 16px; }
+.simulateur__retour:focus-visible, .simulateur__externe:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.simulateur__titre { flex: 1; min-width: 0; margin: 0; font: 650 15px var(--texte); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.simulateur__titre::before { content: ""; display: inline-block; width: 9px; height: 9px; margin-right: 8px; border-radius: 50%; background: var(--c, var(--encre-3)); vertical-align: 1px; }
+.simulateur--credit { --c: var(--credit); } .simulateur--epargne { --c: var(--epargne); } .simulateur--ambre { --c: var(--ambre); } .simulateur--salaire { --c: var(--salaire); }
+.simulateur__externe { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--encre-3); text-decoration: none; }
+.simulateur__externe:hover { color: var(--encre); }
+.simulateur__externe svg { width: 15px; height: 15px; }
+@media (max-width: 520px) { .simulateur__externe-lib { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
+.simulateur__corps { position: relative; min-height: 0; }
+.simulateur__cadre { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
+.simulateur__cadre[hidden] { display: none; }
+.simulateur__attente { position: absolute; inset: 0; z-index: 1; display: grid; place-content: center; justify-items: center; gap: 14px; padding: 24px; background: var(--fond); color: var(--encre-2); font-size: 14.5px; text-align: center; }
+.simulateur__attente[hidden] { display: none; }
+.simulateur__rond { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--surface-3); border-top-color: var(--c, var(--salaire)); animation: sim-tourne 800ms linear infinite; }
+.simulateur__attente--lent .simulateur__rond { animation-duration: 1600ms; }
+@keyframes sim-tourne { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { dialog.apps[open], dialog.simulateur[open] { animation: none; } .simulateur__rond { animation-duration: 3s; } }
+
+/* Téléphone : la barre garde ses boutons ; le titre (déjà donné par les onglets du bas) laisse la place. */
+@media (max-width: 440px) { .barre__titre { display: none; } .apps__app { font-size: 11.5px; } }
+.apps__nom { hyphens: auto; -webkit-hyphens: auto; }
