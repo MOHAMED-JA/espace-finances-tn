@@ -1127,6 +1127,74 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => /Après l'échéance n° (2[0-9]|3[0-9])/.test(document.querySelector('[data-ra-date="0"]').textContent));
   });
 
+  await etape("crédit en une phrase : montant, durée, taux, assurance et type compris ; phrase vide de sens refusée ; arabe", async () => {
+    await page.goto(base + "/espace/#credit");
+    await page.waitForSelector("#cr-phrase");
+    await page.fill("#cr-phrase", "Crédit voiture de 45 000 DT sur 60 mois à 10,5 % assurance 0,4 %");
+    await page.press("#cr-phrase", "Enter");
+    await page.waitForFunction(() => /Compris/.test(document.getElementById("cr-phrase-aide").textContent));
+    const aide = await page.textContent("#cr-phrase-aide");
+    assert(/crédit auto/.test(aide) && /45\u202f000/.test(aide) && /5 ans/.test(aide) && /10,5/.test(aide) && /assurance 0,4/.test(aide), "résumé : " + aide);
+    assert(Number((await page.inputValue("#cr-capital")).replace(/\D/g, "")) === 45000, "montant rempli");
+    const e = await page.evaluate(() => window.ModuleCredit.etat());
+    assert(/(^|&)m=60(&|$)/.test(e) && /(^|&)t=10\.5(&|$)/.test(e) && /ty=auto/.test(e) && /as=0\.4/.test(e), "durée, taux, type et assurance appliqués : " + e);
+    await page.screenshot({ path: path.join(CAPTURES, "credit-phrase.png") });
+    await page.fill("#cr-phrase", "bonjour Orbite");
+    await page.click("#cr-phrase-ok");
+    await page.waitForFunction(() => /rien reconnu/.test(document.getElementById("cr-phrase-aide").textContent));
+    await page.fill("#cr-phrase", "قرض سكن ١٢٠ ألف على ٢٠ سنة بنسبة ٨٪");
+    await page.click("#cr-phrase-ok");
+    await page.waitForFunction(() => /crédit immobilier/.test(document.getElementById("cr-phrase-aide").textContent));
+    assert(Number((await page.inputValue("#cr-capital")).replace(/\D/g, "")) === 120000, "montant en arabe");
+  });
+
+  await etape("crédit : lire une offre (texte), contrôler le tableau de la banque (exemple exact, PDF avec une erreur)", async () => {
+    await page.goto(base + "/espace/#credit");
+    await page.waitForSelector("#cr-outil-offre");
+    await page.click("#cr-outil-offre > summary");
+    await page.fill("#cr-offre-txt", "Montant du prêt : 120 000,000 DT\nDurée : 180 mois\nTaux : TMM + 2,75 %\nTEG : 11,2 %\nFrais de dossier : 1 %\nAssurance 0,35 %");
+    await page.waitForSelector("#cr-offre-capital");
+    assert(/6 valeurs repérées/.test(await page.textContent("#cr-o-offre")), "valeurs repérées");
+    await page.click("[data-offre-appliquer]");
+    await page.waitForFunction(() => /(^|&)c=120000(&|$)/.test(window.ModuleCredit.etat()));
+    const e = await page.evaluate(() => window.ModuleCredit.etat());
+    assert(/(^|&)m=180(&|$)/.test(e) && /mg=2\.75/.test(e) && /as=0\.35/.test(e), "offre appliquée : " + e);
+    /* Tableau de la banque : l'exemple (échéancier exact) ne montre aucune erreur. */
+    await page.click("#cr-outil-audit > summary");
+    await page.click("[data-audit-exemple]");
+    await page.waitForFunction(() => /chaque échéance est exacte au millime/.test(document.getElementById("cr-o-audit").textContent));
+    /* PDF de banque (60 échéances, intérêts majorés de 0,750 DT à l'échéance 14) lu sur l'appareil. */
+    await page.setInputFiles('[data-lire-fichier="audit"]', path.join(__dirname, "fixtures", "tableau-banque.pdf"));
+    await page.waitForFunction(() => /Lecture terminée/.test(document.querySelector("#cr-o-audit [data-lecture-etat]").textContent), null, { timeout: 30000 });
+    const au = await page.textContent("#cr-o-audit .cr-outil__sortie");
+    assert(/60 échéances lues/.test(au) && /1 point à vérifier/.test(au) && /Échéance 14/.test(au) && /\+0,750/.test(au), "audit du PDF : " + au.slice(0, 400));
+    await page.screenshot({ path: path.join(CAPTURES, "credit-audit.png"), fullPage: false });
+  });
+
+  await etape("crédit : voyage dans le temps, échéancier en PDF et en Excel, lettre en Word", async () => {
+    await page.goto(base + "/espace/#credit?type=auto&capital=30000&mois=60&taux=10.5");
+    await page.waitForSelector("#cr-temps-curseur");
+    await page.waitForFunction(() => document.getElementById("cr-temps-curseur").max === "60");
+    await page.fill("#cr-temps-curseur", "30");
+    await page.waitForFunction(() => /Échéance 30 sur 60/.test(document.getElementById("cr-temps-date").textContent));
+    const st = await page.textContent("#cr-temps-stats");
+    assert(/Capital remboursé/.test(st) && /30 échéances restantes/.test(st), "voyage dans le temps : " + st);
+    await page.click("#cr-temps-lire");
+    await page.waitForFunction(() => /Crédit soldé/.test(document.getElementById("cr-temps-stats").textContent), null, { timeout: 15000 });
+    for (const [id, ext] of [["#cr-pdf", "pdf"], ["#cr-xlsx", "xlsx"]]) {
+      const [dl] = await Promise.all([page.waitForEvent("download"), page.click(id)]);
+      assert(dl.suggestedFilename() === "echeancier-credit-30000dt-60mois." + ext, "nom : " + dl.suggestedFilename());
+      const octets = fs.readFileSync(await dl.path());
+      assert(ext === "pdf" ? octets.slice(0, 5).toString() === "%PDF-" : octets.slice(0, 2).toString() === "PK", "fichier " + ext + " valide");
+    }
+    await page.goto(base + "/espace/#credit?type=immo&capital=150000&mois=240&taux=8");
+    await page.waitForSelector("#cr-outil-quand");
+    await page.click("#cr-outil-quand > summary");
+    await page.click("#cr-o-quand details[data-lettre] > summary");
+    const [dl] = await Promise.all([page.waitForEvent("download"), page.click("[data-lettre-docx]")]);
+    assert(dl.suggestedFilename() === "lettre-banque.docx" && fs.readFileSync(await dl.path()).slice(0, 2).toString() === "PK", "lettre Word");
+  });
+
   await etape("simulation → profil : crédit ajouté (puis annulé), épargne ajoutée depuis « Enregistrer »", async () => {
     await page.goto(base + "/espace/#credit?type=auto&capital=40000&mois=60&taux=9");
     await page.waitForSelector("#ajouter-profil", { state: "visible" });

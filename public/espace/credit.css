@@ -421,3 +421,55 @@
 .cr-capacites__ligne strong { font-weight: 600; white-space: nowrap; }
 .cr-capacites__ligne--actif { border-color: var(--credit); background: var(--credit-doux); }
 .cr-capacites__ligne--actif strong { color: var(--credit-t); }
+
+/* ---------- Crédit décrit en une phrase, écrite ou dictée ---------- */
+.module--credit .cr-phrase { display: grid; gap: 8px; margin-bottom: 18px; padding: 14px; border-radius: var(--r-int); background: linear-gradient(135deg, color-mix(in srgb, var(--credit) 9%, var(--surface-2)), var(--surface-2)); border: 1px solid color-mix(in srgb, var(--credit) 22%, var(--filet)); }
+.module--credit .cr-phrase__saisie { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.module--credit .cr-phrase__saisie input { flex: 1 1 auto; min-width: 0; min-height: 46px; padding: 0 14px; border: 1px solid var(--filet); border-radius: var(--r-champ); background: var(--surface); color: var(--encre); font: 500 16px/1.3 var(--texte); }
+.module--credit .cr-phrase__saisie input:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; border-color: transparent; }
+.module--credit .cr-phrase__micro { flex: none; width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--filet); background: var(--surface); color: var(--credit-t); display: grid; place-items: center; cursor: pointer; transition: background-color 160ms ease, transform 140ms var(--sortie); }
+.module--credit .cr-phrase__micro svg { width: 20px; height: 20px; }
+.module--credit .cr-phrase__micro:hover { background: var(--credit-doux); }
+.module--credit .cr-phrase__micro:active { transform: scale(var(--appui)); }
+.module--credit .cr-phrase__micro:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.module--credit .cr-phrase__micro--ecoute { background: var(--erreur); border-color: var(--erreur); color: #fff; animation: cr-ecoute 1.2s ease-in-out infinite; }
+.module--credit .cr-phrase__micro--ecoute:hover { background: var(--erreur); }
+@keyframes cr-ecoute { 50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--erreur) 22%, transparent); } }
+.module--credit .cr-phrase__ok { flex: none; min-height: 46px; }
+.module--credit .cr-phrase__aide--ok { color: var(--succes); font-weight: 600; }
+.module--credit .cr-phrase__aide--erreur { color: var(--erreur); font-weight: 600; }
+@media (max-width: 420px) { .module--credit .cr-phrase__saisie { flex-wrap: wrap; } .module--credit .cr-phrase__saisie input { flex-basis: 100%; } .module--credit .cr-phrase__ok { flex: 1; } }
+@media (prefers-reduced-motion: reduce) { .module--credit .cr-phrase__micro--ecoute { animation: none; } }
+
+/* ---------- Lire une offre / Contrôler le tableau de ma banque ---------- */
+.module--credit .cr-lecture-etat { margin: 2px 0 0; }
+.module--credit .cr-lecture-etat--erreur { color: var(--erreur); font-weight: 600; }
+.module--credit .cr-coller > summary { cursor: pointer; font-weight: 650; font-size: 14px; padding: 6px 0; color: var(--encre-2); }
+.module--credit .cr-coller[open] > summary { margin-bottom: 8px; }
+.module--credit .cr-offre-champs { margin-top: 4px; }
+.module--credit .cr-offre--trouve .saisie { border-color: color-mix(in srgb, var(--succes) 55%, var(--filet)); background: color-mix(in srgb, var(--succes) 7%, var(--surface-2)); }
+.module--credit .cr-table-zone { max-height: 420px; overflow: auto; border: 1px solid var(--filet); border-radius: var(--r-int); }
+.module--credit .cr-table-zone:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.module--credit .cr-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 520px; }
+.module--credit .cr-table th { position: sticky; top: 0; background: var(--surface-2); text-align: right; font-weight: 650; font-size: 12px; color: var(--encre-3); padding: 8px 10px; border-bottom: 1px solid var(--filet); }
+.module--credit .cr-table th:first-child, .module--credit .cr-table th:nth-child(2) { text-align: left; }
+.module--credit .cr-table td { padding: 6px 10px; border-bottom: 1px solid var(--filet); text-align: right; font-family: var(--mono); font-size: 12.5px; }
+.module--credit .cr-table td:first-child, .module--credit .cr-table td:nth-child(2) { text-align: left; font-family: var(--texte); color: var(--encre-2); }
+.module--credit .cr-ligne-ko td { background: var(--erreur-doux); color: var(--encre); }
+.module--credit .cr-ligne-ko strong { color: var(--erreur); }
+.module--credit .cr-ligne-corrigee td { background: color-mix(in srgb, var(--alerte) 8%, transparent); }
+.module--credit .cr-exports { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ---------- Voyage dans le temps ---------- */
+.module--credit .cr-temps { display: grid; gap: 14px; }
+.module--credit .cr-temps__commande { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.module--credit .cr-temps__commande .curseur { flex: 1 1 220px; min-width: 0; }
+.module--credit .cr-temps__lire { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--credit); color: #fff; display: grid; place-items: center; cursor: pointer; transition: transform 140ms var(--sortie), background-color 160ms ease; }
+.module--credit .cr-temps__lire svg { width: 18px; height: 18px; }
+.module--credit .cr-temps__lire:hover { background: var(--credit-t); }
+.module--credit .cr-temps__lire:active { transform: scale(var(--appui)); }
+.module--credit .cr-temps__lire:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.module--credit .cr-temps__date { min-width: 15ch; font-weight: 650; font-size: 14px; color: var(--encre-2); }
+.module--credit .cr-temps__barre { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.module--credit .cr-temps__barre span { display: block; height: 100%; width: var(--p, 0%); border-radius: inherit; background: linear-gradient(90deg, var(--credit), var(--salaire)); transition: width 120ms linear; }
+@media (prefers-reduced-motion: reduce) { .module--credit .cr-temps__barre span { transition: none; } }
