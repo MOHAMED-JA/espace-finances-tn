@@ -242,7 +242,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector(".visite__bulle #visite-chapitres:not([hidden])");
     assert(/Par quoi voulez-vous commencer/.test(await page.textContent("#visite-titre")), "écran de choix");
     assert(await page.$eval("#visite-chap-essentiel", (b) => b.classList.contains("visite__chap--conseil") && document.activeElement === b), "nouveau venu : « L'essentiel » conseillé");
-    assert(/10 nouvelles/.test(await page.textContent("#visite-badge")), "badge des nouveautés");
+    assert(/8 nouvelles/.test(await page.textContent("#visite-badge")), "badge des nouveautés");
     await page.waitForTimeout(400);
     await page.screenshot({ path: path.join(CAPTURES, "visite-choix.png") });
     await page.click("#visite-chap-essentiel");
@@ -265,31 +265,43 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector(".visite", { state: "detached" });
     await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite);
     assert(faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite_visite, "visite marquée comme vue sur le compte");
-    /* « ? » : les nouveautés sont conseillées, chaque étape ouvre sa page, retour à Mon orbite à la fin. */
+    /* « ? » : les nouveautés d'octobre sont conseillées, chaque étape ouvre sa page, retour à Mon orbite à la fin. */
     await page.click("#aide-visite");
     await page.waitForSelector(".visite__bulle #visite-chapitres:not([hidden])");
     assert(await page.$eval("#visite-chap-nouveautes", (b) => b.classList.contains("visite__chap--conseil")), "déjà venu : « Les nouveautés » conseillées");
+    assert(await page.isVisible("#visite-chap-plus"), "chapitre « Pour aller plus loin »");
     await page.click("#visite-chap-nouveautes");
-    assert(/Lire ma fiche de paie/.test(await page.textContent("#visite-titre")), "première nouveauté : la fiche de paie");
-    await page.waitForFunction(() => location.hash === "#profil?section=salaire" && !document.querySelector(".visite--transit"));
-    /* Le halo glisse en 320 ms vers la carte « Remplir avec ma fiche de paie ». */
-    await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.getElementById("fiche-entree-profil").getBoundingClientRect(); return Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
+    assert(/Ctrl K/.test(await page.textContent("#visite-titre")), "première nouveauté : la palette");
+    await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.getElementById("palette-ouvrir").getBoundingClientRect(); return !document.querySelector(".visite--transit") && Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
     await page.waitForTimeout(400);
     await page.screenshot({ path: path.join(CAPTURES, "visite-nouveautes.png") });
     const vus = [];
-    for (let i = 1; i < 10; i++) {
+    for (let i = 1; i < 8; i++) {
       await page.click("#visite-suiv");
       await page.waitForFunction(() => !document.querySelector(".visite--transit"));
       vus.push((await page.textContent("#visite-titre")) + " @ " + (await page.evaluate(() => location.hash)));
     }
-    assert(vus.some((t) => /Retraite @ #progression\?onglet=retraite/.test(t)) && vus.some((t) => /Et si… \? @ #vie\?onglet=scenarios/.test(t)) && vus.some((t) => /Rappels @ #compte\?onglet=preferences/.test(t)), "pages ouvertes : " + vus.join(" | "));
+    assert(vus.some((t) => /négociation @ #salaire/.test(t)) && vus.some((t) => /une phrase @ #credit/.test(t)) && vus.some((t) => /tableau de votre banque @ #credit/.test(t)), "pages ouvertes : " + vus.join(" | "));
+    await page.screenshot({ path: path.join(CAPTURES, "visite-credit.png") });
     await page.click("#visite-suiv");
     await page.waitForSelector(".visite", { state: "detached" });
     await page.waitForFunction(() => location.hash === "#orbite");
-    await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite_nouveautes === "2026-10-11");
+    await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite_nouveautes === "2026-10-12");
+    /* « Pour aller plus loin » : les nouveautés précédentes, fiche de paie d'abord. */
     await page.click("#aide-visite");
-    await page.waitForSelector(".visite__bulle");
+    await page.waitForSelector(".visite__bulle #visite-chapitres:not([hidden])");
     assert(/déjà vues/.test(await page.textContent("#visite-badge")), "nouveautés marquées comme vues");
+    await page.click("#visite-chap-plus");
+    assert(/Lire ma fiche de paie/.test(await page.textContent("#visite-titre")), "première étape : la fiche de paie");
+    await page.waitForFunction(() => location.hash === "#profil?section=salaire" && !document.querySelector(".visite--transit"));
+    await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.getElementById("fiche-entree-profil").getBoundingClientRect(); return Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
+    const vus2 = [];
+    for (let i = 1; i < 10; i++) {
+      await page.click("#visite-suiv");
+      await page.waitForFunction(() => !document.querySelector(".visite--transit"));
+      vus2.push((await page.textContent("#visite-titre")) + " @ " + (await page.evaluate(() => location.hash)));
+    }
+    assert(vus2.some((t) => /Retraite @ #progression\?onglet=retraite/.test(t)) && vus2.some((t) => /Et si… \? @ #vie\?onglet=scenarios/.test(t)) && vus2.some((t) => /Rappels @ #compte\?onglet=preferences/.test(t)), "pages ouvertes : " + vus2.join(" | "));
     await page.keyboard.press("Escape");
     await page.waitForSelector(".visite", { state: "detached" });
   });

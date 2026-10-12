@@ -1,7 +1,8 @@
 /*
- * Orbite — visite guidée en deux chapitres (maquette validée le 12 oct. 2026).
- * Elle s'ouvre toujours sur un choix : « L'essentiel » (8 étapes, proposé aux nouveaux venus) ou « Les nouveautés »
- * (10 étapes, proposé à ceux qui ont déjà vu l'essentiel ; badge tant que cette version n'a pas été vue).
+ * Orbite — visite guidée en trois chapitres (maquette validée le 12 oct. 2026, nouveautés d'octobre ajoutées le même jour).
+ * Elle s'ouvre toujours sur un choix : « L'essentiel » (8 étapes, proposé aux nouveaux venus), « Les nouveautés »
+ * (8 étapes, proposé à ceux qui ont déjà vu l'essentiel ; badge tant que cette version n'a pas été vue) et
+ * « Pour aller plus loin » (10 étapes : les nouveautés précédentes).
  * Démarre juste après le « premier pas » (une fois par compte, user_metadata.orbite_visite) ; on la revoit avec le
  * bouton « ? » de la barre ou depuis Paramètres → Préférences. Une étape peut ouvrir une autre page (« vue ») avant de
  * désigner sa rubrique ; à la fin, on revient là où la visite a commencé. Une bulle désigne chaque rubrique ; sans
@@ -10,7 +11,7 @@
 (function () {
   "use strict";
   var O = window.Orbite, E = window.Espace, doc = document, $ = O.$;
-  var VERSION_NOUVEAUTES = "2026-10-11";
+  var VERSION_NOUVEAUTES = "2026-10-12";
 
   /* cibles : sélecteurs essayés dans l'ordre ; le premier visible est désigné. vue : page à ouvrir d'abord. */
   var CHAPITRES = {
@@ -23,12 +24,25 @@
         { vue: "#orbite", cibles: [".rail a[data-vue='profil']", ".onglets-bas a[data-vue='profil']"], titre: "Mon profil", texte: "Le cœur d'Orbite : famille, salaire, crédits, contrats et budget, enregistrés automatiquement et visibles par vous seul. Le plus rapide pour le remplir : votre fiche de paie, lue sur votre appareil." },
         { vue: "#orbite", cibles: [".rail a[data-vue='salaire']", ".onglets-bas a[data-vue='salaire']"], titre: "Salaire", texte: "Du brut au net au millime près : CNSS ou CNRPS, IRPP et CSS, primes, 13ᵉ mois et plus. Simulez une augmentation et voyez ce que coûte votre salaire à l'employeur." },
         { vue: "#orbite", cibles: [".rail a[data-vue='epargne']", ".onglets-bas a[data-vue='epargne']"], titre: "Épargne vie & CEA", texte: "Projetez votre assurance vie et votre CEA, et voyez l'impôt que chaque versement vous fait économiser." },
-        { vue: "#orbite", cibles: [".rail a[data-vue='credit']", ".onglets-bas a[data-vue='credit']"], titre: "Crédit", texte: "Taux fixe ou TMM + marge : mensualité, coût total, tableau d'amortissement, remboursement anticipé, et plusieurs offres comparées." },
+        { vue: "#orbite", cibles: [".rail a[data-vue='credit']", ".onglets-bas a[data-vue='credit']"], titre: "Crédit", texte: "Taux fixe ou TMM + marge : mensualité, coût total, tableau d'amortissement, remboursement anticipé, plusieurs offres comparées, et le contrôle du tableau remis par votre banque." },
         { vue: "#orbite", cibles: [".rail a[data-vue='assistant']", "#bulle-assistant"], titre: "Assistant et « ? »", texte: "Posez vos questions en français ou en darija, par exemple « Najjem nechri karhba fi 2029 ? ». Le bouton « ? » relance la visite : essayez ensuite « Les nouveautés ».", fin: true }
       ]
     },
     nouveautes: {
-      nom: "Les nouveautés", resume: "Fiche de paie, progression, retraite, Mon année… · 2 minutes",
+      nom: "Les nouveautés", resume: "Ctrl K, mes applications, négociation, crédit complet · 2 minutes",
+      etapes: [
+        { vue: "#orbite", cibles: ["#palette-ouvrir"], titre: "Ctrl K : tout trouver", texte: "Ctrl K (⌘ K sur Mac), « / » ou la loupe : tapez quelques lettres (« kridi », « retraite », « dossier »…) pour sauter à une page, une section ou une action. Une phrase entière part à l'Assistant." },
+        { vue: "#orbite", cibles: ["#apps-ouvrir"], titre: "Mes applications", texte: "Toutes les parties d'Orbite et les simulateurs (crédit, assurance vie, assurance auto, salaire) au même endroit. Un simulateur s'ouvre dans Orbite : « ← Orbite » vous ramène où vous étiez." },
+        { vue: "#salaire", cibles: ["#nego-ouvrir"], titre: "Préparer ma négociation", texte: "Dites ce que vous voulez toucher : Orbite trouve le brut à demander, vos trois paliers, des arguments chiffrés et une note PDF. L'onglet « Offre reçue » juge une offre d'emploi." },
+        { vue: "#credit", cibles: ["#cr-phrase-bloc"], titre: "Votre crédit en une phrase", texte: "Écrivez ou dictez « 150 000 sur 20 ans à TMM + 2,5 avec 30 000 d'apport », en français ou en arabe : Orbite remplit tout le crédit et vous dit ce qu'il a compris." },
+        { vue: "#credit", cibles: ["#cr-outil-offre"], titre: "Lire une offre de banque", texte: "Photo, PDF ou texte de l'offre : le montant, la durée, le taux, le TEG, les frais et l'assurance sont repérés, vous vérifiez, puis vous les appliquez à votre scénario." },
+        { vue: "#credit", cibles: ["#cr-outil-audit"], titre: "Contrôler le tableau de votre banque", texte: "Déposez le tableau d'amortissement de votre banque (PDF ou photos) : chaque échéance est recalculée au millime, les écarts et la réduction de taux oubliée sont signalés, avec un rapport PDF à présenter." },
+        { vue: "#credit", cibles: [".cr-temps"], titre: "Voyage dans le temps du crédit", texte: "Faites défiler les échéances : capital remboursé, intérêts payés, capital restant. L'échéancier se télécharge aussi en PDF ou en Excel, et la lettre à la banque en Word." },
+        { vue: "#credit", cibles: ["#dossier-ouvrir"], titre: "Dossier banque", texte: "Un PDF propre à remettre à votre conseiller : revenus, charges, capacité et crédit demandé, préparés à partir de votre profil. Le chapitre « Pour aller plus loin » montre les autres fonctions.", fin: true }
+      ]
+    },
+    plus: {
+      nom: "Pour aller plus loin", resume: "Fiche de paie, progression, retraite, Mon année… · 2 minutes",
       etapes: [
         { vue: "#profil?section=salaire", cibles: ["#fiche-entree-profil"], titre: "Lire ma fiche de paie", texte: "Photo ou PDF : Orbite lit votre fiche sur votre appareil (rien n'est envoyé), montre chaque montant trouvé, la compare à son propre calcul et met votre profil à jour en un clic." },
         { vue: "#profil?section=salaire", cibles: ["#hs-bloc"], titre: "Historique du salaire", texte: "Chaque hausse avec sa date : l'impôt de l'année se calcule mois par mois, et une hausse annoncée s'applique toute seule à son mois." },
@@ -248,7 +262,7 @@
     if (ailleurs) location.hash = retour;
     if (prec && prec.focus && doc.contains(prec)) prec.focus({ preventScroll: true });
     marquerVue(chap, complete);
-    if (complete) O.toast(chap === "nouveautes" ? "Vous avez fait le tour des nouveautés. D'autres arrivent bientôt !" : "Bonne découverte ! Commencez par compléter « Mon profil ».");
+    if (complete) O.toast(chap === "nouveautes" ? "Vous avez fait le tour des nouveautés. D'autres arrivent bientôt !" : chap === "plus" ? "Vous connaissez maintenant tout Orbite." : "Bonne découverte ! Commencez par compléter « Mon profil ».");
   }
 
   /* L'essentiel est marqué vu à la première fermeture ; les nouveautés, quand leur chapitre est parcouru jusqu'au bout. */
