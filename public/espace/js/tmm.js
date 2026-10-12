@@ -19,9 +19,21 @@
   try { var memo = JSON.parse(localStorage.getItem(CLE) || "null"); if (memo && memo.taux) appliquer(memo.taux); } catch (e) {}
 
   var historique = [], charge = false;
+  /* Formulaire d'administration relié dès le chargement : une saisie faite avant que la session soit prête n'est ni
+     envoyée par le navigateur (rechargement) ni écrasée ; elle part dès que la session l'est. */
+  var saisir = null, enAttente = false, formAdmin = doc.getElementById("admin-tmm-form");
+  if (formAdmin) {
+    var champMois = doc.getElementById("admin-tmm-mois"), d0 = new Date(), m0 = d0.getFullYear() + "-" + String(d0.getMonth() + 1).padStart(2, "0");
+    if (!champMois.value) champMois.value = m0;
+    champMois.max = m0;
+    formAdmin.addEventListener("submit", function (e) { e.preventDefault(); if (saisir) saisir(); else enAttente = true; });
+  }
   function noter(d) { try { localStorage.setItem(CLE, JSON.stringify(d)); } catch (e) {} }
 
   function demarrer() {
+    /* Ce script est chargé tôt (avant le module Crédit) ; projets.js vient après. Si la session est prête entre les deux,
+       on attend la fin du chargement des scripts au lieu d'abandonner. */
+    if (!window.CreditProjets && doc.readyState === "loading") { doc.addEventListener("DOMContentLoaded", demarrer, { once: true }); return; }
     var O = window.Orbite, E = window.Espace, P = window.CreditProjets;
     if (!O || !E || !E.tmm || !P) return;
     var $ = O.$, F = O.F;
@@ -131,10 +143,7 @@
     }
     var form = $("admin-tmm-form");
     if (form) {
-      var m0 = new Date(); $("admin-tmm-mois").value = m0.getFullYear() + "-" + String(m0.getMonth() + 1).padStart(2, "0");
-      $("admin-tmm-mois").max = $("admin-tmm-mois").value;
-      form.addEventListener("submit", function (e) {
-        e.preventDefault();
+      saisir = function () {
         var err = $("admin-tmm-erreur"), mois = $("admin-tmm-mois").value, l = F.lire($("admin-tmm-taux").value);
         if (!/^\d{4}-\d{2}$/.test(mois) || !l.valide || l.vide || !(l.valeur > 0 && l.valeur < 30)) { err.textContent = "Indiquez le mois et un TMM entre 0 et 30 %, par exemple 7,45."; err.hidden = false; return; }
         err.hidden = true;
@@ -143,12 +152,14 @@
           rendreAdmin(); $("admin-tmm-taux").value = "";
           O.toast("TMM de " + nomMois(mois + "-01") + " enregistré : " + pc(l.valeur) + ".", { type: "ok", detail: "Il s'applique à tout Orbite, pour tous les comptes." });
         }).catch(function (x) { err.textContent = E.modele.messageErreur(x); err.hidden = false; }).finally(function () { bt.disabled = false; });
-      });
+      };
+      if (enAttente) { enAttente = false; saisir(); }
     }
     doc.addEventListener("orbite:vue", function (e) { if (e.detail.vue === "admin") (charge ? Promise.resolve() : charger(true)).then(rendreAdmin); });
 
     window.OrbiteTMM = { historique: function () { return historique.slice(); }, recharger: charger, rendreOnglet: rendreOnglet };
     charger(true).then(function () { if (O.lireRoute && O.lireRoute().vue === "admin") rendreAdmin(); });
   }
-  doc.addEventListener("orbite:pret", demarrer, { once: true });
+  /* La session peut être prête avant le chargement de ce script (le navigateur exécute d'autres tâches entre deux scripts). */
+  if (window.Orbite && window.Orbite.pret) demarrer(); else doc.addEventListener("orbite:pret", demarrer, { once: true });
 })();

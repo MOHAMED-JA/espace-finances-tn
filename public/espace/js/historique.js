@@ -116,7 +116,8 @@
     if (aller(annuler ? -1 : 1)) e.preventDefault();
   });
   /* Premier affichage : le module courant a peut-être été rendu avant ce script. */
-  doc.addEventListener("orbite:pret", function () { var v = vueCourante(); if (v) depart(v); }, { once: true });
+  function premier() { var v = vueCourante(); if (v) depart(v); }
+  if (O.pret) premier(); else doc.addEventListener("orbite:pret", premier, { once: true });
 
   window.OrbiteHistorique = { annuler: function () { return aller(-1); }, retablir: function () { return aller(1); }, possible: possible,
     /* À appeler juste avant une modification faite hors du module (simulation guidée, lien reçu…) : l'état d'avant est gardé. */
