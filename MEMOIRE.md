@@ -692,6 +692,7 @@ Branche `point5`. Choix validés par l'utilisateur (options conseillées) ; règ
 - **Regrouper** : crédit immobilier facultatif ; IRA de 1,5 % du capital restant (modifiable) ; verdict `gagnant`, `moins_cher_mensualite_plus_haute`, `mensualite_baisse_cout_monte` ou `perdant`.
 
 **TMM du mois** (`public/espace/js/tmm.js`, migration `supabase/migrations/0015_tmm.sql`)
+- Migration 0015 **appliquée en production le 12 oct.** (éditeur SQL de Supabase, l'outil Supabase de la session demandant une autorisation impossible à afficher) ; vérifiée : RLS active, table fermée, `tmm_historique` pour les comptes connectés, saisie réservée à l'admin. PR #116 fusionnée.
 - Table `tmm_mensuel` (mois au 1er, taux 0 à 30), RLS et tous les droits retirés ; lecture par `tmm_historique(24)` ; saisie et suppression par l'admin (`admin_tmm_saisir` refuse un mois futur, `admin_tmm_supprimer`).
 - Administration › « TMM du mois » ; le dernier taux s'applique à tout Orbite (`OrbiteCalcul.definirTMM`, `Orbite.recalculer()`), gardé sur l'appareil (`orbite-tmm`) ; annoncé une fois au chargement suivant ; sans historique, retour au défaut 7,5 %.
 - Onglet Crédit › Le TMM : courbe 24 mois, effet de la dernière variation et d'un point de plus sur les crédits variables (sans crédit variable : exemple de 150 000 DT sur 20 ans à TMM + 2,5).
