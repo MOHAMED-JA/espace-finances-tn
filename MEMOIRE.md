@@ -677,6 +677,39 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 sexseptuagies. Lot 1 « crédit complet » (12 oct.)
+
+- **Demande** (maquette validée https://claude.ai/artifact/DfKbFaPFpPDD6ei3Z1GgKJ, puis « applique 1, 2, 4 et 5 ») : reprendre dans Orbite les fonctions du simulateur de crédit qui lui manquaient.
+- **Choix validés le 12 oct.** :
+  - ordre des livraisons : Lot 1 → visite guidée → Lot 2 → point 5 ;
+  - **dictée avec avertissement** : la reconnaissance vocale de Chrome et d'Edge envoie la voix à Google ou à Microsoft, c'est dit avant le premier usage ;
+  - **loi de finances 2027** : on attend le texte officiel (JORT), rien de provisoire ;
+  - **point 5** : une seule maquette pour les 6 fonctions.
+- **Une phrase** (`moteurs/credit/phrase.js`, `window.CreditPhrase`, reprise de `analyserTexte`) :
+  - comprend le montant, la durée, le taux ou TMM + marge, l'apport et le prix, le différé, la périodicité, l'amortissement, l'assurance, les frais et le type, en français ou en arabe (chiffres arabes, « ألف ») ;
+  - les valeurs aberrantes sont ignorées ; résumé « Compris : … » sous le champ (zone `aria-live`) ;
+  - module Crédit : bloc `#cr-phrase` en tête de l'éditeur, touche Entrée ou « Remplir » ;
+  - une description complète (montant et durée) remet à zéro les options non citées.
+- **Dictée** :
+  - bouton micro seulement si `SpeechRecognition` existe ; le premier appui affiche l'avertissement (`localStorage` `orbite_dictee_ok`), le second écoute ;
+  - langue `ar-TN` si le champ contient de l'arabe, sinon `fr-FR` ;
+  - `_headers` : `microphone=(self)` (était `()`), les cadres des simulateurs restent sans micro.
+- **Offre et tableau de la banque** (`moteurs/credit/audit.js`, `window.CreditAudit`, reprise de `analyserOffre`, `analyserTableau`, `auditerTableau`) :
+  - outil « Lire une offre bancaire » (photo, PDF ou texte) : les valeurs repérées sont modifiables, puis « Utiliser dans mon scénario » ;
+  - outil « Contrôler le tableau de ma banque » (remplace « Vérifier l'échéancier ») : PDF, même scanné, ou plusieurs photos, lus par `FicheLecture.lire(f, { pagesMax: 40 })` (nouvelle option, 3 pages par défaut) ;
+  - le rôle des colonnes est deviné quel que soit leur ordre ; les chiffres mal lus sont corrigés par recoupement ; les échéances manquantes sont signalées ; les intérêts sont recalculés par phase de taux ; les remboursements anticipés sont détectés ; mensualité théorique (pas pour une phase d'une seule ligne, déjà signalée) ; règle des 8 % ;
+  - un texte sans date garde l'ancienne comparaison avec le scénario ;
+  - rapport : verdict, chiffres, constats, tableau des échéances recalculées, boutons « Rapport PDF » et « Excel ».
+- **Documents** (`espace/js/credit-documents.js`, `window.CreditDocuments`) :
+  - échéancier en PDF (jsPDF chargé à la demande) et en Excel (`Xlsx.classeur`, totaux en formules), boutons `#cr-pdf` et `#cr-xlsx` à côté du CSV ;
+  - rapport de contrôle en PDF et en Excel ;
+  - lettre à la banque en Word (`.docx` minimal construit avec `Xlsx.zip`), bouton « Word (.docx) » dans « Quand demander la réduction ? ».
+- **Voyage dans le temps** : panneau `.cr-temps` au-dessus des graphiques. Curseur sur les échéances et bouton lecture/pause ; il affiche le capital remboursé, les intérêts payés, l'assurance et le capital restant dû, avec une barre de progression (`--p` posé en CSSOM, CSP intacte).
+- **Tests** :
+  - `tests/credit/phrase.test.js` (9), `audit.test.js` (7), `documents.test.js` (4) ;
+  - e2e : 3 étapes ; « lire une offre » utilise le PDF `e2e/fixtures/tableau-banque.pdf`, fabriqué par `e2e/fixtures/fabriquer-tableau.js` (profil fictif, +0,750 DT à l'échéance 14).
+- **Versions** : SW `orbite-2026-10-12h`, Nouveautés `2026-10-12g` (« Crédit complet »).
+
 ## 3 quinseptuagies. Vidéo 4 : « Orbite » en 3D, 30 s, 16:9 (12 oct., livrée)
 
 - **Demande** (12 oct.) : une vidéo promotionnelle 3D pour LinkedIn et YouTube, inspirée d'une nouvelle vidéo TikTok (ordinateur portable dans le noir, écran qui raconte l'histoire, volets lumineux entre les plans, musique électro). Storyboard de 8 plans validé dans la maquette https://claude.ai/artifact/DfKbFaPFpPDD6ei3Z1GgKJ (« 30 s, storyboard validé »).

@@ -458,3 +458,18 @@
 .module--credit .cr-ligne-ko td { background: var(--erreur-doux); color: var(--encre); }
 .module--credit .cr-ligne-ko strong { color: var(--erreur); }
 .module--credit .cr-ligne-corrigee td { background: color-mix(in srgb, var(--alerte) 8%, transparent); }
+.module--credit .cr-exports { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ---------- Voyage dans le temps ---------- */
+.module--credit .cr-temps { display: grid; gap: 14px; }
+.module--credit .cr-temps__commande { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.module--credit .cr-temps__commande .curseur { flex: 1 1 220px; min-width: 0; }
+.module--credit .cr-temps__lire { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--credit); color: #fff; display: grid; place-items: center; cursor: pointer; transition: transform 140ms var(--sortie), background-color 160ms ease; }
+.module--credit .cr-temps__lire svg { width: 18px; height: 18px; }
+.module--credit .cr-temps__lire:hover { background: var(--credit-t); }
+.module--credit .cr-temps__lire:active { transform: scale(var(--appui)); }
+.module--credit .cr-temps__lire:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.module--credit .cr-temps__date { min-width: 15ch; font-weight: 650; font-size: 14px; color: var(--encre-2); }
+.module--credit .cr-temps__barre { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.module--credit .cr-temps__barre span { display: block; height: 100%; width: var(--p, 0%); border-radius: inherit; background: linear-gradient(90deg, var(--credit), var(--salaire)); transition: width 120ms linear; }
+@media (prefers-reduced-motion: reduce) { .module--credit .cr-temps__barre span { transition: none; } }

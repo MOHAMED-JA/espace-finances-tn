@@ -406,7 +406,14 @@
   }
 
   function htmlBas() {
-    return '<section class="panneau cr-graphes" aria-labelledby="cr-gr-titre">' +
+    return '<section class="panneau cr-temps" aria-labelledby="cr-temps-titre">' +
+        '<div class="cr-panneau-tete"><div><h2 class="panneau__titre" id="cr-temps-titre">Voyage dans le temps</h2><p class="panneau__sous">Déplacez le curseur, ou lancez la lecture : où en serez-vous à chaque échéance ?</p></div></div>' +
+        '<div class="cr-temps__commande"><button type="button" class="cr-temps__lire" id="cr-temps-lire" aria-pressed="false" aria-label="Lancer la lecture">' + ico("lecture") + '</button>' +
+          '<input type="range" class="curseur" id="cr-temps-curseur" min="0" max="1" step="1" value="0" aria-describedby="cr-temps-date"><output id="cr-temps-date" for="cr-temps-curseur" class="cr-temps__date chiffre"></output></div>' +
+        '<div class="cr-temps__barre" aria-hidden="true"><span id="cr-temps-rempli"></span></div>' +
+        '<div class="cr-stats cr-temps__stats" id="cr-temps-stats"></div>' +
+      '</section>' +
+      '<section class="panneau cr-graphes" aria-labelledby="cr-gr-titre">' +
         '<div class="cr-panneau-tete"><h2 class="panneau__titre" id="cr-gr-titre">Évolution du crédit</h2>' +
           '<div class="onglets" role="tablist" aria-label="Graphique affiché" id="cr-gr-onglets">' +
             '<button type="button" role="tab" id="cr-gr-tab-crd" aria-selected="true" aria-controls="cr-gr-zone" data-graphe="crd">Capital restant dû</button>' +
@@ -424,7 +431,9 @@
           '<div class="cr-tab-actions"><div class="onglets" role="tablist" aria-label="Détail du tableau" id="cr-tab-onglets">' +
             '<button type="button" role="tab" id="cr-tab-mensuel" aria-selected="true" aria-controls="cr-tab-cadre" data-vue="mensuel">Par échéance</button>' +
             '<button type="button" role="tab" id="cr-tab-annuel" aria-selected="false" aria-controls="cr-tab-cadre" data-vue="annuel" tabindex="-1">Par année</button></div>' +
-            '<button type="button" class="bouton bouton--petit" id="cr-csv">' + ico("telecharger") + 'CSV</button></div></div>' +
+            '<div class="cr-exports"><button type="button" class="bouton bouton--petit" id="cr-pdf">' + ico("telecharger") + 'PDF</button>' +
+            '<button type="button" class="bouton bouton--petit" id="cr-xlsx">' + ico("telecharger") + 'Excel</button>' +
+            '<button type="button" class="bouton bouton--petit" id="cr-csv">' + ico("telecharger") + 'CSV</button></div></div></div>' +
         '<div class="tableau-cadre cr-tableau-cadre" id="cr-tab-cadre" role="tabpanel" tabindex="0" aria-labelledby="cr-tab-titre"><table class="tableau cr-tableau" id="cr-tableau"></table></div>' +
       '</section>';
   }
@@ -736,7 +745,33 @@
     lourdEnAttente = setTimeout(rendreLourd, anime ? 0 : 140);
     annoncer();
   }
+  /* ---------- Voyage dans le temps ---------- */
+  var lecture = null;
+  function majTemps() {
+    var d = S.dernier; if (!d) return;
+    var r = d.r, n = r.lignes.length, cur = $("cr-temps-curseur");
+    cur.max = String(n);
+    var k = Math.min(n, Math.max(0, +cur.value || 0)), cumP = 0, cumI = 0, cumA = 0;
+    for (var i = 0; i < k; i++) { cumP += r.lignes[i].principal + (r.lignes[i].ra ? r.lignes[i].ra.montant : 0); cumI += r.lignes[i].interet; cumA += r.lignes[i].assurance || 0; }
+    var l = k ? r.lignes[k - 1] : null, reste = l ? MC.resteFin(l) : r.C, part = r.C > 0 ? Math.min(1, cumP / r.C) : 0;
+    $("cr-temps-date").textContent = k === 0 ? "Avant la 1re échéance" : "Échéance " + k + " sur " + n + (l && l.date ? " · " + moisAn(l.date) : "");
+    cur.setAttribute("aria-valuetext", $("cr-temps-date").textContent + ", " + Math.round(part * 100) + " % du capital remboursé");
+    $("cr-temps-rempli").style.setProperty("--p", (part * 100).toFixed(2) + "%");
+    $("cr-temps-stats").innerHTML = stat("Capital remboursé", dt(arr(cumP)), Math.round(part * 100) + " % du capital") + stat("Intérêts payés", dt(arr(cumI)), r.totI > 0 ? Math.round(cumI / r.totI * 100) + " % des intérêts" : "") +
+      (r.totAss > 0 ? stat("Assurance payée", dt(arr(cumA))) : "") + stat("Capital restant dû", dt(reste), k < n ? pluriel(n - k, "échéance restante", "échéances restantes") : "Crédit soldé", "cr-stat--fort");
+  }
+  function arreterLecture() { if (!lecture) return; clearInterval(lecture); lecture = null; var b = $("cr-temps-lire"); b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Lancer la lecture"); b.innerHTML = ico("lecture"); }
+  function basculerLecture() {
+    if (lecture) { arreterLecture(); return; }
+    var cur = $("cr-temps-curseur"), n = +cur.max; if (!n) return;
+    if (+cur.value >= n) cur.value = "0";
+    var b = $("cr-temps-lire"); b.setAttribute("aria-pressed", "true"); b.setAttribute("aria-label", "Mettre en pause"); b.innerHTML = ico("pause");
+    var pas = Math.max(1, Math.round(n / 120));
+    lecture = setInterval(function () { cur.value = String(Math.min(n, +cur.value + pas)); majTemps(); if (+cur.value >= n) arreterLecture(); }, mouvementReduit.matches ? 120 : 33);
+  }
+
   function rendreLourd() {
+    majTemps();
     rendreGraphe();
     rendreTableau();
     rendreComparaison();
@@ -1296,6 +1331,38 @@
     telecharger("echeancier-credit-" + Math.round(r.C) + "dt-" + r.n * r.p + "mois.csv", txt, "text/csv;charset=utf-8");
     toast("Échéancier exporté au format CSV.");
   }
+  /* Échéancier en PDF ou en Excel (credit-documents.js), fabriqué sur l'appareil. */
+  function donneesEcheancier() {
+    var d = S.dernier; if (!d) return null;
+    var r = d.r, e = d.e, info = MC.infoPeriodicite(r.p), lignes = r.lignes.map(function (l) {
+      return { n: l.mois, date: l.date, ech: l.paiement, int: l.interet, am: l.principal, ass: l.assurance || 0, ra: l.ra ? l.ra.montant : 0, crd: MC.resteFin(l) };
+    });
+    var taux = e.tmm ? "TMM " + pc(e.tmm.tmm, 2) + " + " + pc(e.tmm.marge, 2) : pc(e.taux, 3);
+    return {
+      titre: "Échéancier · " + (TYPES[d.sc.type] ? TYPES[d.sc.type].long : "Crédit") + " de " + F.dt3(r.C) + " DT",
+      sousTitre: r.n + " échéances " + (info.nom || "").toLowerCase() + "s · taux " + taux + (r.debut ? " · première échéance " + r.debut.toLocaleDateString("fr-FR") : ""),
+      cartes: [["Échéance", F.dt3(premiereEcheance(r)) + " DT"], ["Intérêts totaux", F.dt3(r.totI) + " DT"], ["Coût total du crédit", F.dt3(r.coutCredit) + " DT"], ["TEG", isFinite(r.teg) ? pc(r.teg, 2) : "-"]],
+      lignes: lignes,
+      totaux: { ech: arr(lignes.reduce(function (a, l) { return a + l.ech; }, 0)), int: r.totI, am: r.totP, ass: r.totAss, ra: r.totRA }
+    };
+  }
+  function nomFichier(ext) { var d = S.dernier; return "echeancier-credit-" + Math.round(d.r.C) + "dt-" + d.r.n * d.r.p + "mois." + ext; }
+  function exporterEcheancier(format, bouton) {
+    var CD = window.CreditDocuments, e = donneesEcheancier(); if (!CD || !e) return;
+    if (format === "xlsx") { telecharger(nomFichier("xlsx"), CD.echeancierXlsx(e), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"); toast("Échéancier exporté au format Excel."); return; }
+    if (bouton) bouton.disabled = true;
+    CD.echeancierPdf(e).then(function (blob) { telecharger(nomFichier("pdf"), blob, "application/pdf"); toast("Échéancier exporté en PDF."); })
+      .catch(function (x) { toast((x && x.message) || "PDF impossible pour le moment.", { erreur: true }); })
+      .finally(function () { if (bouton) bouton.disabled = false; });
+  }
+  function exporterAudit(format, bouton) {
+    var CD = window.CreditDocuments, au = OUTIL_FN.audit.dernier; if (!CD || !au) return;
+    if (format === "xlsx") { telecharger("controle-tableau-banque.xlsx", CD.auditXlsx(au), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"); toast("Contrôle exporté au format Excel."); return; }
+    if (bouton) bouton.disabled = true;
+    CD.auditPdf(au).then(function (blob) { telecharger("controle-tableau-banque.pdf", blob, "application/pdf"); toast("Rapport de contrôle téléchargé."); })
+      .catch(function (x) { toast((x && x.message) || "PDF impossible pour le moment.", { erreur: true }); })
+      .finally(function () { if (bouton) bouton.disabled = false; });
+  }
   function texteResume() {
     var d = S.dernier; if (!d) return "";
     var e = d.e, r = d.r, info = MC.infoPeriodicite(r.p);
@@ -1617,7 +1684,7 @@
               champ({ c: "num", t: "texte", lib: "N° du crédit", placeholder: "Ex. 0495950100470" }) +
               champ({ c: "ville", t: "texte", lib: "Ville", placeholder: "Ex. Tunis" }) +
             '</div><pre class="cr-lettre__texte" data-lettre-texte tabindex="0" aria-label="Aperçu de la lettre"></pre>' +
-            '<div class="cr-ligne-actions"><button type="button" class="bouton bouton--petit" data-lettre-copier>' + ico("copier") + 'Copier le texte</button><button type="button" class="bouton bouton--petit" data-lettre-dl>' + ico("telecharger") + 'Télécharger (.txt)</button></div>' +
+            '<div class="cr-ligne-actions"><button type="button" class="bouton bouton--petit" data-lettre-copier>' + ico("copier") + 'Copier le texte</button><button type="button" class="bouton bouton--petit" data-lettre-docx>' + ico("telecharger") + 'Word (.docx)</button><button type="button" class="bouton bouton--petit bouton--fantome" data-lettre-dl>' + ico("telecharger") + 'Texte (.txt)</button></div>' +
           '</div></details>';
       },
       calc: function (c) {
@@ -1892,6 +1959,7 @@
     }
     var tous = au.anomalies.concat(au.infos);
     if (tous.length) h += '<ul class="cr-constats">' + tous.slice(0, 40).map(function (a) { return '<li data-g="' + a.g + '">' + ico(a.g === "info" ? "info" : "alerte") + '<span>' + esc(a.txt) + '</span></li>'; }).join("") + (tous.length > 40 ? '<li data-g="info">' + ico("info") + '<span>… et ' + (tous.length - 40) + ' autres constats.</span></li>' : "") + '</ul>';
+    h += '<div class="cr-ligne-actions"><button type="button" class="bouton bouton--petit" data-audit-pdf>' + ico("telecharger") + 'Rapport PDF</button><button type="button" class="bouton bouton--petit" data-audit-xlsx>' + ico("telecharger") + 'Excel</button></div>';
     if (!au.nonDetaille) h += '<details class="cr-coller"><summary>Voir les ' + L.length + ' échéances recalculées</summary><div class="cr-table-zone" tabindex="0" role="region" aria-label="Échéances recalculées"><table class="cr-table cr-table--audit"><thead><tr><th scope="col">N°</th><th scope="col">Date</th><th scope="col">Capital dû</th><th scope="col">Intérêts facturés</th><th scope="col">Intérêts attendus</th><th scope="col">Écart</th></tr></thead><tbody>' +
       L.map(function (l) { var ko = isFinite(l.ecart) && Math.abs(l.ecart) > 0.0015; return '<tr' + (ko ? ' class="cr-ligne-ko"' : l.corrige ? ' class="cr-ligne-corrigee"' : "") + '><td>' + l.n + '</td><td>' + mA(l.date) + '</td><td class="chiffre">' + F.dt3(l.crdAv) + '</td><td class="chiffre">' + (isFinite(l.int) ? F.dt3(l.int) : "—") + '</td><td class="chiffre">' + (isFinite(l.attendu) ? F.dt3(l.attendu) : "—") + '</td><td class="chiffre">' + (isFinite(l.ecart) ? (ko ? "<strong>" + signe(l.ecart) + "</strong>" : "0") : "—") + '</td></tr>'; }).join("") +
       '</tbody></table></div></details>';
@@ -2097,6 +2165,10 @@
     ongletsSimples($("cr-gr-onglets"), "data-graphe", function (v) { S.vueGraphe = v; $("cr-gr-zone").setAttribute("aria-labelledby", "cr-gr-tab-" + v); rendreGraphe(); });
     ongletsSimples($("cr-tab-onglets"), "data-vue", function (v) { S.vueTableau = v; rendreTableau(); });
     $("cr-csv").addEventListener("click", exporterCsv);
+    $("cr-temps-curseur").addEventListener("input", function () { arreterLecture(); majTemps(); });
+    $("cr-temps-lire").addEventListener("click", basculerLecture);
+    $("cr-pdf").addEventListener("click", function () { exporterEcheancier("pdf", this); });
+    $("cr-xlsx").addEventListener("click", function () { exporterEcheancier("xlsx"); });
     $("cr-imprimer").addEventListener("click", function () { S.vueTableau = S.vueTableau || "mensuel"; window.print(); });
     $("cr-copier-resume").addEventListener("click", function () { copierTexte(texteResume(), "Résumé copié : collez-le où vous voulez."); });
     /* Délégation globale : outils, éligibilité, comparaison */
@@ -2123,6 +2195,13 @@
         OUTIL_FN.audit.calc(ca); return;
       }
       if (t.closest("[data-lettre-copier]")) { copierTexte($("cr-o-quand").querySelector("[data-lettre-texte]").textContent, "Lettre copiée."); return; }
+      if (t.closest("[data-lettre-docx]")) {
+        var CDl = window.CreditDocuments; if (!CDl) return;
+        telecharger("lettre-banque.docx", CDl.lettreDocx("Demande de réduction du taux", $("cr-o-quand").querySelector("[data-lettre-texte]").textContent), "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        toast("Lettre téléchargée au format Word."); return;
+      }
+      if (t.closest("[data-audit-pdf]")) { exporterAudit("pdf", t.closest("[data-audit-pdf]")); return; }
+      if (t.closest("[data-audit-xlsx]")) { exporterAudit("xlsx"); return; }
       if (t.closest("[data-lettre-dl]")) { telecharger("lettre-banque.txt", "﻿" + $("cr-o-quand").querySelector("[data-lettre-texte]").textContent.replace(/\n/g, "\r\n"), "text/plain;charset=utf-8"); toast("Lettre téléchargée."); return; }
       if (t.closest("[data-vers-reneg]")) {
         var cm = $("cr-o-mon"), det2 = $("cr-outil-reneg");

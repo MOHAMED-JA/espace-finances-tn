@@ -1171,6 +1171,30 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.screenshot({ path: path.join(CAPTURES, "credit-audit.png"), fullPage: false });
   });
 
+  await etape("crédit : voyage dans le temps, échéancier en PDF et en Excel, lettre en Word", async () => {
+    await page.goto(base + "/espace/#credit?type=auto&capital=30000&mois=60&taux=10.5");
+    await page.waitForSelector("#cr-temps-curseur");
+    await page.waitForFunction(() => document.getElementById("cr-temps-curseur").max === "60");
+    await page.fill("#cr-temps-curseur", "30");
+    await page.waitForFunction(() => /Échéance 30 sur 60/.test(document.getElementById("cr-temps-date").textContent));
+    const st = await page.textContent("#cr-temps-stats");
+    assert(/Capital remboursé/.test(st) && /30 échéances restantes/.test(st), "voyage dans le temps : " + st);
+    await page.click("#cr-temps-lire");
+    await page.waitForFunction(() => /Crédit soldé/.test(document.getElementById("cr-temps-stats").textContent), null, { timeout: 15000 });
+    for (const [id, ext] of [["#cr-pdf", "pdf"], ["#cr-xlsx", "xlsx"]]) {
+      const [dl] = await Promise.all([page.waitForEvent("download"), page.click(id)]);
+      assert(dl.suggestedFilename() === "echeancier-credit-30000dt-60mois." + ext, "nom : " + dl.suggestedFilename());
+      const octets = fs.readFileSync(await dl.path());
+      assert(ext === "pdf" ? octets.slice(0, 5).toString() === "%PDF-" : octets.slice(0, 2).toString() === "PK", "fichier " + ext + " valide");
+    }
+    await page.goto(base + "/espace/#credit?type=immo&capital=150000&mois=240&taux=8");
+    await page.waitForSelector("#cr-outil-quand");
+    await page.click("#cr-outil-quand > summary");
+    await page.click("#cr-o-quand details[data-lettre] > summary");
+    const [dl] = await Promise.all([page.waitForEvent("download"), page.click("[data-lettre-docx]")]);
+    assert(dl.suggestedFilename() === "lettre-banque.docx" && fs.readFileSync(await dl.path()).slice(0, 2).toString() === "PK", "lettre Word");
+  });
+
   await etape("simulation → profil : crédit ajouté (puis annulé), épargne ajoutée depuis « Enregistrer »", async () => {
     await page.goto(base + "/espace/#credit?type=auto&capital=40000&mois=60&taux=9");
     await page.waitForSelector("#ajouter-profil", { state: "visible" });
