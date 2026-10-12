@@ -720,6 +720,8 @@
     setTimeout(function () { b.classList.add("bascule-lib"); setTimeout(function () { l.textContent = "Partager"; b.classList.remove("bascule-lib"); }, 160); }, 2400);
   }
   $("partager").addEventListener("click", function () {
+    /* Lot 2 : fenêtre de partage commune (page publique préremplie, QR code, WhatsApp, e-mail). */
+    if (window.OrbitePartage) { window.OrbitePartage.ouvrir("salaire"); return; }
     var lien = lienPartage();
     if (navigator.share && matchMedia("(pointer: coarse)").matches) {
       navigator.share({ title: doc.title, text: "Mon calcul de salaire net (Tunisie)", url: lien }).catch(function () {});
@@ -753,6 +755,18 @@
   window.ModuleSalaire = {
     outil: "salaire",
     etat: function () { return requete(); },
+    /* Partage (Lot 2) : brut du mois et secteur ; la situation de famille seulement si la personne la joint. */
+    pourPartage: function (options) {
+      var L = window.PartageLien;
+      if (!L || !dernier) return { erreur: "Indiquez un salaire avant de le partager." };
+      var c = dernier.calc, e = dernier.etat, non = [];
+      if (e.primesImposables > 0 || e.primesNonCotisables > 0) non.push("les primes");
+      if (e.avantagesNature > 0) non.push("les avantages en nature");
+      if (e.indemnitesNonImposables > 0) non.push("les indemnités");
+      if (e.nombreSalaires > 12) non.push("les salaires en plus des 12 mois");
+      if (options && options.famille && (e.etudiants > 0 || e.handicapes > 0 || e.parents > 0)) non.push("les étudiants, personnes handicapées et parents à charge");
+      return L.depuisSalaire({ brut: c.v.brutMensuel, secteur: e.secteur, chef: e.chefDeFamille, enfants: e.enfants, nonRepris: non }, options);
+    },
     resume: function () {
       if (!dernier) return null;
       var c = dernier.calc, etat = dernier.etat, a = c.r.annuel, n = c.v.nombre, mensuel = c.r.periode === "mensuel";

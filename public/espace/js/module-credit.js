@@ -2351,6 +2351,47 @@
       };
     },
     nomParDefaut: function () { return nomScenario(sc0()); },
+    /* Document reçu (Lot 2) : ouvre l'outil « offre » ou « audit » et y lit les fichiers. */
+    lireDocument: function (cle, fichiers) {
+      if ((cle !== "audit" && cle !== "offre") || !fichiers || !fichiers.length) return false;
+      var d = $("cr-outil-" + cle);
+      if (!d) return false;
+      d.open = true;
+      var corps = construireOutil(cle);
+      if (!corps) return false;
+      lireFichiers(corps, cle, fichiers);
+      d.scrollIntoView({ behavior: "smooth", block: "start" });
+      return true;
+    },
+    /* Annuler / rétablir (Lot 2) : tous les scénarios A, B, C et l'onglet actif. */
+    instantane: function () { return JSON.stringify({ s: S.scenarios, a: S.actif }); },
+    restaurer: function (t) {
+      var x = null;
+      try { x = JSON.parse(t); } catch (e) { x = null; }
+      if (!x || !Array.isArray(x.s) || !x.s.length || !x.s[x.a]) return false;
+      S.scenarios = x.s; S.actif = x.a; S.precedentM = null;
+      ecrireEditeur();
+      calculer(true);
+      var O = Orb(); if (O) requestAnimationFrame(function () { O.placerPastilles(racine); });
+      return true;
+    },
+    /* Partage (Lot 2) : le crédit actif vers le simulateur public, montants seuls ; ce que la page ne montre pas est listé. */
+    pourPartage: function () {
+      var sc = sc0(), L = window.PartageLien;
+      if (!L || !valide(sc)) return { erreur: "Complétez la simulation avant de la partager." };
+      var e = entree(sc, false), non = [];
+      if (e.apport) non.push("le prix du bien et l'apport");
+      if (e.periodicite !== 1) non.push("les échéances " + ({ 3: "trimestrielles", 6: "semestrielles", 12: "annuelles" }[e.periodicite] || "non mensuelles"));
+      if (e.amort !== "constant") non.push(e.amort === "lineaire" ? "l'amortissement constant" : "le remboursement in fine");
+      if (e.differe) non.push("le différé");
+      if (e.variation) non.push("la variation du TMM");
+      if (e.assurance) non.push("l'assurance");
+      if (e.frais) non.push("les frais");
+      if (e.ras.length) non.push(e.ras.length > 1 ? "les remboursements anticipés" : "le remboursement anticipé");
+      if (e.versement) non.push("les versements réguliers");
+      if (e.reduction) non.push("la règle des 8 %");
+      return L.depuisCredit({ type: sc.type, capital: sc.capital, mois: sc.mois, taux: e.taux, tmm: e.tmm, nonRepris: non }, OC.TMM);
+    },
     /* Ce que la simulation apporte au profil : un crédit en cours (situation du jour, tirée du tableau simulé,
        remboursements anticipés et réductions de taux compris) et un projet (crédit pas encore signé). */
     versProfil: function () {

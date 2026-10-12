@@ -96,8 +96,13 @@
         <button type="button" class="bouton bouton--fantome bouton--petit barre__aide" id="aide-visite" aria-label="Guide : revoir la visite guidée" title="Revoir la visite guidée"><svg aria-hidden="true"><use href="/orbite/icones.svg#boussole"/></svg><span class="barre__aide-lib" aria-hidden="true">Guide</span></button>
         <a class="pastille-acces" id="pastille-acces" href="#abonnement" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#couronne"/></svg><span id="pastille-acces-lib"></span></a>
         <div class="barre__actions" id="barre-actions" hidden>
-          <button type="button" class="bouton bouton--petit" id="reprendre-profil"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span class="bouton__lib">Reprendre mon profil</span></button>
-          <button type="button" class="bouton bouton--petit" id="ajouter-profil" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg><span class="bouton__lib">Ajouter à mon profil</span></button>
+          <button type="button" class="bouton bouton--petit" id="reprendre-profil" title="Reprendre mon profil"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span class="bouton__lib">Reprendre mon profil</span></button>
+          <button type="button" class="bouton bouton--petit" id="ajouter-profil" title="Ajouter à mon profil" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg><span class="bouton__lib">Ajouter à mon profil</span></button>
+          <span class="barre__histo" role="group" aria-label="Historique des modifications">
+            <button type="button" class="bouton bouton--fantome bouton--petit barre__histo-b" id="histo-annuler" aria-label="Annuler la dernière modification (Ctrl Z)" title="Annuler (Ctrl Z)" disabled><svg aria-hidden="true"><use href="/orbite/icones.svg#annuler"/></svg></button>
+            <button type="button" class="bouton bouton--fantome bouton--petit barre__histo-b" id="histo-retablir" aria-label="Rétablir la modification (Ctrl Y)" title="Rétablir (Ctrl Y)" disabled><svg aria-hidden="true"><use href="/orbite/icones.svg#retablir"/></svg></button>
+          </span>
+          <button type="button" class="bouton bouton--petit" id="partager-sim" aria-haspopup="dialog" title="Partager : lien, QR code, WhatsApp, e-mail"><svg aria-hidden="true"><use href="/orbite/icones.svg#partager"/></svg><span class="bouton__lib">Partager</span></button>
           <button type="button" class="bouton bouton--plein bouton--petit" id="enregistrer"><svg aria-hidden="true"><use href="/orbite/icones.svg#enregistrer"/></svg><span class="bouton__lib" id="enregistrer-lib">Enregistrer</span></button>
         </div>
       </header>
@@ -460,6 +465,7 @@
               <div class="depliant__corps">
                 <ul class="lignes-liste" id="liste-contrats"></ul>
                 <button type="button" class="bouton bouton--petit" data-ajouter="contrats"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg>Ajouter un contrat</button>
+                <div class="champ rappel-versement"><label for="p-jour-versement">Rappel de versement</label><div class="saisie"><select id="p-jour-versement" data-p="jourVersement" aria-describedby="p-jour-versement-aide"><option value="0">Pas de rappel</option><option value="1">Chaque mois, le 1er</option><option value="5">Chaque mois, le 5</option><option value="10">Chaque mois, le 10</option><option value="15">Chaque mois, le 15</option><option value="20">Chaque mois, le 20</option><option value="25">Chaque mois, le 25</option><option value="28">Chaque mois, le 28</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div><span class="champ__aide" id="p-jour-versement-aide">Une notification le jour choisi pour verser votre épargne du mois. L'e-mail de rappel, si vous l'avez activé, ne contient aucun montant.</span></div>
               </div>
             </details>
 
@@ -500,6 +506,7 @@
             <span class="module__pastille" aria-hidden="true"><svg><use href="/orbite/icones.svg#salaire"/></svg></span>
             <div><h1 id="titre-salaire">Salaire</h1><p class="vue__sous" id="sous-salaire">Brut ⇄ net, tranche d'impôt, augmentation, coût employeur et offres. Barèmes <span data-annee>2026</span>.</p></div>
             <div class="module__actions">
+              <button type="button" class="bouton bouton--petit" data-guidee="salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#etapes"/></svg>Simulation guidée</button>
               <button type="button" class="bouton bouton--petit" id="nego-ouvrir"><svg aria-hidden="true"><use href="/orbite/icones.svg#hausse"/></svg>Préparer ma négociation</button>
               <button type="button" class="bouton bouton--petit" id="fiche-controle"><svg aria-hidden="true"><use href="/orbite/icones.svg#fiche"/></svg>Contrôler ma fiche de paie</button>
             </div>
@@ -690,6 +697,7 @@
           <header class="vue__tete module__tete">
             <span class="module__pastille" aria-hidden="true"><svg><use href="/orbite/icones.svg#epargne"/></svg></span>
             <div><h1 id="titre-epargne">Épargne vie &amp; CEA</h1><p class="vue__sous">Économie d'impôt (art. 39), capital projeté, rachat, retraite et protection.</p></div>
+            <div class="module__actions"><button type="button" class="bouton bouton--petit partager-mobile" data-partager><svg aria-hidden="true"><use href="/orbite/icones.svg#partager"/></svg>Partager</button><button type="button" class="bouton bouton--petit" data-guidee="epargne"><svg aria-hidden="true"><use href="/orbite/icones.svg#etapes"/></svg>Simulation guidée</button></div>
           </header>
           <div id="epargne-racine" class="module__racine"><div class="squelette module__attente"></div></div>
         </section>
@@ -699,7 +707,11 @@
           <header class="vue__tete module__tete">
             <span class="module__pastille" aria-hidden="true"><svg><use href="/orbite/icones.svg#credit"/></svg></span>
             <div><h1 id="titre-credit">Crédit</h1><p class="vue__sous">Mensualité, TMM + marge, TEG, tableau d'amortissement, capacité et renégociation.</p></div>
-            <button type="button" class="bouton bouton--petit module__action" id="dossier-ouvrir"><svg aria-hidden="true"><use href="/orbite/icones.svg#fiche"/></svg>Préparer mon dossier banque</button>
+            <div class="module__actions">
+              <button type="button" class="bouton bouton--petit" data-guidee="credit"><svg aria-hidden="true"><use href="/orbite/icones.svg#etapes"/></svg>Simulation guidée</button>
+              <button type="button" class="bouton bouton--petit partager-mobile" data-partager><svg aria-hidden="true"><use href="/orbite/icones.svg#partager"/></svg>Partager</button>
+              <button type="button" class="bouton bouton--petit" id="dossier-ouvrir"><svg aria-hidden="true"><use href="/orbite/icones.svg#fiche"/></svg>Préparer mon dossier banque</button>
+            </div>
           </header>
           <div id="credit-racine" class="module__racine"><div class="squelette module__attente"></div></div>
         </section>
@@ -719,9 +731,15 @@
               <i class="bascule__pastille" aria-hidden="true"></i>
             </div>
             <div class="saisie recherche"><svg aria-hidden="true"><use href="/orbite/icones.svg#recherche"/></svg><input id="recherche" type="search" placeholder="Rechercher par nom" aria-label="Rechercher une simulation"></div>
+            <button type="button" class="bouton bouton--petit" id="comparer-mode" aria-pressed="false"><svg aria-hidden="true"><use href="/orbite/icones.svg#comparer"/></svg>Comparer</button>
             <div class="saisie tri"><select id="tri" aria-label="Trier"><option value="recent">Plus récentes</option><option value="ancien">Plus anciennes</option><option value="nom">Par nom</option><option value="favori">Favoris d'abord</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div>
           </div>
           <ul class="cartes" id="toutes" role="list" aria-busy="true"></ul>
+          <div class="comparer-barre" id="comparer-barre" role="region" aria-label="Comparaison" hidden>
+            <p id="comparer-etat" aria-live="polite">Cochez 2 ou 3 simulations du même module.</p>
+            <button type="button" class="bouton bouton--fantome bouton--petit" id="comparer-annuler">Annuler</button>
+            <button type="button" class="bouton bouton--plein bouton--petit" id="comparer-ouvrir" disabled>Comparer</button>
+          </div>
         </section>
 
         <!-- ======== Vie & impôts (route #vie, onglet par #vie?onglet=vie|fiscal) ======== -->
@@ -1130,6 +1148,16 @@
                 </div>
               </div>
             </section>
+            <section class="panneau reglage" aria-labelledby="r-lisible">
+              <div class="reglage__texte"><h2 id="r-lisible">Lisibilité</h2><p>Haute lisibilité : texte plus grand, gris plus foncés, liens soulignés, contour bien visible autour de l'élément actif et animations coupées. Retenue sur votre compte, sur tous vos appareils. Aussi dans Ctrl K.</p></div>
+              <div class="reglage__controle">
+                <div class="bascule" id="choix-lisible" role="radiogroup" aria-label="Lisibilité">
+                  <label><input type="radio" name="lisible" value=""><span>Normale</span></label>
+                  <label><input type="radio" name="lisible" value="oui"><span>Haute lisibilité</span></label>
+                  <i class="bascule__pastille" aria-hidden="true"></i>
+                </div>
+              </div>
+            </section>
             <section class="panneau reglage" aria-labelledby="r-mouvement">
               <div class="reglage__texte"><h2 id="r-mouvement">Animations</h2><p>Réduisez les mouvements si les animations vous gênent ; les fondus doux restent.</p></div>
               <div class="reglage__controle">
@@ -1425,6 +1453,7 @@
         <span class="carte__secondaires"></span>
       </a>
       <div class="carte__actions">
+        <label class="carte__choix"><input type="checkbox" class="carte__case"><span class="cache carte__case-lib">Comparer</span></label>
         <button type="button" class="bouton bouton--fantome bouton--icone bouton--petit carte__favori" aria-pressed="false"><svg aria-hidden="true"><use href="/orbite/icones.svg#etoile"/></svg></button>
         <button type="button" class="bouton bouton--fantome bouton--icone bouton--petit carte__menu" aria-haspopup="menu" aria-expanded="false"><svg aria-hidden="true"><use href="/orbite/icones.svg#points"/></svg></button>
       </div>
@@ -1966,6 +1995,108 @@
     </form>
   </dialog>
 
+  <dialog class="dialogue dialogue--partager" id="dlg-partager" aria-labelledby="dlg-partager-titre">
+    <form method="dialog">
+      <div class="dialogue__tete"><h2 id="dlg-partager-titre">Partager cette simulation</h2></div>
+      <div class="dialogue__corps partager">
+        <section class="partager__apercu" aria-labelledby="dlg-partager-voit">
+          <p class="partager__sur" id="dlg-partager-voit">Ce que verra la personne&nbsp;: <b id="partager-page"></b></p>
+          <p class="partager__chiffre"><span id="partager-chiffre"></span> <small id="partager-chiffre-lib"></small></p>
+          <p class="partager__second" id="partager-second"></p>
+          <ul class="partager__contenu" id="partager-contenu" aria-label="Ce que contient le lien"></ul>
+        </section>
+        <label class="partager__sensible" id="partager-sensible" hidden><input type="checkbox" id="partager-sensible-case"> <span id="partager-sensible-lib"></span></label>
+        <details class="partager__ecarts" id="partager-ecarts" hidden>
+          <summary id="partager-ecarts-titre"></summary>
+          <ul id="partager-ecarts-liste"></ul>
+        </details>
+        <div class="partager__lien">
+          <label class="cache" for="partager-url">Lien de partage</label>
+          <input id="partager-url" type="text" readonly spellcheck="false">
+          <button type="button" class="bouton bouton--plein bouton--petit" id="partager-copier"><svg aria-hidden="true"><use href="/orbite/icones.svg#copier"/></svg><span id="partager-copier-lib">Copier</span></button>
+        </div>
+        <div class="partager__canaux">
+          <a class="bouton bouton--petit" id="partager-whatsapp" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true"><use href="/orbite/icones.svg#message"/></svg>WhatsApp</a>
+          <a class="bouton bouton--petit" id="partager-email"><svg aria-hidden="true"><use href="/orbite/icones.svg#enveloppe"/></svg>E-mail</a>
+          <button type="button" class="bouton bouton--petit" id="partager-qr-bouton" aria-expanded="false" aria-controls="partager-qr"><svg aria-hidden="true"><use href="/orbite/icones.svg#qr"/></svg>QR code</button>
+          <button type="button" class="bouton bouton--petit" id="partager-natif" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#partager"/></svg>Autres applications</button>
+          <a class="bouton bouton--fantome bouton--petit" id="partager-ouvrir" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/orbite/icones.svg#sortie-externe"/></svg>Voir la page</a>
+        </div>
+        <div class="partager__qr" id="partager-qr" hidden>
+          <div class="partager__qr-image" id="partager-qr-image" role="img" aria-label="QR code du lien de partage"></div>
+          <div class="partager__qr-texte">
+            <p>À scanner avec l'appareil photo d'un téléphone : la page s'ouvre déjà remplie.</p>
+            <button type="button" class="bouton bouton--petit" id="partager-qr-png"><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg>Enregistrer l'image</button>
+          </div>
+        </div>
+        <p class="partager__vie-privee"><svg aria-hidden="true"><use href="/orbite/icones.svg#cadenas"/></svg><span>Le lien ne contient que ces montants&nbsp;: ni votre nom, ni votre profil, ni votre compte. Les valeurs restent après le «&nbsp;#&nbsp;», elles ne sont jamais envoyées au serveur.</span></p>
+        <p class="erreur-champ" id="partager-erreur" role="alert" hidden></p>
+      </div>
+      <div class="dialogue__pied">
+        <button type="submit" class="bouton bouton--fermer" value="fermer">Fermer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialogue dialogue--guidee" id="dlg-guidee" aria-labelledby="guidee-question">
+    <form method="dialog" id="guidee-form" novalidate>
+      <div class="dialogue__tete guidee__tete">
+        <p class="guidee__module" id="guidee-module"></p>
+        <ol class="guidee__points" id="guidee-points" aria-hidden="true"></ol>
+        <p class="cache" id="guidee-progression" aria-live="polite"></p>
+      </div>
+      <div class="dialogue__corps guidee__corps" id="guidee-corps">
+        <h2 class="guidee__question" id="guidee-question" tabindex="-1"></h2>
+        <p class="guidee__aide" id="guidee-aide"></p>
+        <div class="guidee__reponse" id="guidee-reponse"></div>
+        <p class="erreur-champ" id="guidee-erreur" role="alert" hidden></p>
+      </div>
+      <div class="dialogue__pied guidee__pied">
+        <button type="button" class="bouton bouton--fantome" id="guidee-retour">Retour</button>
+        <span class="guidee__espace"></span>
+        <button type="submit" class="bouton bouton--fermer" value="fermer" formnovalidate id="guidee-fermer">Fermer</button>
+        <button type="button" class="bouton bouton--plein" id="guidee-suivant">Suivant</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialogue dialogue--comparer" id="dlg-comparer" aria-labelledby="comparer-titre">
+    <form method="dialog">
+      <div class="dialogue__tete"><h2 id="comparer-titre">Comparer vos simulations</h2><p class="comparer__sous" id="comparer-sous"></p></div>
+      <div class="dialogue__corps">
+        <div class="comparer__table-cadre" tabindex="0" role="region" aria-labelledby="comparer-titre">
+          <table class="comparer__table" id="comparer-table"></table>
+        </div>
+        <p class="comparer__note">✓ marque la meilleure valeur quand le sens ne fait pas de doute (mensualité, coût et impôt les plus bas ; net et économie les plus hauts).</p>
+      </div>
+      <div class="dialogue__pied"><button type="submit" class="bouton bouton--fermer" value="fermer">Fermer</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="dialogue dialogue--recevoir" id="dlg-recevoir" aria-labelledby="recevoir-titre">
+    <form method="dialog">
+      <div class="dialogue__tete"><h2 id="recevoir-titre">Document reçu</h2></div>
+      <div class="dialogue__corps recevoir">
+        <ul class="recevoir__fichiers" id="recevoir-fichiers"></ul>
+        <p class="recevoir__etat" id="recevoir-etat" role="status" aria-live="polite"></p>
+        <div class="recevoir__resultat" id="recevoir-resultat" hidden>
+          <p class="recevoir__type">Orbite reconnaît&nbsp;: <b id="recevoir-type"></b></p>
+          <button type="button" class="bouton bouton--plein" id="recevoir-action"></button>
+        </div>
+        <div class="recevoir__choix" id="recevoir-choix" hidden>
+          <p id="recevoir-choix-titre">Ce n'est pas ça&nbsp;? Choisissez&nbsp;:</p>
+          <div class="recevoir__boutons">
+            <button type="button" class="bouton bouton--petit" data-recevoir="fiche"><svg aria-hidden="true"><use href="/orbite/icones.svg#fiche"/></svg>Fiche de paie</button>
+            <button type="button" class="bouton bouton--petit" data-recevoir="tableau"><svg aria-hidden="true"><use href="/orbite/icones.svg#liste"/></svg>Tableau d'amortissement</button>
+            <button type="button" class="bouton bouton--petit" data-recevoir="offre"><svg aria-hidden="true"><use href="/orbite/icones.svg#credit"/></svg>Offre de crédit</button>
+          </div>
+        </div>
+        <p class="recevoir__vie-privee"><svg aria-hidden="true"><use href="/orbite/icones.svg#cadenas"/></svg><span>Lu sur votre appareil&nbsp;: le document n'est ni envoyé ni gardé par Orbite.</span></p>
+      </div>
+      <div class="dialogue__pied"><button type="submit" class="bouton bouton--fermer" value="fermer">Fermer</button></div>
+    </form>
+  </dialog>
+
   <dialog class="dialogue" id="dlg-supprimer-compte" aria-labelledby="dlg-sc-titre">
     <form method="dialog">
       <div class="dialogue__tete"><h2 id="dlg-sc-titre">Supprimer définitivement votre compte&nbsp;?</h2></div>
@@ -2020,7 +2151,15 @@
   <script src="/espace/js/module-epargne.js"></script>
   <script src="/moteurs/credit/credit.js"></script><script src="/moteurs/credit/phrase.js"></script><script src="/moteurs/credit/audit.js"></script><script src="/espace/js/credit-documents.js"></script><script src="/espace/js/module-credit.js"></script>
   <script src="/commun/fuites.js"></script>
+  <script src="/espace/js/comparer-calcul.js"></script>
   <script src="/espace/js/simulations.js"></script>
+  <script src="/commun/partage-lien.js"></script>
+  <script src="/espace/js/partage-simulation.js"></script>
+  <script src="/espace/js/lisibilite.js"></script>
+  <script src="/espace/js/historique.js"></script>
+  <script src="/espace/js/guidee.js"></script>
+  <script src="/espace/js/recevoir-calcul.js"></script>
+  <script src="/espace/js/recevoir.js"></script>
   <script src="/espace/js/abonnement-calcul.js"></script>
   <script src="/espace/js/abonnement.js"></script>
   <script src="/espace/js/parametres.js"></script>

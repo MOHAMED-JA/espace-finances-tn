@@ -14,6 +14,12 @@
     { "src": "/orbite/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "/orbite/icone-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
+  "share_target": {
+    "action": "/espace/recevoir",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": { "files": [{ "name": "fichiers", "accept": ["application/pdf", ".pdf", "image/jpeg", "image/png", "image/webp"] }] }
+  },
   "shortcuts": [
     { "name": "Mettre à jour mon salaire", "short_name": "Salaire", "description": "Nouveau montant et mois d'effet", "url": "/espace/#profil?section=salaire&salaire=1", "icons": [{ "src": "/orbite/raccourcis/salaire.png", "sizes": "96x96", "type": "image/png" }] },
     { "name": "Dossier banque", "short_name": "Dossier", "description": "PDF à remettre au conseiller", "url": "/espace/#credit?dossier=1", "icons": [{ "src": "/orbite/raccourcis/dossier.png", "sizes": "96x96", "type": "image/png" }] },

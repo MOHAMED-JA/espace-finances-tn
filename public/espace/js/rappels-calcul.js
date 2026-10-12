@@ -82,6 +82,21 @@
             CONSEIL_REDUCTION, "Voir mon crédit") });
       });
     }
+    /* Versement mensuel d'épargne (Lot 2) : le jour choisi à 9 h, visible 5 jours ; le prochain seulement.
+       Le montant (somme des contrats commencés) n'apparaît que dans Orbite, jamais dans l'email. */
+    if (sy && sy.profil && sy.profil.jourVersement > 0) {
+      var jv = sy.profil.jourVersement, dv = new Date(maintenant.getFullYear(), maintenant.getMonth(), jv, 9, 0, 0);
+      if (dv.getTime() + 5 * JOUR <= t) dv = new Date(maintenant.getFullYear(), maintenant.getMonth() + 1, jv, 9, 0, 0);
+      var mensuel = 0, mv = dv.getFullYear() * 12 + dv.getMonth();
+      (sy.profil.contrats || []).forEach(function (c) { if (c.anneeDebut * 12 + c.moisDebut - 1 <= mv) mensuel += c.versementMensuel || 0; });
+      liste.push({ id: "versement-" + dv.getFullYear() + "-" + (dv.getMonth() + 1), titre: "C'est le jour de votre versement d'épargne",
+        corps: mensuel > 0 ? "Assurance vie et CEA : " + dt(mensuel) + " ce mois-ci, comme prévu. Un versement régulier fait travailler les intérêts plus longtemps."
+          : "Votre versement d'épargne du mois, comme prévu. Un versement régulier fait travailler les intérêts plus longtemps.",
+        url: "/espace/#epargne", quand: iso(Math.max(dv.getTime(), t)), jusqua: iso(dv.getTime() + 5 * JOUR), type: "versement",
+        mail: mail("Épargne · " + MOIS[dv.getMonth()] + " " + dv.getFullYear(), "C'est le jour de votre versement d'épargne",
+          "Vous avez choisi de verser votre épargne le " + (jv === 1 ? "1er" : jv) + " de chaque mois. Le montant prévu vous attend dans Orbite.",
+          "Un virement permanent depuis votre banque vous évite d'y penser chaque mois.", "Voir mon épargne") });
+    }
     /* Rappels programmés par l'utilisateur : le 1er du mois choisi à 9 h, visibles 45 jours. */
     if (sy && sy.profil) {
       (sy.profil.rappelsPerso || []).forEach(function (r) {

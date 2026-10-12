@@ -9,7 +9,7 @@
  *   la synchronisation périodique (application installée) les affiche même quand Orbite est fermée.
  */
 "use strict";
-var VERSION = "orbite-2026-10-12i";
+var VERSION = "orbite-2026-10-12j";
 var CACHE = VERSION + "-site";
 var RAPPELS = "/__orbite/rappels.json";
 var DEJA = "/__orbite/rappels-vus.json";
@@ -51,12 +51,27 @@ self.addEventListener("install", function (e) {
 
 self.addEventListener("activate", function (e) {
   e.waitUntil(caches.keys().then(function (cles) {
-    return Promise.all(cles.filter(function (k) { return k.indexOf("orbite-") === 0 && k !== CACHE && k !== "orbite-rappels"; }).map(function (k) { return caches.delete(k); }));
+    return Promise.all(cles.filter(function (k) { return k.indexOf("orbite-") === 0 && k !== CACHE && k !== "orbite-rappels" && k !== RECUS; }).map(function (k) { return caches.delete(k); }));
   }).then(function () { return self.clients.claim(); }));
 });
 
+/* Document partagé vers Orbite (Lot 2, share_target du manifeste) : les fichiers sont gardés le temps que la page les lise
+   (cache « orbite-recus », vidé dès la lecture), puis la page s'ouvre sur #recevoir. Rien n'est envoyé au serveur. */
+var RECUS = "orbite-recus";
+function recevoir(req) {
+  return req.formData().then(function (fd) {
+    var fichiers = fd.getAll("fichiers").filter(function (f) { return f && typeof f === "object" && f.size > 0 && f.size <= 15 * 1024 * 1024; }).slice(0, 5);
+    return caches.delete(RECUS).then(function () { return caches.open(RECUS); }).then(function (c) {
+      return Promise.all(fichiers.map(function (f, i) {
+        return c.put("/__orbite/recu/" + i, new Response(f, { headers: { "Content-Type": f.type || "application/octet-stream", "X-Orbite-Nom": encodeURIComponent(f.name || "document") } }));
+      })).then(function () { return c.put("/__orbite/recu/liste", new Response(JSON.stringify({ n: fichiers.length, t: Date.now() }), { headers: { "Content-Type": "application/json" } })); });
+    }).then(function () { return Response.redirect("/espace/#recevoir", 303); });
+  }).catch(function () { return Response.redirect("/espace/#recevoir?erreur=1", 303); });
+}
+
 self.addEventListener("fetch", function (e) {
   var req = e.request, url = new URL(req.url);
+  if (req.method === "POST" && url.origin === self.location.origin && url.pathname === "/espace/recevoir") { e.respondWith(recevoir(req)); return; }
   if (req.method !== "GET" || url.origin !== self.location.origin || url.pathname.indexOf("/__orbite/") === 0) return;
   /* Retour de paiement : toujours le réseau (la vérification doit se faire auprès du serveur). */
   if (url.searchParams.has("paiement") || /paiement-test\.html$/.test(url.pathname)) return;

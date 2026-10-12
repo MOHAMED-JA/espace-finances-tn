@@ -268,6 +268,7 @@
 
   function moduleCourant() { var r = lireRoute(); return MODULES[r.vue] ? r.vue : null; }
   function modifie(vue) {
+    doc.dispatchEvent(new CustomEvent("orbite:modifie", { detail: { vue: vue } }));
     var s = simulationOuverte[vue];
     if (s && moduleCourant() === vue) $("enregistrer-lib").textContent = "Mettre à jour";
   }
@@ -757,6 +758,8 @@
     utilisateur: function () { return utilisateur; },
     modifie: modifie,
     ouvrirSimulation: ouvrirSimulation,
+    /* Nouvelle simulation partie de zéro (simulation guidée) : « Enregistrer » crée une nouvelle fiche au lieu de mettre à jour. */
+    detacherSimulation: function (vue) { if (simulationOuverte[vue]) { simulationOuverte[vue] = null; if (moduleCourant() === vue) $("enregistrer-lib").textContent = "Enregistrer"; } },
     lireRoute: lireRoute,
     remplirUtilisateur: remplirUtilisateur,
     enregistrerModule: function (vue) { if (lireRoute().vue === vue) afficher(false); },

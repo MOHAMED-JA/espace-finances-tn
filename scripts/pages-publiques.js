@@ -204,6 +204,7 @@ ${PAGES.filter((p) => p.cle !== pg.cle).map((p) => `        <li><a href="/${p.sl
   <script src="/espace/js/orbite-intelligence.js"></script>
   <script src="/espace/js/retraite-calcul.js"></script>
   <script src="/commun/pages-calcul.js"></script>
+  <script src="/commun/partage-lien.js"></script>
   <script src="/commun/pages-publiques.js"></script>
 </body>
 </html>

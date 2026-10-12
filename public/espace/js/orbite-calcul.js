@@ -51,7 +51,7 @@
       activite: "salarie", caissePension: "cnss", pensionEtrangere: false,
       primesImposables: 0, primesNonCotisables: 0, avantagesNature: 0, indemnitesNonImposables: 0,
       chefDeFamille: false, enfants: 0, etudiants: 0, handicapes: 0, parents: 0,
-      credits: [], contrats: [], projets: [], historiqueSalaire: [], scenarios: [], rappelsPerso: [],
+      credits: [], contrats: [], projets: [], historiqueSalaire: [], scenarios: [], rappelsPerso: [], jourVersement: 0,
       loyer: 0, chargesFixes: 0, epargneDisponible: 0, autresRevenus: 0,
       quotiteNet: QUOTITE, quotiteBrut: QUOTITE
     };
@@ -319,6 +319,8 @@
       projets: liste(p.projets, normaliserProjet, 8),
       scenarios: liste(p.scenarios, normaliserScenario, MAX_SCENARIOS),
       rappelsPerso: liste(p.rappelsPerso, normaliserRappel, 20).filter(function (r) { return r.titre && r.annee > 0; }),
+      /* Rappel mensuel de versement d'épargne (Lot 2) : jour du mois, 0 = aucun rappel. */
+      jourVersement: entier(p.jourVersement, 0, 0, 28),
       historiqueSalaire: liste(p.historiqueSalaire, normaliserHausse, 40).filter(function (h) { return h.montant > 0; }).sort(function (a, b) { return cleHausse(a) - cleHausse(b); }),
       loyer: nombre(p.loyer, 0, 0, 1e6),
       chargesFixes: nombre(p.chargesFixes, 0, 0, 1e6),

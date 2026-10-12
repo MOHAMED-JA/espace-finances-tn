@@ -135,7 +135,8 @@
   $("choix-mouvement").addEventListener("change", function (e) {
     var v = e.target.value;
     try { if (v) localStorage.setItem("ef-mouvement", v); else localStorage.removeItem("ef-mouvement"); } catch (x) {}
-    if (v === "reduit") doc.documentElement.setAttribute("data-mouvement", "reduit"); else doc.documentElement.removeAttribute("data-mouvement");
+    /* La haute lisibilité coupe aussi les animations : elle garde la main tant qu'elle est active. */
+    if (v === "reduit" || doc.documentElement.getAttribute("data-lisible") === "oui") doc.documentElement.setAttribute("data-mouvement", "reduit"); else doc.documentElement.removeAttribute("data-mouvement");
     E.toast(v === "reduit" ? "Animations réduites." : "Animations selon votre appareil.");
   });
   var choixVibrations = (function () { try { return localStorage.getItem("ef-vibrations") === "non" ? "non" : ""; } catch (e) { return ""; } })();

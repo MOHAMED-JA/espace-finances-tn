@@ -4,6 +4,7 @@
   var E = window.Espace, M = window.EFModele;
   var $ = function (id) { return document.getElementById(id); };
   var utilisateur = null, profil = null, liste = [], chargee = false;
+  var choix = [], modeComparer = false; /* Lot 2 : comparer 2 ou 3 simulations du même module */
   var dateFmt = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 
   /* ---------- Cartes ---------- */
@@ -40,6 +41,14 @@
     fav.setAttribute("aria-pressed", s.favori ? "true" : "false");
     fav.setAttribute("aria-label", (s.favori ? "Retirer des favoris : " : "Ajouter aux favoris : ") + s.nom);
     noeud.querySelector(".carte__menu").setAttribute("aria-label", "Actions pour " + s.nom);
+    var cas = noeud.querySelector(".carte__case");
+    if (cas) {
+      cas.checked = choix.indexOf(s.id) !== -1;
+      cas.setAttribute("aria-label", "Comparer : " + s.nom);
+      var outilChoisi = choix.length ? (trouver(choix[0]) || {}).outil : null;
+      cas.disabled = !cas.checked && (choix.length >= window.ComparerCalcul.MAX || (outilChoisi && outilChoisi !== s.outil));
+      if (cas.checked) noeud.classList.add("carte--choisie");
+    }
     return noeud;
   }
 
@@ -161,6 +170,79 @@
   });
   window.addEventListener("resize", function () { fermerMenu(false); });
   window.addEventListener("scroll", function () { fermerMenu(false); }, { passive: true });
+
+  /* ---------- Comparer 2 ou 3 simulations (Lot 2) ---------- */
+  function majComparer() {
+    var ul = $("toutes"), barre = $("comparer-barre");
+    ul.classList.toggle("cartes--choix", modeComparer);
+    $("comparer-mode").setAttribute("aria-pressed", modeComparer ? "true" : "false");
+    barre.hidden = !modeComparer;
+    var n = choix.length, o = n ? (trouver(choix[0]) || {}).outil : null;
+    $("comparer-etat").textContent = !n ? "Cochez 2 ou 3 simulations du même module." :
+      n + " sur 3 · " + (M.OUTILS[o] ? M.OUTILS[o].court : "") + (n < 2 ? " · cochez-en au moins une autre" : "");
+    $("comparer-ouvrir").disabled = n < 2;
+  }
+  function basculerChoix(id) {
+    var i = choix.indexOf(id);
+    if (i !== -1) choix.splice(i, 1);
+    else {
+      var s = trouver(id), o = choix.length ? (trouver(choix[0]) || {}).outil : null;
+      if (!s || choix.length >= window.ComparerCalcul.MAX || (o && o !== s.outil)) return;
+      choix.push(id);
+    }
+    rendreToutes(); majComparer();
+    var c = document.querySelector('.carte[data-id="' + id + '"] .carte__case'); if (c) c.focus();
+  }
+  function quitterComparer() { modeComparer = false; choix = []; rendreToutes(); majComparer(); }
+  $("comparer-mode").addEventListener("click", function () { if (modeComparer) quitterComparer(); else { modeComparer = true; majComparer(); } });
+  $("comparer-annuler").addEventListener("click", quitterComparer);
+  document.addEventListener("change", function (e) {
+    if (!e.target.classList || !e.target.classList.contains("carte__case")) return;
+    basculerChoix(e.target.closest(".carte").getAttribute("data-id"));
+  });
+  /* En mode comparaison, toucher une carte la coche au lieu de l'ouvrir. */
+  document.addEventListener("click", function (e) {
+    if (!modeComparer) return;
+    var l = e.target.closest && e.target.closest("#toutes .carte__lien");
+    if (!l) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    basculerChoix(l.closest(".carte").getAttribute("data-id"));
+  }, true);
+  function cellule(tag, cls, txt) { var c = document.createElement(tag); if (cls) c.className = cls; if (txt != null) c.textContent = txt; return c; }
+  $("comparer-ouvrir").addEventListener("click", function () {
+    var sims = choix.map(trouver).filter(Boolean).map(function (s) { return { nom: s.nom, outil: s.outil, resume: M.resumeValide(s.resume), id: s.id }; });
+    var r = window.ComparerCalcul.comparer(sims);
+    if (r.erreur) { E.toast(r.erreur, { erreur: true }); return; }
+    var t = $("comparer-table"); t.textContent = "";
+    var thead = cellule("thead"), tr = cellule("tr");
+    tr.appendChild(cellule("th", null, "")).setAttribute("scope", "col");
+    sims.forEach(function (s, i) {
+      var th = cellule("th"); th.setAttribute("scope", "col");
+      th.appendChild(cellule("span", "comparer__lettre", "ABC".charAt(i)));
+      th.appendChild(cellule("span", "comparer__nom", s.nom));
+      var b = cellule("button", "bouton bouton--petit bouton--fantome comparer__ouvrir", "Ouvrir"); b.type = "button";
+      b.setAttribute("aria-label", "Ouvrir " + s.nom);
+      b.addEventListener("click", function () { $("dlg-comparer").close(); quitterComparer(); window.Orbite.ouvrirSimulation(trouver(s.id)); });
+      th.appendChild(b); tr.appendChild(th);
+    });
+    if (sims.length >= 2) { var te = cellule("th", "comparer__ecart-t", "Écart"); te.setAttribute("scope", "col"); tr.appendChild(te); }
+    thead.appendChild(tr); t.appendChild(thead);
+    var tb = cellule("tbody");
+    r.lignes.forEach(function (l) {
+      var ligne = cellule("tr", l.principal ? "comparer__principal" : null), th = cellule("th", null, l.libelle); th.setAttribute("scope", "row");
+      ligne.appendChild(th);
+      l.cellules.forEach(function (c, i) {
+        var td = cellule("td", i === l.meilleur ? "comparer__meilleur" : null, c ? M.formaterIndicateur(c) : "—");
+        if (i === l.meilleur) { var m = cellule("span", "comparer__marque", "✓"); m.setAttribute("aria-label", l.sens < 0 ? "le plus bas" : "le plus haut"); td.appendChild(m); }
+        ligne.appendChild(td);
+      });
+      ligne.appendChild(cellule("td", "comparer__ecart", l.ecart && l.ecart.valeur > 0 ? M.formaterIndicateur(l.ecart) : "—"));
+      tb.appendChild(ligne);
+    });
+    t.appendChild(tb);
+    $("comparer-sous").textContent = (M.OUTILS[r.outil] ? M.OUTILS[r.outil].court + " · " : "") + sims.length + " simulations côte à côte";
+    $("dlg-comparer").showModal();
+  });
 
   function remplacer(s) {
     liste = liste.map(function (x) { return x.id === s.id ? s : x; });

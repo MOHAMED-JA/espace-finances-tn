@@ -1831,6 +1831,20 @@
       return { principal: { libelle: "Économie d'impôt / an", valeur: arr3(s.economie), unite: "DT" }, secondaires: sec.slice(0, 4), ligne: ligne.slice(0, 140) };
     },
     nomParDefaut: function () { return (nomProduits() + " · " + pluriel(etat.dureeAns, "an")).slice(0, 120); },
+    /* Partage (Lot 2) : versements, durée et rendement ; le salaire brut (tiré du profil) seulement si la personne le joint. */
+    pourPartage: function (options) {
+      var L = window.PartageLien;
+      if (!L) return { erreur: "Partage indisponible." };
+      if (!res) calculer(false);
+      var c = res, e = c.etat, brut = null, non = [];
+      try { var p = OC.normaliser(O.profil() || {}); if (p.activite !== "retraite") { var sl = OC.salaire(p); brut = sl && sl.brutMensuel > 0 ? sl.brutMensuel : null; } } catch (er) { brut = null; }
+      if (e.initialAv > 0 || e.initialCea > 0) non.push("le versement initial");
+      if ((e.libres || []).length) non.push("les versements libres");
+      if (e.retraitMontant > 0) non.push("les retraits");
+      if (existant()) non.push("vos contrats actuels");
+      return L.depuisEpargne({ mode: ui.mode, versementMensuel: e.versement * c.facteur / 12, depotAnnuel: e.versementCea * c.facteur,
+        dureeAns: e.dureeAns, rendementPct: e.rendementPct, fraisPct: e.fraisPct, brut: brut, nonRepris: non }, options);
+    },
     /* Ce que la simulation apporte au profil : un contrat par produit simulé (assurance vie et CEA séparés,
        ils n'ont pas la même durée fiscale), avec son versement mensuel. */
     versProfil: function () {

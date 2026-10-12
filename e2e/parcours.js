@@ -271,8 +271,8 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(await page.$eval("#visite-chap-nouveautes", (b) => b.classList.contains("visite__chap--conseil")), "déjà venu : « Les nouveautés » conseillées");
     assert(await page.isVisible("#visite-chap-plus"), "chapitre « Pour aller plus loin »");
     await page.click("#visite-chap-nouveautes");
-    assert(/Ctrl K/.test(await page.textContent("#visite-titre")), "première nouveauté : la palette");
-    await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.getElementById("palette-ouvrir").getBoundingClientRect(); return !document.querySelector(".visite--transit") && Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
+    assert(/Simulation guidée/.test(await page.textContent("#visite-titre")), "première nouveauté : la simulation guidée");
+    await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.querySelector("[data-guidee='credit']").getBoundingClientRect(); return location.hash === "#credit" && !document.querySelector(".visite--transit") && Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
     await page.waitForTimeout(400);
     await page.screenshot({ path: path.join(CAPTURES, "visite-nouveautes.png") });
     const vus = [];
@@ -281,12 +281,12 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
       await page.waitForFunction(() => !document.querySelector(".visite--transit"));
       vus.push((await page.textContent("#visite-titre")) + " @ " + (await page.evaluate(() => location.hash)));
     }
-    assert(vus.some((t) => /négociation @ #salaire/.test(t)) && vus.some((t) => /une phrase @ #credit/.test(t)) && vus.some((t) => /tableau de votre banque @ #credit/.test(t)), "pages ouvertes : " + vus.join(" | "));
+    assert(vus.some((t) => /Partager une simulation @ #credit/.test(t)) && vus.some((t) => /Comparer vos simulations @ #simulations/.test(t)) && vus.some((t) => /Rappel de versement @ #profil/.test(t)) && vus.some((t) => /Haute lisibilité @ #compte\?onglet=preferences/.test(t)), "pages ouvertes : " + vus.join(" | "));
     await page.screenshot({ path: path.join(CAPTURES, "visite-credit.png") });
     await page.click("#visite-suiv");
     await page.waitForSelector(".visite", { state: "detached" });
     await page.waitForFunction(() => location.hash === "#orbite");
-    await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite_nouveautes === "2026-10-12");
+    await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite_nouveautes === "2026-10-12b");
     /* « Pour aller plus loin » : les nouveautés précédentes, fiche de paie d'abord. */
     await page.click("#aide-visite");
     await page.waitForSelector(".visite__bulle #visite-chapitres:not([hidden])");
@@ -296,12 +296,12 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => location.hash === "#profil?section=salaire" && !document.querySelector(".visite--transit"));
     await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.getElementById("fiche-entree-profil").getBoundingClientRect(); return Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
     const vus2 = [];
-    for (let i = 1; i < 10; i++) {
+    for (let i = 1; i < 14; i++) {
       await page.click("#visite-suiv");
       await page.waitForFunction(() => !document.querySelector(".visite--transit"));
       vus2.push((await page.textContent("#visite-titre")) + " @ " + (await page.evaluate(() => location.hash)));
     }
-    assert(vus2.some((t) => /Retraite @ #progression\?onglet=retraite/.test(t)) && vus2.some((t) => /Et si… \? @ #vie\?onglet=scenarios/.test(t)) && vus2.some((t) => /Rappels @ #compte\?onglet=preferences/.test(t)), "pages ouvertes : " + vus2.join(" | "));
+    assert(vus2.some((t) => /Retraite @ #progression\?onglet=retraite/.test(t)) && vus2.some((t) => /Et si… \? @ #vie\?onglet=scenarios/.test(t)) && vus2.some((t) => /Rappels @ #compte\?onglet=preferences/.test(t)) && vus2.some((t) => /négociation @ #salaire/.test(t)) && vus2.some((t) => /Ctrl K/.test(t)), "pages ouvertes : " + vus2.join(" | "));
     await page.keyboard.press("Escape");
     await page.waitForSelector(".visite", { state: "detached" });
   });
@@ -1160,6 +1160,241 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(Number((await page.inputValue("#cr-capital")).replace(/\D/g, "")) === 120000, "montant en arabe");
   });
 
+  await etape("partage : page publique préremplie (crédit, salaire, épargne), aperçu identique, QR code, WhatsApp, e-mail, rien de personnel", async () => {
+    await page.goto(base + "/espace/#credit");
+    await page.waitForSelector("#cr-phrase");
+    await page.fill("#cr-phrase", "crédit immobilier 150 000 sur 20 ans à 9 %");
+    await page.click("#cr-phrase-ok");
+    await page.waitForFunction(() => /crédit immobilier/.test(document.getElementById("cr-phrase-aide").textContent));
+    await page.click("#partager-sim");
+    await page.waitForSelector("#dlg-partager[open]");
+    const url = await page.inputValue("#partager-url");
+    assert(url === base + "/simulateur-credit-tunisie#type=immo&montant=150000&duree=20&marge=1.5", "lien du crédit : " + url);
+    await page.waitForFunction(() => /DT/.test(document.getElementById("partager-chiffre").textContent));
+    const vu = (await page.textContent("#partager-chiffre")).trim();
+    const nom = await page.evaluate(() => { const u = window.Orbite.utilisateur(); return u && u.email; });
+    assert(!nom || url.indexOf(nom) === -1, "aucune adresse dans le lien");
+    const wa = await page.getAttribute("#partager-whatsapp", "href");
+    assert(wa.startsWith("https://wa.me/?text=") && decodeURIComponent(wa).endsWith(url), "WhatsApp : " + wa);
+    const mail = await page.getAttribute("#partager-email", "href");
+    assert(mail.startsWith("mailto:?subject=") && decodeURIComponent(mail).indexOf(url) !== -1, "e-mail : " + mail);
+    await page.click("#partager-qr-bouton");
+    await page.waitForSelector("#partager-qr-image svg path");
+    assert((await page.getAttribute("#partager-qr-image svg path", "d")).length > 500, "QR code dessiné");
+    await page.screenshot({ path: path.join(CAPTURES, "partage-credit.png") });
+    await page.click("#dlg-partager .bouton--fermer");
+    /* La page publique reçue affiche le même chiffre que l'aperçu. */
+    const pub = await contexte.newPage();
+    await pub.goto(url);
+    await pub.waitForSelector(".calc__recu");
+    await pub.waitForFunction((v) => (document.querySelector("[data-v='mens_ent']").textContent + document.querySelector("[data-v='mens_dec']").textContent).trim() === v, vu);
+    assert(await pub.isChecked("input[name='type'][value='immo']"), "type logement coché");
+    assert((await pub.inputValue("#duree")) === "20", "durée remplie");
+    await pub.screenshot({ path: path.join(CAPTURES, "partage-page-recue.png") });
+    /* Salaire : situation de famille jointe seulement sur demande ; lien malformé ignoré. */
+    await pub.goto(base + "/salaire-net-tunisie#montant=3000&secteur=public&chef=1&enfants=2&nom=Aziz");
+    await pub.waitForSelector(".calc__recu");
+    assert((await pub.inputValue("#montant")) === "3 000" && await pub.isChecked("input[name='secteur'][value='public']") && await pub.isChecked("input[name='chef']"), "salaire reçu");
+    assert((await pub.textContent("output[name='enfants']")).trim() === "2", "enfants reçus");
+    await pub.goto(base + "/calcul-cea-tunisie#depot=abc&montant=-5");
+    await pub.waitForSelector("#depot");
+    assert(!(await pub.$(".calc__recu")), "lien malformé : rien de rempli");
+    await pub.close();
+    await page.goto(base + "/espace/#salaire");
+    await page.waitForSelector("#partager");
+    await page.click("#partager");
+    await page.waitForSelector("#dlg-partager[open]");
+    const us = await page.inputValue("#partager-url");
+    assert(/\/salaire-net-tunisie#montant=\d+/.test(us) && !/chef=/.test(us), "salaire sans famille : " + us);
+    if (await page.isVisible("#partager-sensible")) {
+      await page.check("#partager-sensible-case");
+      assert(/chef=1/.test(await page.inputValue("#partager-url")), "famille jointe sur demande");
+    }
+    await page.click("#dlg-partager .bouton--fermer");
+    await page.goto(base + "/espace/#epargne");
+    await page.waitForSelector("#partager-sim");
+    await page.click("#partager-sim");
+    await page.waitForSelector("#dlg-partager[open]");
+    const ue = await page.inputValue("#partager-url");
+    assert(/\/(simulateur-assurance-vie-tunisie|calcul-cea-tunisie)#/.test(ue) && !/montant=/.test(ue), "épargne sans salaire : " + ue);
+    if (await page.isVisible("#partager-sensible")) {
+      await page.check("#partager-sensible-case");
+      assert(/montant=\d/.test(await page.inputValue("#partager-url")), "salaire joint sur demande");
+    }
+    await page.waitForFunction(() => /DT/.test(document.getElementById("partager-chiffre").textContent));
+    await page.setViewportSize({ width: 375, height: 760 });
+    await page.screenshot({ path: path.join(CAPTURES, "partage-epargne-telephone.png") });
+    await page.setViewportSize({ width: 1280, height: 860 });
+    await page.click("#dlg-partager .bouton--fermer");
+  });
+
+  await etape("haute lisibilité (compte, avant l'affichage, Ctrl K) ; annuler / rétablir (boutons, Ctrl Z / Ctrl Y)", async () => {
+    await page.goto(base + "/espace/#compte?onglet=preferences");
+    await page.waitForSelector("#choix-lisible", { state: "visible" });
+    await page.click('#choix-lisible label:has(input[value="oui"])');
+    assert((await page.getAttribute("html", "data-lisible")) === "oui", "lisibilité appliquée");
+    await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_lisible === "oui");
+    /* Retenue sur le compte : un autre appareil (stockage vide) l'applique au démarrage. */
+    /* La question « partager votre fiche avec l'administrateur » est traitée ailleurs : on la marque répondue. */
+    await page.evaluate(() => window.Espace.compte.preferences({ orbite_partage_demande: new Date().toISOString(), orbite_partage_reponse: "non" }));
+    await page.evaluate(() => localStorage.removeItem("ef-lisible"));
+    await page.goto(base + "/espace/#credit");
+    await page.reload();
+    await page.waitForFunction(() => document.documentElement.getAttribute("data-lisible") === "oui");
+    await page.waitForSelector("#cr-capital");
+    const lsl = await page.evaluate(() => [localStorage.getItem("ef-lisible"), Object.keys(localStorage).join(",")]);
+    assert(lsl[0] === "oui", "recopiée sur l'appareil : " + JSON.stringify(lsl));
+    await page.screenshot({ path: path.join(CAPTURES, "lisibilite-credit.png") });
+    for (const l of [1280, 1024, 800]) {
+      await page.setViewportSize({ width: l, height: 700 });
+      const deborde = await page.evaluate(() => { const b = document.getElementById("barre"); return b.scrollWidth > b.clientWidth + 1 || Array.from(b.querySelectorAll("button:not([hidden]), a:not([hidden])")).some((x) => x.offsetParent && x.getBoundingClientRect().right > window.innerWidth); });
+      await page.screenshot({ path: path.join(CAPTURES, "barre-" + l + ".png"), clip: { x: 0, y: 0, width: l, height: 80 } });
+      assert(!deborde, "barre sans débordement à " + l + " px");
+    }
+    await page.setViewportSize({ width: 1360, height: 900 });
+    /* Annuler / rétablir. */
+    const avant = Number((await page.inputValue("#cr-capital")).replace(/\D/g, ""));
+    await page.fill("#cr-capital", "90 000");
+    await page.press("#cr-capital", "Tab");
+    await page.waitForFunction(() => window.OrbiteHistorique.position().n === 2);
+    assert(!(await page.isDisabled("#histo-annuler")) && await page.isDisabled("#histo-retablir"), "annuler possible, rétablir non");
+    await page.click("#histo-annuler");
+    await page.waitForFunction((v) => Number(document.getElementById("cr-capital").value.replace(/\D/g, "")) === v, avant);
+    await page.waitForFunction(() => !document.getElementById("histo-retablir").disabled);
+    await page.click("#histo-retablir");
+    await page.waitForFunction(() => Number(document.getElementById("cr-capital").value.replace(/\D/g, "")) === 90000);
+    await page.waitForTimeout(1000);
+    await page.evaluate(() => document.activeElement && document.activeElement.blur());
+    await page.keyboard.press("Control+z");
+    await page.waitForFunction((v) => Number(document.getElementById("cr-capital").value.replace(/\D/g, "")) === v, avant);
+    await page.waitForTimeout(1000);
+    await page.keyboard.press("Control+y");
+    await page.waitForFunction(() => Number(document.getElementById("cr-capital").value.replace(/\D/g, "")) === 90000);
+    await page.waitForTimeout(1000);
+    /* Ctrl K : retour à la lisibilité normale. */
+    await page.keyboard.press("Control+k");
+    await page.waitForSelector("#dlg-palette[open]");
+    await page.fill("#palette-q", "lisibilite");
+    await page.waitForFunction(() => /lisibilité normale/.test(document.getElementById("palette-liste").textContent));
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => !document.documentElement.hasAttribute("data-lisible"));
+    await page.waitForFunction(() => !window.Orbite.utilisateur().user_metadata.orbite_lisible);
+  });
+
+  await etape("simulation guidée (crédit, salaire, épargne), comparer 2 crédits enregistrés, rappel de versement mensuel", async () => {
+    async function enregistrer(nom) {
+      await page.click("#enregistrer");
+      await page.waitForSelector("#dlg-enregistrer[open]");
+      await page.fill("#enr-nom", nom);
+      await page.click('#dlg-enregistrer button[value="ok"]');
+      await page.waitForFunction((n) => !document.getElementById("dlg-enregistrer").open, nom);
+      await page.waitForTimeout(400);
+    }
+    async function choisir(texte) { await page.click(`#guidee-reponse .guidee__option:has-text("${texte}")`); await page.waitForTimeout(250); }
+    /* Les étapes suivantes partent de l'état des modules : il est remis tel quel à la fin. */
+    await page.goto(base + "/espace/#credit");
+    await page.waitForSelector("#cr-capital");
+    const avantModules = await page.evaluate(() => ({ c: window.ModuleCredit.instantane(), s: window.ModuleSalaire.etat(), e: window.ModuleEpargne.etat() }));
+    /* Crédit : voiture, 40 000 DT, 5 ans, taux de 9 %. */
+    await page.goto(base + "/espace/#credit");
+    await page.waitForSelector('[data-guidee="credit"]');
+    await page.click('[data-guidee="credit"]');
+    await page.waitForSelector("#dlg-guidee[open]");
+    await choisir("Une voiture");
+    await page.waitForSelector("#guidee-montant");
+    await page.fill("#guidee-montant", "40000");
+    await page.keyboard.press("Enter");
+    await choisir("5 ans");
+    await choisir("J'ai un taux");
+    await page.waitForSelector("#guidee-montant");
+    await page.fill("#guidee-montant", "abc");
+    await page.click("#guidee-suivant");
+    await page.waitForSelector("#guidee-erreur:not([hidden])");
+    await page.fill("#guidee-montant", "9");
+    await page.click("#guidee-suivant");
+    await page.waitForSelector(".guidee__resultat");
+    const mens = await page.textContent(".guidee__resultat-val");
+    assert(/830,3\d\d/.test(mens.replace(/\s/g, "")), "mensualité 40 000 DT, 5 ans, 9 % : " + mens);
+    await page.screenshot({ path: path.join(CAPTURES, "guidee-credit.png") });
+    await page.click("#guidee-suivant");
+    await page.waitForFunction(() => !document.getElementById("dlg-guidee").open);
+    const e1 = await page.evaluate(() => window.ModuleCredit.etat());
+    assert(/c=40000/.test(e1) && /m=60/.test(e1) && /t=9(&|$)/.test(e1) && /ty=auto/.test(e1), "module rempli : " + e1);
+    await enregistrer("Banque A voiture");
+    /* Deuxième offre : même voiture au taux habituel. */
+    await page.click('[data-guidee="credit"]');
+    await page.waitForSelector("#dlg-guidee[open]");
+    await choisir("Une voiture");
+    await page.fill("#guidee-montant", "40000");
+    await page.click("#guidee-suivant");
+    await choisir("5 ans");
+    await choisir("Taux habituel");
+    await page.waitForSelector(".guidee__resultat");
+    await page.click("#guidee-suivant");
+    await enregistrer("Banque B voiture");
+    /* Salaire : net connu, public, chef de famille avec 2 enfants. */
+    await page.goto(base + "/espace/#salaire");
+    await page.waitForSelector('[data-guidee="salaire"]');
+    await page.click('[data-guidee="salaire"]');
+    await page.waitForSelector("#dlg-guidee[open]");
+    await choisir("Mon net");
+    await page.fill("#guidee-montant", "2000");
+    await page.click("#guidee-suivant");
+    await choisir("Secteur public");
+    await choisir("Chef de famille, 2 enfants");
+    await page.waitForSelector(".guidee__resultat");
+    await page.click("#guidee-suivant");
+    const es = await page.evaluate(() => window.EtatSimulation.decoder(window.ModuleSalaire.etat()).a);
+    assert(es.sens === "net" && es.montant === 2000 && es.secteur === "public" && es.chefDeFamille && es.enfants === 2, "salaire rempli : " + JSON.stringify(es));
+    /* Épargne : les deux, 150 + 100 DT par mois, 12 ans → 15 ans proposés : on prend 15. */
+    await page.goto(base + "/espace/#epargne");
+    await page.waitForSelector('[data-guidee="epargne"]');
+    await page.click('[data-guidee="epargne"]');
+    await page.waitForSelector("#dlg-guidee[open]");
+    await choisir("Les deux");
+    await page.fill("#guidee-montant", "150");
+    await page.click("#guidee-suivant");
+    await page.fill("#guidee-montant", "100");
+    await page.click("#guidee-suivant");
+    await choisir("15 ans");
+    await page.waitForSelector(".guidee__resultat");
+    await page.setViewportSize({ width: 375, height: 760 });
+    await page.screenshot({ path: path.join(CAPTURES, "guidee-epargne-telephone.png") });
+    await page.setViewportSize({ width: 1360, height: 900 });
+    await page.click("#guidee-suivant");
+    const ee = await page.evaluate(() => window.ModuleEpargne.etat());
+    assert(/Xp=ac/.test(ee), "épargne : les deux produits : " + ee);
+    /* Comparer les deux crédits. */
+    await page.goto(base + "/espace/#simulations");
+    await page.waitForSelector('.carte[data-outil="credit"]');
+    await page.click("#comparer-mode");
+    await page.waitForSelector("#comparer-barre:not([hidden])");
+    for (const nom of ["Banque A voiture", "Banque B voiture"]) await page.click(`.carte:has-text("${nom}") .carte__lien`);
+    const autre = await page.$('.carte:not([data-outil="credit"]) .carte__case');
+    if (autre) assert(await autre.isDisabled(), "une simulation d'un autre module ne peut pas être cochée");
+    await page.click("#comparer-ouvrir");
+    await page.waitForSelector("#dlg-comparer[open]");
+    const entetes = await page.$$eval("#comparer-table thead .comparer__nom", (x) => x.map((e) => e.textContent));
+    assert(entetes.length === 2 && entetes.includes("Banque A voiture"), "colonnes : " + entetes);
+    const meilleur = await page.$$eval("#comparer-table .comparer__principal td", (x) => x.map((e) => e.className));
+    assert(meilleur.filter((c) => /meilleur/.test(c)).length === 1, "une mensualité la plus basse : " + meilleur);
+    await page.screenshot({ path: path.join(CAPTURES, "comparer-credits.png") });
+    await page.click("#dlg-comparer .bouton--fermer");
+    await page.click("#comparer-annuler");
+    assert(await page.isHidden("#comparer-barre"), "mode comparaison quitté");
+    /* Rappel de versement : le 10 de chaque mois. */
+    await page.goto(base + "/espace/#profil?section=contrats");
+    await page.waitForSelector("#p-jour-versement", { state: "attached" });
+    await page.evaluate(() => { const d = document.getElementById("sec-contrats"); if (d) d.open = true; });
+    await page.selectOption("#p-jour-versement", "10");
+    await page.waitForFunction(() => window.Orbite.profil().jourVersement === 10);
+    const rv = await page.evaluate(() => window.RappelsCalcul.rappels(window.Orbite.synthese(), null, null, new Date()).filter((r) => r.type === "versement"));
+    assert(rv.length === 1 && new Date(rv[0].quand).getDate() >= 1 && !/\d{3}/.test(rv[0].mail.corps), "rappel de versement : " + JSON.stringify(rv));
+    await page.selectOption("#p-jour-versement", "0");
+    await page.waitForFunction(() => window.Orbite.profil().jourVersement === 0);
+    await page.evaluate((m) => { window.ModuleCredit.restaurer(m.c); window.ModuleSalaire.charger(m.s); window.ModuleEpargne.charger(m.e); ["credit", "salaire", "epargne"].forEach((v) => window.Orbite.detacherSimulation(v)); }, avantModules);
+  });
+
   await etape("crédit : lire une offre (texte), contrôler le tableau de la banque (exemple exact, PDF avec une erreur)", async () => {
     await page.goto(base + "/espace/#credit");
     await page.waitForSelector("#cr-outil-offre");
@@ -1181,6 +1416,70 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     const au = await page.textContent("#cr-o-audit .cr-outil__sortie");
     assert(/60 échéances lues/.test(au) && /1 point à vérifier/.test(au) && /Échéance 14/.test(au) && /\+0,750/.test(au), "audit du PDF : " + au.slice(0, 400));
     await page.screenshot({ path: path.join(CAPTURES, "credit-audit.png"), fullPage: false });
+  });
+
+  await etape("document reçu par « Partager » : service worker, reconnaissance du tableau, outil ouvert, rien ne reste ; photo : choix", async () => {
+    await page.goto(base + "/espace/#orbite");
+    await page.waitForFunction(() => navigator.serviceWorker && navigator.serviceWorker.controller, null, { timeout: 20000 }).catch(() => {});
+    const octets = Array.from(fs.readFileSync(path.join(__dirname, "fixtures", "tableau-banque.pdf")));
+    const parSw = await page.evaluate(async (o) => {
+      const fd = new FormData();
+      fd.append("fichiers", new File([new Uint8Array(o)], "echeancier-banque.pdf", { type: "application/pdf" }));
+      if (navigator.serviceWorker.controller) { const r = await fetch("/espace/recevoir", { method: "POST", body: fd }); return r.ok && (await caches.has("orbite-recus")) ? "service worker" : "service worker ? " + r.status; }
+      /* Sans service worker actif : on dépose comme lui. */
+      const c = await caches.open("orbite-recus");
+      await c.put("/__orbite/recu/0", new Response(new Blob([new Uint8Array(o)], { type: "application/pdf" }), { headers: { "Content-Type": "application/pdf", "X-Orbite-Nom": "echeancier-banque.pdf" } }));
+      await c.put("/__orbite/recu/liste", new Response(JSON.stringify({ n: 1, t: Date.now() })));
+      return "page";
+    }, octets);
+    assert(parSw !== "page" ? parSw === "service worker" : true, "dépôt par le service worker : " + parSw);
+    /* Chargement complet de la page, comme après la redirection du service worker. */
+    await page.goto(base + "/cgv.html");
+    await page.goto(base + "/espace/#recevoir");
+    await page.waitForSelector("#dlg-recevoir[open]", { timeout: 20000 }).catch(async () => {
+      const d = await page.evaluate(async () => [location.href, await caches.has("orbite-recus"), Array.from(document.querySelectorAll(".toast")).map((t) => t.textContent), Array.from(document.querySelectorAll("dialog[open]")).map((x) => x.id), !!window.OrbiteRecevoir, window.Orbite && window.Orbite.pret]);
+      throw new Error("fenêtre du document reçu absente : " + JSON.stringify(d));
+    });
+    await page.waitForSelector("#recevoir-resultat:not([hidden])", { timeout: 60000 });
+    assert(/tableau d'amortissement/.test(await page.textContent("#recevoir-type")), "tableau reconnu : " + await page.textContent("#recevoir-type"));
+    assert(!(await page.evaluate(() => caches.has("orbite-recus"))), "cache des documents reçus vidé");
+    assert(!/recevoir/.test(await page.evaluate(() => location.hash)), "adresse nettoyée");
+    await page.screenshot({ path: path.join(CAPTURES, "recevoir-tableau.png") });
+    await page.click("#recevoir-action");
+    await page.waitForFunction(() => location.hash === "#credit");
+    await page.waitForFunction(() => /échéances? lues?/.test((document.querySelector("#cr-o-audit .cr-outil__sortie") || {}).textContent || ""), null, { timeout: 90000 });
+    assert(await page.evaluate(() => document.getElementById("cr-outil-audit").open), "outil « Contrôler le tableau » ouvert");
+    /* Photo : Orbite demande ce que c'est. */
+    const photo = Array.from(fs.readFileSync(path.join(__dirname, "fixtures", "fiche-paie.jpg")));
+    await page.evaluate(async (o) => {
+      const c = await caches.open("orbite-recus");
+      await c.put("/__orbite/recu/0", new Response(new Blob([new Uint8Array(o)], { type: "image/jpeg" }), { headers: { "Content-Type": "image/jpeg", "X-Orbite-Nom": "IMG_2041.jpg" } }));
+      await c.put("/__orbite/recu/liste", new Response(JSON.stringify({ n: 1, t: Date.now() })));
+    }, photo);
+    await page.goto(base + "/espace/#recevoir");
+    await page.waitForSelector("#dlg-recevoir[open]", { timeout: 20000 }).catch(async () => {
+      const d = await page.evaluate(async () => [location.href, await caches.has("orbite-recus"), Array.from(document.querySelectorAll(".toast")).map((t) => t.textContent), Array.from(document.querySelectorAll("dialog[open]")).map((x) => x.id), !!window.OrbiteRecevoir, window.Orbite && window.Orbite.pret]);
+      throw new Error("fenêtre du document reçu absente : " + JSON.stringify(d));
+    });
+    await page.waitForSelector("#recevoir-choix:not([hidden])");
+    assert(await page.isHidden("#recevoir-resultat"), "photo : pas de supposition");
+    assert((await page.$$('#recevoir-choix [data-recevoir]:not([hidden])')).length === 3, "photo : les trois choix");
+    /* (Sans lancer la lecture de la photo : l'étape « fiche de paie » vérifie plus loin le chargement de l'outil.) */
+    await page.click("#dlg-recevoir .bouton--fermer");
+    /* Fiche de paie en PDF : reconnue, ouverte dans le contrôle de la fiche. */
+    const fiche = Array.from(fs.readFileSync(path.join(__dirname, "fixtures", "fiche-paie.pdf")));
+    await page.evaluate(async (o) => {
+      const c = await caches.open("orbite-recus");
+      await c.put("/__orbite/recu/0", new Response(new Blob([new Uint8Array(o)], { type: "application/pdf" }), { headers: { "Content-Type": "application/pdf", "X-Orbite-Nom": "scan-octobre.pdf" } }));
+      await c.put("/__orbite/recu/liste", new Response(JSON.stringify({ n: 1, t: Date.now() })));
+    }, fiche);
+    await page.goto(base + "/espace/#recevoir");
+    await page.waitForSelector("#recevoir-resultat:not([hidden])", { timeout: 60000 });
+    assert(/fiche de paie/.test(await page.textContent("#recevoir-type")), "fiche reconnue : " + await page.textContent("#recevoir-type"));
+    await page.click("#recevoir-action");
+    await page.waitForSelector('#dlg-fiche[open][data-ecran="verifier"]', { timeout: 60000 });
+    await page.keyboard.press("Escape");
+    await page.waitForFunction(() => !document.getElementById("dlg-fiche").open);
   });
 
   await etape("crédit : voyage dans le temps, échéancier en PDF et en Excel, lettre en Word", async () => {

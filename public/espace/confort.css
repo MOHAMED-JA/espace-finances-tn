@@ -61,3 +61,174 @@ dialog.dialogue--partage { width: min(460px, calc(100vw - 24px)); }
 /* Textes d'exemple dans les champs : lisibles dans les deux thèmes (gris du navigateur trop pâle en sombre),
    toujours plus discrets qu'une valeur saisie (encre principale, plus grasse). */
 .principal ::placeholder, dialog ::placeholder { color: var(--encre-3); opacity: .85; }
+
+/* ---------- Partager une simulation (Lot 2) ---------- */
+.dialogue--partager { width: min(560px, calc(100vw - 24px)); --t: var(--credit); --t-t: var(--credit-t); --t-doux: var(--credit-doux); }
+.dialogue--partager[data-teinte="salaire"] { --t: var(--salaire); --t-t: var(--salaire-t); --t-doux: var(--salaire-doux); }
+.dialogue--partager[data-teinte="epargne"] { --t: var(--epargne); --t-t: var(--epargne-t); --t-doux: var(--epargne-doux); }
+.partager { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.partager__apercu { padding: 14px 16px; border-radius: var(--r-int); background: var(--t-doux); border: 1px solid color-mix(in srgb, var(--t) 26%, transparent); display: grid; gap: 4px; }
+.partager__sur { margin: 0; font-size: 13px; color: var(--encre-2); }
+.partager__sur b { color: var(--t-t); }
+.partager__chiffre { margin: 2px 0 0; font-size: clamp(26px, 6vw, 32px); font-weight: 800; letter-spacing: -.02em; color: var(--encre); font-variant-numeric: tabular-nums; line-height: 1.1; min-height: 1.1em; }
+.partager__chiffre small { font-size: 14px; font-weight: 600; color: var(--encre-2); letter-spacing: 0; }
+.partager__second { margin: 0; font-size: 13px; color: var(--encre-2); }
+.partager__contenu { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.partager__contenu li { padding: 3px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--filet); font-size: 12.5px; font-weight: 600; color: var(--encre); }
+.partager__sensible { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--encre); cursor: pointer; }
+.partager__sensible input { margin-top: 3px; accent-color: var(--t); width: 16px; height: 16px; flex: none; }
+.partager__ecarts { border: 1px solid var(--filet); border-radius: var(--r-int); padding: 8px 12px; font-size: 13px; color: var(--encre-2); }
+.partager__ecarts summary { cursor: pointer; font-weight: 600; color: var(--encre); }
+.partager__ecarts ul { margin: 8px 0 2px; padding-left: 18px; display: grid; gap: 4px; }
+.partager__lien { display: flex; gap: 8px; align-items: center; }
+.partager__lien input { flex: 1; min-width: 0; height: 38px; padding: 0 12px; border-radius: var(--r-champ); border: 1px solid var(--filet-fort); background: var(--surface-2); color: var(--encre); font: 13px/1 var(--mono, ui-monospace, monospace); text-overflow: ellipsis; }
+.partager__lien input:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.partager__canaux { display: flex; flex-wrap: wrap; gap: 8px; }
+.partager__canaux .bouton svg { width: 16px; height: 16px; }
+.partager__qr { display: flex; gap: 16px; align-items: center; padding: 12px; border-radius: var(--r-int); background: var(--surface-2); }
+.partager__qr-image { width: 148px; height: 148px; flex: none; border-radius: 10px; overflow: hidden; background: #fff; display: grid; place-items: center; font-size: 12px; color: #333; }
+.partager__qr-image svg { width: 100%; height: 100%; display: block; }
+.partager__qr-texte { display: grid; gap: 10px; justify-items: start; font-size: 13.5px; color: var(--encre-2); }
+.partager__qr-texte p { margin: 0; }
+.partager__vie-privee { margin: 0; display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; line-height: 1.45; color: var(--encre-2); }
+.partager__vie-privee svg { width: 16px; height: 16px; flex: none; margin-top: 1px; color: var(--succes); }
+@media (max-width: 520px) {
+  .partager__qr { flex-direction: column; align-items: flex-start; }
+}
+
+/* ---------- Annuler / rétablir (Lot 2) ---------- */
+.barre__histo { display: inline-flex; gap: 2px; }
+.barre__histo-b { width: 36px; padding: 0; }
+.barre__histo-b svg { width: 18px; height: 18px; }
+.barre__histo-b:disabled { opacity: .38; cursor: default; }
+@media (max-width: 640px) { .barre__histo { display: none; } }
+
+/* ---------- Haute lisibilité (Lot 2) ----------
+   Texte agrandi par « zoom » sur le contenu (les tailles sont en px), gris plus foncés, filets marqués, liens soulignés. */
+:root[data-lisible="oui"] { --encre-2: #20252F; --encre-3: #3B4150; --filet: #C3C9D5; --filet-fort: #9AA2B3; }
+:root[data-lisible="oui"][data-theme="dark"] { --encre-2: #E6EAF1; --encre-3: #C9CFDA; --filet: #3B4253; --filet-fort: #5A6378; }
+:root[data-lisible="oui"] .principal { zoom: 1.12; }
+:root[data-lisible="oui"] .dialogue { zoom: 1.08; }
+:root[data-lisible="oui"] .toast { zoom: 1.1; }
+@media (max-width: 640px) {
+  :root[data-lisible="oui"] .principal { zoom: 1.07; }
+  :root[data-lisible="oui"] .dialogue { zoom: 1; font-size: 105%; }
+}
+:root[data-lisible="oui"] .principal a:not(.bouton):not([class*="carte"]):not([role="tab"]) { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1.5px; }
+:root[data-lisible="oui"] :focus-visible { outline-width: 3px !important; outline-offset: 3px !important; }
+:root[data-lisible="oui"] ::placeholder { color: var(--encre-3); opacity: 1; }
+:root[data-lisible="oui"] .champ__aide, :root[data-lisible="oui"] .note { color: var(--encre-2); }
+/* Barre des modules : avec ↶ ↷ et « Partager », « Guide » et « Partager » passent en icône seule sous 1480 px. */
+@media (min-width: 641px) and (max-width: 1480px) {
+  .barre { gap: 8px; padding-left: 20px; padding-right: 20px; }
+  .barre__histo-b { width: 32px; }
+  .barre__aide:not(.barre__palette):not(.barre__apps) { width: 36px; padding: 0; justify-content: center; }
+  .barre__aide:not(.barre__palette):not(.barre__apps) .barre__aide-lib { display: none; }
+  #partager-sim { width: 36px; padding: 0; justify-content: center; }
+  #partager-sim .bouton__lib { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+@media (min-width: 641px) and (max-width: 1280px) {
+  .barre__actions .bouton:not(#enregistrer) { width: 36px; padding: 0; justify-content: center; }
+  .barre__actions .bouton:not(#enregistrer) .bouton__lib { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+
+/* ---------- Rappel de versement (Lot 2) ---------- */
+.rappel-versement { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--filet); max-width: 420px; }
+
+/* ---------- Simulation guidée (Lot 2) ---------- */
+#vue-epargne .module__tete { flex-wrap: wrap; }
+#vue-epargne .module__tete > div:not(.module__actions) { flex: 1 1 260px; min-width: 0; }
+#vue-credit .module__tete > .module__actions, #vue-salaire .module__tete > .module__actions, #vue-epargne .module__tete > .module__actions { flex: 0 1 auto; }
+.dialogue--guidee { width: min(520px, calc(100vw - 24px)); --t: var(--credit); --t-t: var(--credit-t); --t-doux: var(--credit-doux); }
+.dialogue--guidee[data-teinte="salaire"] { --t: var(--salaire); --t-t: var(--salaire-t); --t-doux: var(--salaire-doux); }
+.dialogue--guidee[data-teinte="epargne"] { --t: var(--epargne); --t-t: var(--epargne-t); --t-doux: var(--epargne-doux); }
+.guidee__tete { display: grid; gap: 10px; padding-bottom: 4px; }
+.guidee__module { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--t-t); }
+.guidee__points { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; }
+.guidee__points li { flex: 1; height: 4px; border-radius: 4px; background: var(--filet); transition: background-color 240ms ease; }
+.guidee__points li.fait { background: color-mix(in srgb, var(--t) 55%, transparent); }
+.guidee__points li.ici { background: var(--t); }
+.guidee__corps { display: grid; gap: 10px; min-height: 280px; align-content: start; }
+.guidee__question { margin: 6px 0 0; font-size: 22px; line-height: 1.2; letter-spacing: -.01em; outline: none; }
+.guidee__aide { margin: 0; color: var(--encre-2); font-size: 14px; line-height: 1.45; }
+.guidee__reponse { margin-top: 6px; }
+.guidee__choix { display: grid; gap: 8px; }
+.guidee__option { position: relative; display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: var(--r-int); border: 1.5px solid var(--filet); background: var(--surface); cursor: pointer; transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease; }
+.guidee__option:hover { border-color: color-mix(in srgb, var(--t) 45%, var(--filet)); }
+.guidee__option:active { transform: scale(.99); }
+.guidee__option:has(input:checked) { border-color: var(--t); background: var(--t-doux); }
+.guidee__option:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+.guidee__option input { accent-color: var(--t); width: 18px; height: 18px; flex: none; margin: 0; }
+.guidee__option-texte { display: grid; gap: 2px; }
+.guidee__option-texte b { font-size: 15px; color: var(--encre); }
+.guidee__option-texte small { font-size: 13px; color: var(--encre-2); }
+.guidee__resultat { padding: 18px; border-radius: var(--r-int); background: var(--t-doux); border: 1px solid color-mix(in srgb, var(--t) 28%, transparent); display: grid; gap: 4px; }
+.guidee__resultat-lib { margin: 0; font-size: 14px; color: var(--encre-2); font-weight: 600; }
+.guidee__resultat-val { margin: 0; font-size: clamp(30px, 8vw, 40px); font-weight: 800; letter-spacing: -.02em; color: var(--encre); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.guidee__resultat-liste { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.guidee__resultat-liste li { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; color: var(--encre-2); border-top: 1px solid color-mix(in srgb, var(--t) 18%, transparent); padding-top: 6px; }
+.guidee__resultat-liste b { color: var(--encre); font-variant-numeric: tabular-nums; }
+.guidee__pied { align-items: center; }
+.guidee__espace { flex: 1; }
+@media (prefers-reduced-motion: reduce) { .guidee__option, .guidee__points li { transition: none; } }
+
+/* ---------- Comparer des simulations (Lot 2) ---------- */
+#comparer-mode[aria-pressed="true"] { background: var(--encre); color: var(--fond); border-color: var(--encre); }
+.carte__choix { display: none; width: 36px; height: 36px; place-items: center; cursor: pointer; }
+.carte__choix input { width: 18px; height: 18px; accent-color: var(--credit); margin: 0; cursor: pointer; }
+.carte__choix input:disabled { cursor: not-allowed; opacity: .4; }
+.cartes--choix .carte__choix { display: grid; }
+.cartes--choix .carte__favori, .cartes--choix .carte__menu { display: none; }
+.cartes--choix .carte__lien { cursor: pointer; }
+.cartes--choix .carte:has(.carte__case:disabled) { opacity: .55; }
+.carte--choisie { box-shadow: 0 0 0 2px var(--credit), var(--ombre-2); }
+.comparer-barre { position: sticky; bottom: max(16px, env(safe-area-inset-bottom)); z-index: 15; margin-top: 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 12px 10px 18px; border-radius: 999px; background: var(--encre); color: var(--fond); box-shadow: var(--ombre-3); }
+.comparer-barre p { margin: 0 auto 0 0; font-size: 14px; font-weight: 600; }
+.comparer-barre .bouton--fantome { color: var(--fond); }
+.comparer-barre .bouton--plein { background: var(--fond); color: var(--encre); }
+.comparer-barre .bouton--plein:disabled { opacity: .5; }
+@media (max-width: 640px) { .comparer-barre { bottom: calc(76px + env(safe-area-inset-bottom)); border-radius: 18px; } }
+.dialogue--comparer { width: min(860px, calc(100vw - 24px)); }
+.comparer__sous { margin: 4px 0 0; font-size: 13px; color: var(--encre-2); }
+.comparer__table-cadre { overflow-x: auto; border: 1px solid var(--filet); border-radius: var(--r-int); }
+.comparer__table-cadre:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.comparer__table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+.comparer__table th, .comparer__table td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--filet); vertical-align: middle; }
+.comparer__table tr:last-child th, .comparer__table tr:last-child td { border-bottom: 0; }
+.comparer__table thead th { text-align: right; vertical-align: bottom; background: var(--surface-2); font-weight: 600; }
+.comparer__table thead th:first-child, .comparer__table tbody th { text-align: left; color: var(--encre-2); font-weight: 600; }
+.comparer__lettre { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; background: var(--credit-doux); color: var(--credit-t); font-size: 12px; font-weight: 800; margin-bottom: 4px; }
+.comparer__nom { display: block; font-weight: 700; color: var(--encre); max-width: 22ch; margin-left: auto; overflow-wrap: anywhere; }
+.comparer__ouvrir { margin-top: 4px; margin-left: auto; }
+.comparer__principal td { font-size: 16px; font-weight: 800; color: var(--encre); }
+.comparer__meilleur { color: var(--succes) !important; font-weight: 800; }
+.comparer__marque { display: inline-grid; place-items: center; margin-left: 6px; width: 18px; height: 18px; border-radius: 50%; background: var(--succes-doux); color: var(--succes); font-size: 11px; }
+.comparer__ecart, .comparer__ecart-t { color: var(--encre-2); font-weight: 600; }
+.comparer__note { margin: 10px 0 0; font-size: 12.5px; color: var(--encre-2); }
+
+/* ---------- Document reçu (Lot 2) ---------- */
+.dialogue--recevoir { width: min(500px, calc(100vw - 24px)); }
+.recevoir { display: grid; gap: 14px; }
+.recevoir__fichiers { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.recevoir__fichiers li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--r-int); background: var(--surface-2); min-width: 0; }
+.recevoir__fichiers svg { width: 20px; height: 20px; flex: none; color: var(--credit-t); }
+.recevoir__nom { font-weight: 650; color: var(--encre); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
+.recevoir__fichiers small { color: var(--encre-2); flex: none; }
+.recevoir__etat { margin: 0; font-size: 14px; color: var(--encre-2); }
+.recevoir__etat:empty { display: none; }
+.recevoir__etat--erreur { color: var(--erreur); }
+.recevoir__resultat { display: grid; gap: 10px; justify-items: start; padding: 14px 16px; border-radius: var(--r-int); background: var(--credit-doux); border: 1px solid color-mix(in srgb, var(--credit) 26%, transparent); }
+.recevoir__type { margin: 0; font-size: 15px; color: var(--encre); }
+.recevoir__type b { color: var(--credit-t); }
+.recevoir__choix p { margin: 0 0 8px; font-size: 14px; color: var(--encre-2); }
+.recevoir__boutons { display: flex; flex-wrap: wrap; gap: 8px; }
+.recevoir__boutons svg { width: 16px; height: 16px; }
+.recevoir__vie-privee { margin: 0; display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; color: var(--encre-2); }
+.recevoir__vie-privee svg { width: 16px; height: 16px; flex: none; color: var(--succes); }
+/* Sur téléphone, « Partager » quitte la barre (trop étroite) pour l'en-tête des modules Crédit et Épargne ;
+   le module Salaire a déjà le sien sous le résultat. */
+.partager-mobile { display: none; }
+@media (max-width: 640px) {
+  #partager-sim { display: none; }
+  .partager-mobile { display: inline-flex; }
+}
