@@ -1,0 +1,63 @@
+/* Orbite — confort : boutons Fermer / Déconnexion en rouge, accès offert à vie (administration),
+   demande de partage de la fiche, et corrections de lisibilité (thème clair et sombre). */
+
+/* ---------- Fermer et Déconnexion : rouge, lisible dans les deux thèmes ---------- */
+.bouton.bouton--fermer { color: var(--erreur); border-color: color-mix(in srgb, var(--erreur) 34%, transparent); }
+.bouton.bouton--fermer:hover { background: var(--erreur-doux); color: var(--erreur); border-color: color-mix(in srgb, var(--erreur) 55%, transparent); }
+.bouton.bouton--fermer:focus-visible { outline-color: var(--erreur); }
+.bouton.bouton--fermer svg { color: currentColor; }
+/* Bouton d'icône seul (barre, fenêtres) : pas de bordure, une pastille rouge douce au survol. */
+.bouton--icone.bouton--fermer { border-color: transparent; }
+/* Histoire de l'année : fond cosmos, rouge clair. */
+.annee__fermer.bouton--fermer { color: #FF8A80; }
+.annee__fermer.bouton--fermer:hover { background: rgba(255, 138, 128, .14); }
+/* Notification d'erreur : « Fermer » sur fond sombre. */
+.toast .toast__fermer { background: rgba(255, 138, 128, .16); color: #FFB4AB; }
+.toast .toast__fermer:hover { background: rgba(255, 138, 128, .26); }
+
+/* ---------- Administration : accès offert à vie ---------- */
+.admin__offert { box-shadow: inset 3px 0 0 var(--epargne); }
+.admin__offert-ligne { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 12px 14px; border-radius: var(--r-int); background: var(--surface-2); }
+.admin__offert-txt { display: grid; gap: 2px; min-width: 0; flex: 1 1 260px; }
+.admin__offert-txt strong { font-weight: 650; font-size: 14.5px; }
+.admin__offert-txt small { color: var(--encre-3); font-size: 13px; line-height: 1.45; }
+.admin__offert-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.admin__offert .bouton--plein { background: var(--epargne); border-color: var(--epargne); color: #fff; }
+.admin__offert .bouton--plein:hover { background: var(--epargne-t); border-color: var(--epargne-t); }
+.admin__offert .interrupteur input:checked + .interrupteur__piste { background: var(--epargne); }
+.admin__offert-astuce a { color: var(--epargne-t); font-weight: 650; }
+#admin-offert-nb:empty { display: none; }
+/* Colonne « Accès à vie » de la liste des comptes. */
+.admin__offrir { white-space: nowrap; }
+.admin__offrir small { display: block; margin-top: 4px; }
+.admin__offrir .bouton { min-height: 32px; }
+.admin__offrir .bouton[data-offrir="1"] { color: var(--epargne-t); border-color: color-mix(in srgb, var(--epargne) 40%, transparent); }
+.admin__offrir .bouton[data-offrir="0"] { color: var(--erreur); border-color: color-mix(in srgb, var(--erreur) 34%, transparent); }
+.admin__offrir .bouton[data-offrir="1"]:hover { background: var(--epargne-doux); }
+.admin__offrir .bouton[data-offrir="0"]:hover { background: var(--erreur-doux); }
+.admin__ligne--offerte td:first-child { box-shadow: inset 3px 0 0 var(--epargne); }
+
+/* ---------- Demande de partage de la fiche (une fois par compte) ---------- */
+dialog.dialogue--partage { width: min(460px, calc(100vw - 24px)); }
+.partage-demande { display: grid; gap: 12px; justify-items: start; padding-top: 22px; }
+.partage-demande__ico { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: var(--credit-doux); color: var(--credit-t); }
+.partage-demande__ico svg { width: 24px; height: 24px; }
+.partage-demande h2 { font-size: 20px; line-height: 1.25; }
+.partage-demande p { color: var(--encre-2); line-height: 1.55; }
+.partage-demande__points { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.partage-demande__points li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 8px; align-items: start; font-size: 14px; color: var(--encre-2); line-height: 1.45; }
+.partage-demande__points svg { width: 18px; height: 18px; margin-top: 1px; color: var(--succes); }
+.partage-demande__pied { flex-wrap: wrap-reverse; }
+@media (max-width: 420px) { .partage-demande__pied .bouton { flex: 1 1 100%; } }
+
+/* ---------- Pastille Administration : disparaît en douceur après une minute ---------- */
+.rail__badge--sortie { animation: pastille-sort 400ms var(--sortie) forwards; }
+@keyframes pastille-sort { to { opacity: 0; transform: scale(.6); } }
+@media (prefers-reduced-motion: reduce) { .rail__badge--sortie { animation: none; opacity: 0; } }
+
+/* ---------- Lisibilité (audit e2e/lisibilite.js) ---------- */
+/* « obligatoire » : brun sur brun en sombre (2,1:1) → ambre clair (9:1). */
+:root[data-theme="dark"] .champ__requis { color: var(--alerte); }
+/* Textes d'exemple dans les champs : lisibles dans les deux thèmes (gris du navigateur trop pâle en sombre),
+   toujours plus discrets qu'une valeur saisie (encre principale, plus grasse). */
+.principal ::placeholder, dialog ::placeholder { color: var(--encre-3); opacity: .85; }
