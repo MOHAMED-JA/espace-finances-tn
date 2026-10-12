@@ -697,7 +697,7 @@
           <header class="vue__tete module__tete">
             <span class="module__pastille" aria-hidden="true"><svg><use href="/orbite/icones.svg#epargne"/></svg></span>
             <div><h1 id="titre-epargne">Épargne vie &amp; CEA</h1><p class="vue__sous">Économie d'impôt (art. 39), capital projeté, rachat, retraite et protection.</p></div>
-            <div class="module__actions"><button type="button" class="bouton bouton--petit" data-guidee="epargne"><svg aria-hidden="true"><use href="/orbite/icones.svg#etapes"/></svg>Simulation guidée</button></div>
+            <div class="module__actions"><button type="button" class="bouton bouton--petit partager-mobile" data-partager><svg aria-hidden="true"><use href="/orbite/icones.svg#partager"/></svg>Partager</button><button type="button" class="bouton bouton--petit" data-guidee="epargne"><svg aria-hidden="true"><use href="/orbite/icones.svg#etapes"/></svg>Simulation guidée</button></div>
           </header>
           <div id="epargne-racine" class="module__racine"><div class="squelette module__attente"></div></div>
         </section>
@@ -709,6 +709,7 @@
             <div><h1 id="titre-credit">Crédit</h1><p class="vue__sous">Mensualité, TMM + marge, TEG, tableau d'amortissement, capacité et renégociation.</p></div>
             <div class="module__actions">
               <button type="button" class="bouton bouton--petit" data-guidee="credit"><svg aria-hidden="true"><use href="/orbite/icones.svg#etapes"/></svg>Simulation guidée</button>
+              <button type="button" class="bouton bouton--petit partager-mobile" data-partager><svg aria-hidden="true"><use href="/orbite/icones.svg#partager"/></svg>Partager</button>
               <button type="button" class="bouton bouton--petit" id="dossier-ouvrir"><svg aria-hidden="true"><use href="/orbite/icones.svg#fiche"/></svg>Préparer mon dossier banque</button>
             </div>
           </header>
@@ -1148,7 +1149,7 @@
               </div>
             </section>
             <section class="panneau reglage" aria-labelledby="r-lisible">
-              <div class="reglage__texte"><h2 id="r-lisible">Lisibilité</h2><p>Haute lisibilité : texte plus grand, gris plus foncés, liens soulignés et contour bien visible autour de l'élément actif. Retenue sur votre compte, sur tous vos appareils. Aussi dans Ctrl K.</p></div>
+              <div class="reglage__texte"><h2 id="r-lisible">Lisibilité</h2><p>Haute lisibilité : texte plus grand, gris plus foncés, liens soulignés, contour bien visible autour de l'élément actif et animations coupées. Retenue sur votre compte, sur tous vos appareils. Aussi dans Ctrl K.</p></div>
               <div class="reglage__controle">
                 <div class="bascule" id="choix-lisible" role="radiogroup" aria-label="Lisibilité">
                   <label><input type="radio" name="lisible" value=""><span>Normale</span></label>
@@ -2072,6 +2073,30 @@
     </form>
   </dialog>
 
+  <dialog class="dialogue dialogue--recevoir" id="dlg-recevoir" aria-labelledby="recevoir-titre">
+    <form method="dialog">
+      <div class="dialogue__tete"><h2 id="recevoir-titre">Document reçu</h2></div>
+      <div class="dialogue__corps recevoir">
+        <ul class="recevoir__fichiers" id="recevoir-fichiers"></ul>
+        <p class="recevoir__etat" id="recevoir-etat" role="status" aria-live="polite"></p>
+        <div class="recevoir__resultat" id="recevoir-resultat" hidden>
+          <p class="recevoir__type">Orbite reconnaît&nbsp;: <b id="recevoir-type"></b></p>
+          <button type="button" class="bouton bouton--plein" id="recevoir-action"></button>
+        </div>
+        <div class="recevoir__choix" id="recevoir-choix" hidden>
+          <p id="recevoir-choix-titre">Ce n'est pas ça&nbsp;? Choisissez&nbsp;:</p>
+          <div class="recevoir__boutons">
+            <button type="button" class="bouton bouton--petit" data-recevoir="fiche"><svg aria-hidden="true"><use href="/orbite/icones.svg#fiche"/></svg>Fiche de paie</button>
+            <button type="button" class="bouton bouton--petit" data-recevoir="tableau"><svg aria-hidden="true"><use href="/orbite/icones.svg#liste"/></svg>Tableau d'amortissement</button>
+            <button type="button" class="bouton bouton--petit" data-recevoir="offre"><svg aria-hidden="true"><use href="/orbite/icones.svg#credit"/></svg>Offre de crédit</button>
+          </div>
+        </div>
+        <p class="recevoir__vie-privee"><svg aria-hidden="true"><use href="/orbite/icones.svg#cadenas"/></svg><span>Lu sur votre appareil&nbsp;: le document n'est ni envoyé ni gardé par Orbite.</span></p>
+      </div>
+      <div class="dialogue__pied"><button type="submit" class="bouton bouton--fermer" value="fermer">Fermer</button></div>
+    </form>
+  </dialog>
+
   <dialog class="dialogue" id="dlg-supprimer-compte" aria-labelledby="dlg-sc-titre">
     <form method="dialog">
       <div class="dialogue__tete"><h2 id="dlg-sc-titre">Supprimer définitivement votre compte&nbsp;?</h2></div>
@@ -2133,6 +2158,8 @@
   <script src="/espace/js/lisibilite.js"></script>
   <script src="/espace/js/historique.js"></script>
   <script src="/espace/js/guidee.js"></script>
+  <script src="/espace/js/recevoir-calcul.js"></script>
+  <script src="/espace/js/recevoir.js"></script>
   <script src="/espace/js/abonnement-calcul.js"></script>
   <script src="/espace/js/abonnement.js"></script>
   <script src="/espace/js/parametres.js"></script>

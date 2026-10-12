@@ -271,8 +271,8 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(await page.$eval("#visite-chap-nouveautes", (b) => b.classList.contains("visite__chap--conseil")), "déjà venu : « Les nouveautés » conseillées");
     assert(await page.isVisible("#visite-chap-plus"), "chapitre « Pour aller plus loin »");
     await page.click("#visite-chap-nouveautes");
-    assert(/Ctrl K/.test(await page.textContent("#visite-titre")), "première nouveauté : la palette");
-    await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.getElementById("palette-ouvrir").getBoundingClientRect(); return !document.querySelector(".visite--transit") && Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
+    assert(/Simulation guidée/.test(await page.textContent("#visite-titre")), "première nouveauté : la simulation guidée");
+    await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.querySelector("[data-guidee='credit']").getBoundingClientRect(); return location.hash === "#credit" && !document.querySelector(".visite--transit") && Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
     await page.waitForTimeout(400);
     await page.screenshot({ path: path.join(CAPTURES, "visite-nouveautes.png") });
     const vus = [];
@@ -281,12 +281,12 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
       await page.waitForFunction(() => !document.querySelector(".visite--transit"));
       vus.push((await page.textContent("#visite-titre")) + " @ " + (await page.evaluate(() => location.hash)));
     }
-    assert(vus.some((t) => /négociation @ #salaire/.test(t)) && vus.some((t) => /une phrase @ #credit/.test(t)) && vus.some((t) => /tableau de votre banque @ #credit/.test(t)), "pages ouvertes : " + vus.join(" | "));
+    assert(vus.some((t) => /Partager une simulation @ #credit/.test(t)) && vus.some((t) => /Comparer vos simulations @ #simulations/.test(t)) && vus.some((t) => /Rappel de versement @ #profil/.test(t)) && vus.some((t) => /Haute lisibilité @ #compte\?onglet=preferences/.test(t)), "pages ouvertes : " + vus.join(" | "));
     await page.screenshot({ path: path.join(CAPTURES, "visite-credit.png") });
     await page.click("#visite-suiv");
     await page.waitForSelector(".visite", { state: "detached" });
     await page.waitForFunction(() => location.hash === "#orbite");
-    await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite_nouveautes === "2026-10-12");
+    await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite_nouveautes === "2026-10-12b");
     /* « Pour aller plus loin » : les nouveautés précédentes, fiche de paie d'abord. */
     await page.click("#aide-visite");
     await page.waitForSelector(".visite__bulle #visite-chapitres:not([hidden])");
@@ -296,12 +296,12 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => location.hash === "#profil?section=salaire" && !document.querySelector(".visite--transit"));
     await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.getElementById("fiche-entree-profil").getBoundingClientRect(); return Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
     const vus2 = [];
-    for (let i = 1; i < 10; i++) {
+    for (let i = 1; i < 14; i++) {
       await page.click("#visite-suiv");
       await page.waitForFunction(() => !document.querySelector(".visite--transit"));
       vus2.push((await page.textContent("#visite-titre")) + " @ " + (await page.evaluate(() => location.hash)));
     }
-    assert(vus2.some((t) => /Retraite @ #progression\?onglet=retraite/.test(t)) && vus2.some((t) => /Et si… \? @ #vie\?onglet=scenarios/.test(t)) && vus2.some((t) => /Rappels @ #compte\?onglet=preferences/.test(t)), "pages ouvertes : " + vus2.join(" | "));
+    assert(vus2.some((t) => /Retraite @ #progression\?onglet=retraite/.test(t)) && vus2.some((t) => /Et si… \? @ #vie\?onglet=scenarios/.test(t)) && vus2.some((t) => /Rappels @ #compte\?onglet=preferences/.test(t)) && vus2.some((t) => /négociation @ #salaire/.test(t)) && vus2.some((t) => /Ctrl K/.test(t)), "pages ouvertes : " + vus2.join(" | "));
     await page.keyboard.press("Escape");
     await page.waitForSelector(".visite", { state: "detached" });
   });
@@ -1291,6 +1291,10 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
       await page.waitForTimeout(400);
     }
     async function choisir(texte) { await page.click(`#guidee-reponse .guidee__option:has-text("${texte}")`); await page.waitForTimeout(250); }
+    /* Les étapes suivantes partent de l'état des modules : il est remis tel quel à la fin. */
+    await page.goto(base + "/espace/#credit");
+    await page.waitForSelector("#cr-capital");
+    const avantModules = await page.evaluate(() => ({ c: window.ModuleCredit.instantane(), s: window.ModuleSalaire.etat(), e: window.ModuleEpargne.etat() }));
     /* Crédit : voiture, 40 000 DT, 5 ans, taux de 9 %. */
     await page.goto(base + "/espace/#credit");
     await page.waitForSelector('[data-guidee="credit"]');
@@ -1388,6 +1392,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(rv.length === 1 && new Date(rv[0].quand).getDate() >= 1 && !/\d{3}/.test(rv[0].mail.corps), "rappel de versement : " + JSON.stringify(rv));
     await page.selectOption("#p-jour-versement", "0");
     await page.waitForFunction(() => window.Orbite.profil().jourVersement === 0);
+    await page.evaluate((m) => { window.ModuleCredit.restaurer(m.c); window.ModuleSalaire.charger(m.s); window.ModuleEpargne.charger(m.e); ["credit", "salaire", "epargne"].forEach((v) => window.Orbite.detacherSimulation(v)); }, avantModules);
   });
 
   await etape("crédit : lire une offre (texte), contrôler le tableau de la banque (exemple exact, PDF avec une erreur)", async () => {
@@ -1411,6 +1416,65 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     const au = await page.textContent("#cr-o-audit .cr-outil__sortie");
     assert(/60 échéances lues/.test(au) && /1 point à vérifier/.test(au) && /Échéance 14/.test(au) && /\+0,750/.test(au), "audit du PDF : " + au.slice(0, 400));
     await page.screenshot({ path: path.join(CAPTURES, "credit-audit.png"), fullPage: false });
+  });
+
+  await etape("document reçu par « Partager » : service worker, reconnaissance du tableau, outil ouvert, rien ne reste ; photo : choix", async () => {
+    await page.goto(base + "/espace/#orbite");
+    await page.waitForFunction(() => navigator.serviceWorker && navigator.serviceWorker.controller, null, { timeout: 20000 }).catch(() => {});
+    const octets = Array.from(fs.readFileSync(path.join(__dirname, "fixtures", "tableau-banque.pdf")));
+    const parSw = await page.evaluate(async (o) => {
+      const fd = new FormData();
+      fd.append("fichiers", new File([new Uint8Array(o)], "echeancier-banque.pdf", { type: "application/pdf" }));
+      if (navigator.serviceWorker.controller) { const r = await fetch("/espace/recevoir", { method: "POST", body: fd }); return r.ok && (await caches.has("orbite-recus")) ? "service worker" : "service worker ? " + r.status; }
+      /* Sans service worker actif : on dépose comme lui. */
+      const c = await caches.open("orbite-recus");
+      await c.put("/__orbite/recu/0", new Response(new Blob([new Uint8Array(o)], { type: "application/pdf" }), { headers: { "Content-Type": "application/pdf", "X-Orbite-Nom": "echeancier-banque.pdf" } }));
+      await c.put("/__orbite/recu/liste", new Response(JSON.stringify({ n: 1, t: Date.now() })));
+      return "page";
+    }, octets);
+    assert(parSw !== "page" ? parSw === "service worker" : true, "dépôt par le service worker : " + parSw);
+    await page.goto(base + "/espace/#recevoir");
+    await page.reload();
+    await page.waitForSelector("#dlg-recevoir[open]");
+    await page.waitForSelector("#recevoir-resultat:not([hidden])", { timeout: 60000 });
+    assert(/tableau d'amortissement/.test(await page.textContent("#recevoir-type")), "tableau reconnu : " + await page.textContent("#recevoir-type"));
+    assert(!(await page.evaluate(() => caches.has("orbite-recus"))), "cache des documents reçus vidé");
+    assert(!/recevoir/.test(await page.evaluate(() => location.hash)), "adresse nettoyée");
+    await page.screenshot({ path: path.join(CAPTURES, "recevoir-tableau.png") });
+    await page.click("#recevoir-action");
+    await page.waitForFunction(() => location.hash === "#credit");
+    await page.waitForFunction(() => /échéances? lues?/.test((document.querySelector("#cr-o-audit .cr-outil__sortie") || {}).textContent || ""), null, { timeout: 90000 });
+    assert(await page.evaluate(() => document.getElementById("cr-outil-audit").open), "outil « Contrôler le tableau » ouvert");
+    /* Photo : Orbite demande ce que c'est. */
+    const photo = Array.from(fs.readFileSync(path.join(__dirname, "fixtures", "fiche-paie.jpg")));
+    await page.evaluate(async (o) => {
+      const c = await caches.open("orbite-recus");
+      await c.put("/__orbite/recu/0", new Response(new Blob([new Uint8Array(o)], { type: "image/jpeg" }), { headers: { "Content-Type": "image/jpeg", "X-Orbite-Nom": "IMG_2041.jpg" } }));
+      await c.put("/__orbite/recu/liste", new Response(JSON.stringify({ n: 1, t: Date.now() })));
+    }, photo);
+    await page.goto(base + "/espace/#recevoir");
+    await page.reload();
+    await page.waitForSelector("#dlg-recevoir[open]");
+    await page.waitForSelector("#recevoir-choix:not([hidden])");
+    assert(await page.isHidden("#recevoir-resultat"), "photo : pas de supposition");
+    assert((await page.$$('#recevoir-choix [data-recevoir]:not([hidden])')).length === 3, "photo : les trois choix");
+    /* (Sans lancer la lecture de la photo : l'étape « fiche de paie » vérifie plus loin le chargement de l'outil.) */
+    await page.click("#dlg-recevoir .bouton--fermer");
+    /* Fiche de paie en PDF : reconnue, ouverte dans le contrôle de la fiche. */
+    const fiche = Array.from(fs.readFileSync(path.join(__dirname, "fixtures", "fiche-paie.pdf")));
+    await page.evaluate(async (o) => {
+      const c = await caches.open("orbite-recus");
+      await c.put("/__orbite/recu/0", new Response(new Blob([new Uint8Array(o)], { type: "application/pdf" }), { headers: { "Content-Type": "application/pdf", "X-Orbite-Nom": "scan-octobre.pdf" } }));
+      await c.put("/__orbite/recu/liste", new Response(JSON.stringify({ n: 1, t: Date.now() })));
+    }, fiche);
+    await page.goto(base + "/espace/#recevoir");
+    await page.reload();
+    await page.waitForSelector("#recevoir-resultat:not([hidden])", { timeout: 60000 });
+    assert(/fiche de paie/.test(await page.textContent("#recevoir-type")), "fiche reconnue : " + await page.textContent("#recevoir-type"));
+    await page.click("#recevoir-action");
+    await page.waitForSelector('#dlg-fiche[open][data-ecran="verifier"]', { timeout: 60000 });
+    await page.keyboard.press("Escape");
+    await page.waitForFunction(() => !document.getElementById("dlg-fiche").open);
   });
 
   await etape("crédit : voyage dans le temps, échéancier en PDF et en Excel, lettre en Word", async () => {

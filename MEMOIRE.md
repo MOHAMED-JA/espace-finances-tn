@@ -677,6 +677,113 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 noveoctogies. Lot 2 livré : partager, guider, comparer, annuler, lisibilité, document reçu (12 oct.)
+
+Branche `lot2`. Tout tourne sur l'appareil ; aucune nouvelle table, aucune migration.
+
+**Partager une simulation** (`public/commun/partage-lien.js`, pur, testé ; `public/espace/js/partage-simulation.js`)
+- Bouton « Partager » dans la barre des modules (dans l'en-tête de Crédit et Épargne sur téléphone ; Salaire garde son bouton sous le résultat). Aussi dans Ctrl K.
+- Le lien ouvre la **page publique** de l'outil, déjà remplie : `/simulateur-credit-tunisie`, `/salaire-net-tunisie`, `/simulateur-assurance-vie-tunisie`, `/calcul-cea-tunisie`.
+- Les valeurs voyagent **après le « # »**, donc jamais envoyées au serveur. Elles ne contiennent que des montants : champs fixes par page, valeurs bornées, champs inconnus ignorés.
+- **Salaire brut** (Épargne) et **situation de famille** (Salaire) : joints seulement si la case est cochée ; décochée par défaut.
+- **Aperçu** : « Ce que verra la personne » est calculé par `PagesCalcul.affichage`, la fonction même de la page publique (chargée à la demande).
+- **Différences listées** (dépliant), par exemple :
+  - durée arrondie aux années ;
+  - TMM du jour ;
+  - taux sous le TMM ramené au TMM ;
+  - crédit « libre » affiché logement ou consommation ;
+  - assurance, frais et différé non repris ;
+  - rendement net de frais ;
+  - CEA non repris sur la page assurance vie.
+- **Canaux** :
+  - copier (repli `execCommand`) ;
+  - **QR code** dessiné sur l'appareil (`public/espace/vendor/qrcode-generator-1.4.4.js`, MIT, Kazuhiko Arase), avec PNG à enregistrer ;
+  - WhatsApp (`wa.me/?text=`), e-mail (`mailto:`), partage natif du téléphone, « Voir la page ».
+- **Pages publiques** (`pages-publiques.js`) : lisent le « # », remplissent le formulaire, affichent « Reçu par lien » et une note. Les pages sont générées par `node scripts/pages-publiques.js`, qui inclut maintenant `/commun/partage-lien.js`.
+
+**Haute lisibilité** (`public/espace/js/lisibilite.js`)
+- Réglage dans Paramètres › Préférences › Lisibilité, et dans Ctrl K (« lisibilité »).
+- Gardé dans `user_metadata.orbite_lisible` (le compte fait foi au démarrage) et recopié dans `localStorage` `ef-lisible`. `theme-init.js` l'applique avant l'affichage.
+- Effet :
+  - `zoom` 1,12 sur `.principal` (1,07 sur téléphone, car toutes les tailles sont en px), 1,08 sur les fenêtres ;
+  - gris plus foncés, filets marqués, liens soulignés, focus de 3 px ;
+  - **animations coupées** (`data-mouvement="reduit"`, qui garde la main sur le réglage « Animations »).
+
+**Annuler / rétablir** (`public/espace/js/historique.js`)
+- Boutons ↶ ↷ dans la barre (masqués sur téléphone, où l'action passe par Ctrl K), plus Ctrl Z, et Ctrl Y ou Ctrl ⇧ Z.
+- Désactivé dans un champ de texte, pour laisser le « annuler » de la frappe, et quand une fenêtre est ouverte.
+- **Instantanés** :
+  - `module.instantane()` et `restaurer()` s'ils existent (Crédit : les 3 scénarios et l'onglet actif) ;
+  - sinon `etat()` et `charger()`.
+- **Quand** :
+  - 50 instantanés par module, en mémoire seulement ;
+  - l'état est noté **avant chaque geste** (écoute en phase de capture `input`, `change`, `click` dans `#vue-<module>`, une fois par rafale de 1,2 s) ;
+  - puis après chaque pause de saisie (`orbite:modifie` + 700 ms) ;
+  - `app.js` `modifie()` émet `orbite:modifie`.
+- Pour les tests : `OrbiteHistorique.position()`. Avant une modification extérieure (simulation guidée) : `OrbiteHistorique.avant(vue)`.
+
+**Simulation guidée** (`public/espace/js/guidee.js`, fenêtre `#dlg-guidee`)
+- Bouton « Simulation guidée » (`[data-guidee]`) dans l'en-tête des 3 modules, et dans Ctrl K.
+- Une question à la fois (choix ou montant), puis le **résultat** (`module.resume()`) ; « Voir le détail » ferme et fait défiler jusqu'au module.
+- **Crédit** : type, montant, durée, taux.
+  - Les durées proposées dépendent du type (logement 10 à 25 ans, voiture 3 à 7 ans, consommation 2 à 7 ans).
+  - « Taux habituel » = TMM + 2,5 (logement), + 3 (voiture) ou + 3,5 (consommation). Ce sont les mêmes exemples que la page publique.
+- **Salaire** : brut ou net, montant, secteur, famille (0 à 4 enfants).
+- **Épargne** : objectif (assurance vie, CEA ou les deux), montants par mois, durée.
+- Le module est rempli par ses propres fonctions : `charger(MoteurCredit.encoderLien(...))`, `EtatSimulation.encoder`, `Partage.encoder`.
+- `Orbite.detacherSimulation(vue)` fait qu'« Enregistrer » crée une **nouvelle** simulation au lieu de mettre à jour celle qui était ouverte.
+
+**Comparer** (`public/espace/js/comparer-calcul.js`, pur, testé ; `simulations.js`)
+- Bouton « Comparer » dans Simulations : des cases apparaissent sur les cartes. Toucher une carte la coche, sans l'ouvrir.
+- 2 ou 3 simulations du même module ; les autres modules sont grisés.
+- Tableau côte à côte avec une colonne « Écart ». ✓ marque la meilleure valeur seulement si le sens est clair :
+  - plus bas : mensualité, coût, intérêts, impôt, prélèvements, effort, taux ;
+  - plus haut : net, économie, capital au terme ;
+  - ni l'un ni l'autre : brut, capital emprunté, coût employeur.
+
+**Rappel de versement** (`orbite-calcul.js` `jourVersement` de 0 à 28 ; `rappels-calcul.js` type `versement`)
+- Réglage dans Mon profil › Contrats : liste « Rappel de versement » (1er, 5, 10, 15, 20, 25 ou 28 du mois).
+- Rappel le jour choisi à 9 h, visible 5 jours ; seul le prochain est créé.
+- Le montant (contrats commencés) apparaît dans Orbite, **jamais dans l'e-mail**.
+
+**Document reçu** (manifeste `share_target`, `sw.js`, `recevoir-calcul.js` pur et testé, `recevoir.js`)
+- Avec Orbite installée, « Partager › Orbite » envoie un POST `multipart` à `/espace/recevoir` : PDF, JPEG, PNG ou WebP, 5 fichiers au plus, 15 Mo chacun.
+- Le service worker range les fichiers dans le cache `orbite-recus`, puis redirige (303) vers `/espace/#recevoir`.
+- La page lit les fichiers, **vide aussitôt le cache** et nettoie l'adresse.
+- Un PDF est lu sur l'appareil (2 pages) puis classé :
+  - indices de mots : fiche de paie, tableau, offre ;
+  - lignes « date + 3 montants » pour un tableau ;
+  - indices tirés du nom du fichier ;
+  - sous 3 points, Orbite demande à la personne.
+- Une photo n'est pas lue d'avance : la personne choisit.
+- Ouverture de l'outil :
+  - fiche de paie → `OrbiteFiche.ouvrir()` puis `lancer(fichier)` ;
+  - tableau ou offre → `ModuleCredit.lireDocument("audit" | "offre", fichiers)`.
+- La fenêtre passe devant « Quoi de neuf » (le partage vient d'un geste de la personne).
+
+**Barre des modules** : de 641 à 1 280 px, les actions secondaires sont en icône seule avec une infobulle ; de 641 à 1 480 px, « Guide » et « Partager » aussi. Aucun débordement à 800, 1 024 et 1 280 px (contrôlé en e2e).
+**Format** : `EFModele.formaterIndicateur` affiche un entier sans décimales (« 60 mois » et non « 60,00 mois »).
+
+**Visite guidée**
+- « Les nouveautés », version `2026-10-12b`, 8 étapes : simulation guidée, partager, annuler, document reçu, crédit complet, comparer, rappel de versement, haute lisibilité.
+- « Pour aller plus loin » passe à 14 étapes : s'y ajoutent Ctrl K, applications, négociation et dossier banque.
+
+**Livraison** : « Quoi de neuf » `2026-10-12h` ; SW `orbite-2026-10-12j`.
+
+**Tests**
+- Unitaires : `partage-lien` (7), `comparer-calcul` (4), `recevoir-calcul` (4), rappel de versement (1).
+- e2e, 5 nouvelles étapes :
+  - partage ;
+  - lisibilité et annuler ;
+  - simulation guidée, comparer et rappel ;
+  - document reçu (POST par le vrai service worker, puis photo) ;
+  - barre sans débordement.
+
+**Pièges**
+- Dans un test, un `goto` vers la même page avec un autre « # » **ne recharge pas** : `page.reload()`.
+- `setTimeout` renvoie un nombre : y poser une propriété échoue en mode strict.
+- Une étape e2e qui modifie un module doit le remettre en état : l'étape « lire une offre » part de l'état du module Crédit.
+
 ## 3 octoseptuagies. Lot 2 et point 5 : décisions du 12 oct. (à livrer)
 
 - **Vidéo 4 livrée** (12 oct.) : `orbite-video-3d-linkedin-youtube.mp4`, 30 s, 1920 × 1080, 60 i/s, −14 LUFS, 26 Mo (voir « 3 quinseptuagies »).

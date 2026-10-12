@@ -205,3 +205,30 @@ dialog.dialogue--partage { width: min(460px, calc(100vw - 24px)); }
 .comparer__marque { display: inline-grid; place-items: center; margin-left: 6px; width: 18px; height: 18px; border-radius: 50%; background: var(--succes-doux); color: var(--succes); font-size: 11px; }
 .comparer__ecart, .comparer__ecart-t { color: var(--encre-2); font-weight: 600; }
 .comparer__note { margin: 10px 0 0; font-size: 12.5px; color: var(--encre-2); }
+
+/* ---------- Document reçu (Lot 2) ---------- */
+.dialogue--recevoir { width: min(500px, calc(100vw - 24px)); }
+.recevoir { display: grid; gap: 14px; }
+.recevoir__fichiers { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.recevoir__fichiers li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--r-int); background: var(--surface-2); min-width: 0; }
+.recevoir__fichiers svg { width: 20px; height: 20px; flex: none; color: var(--credit-t); }
+.recevoir__nom { font-weight: 650; color: var(--encre); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
+.recevoir__fichiers small { color: var(--encre-2); flex: none; }
+.recevoir__etat { margin: 0; font-size: 14px; color: var(--encre-2); }
+.recevoir__etat:empty { display: none; }
+.recevoir__etat--erreur { color: var(--erreur); }
+.recevoir__resultat { display: grid; gap: 10px; justify-items: start; padding: 14px 16px; border-radius: var(--r-int); background: var(--credit-doux); border: 1px solid color-mix(in srgb, var(--credit) 26%, transparent); }
+.recevoir__type { margin: 0; font-size: 15px; color: var(--encre); }
+.recevoir__type b { color: var(--credit-t); }
+.recevoir__choix p { margin: 0 0 8px; font-size: 14px; color: var(--encre-2); }
+.recevoir__boutons { display: flex; flex-wrap: wrap; gap: 8px; }
+.recevoir__boutons svg { width: 16px; height: 16px; }
+.recevoir__vie-privee { margin: 0; display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; color: var(--encre-2); }
+.recevoir__vie-privee svg { width: 16px; height: 16px; flex: none; color: var(--succes); }
+/* Sur téléphone, « Partager » quitte la barre (trop étroite) pour l'en-tête des modules Crédit et Épargne ;
+   le module Salaire a déjà le sien sous le résultat. */
+.partager-mobile { display: none; }
+@media (max-width: 640px) {
+  #partager-sim { display: none; }
+  .partager-mobile { display: inline-flex; }
+}

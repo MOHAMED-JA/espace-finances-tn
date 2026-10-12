@@ -148,5 +148,6 @@
   }
 
   $("partager-sim").addEventListener("click", function () { ouvrir(); });
+  doc.querySelectorAll("[data-partager]").forEach(function (b) { b.addEventListener("click", function () { ouvrir(); }); });
   window.OrbitePartage = { ouvrir: ouvrir };
 })();

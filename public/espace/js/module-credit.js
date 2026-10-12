@@ -2351,6 +2351,18 @@
       };
     },
     nomParDefaut: function () { return nomScenario(sc0()); },
+    /* Document reçu (Lot 2) : ouvre l'outil « offre » ou « audit » et y lit les fichiers. */
+    lireDocument: function (cle, fichiers) {
+      if ((cle !== "audit" && cle !== "offre") || !fichiers || !fichiers.length) return false;
+      var d = $("cr-outil-" + cle);
+      if (!d) return false;
+      d.open = true;
+      var corps = construireOutil(cle);
+      if (!corps) return false;
+      lireFichiers(corps, cle, fichiers);
+      d.scrollIntoView({ behavior: "smooth", block: "start" });
+      return true;
+    },
     /* Annuler / rétablir (Lot 2) : tous les scénarios A, B, C et l'onglet actif. */
     instantane: function () { return JSON.stringify({ s: S.scenarios, a: S.actif }); },
     restaurer: function (t) {

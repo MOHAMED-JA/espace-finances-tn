@@ -39,7 +39,7 @@
   /* Animations réduites choisies dans les paramètres (en plus du réglage de l'appareil). */
   try { if (localStorage.getItem("ef-mouvement") === "reduit") racine.setAttribute("data-mouvement", "reduit"); } catch (e) {}
   /* Haute lisibilité (Lot 2) : retenue sur le compte, recopiée sur l'appareil pour s'appliquer avant l'affichage. */
-  try { if (localStorage.getItem("ef-lisible") === "oui") racine.setAttribute("data-lisible", "oui"); } catch (e) {}
+  try { if (localStorage.getItem("ef-lisible") === "oui") { racine.setAttribute("data-lisible", "oui"); racine.setAttribute("data-mouvement", "reduit"); } } catch (e) {}
   window.EFTheme = { appliquer: appliquer, effectif: effectif, soleil: soleil, nuitATunis: nuitATunis };
   if (typeof module !== "undefined" && module.exports) module.exports = window.EFTheme;
 })();
