@@ -119,7 +119,9 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.goto(base + "/salaire-net-tunisie");
     await page.waitForFunction(() => window.PagesCalcul);
     assert((await ent(page)).replace(/\s/g, "") === "1849,310DT", "net 2 500 DT : " + (await ent(page)));
+    assert(await page.isDisabled("[data-pas='1']"), "compteur d'enfants bloqué tant que « Chef de famille » n'est pas coché");
     await page.check("input[name=chef]", { force: true });
+    await page.waitForFunction(() => !document.querySelector("[data-pas='1']").disabled);
     await page.click("[data-pas='1']"); await page.click("[data-pas='1']");
     await page.waitForFunction(() => document.querySelector(".grand").textContent.replace(/\s/g, "") !== "1849,310DT");
     const attendu = await page.evaluate(() => { const a = PagesCalcul.affichage("salaire", { montant: 2500, chef: true, enfants: 2 }, new Date()); return a.net_ent + a.net_dec; });
@@ -304,6 +306,15 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector("#vue-profil:not([hidden])");
     await page.fill("#p-prenom", "Aziz");
     await page.fill("#p-nom", "Jaouadi");
+    /* Enfants réservés au chef de famille : compteurs bloqués et aide visible tant que la case est décochée. */
+    const chefCoche = await page.isChecked('input[data-p="chefDeFamille"]');
+    if (chefCoche) await page.click('label.interrupteur:has(input[data-p="chefDeFamille"]) .interrupteur__piste');
+    await page.waitForSelector("#p-enfants-aide:not([hidden])");
+    assert(await page.isDisabled('[data-pp="enfants"][data-pas="1"]') && await page.isDisabled('[data-pp="etudiants"][data-pas="1"]'), "enfants et étudiants bloqués sans chef de famille");
+    await page.click('label.interrupteur:has(input[data-p="chefDeFamille"]) .interrupteur__piste');
+    await page.waitForSelector("#p-enfants-aide", { state: "hidden" });
+    assert(!(await page.isDisabled('[data-pp="enfants"][data-pas="1"]')), "enfants débloqués avec chef de famille");
+    if (!chefCoche) await page.click('label.interrupteur:has(input[data-p="chefDeFamille"]) .interrupteur__piste');
     await page.fill("#p-naissance", "1990-05-14");
     await page.fill("#p-embauche", "2018-09-01");
     await page.click("#sec-credits summary");

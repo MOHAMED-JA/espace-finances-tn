@@ -345,6 +345,8 @@ body.attente .onglets-bas a, body.attente .rail__liens a { pointer-events: none;
 .compteurs { display: grid; gap: 4px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 .compteur-ligne { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 8px 0; font-weight: 600; font-size: 15px; }
 .compteur-ligne small { display: block; font-weight: 500; color: var(--encre-3); font-size: 13px; }
+.compteur-ligne--bloque > span:first-child { color: var(--encre-3); }
+.compteurs__aide { grid-column: 1 / -1; margin: 0; }
 .icone--salaire { background: var(--salaire-doux) !important; color: var(--salaire-t); }
 .icone--credit { background: var(--credit-doux) !important; color: var(--credit-t); }
 .icone--epargne { background: var(--epargne-doux) !important; color: var(--epargne-t); }
