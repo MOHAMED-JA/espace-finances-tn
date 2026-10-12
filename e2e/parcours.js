@@ -1148,6 +1148,29 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(Number((await page.inputValue("#cr-capital")).replace(/\D/g, "")) === 120000, "montant en arabe");
   });
 
+  await etape("crédit : lire une offre (texte), contrôler le tableau de la banque (exemple exact, PDF avec une erreur)", async () => {
+    await page.goto(base + "/espace/#credit");
+    await page.waitForSelector("#cr-outil-offre");
+    await page.click("#cr-outil-offre > summary");
+    await page.fill("#cr-offre-txt", "Montant du prêt : 120 000,000 DT\nDurée : 180 mois\nTaux : TMM + 2,75 %\nTEG : 11,2 %\nFrais de dossier : 1 %\nAssurance 0,35 %");
+    await page.waitForSelector("#cr-offre-capital");
+    assert(/6 valeurs repérées/.test(await page.textContent("#cr-o-offre")), "valeurs repérées");
+    await page.click("[data-offre-appliquer]");
+    await page.waitForFunction(() => /(^|&)c=120000(&|$)/.test(window.ModuleCredit.etat()));
+    const e = await page.evaluate(() => window.ModuleCredit.etat());
+    assert(/(^|&)m=180(&|$)/.test(e) && /mg=2\.75/.test(e) && /as=0\.35/.test(e), "offre appliquée : " + e);
+    /* Tableau de la banque : l'exemple (échéancier exact) ne montre aucune erreur. */
+    await page.click("#cr-outil-audit > summary");
+    await page.click("[data-audit-exemple]");
+    await page.waitForFunction(() => /chaque échéance est exacte au millime/.test(document.getElementById("cr-o-audit").textContent));
+    /* PDF de banque (60 échéances, intérêts majorés de 0,750 DT à l'échéance 14) lu sur l'appareil. */
+    await page.setInputFiles('[data-lire-fichier="audit"]', path.join(__dirname, "fixtures", "tableau-banque.pdf"));
+    await page.waitForFunction(() => /Lecture terminée/.test(document.querySelector("#cr-o-audit [data-lecture-etat]").textContent), null, { timeout: 30000 });
+    const au = await page.textContent("#cr-o-audit .cr-outil__sortie");
+    assert(/60 échéances lues/.test(au) && /1 point à vérifier/.test(au) && /Échéance 14/.test(au) && /\+0,750/.test(au), "audit du PDF : " + au.slice(0, 400));
+    await page.screenshot({ path: path.join(CAPTURES, "credit-audit.png"), fullPage: false });
+  });
+
   await etape("simulation → profil : crédit ajouté (puis annulé), épargne ajoutée depuis « Enregistrer »", async () => {
     await page.goto(base + "/espace/#credit?type=auto&capital=40000&mois=60&taux=9");
     await page.waitForSelector("#ajouter-profil", { state: "visible" });

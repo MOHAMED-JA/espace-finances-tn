@@ -434,6 +434,7 @@
     { cle: "capacite", icone: "cible", titre: "Capacité d'emprunt", sous: "Sur le net et sur le brut, d'après votre profil" },
     { cle: "inverse", icone: "comparer", titre: "Calcul inverse", sous: "Partir de la mensualité pour trouver le capital, la durée ou le taux" },
     { cle: "plan", icone: "liste", titre: "Plan de financement", sous: "Plusieurs prêts, mensualité globale et lissage" },
+    { cle: "offre", icone: "photo", titre: "Lire une offre bancaire", sous: "Photo, PDF ou texte : taux, durée, montant et frais repérés" },
     { cle: "offres", icone: "comparer", titre: "Comparer des offres bancaires", sous: "Taux, frais et assurance : l'offre la moins chère" },
     { cle: "reneg", icone: "hausse", titre: "Renégociation ou rachat", sous: "Changer de taux vaut-il le coût ?" },
     { cle: "stress", icone: "alerte", titre: "Stress test du TMM", sous: "1 000 trajectoires du TMM et leurs effets" },
@@ -444,7 +445,7 @@
     { cle: "sensib", icone: "hausse", titre: "Sensibilité au TMM", sous: "Échéance et intérêts si le TMM bouge de −1 à +2 points" },
     { cle: "calendrier", icone: "horloge", titre: "Calendrier des échéances", sous: "Vue par mois et export vers votre agenda (.ics)" },
     { cle: "va", icone: "hausse", titre: "Valeur actuelle", sous: "Ce que pèsent vos remboursements, inflation déduite" },
-    { cle: "audit", icone: "valide", titre: "Vérifier l'échéancier de ma banque", sous: "Collez les lignes du tableau bancaire et comparez" }
+    { cle: "audit", icone: "valide", titre: "Contrôler le tableau de ma banque", sous: "PDF, photo ou texte : chaque échéance recalculée au millime" }
   ];
   function htmlOutils() {
     return '<section class="cr-outils" aria-labelledby="cr-outils-titre">' +
@@ -1753,18 +1754,48 @@
     audit: {
       suit: true,
       html: function () {
-        return '<p class="cr-texte">Collez les lignes du tableau de votre banque (une échéance par ligne) ou importez un fichier CSV. Colonnes attendues, dans cet ordre : <strong>N° ; échéance ; intérêts ; capital amorti ; capital restant dû</strong>. Une date peut figurer sur la ligne, et des colonnes intermédiaires (assurance, TVA…) sont comptées comme frais accessoires.</p>' +
-          '<p class="cr-texte cr-texte--doux">La comparaison se fait avec votre scénario actuel : renseignez d\'abord le capital, la durée, le taux et la date de votre crédit.</p>' +
-          '<div class="champ"><label for="cr-audit-txt">Lignes du tableau bancaire</label><textarea id="cr-audit-txt" class="cr-zone-texte" rows="7" data-c="lignes" data-t="texte" spellcheck="false" placeholder="1 ; 01/11/2026 ; 1 447,530 ; 1 250,000 ; 197,530 ; 149 802,470"></textarea></div>' +
-          '<div class="cr-ligne-actions"><label class="bouton bouton--petit cr-fichier">' + ico("telecharger") + 'Importer un CSV<input type="file" accept=".csv,.txt,text/csv,text/plain" data-audit-fichier class="cache"></label>' +
-          '<button type="button" class="bouton bouton--petit bouton--fantome" data-audit-exemple>Exemple : coller l\'échéancier simulé</button></div>' +
+        return '<p class="cr-texte">Déposez le tableau d\'amortissement remis par votre banque : <strong>PDF</strong> (même scanné), <strong>photos</strong> des pages, ou texte collé. Orbite reconnaît les colonnes seul (capital dû, amortissement, intérêts, échéance), recalcule chaque échéance au millime, et signale les écarts, les pages manquantes et la réduction de taux oubliée (règle des 8 %).</p>' +
+          '<div class="cr-ligne-actions">' + boutonFichier("audit", "Choisir le PDF ou les photos du tableau", true) +
+          '<button type="button" class="bouton bouton--petit bouton--fantome" data-audit-exemple>Exemple : l\'échéancier simulé</button></div>' +
+          '<p class="cr-texte cr-texte--doux cr-lecture-etat" data-lecture-etat aria-live="polite">Tout est lu sur votre appareil : rien n\'est envoyé.</p>' +
+          '<details class="cr-coller"><summary>Ou coller le texte du tableau</summary><div class="champ"><label for="cr-audit-txt">Lignes du tableau bancaire (une échéance par ligne)</label><textarea id="cr-audit-txt" class="cr-zone-texte" rows="7" data-c="lignes" data-t="texte" spellcheck="false" placeholder="1 ; 30/11/2026 ; 150 000,000 ; 197,530 ; 1 250,000 ; 1 447,530"></textarea></div></details>' +
           '<div class="cr-outil__sortie" aria-live="polite"></div>';
       },
       calc: function (c) {
-        var txt = (c.querySelector('[data-c="lignes"]') || {}).value || "", out = sortie(c), d = d0(), r = d.r;
-        var lignes = lireTableauBancaire(txt);
-        if (!lignes.length) { out.innerHTML = encart("", "info", "<p>Aucune ligne lue pour l'instant.</p>"); return; }
-        out.innerHTML = auditer(lignes, r, d.e);
+        var txt = (c.querySelector('[data-c="lignes"]') || {}).value || "", out = sortie(c);
+        if (!txt.trim()) { out.innerHTML = ""; return; }
+        var CA = window.CreditAudit, tab = CA ? CA.analyserTableau(txt) : { lignes: [] };
+        if (tab.lignes.length >= 3) { var au = CA.auditerTableau(tab); OUTIL_FN.audit.dernier = au; out.innerHTML = rendreAuditBanque(au); return; }
+        /* Lignes sans date : comparaison avec le scénario (ancien format « N° ; échéance ; intérêts ; capital ; restant »). */
+        var d = d0(), lignes = lireTableauBancaire(txt);
+        if (!lignes.length) { out.innerHTML = encart("alerte", "info", "<p>Aucune ligne d'échéance reconnue : il faut une date (jj/mm/aaaa) suivie des montants. Vérifiez le fichier ou collez le texte.</p>"); return; }
+        out.innerHTML = auditer(lignes, d.r, d.e);
+      }
+    },
+
+    offre: {
+      html: function () {
+        return '<p class="cr-texte">Photographiez l\'offre de prêt de votre banque, choisissez son PDF, ou collez son texte : le montant, la durée, le taux (ou TMM + marge), le TEG, les frais et l\'assurance sont repérés. Vous vérifiez, puis vous les appliquez à votre scénario.</p>' +
+          '<div class="cr-ligne-actions">' + boutonFichier("offre", "Photo ou PDF de l\'offre", false) + '</div>' +
+          '<p class="cr-texte cr-texte--doux cr-lecture-etat" data-lecture-etat aria-live="polite">Lu sur votre appareil : rien n\'est envoyé.</p>' +
+          '<div class="champ"><label for="cr-offre-txt">Ou collez le texte de l\'offre</label><textarea id="cr-offre-txt" class="cr-zone-texte" rows="4" data-c="offre" data-t="texte" spellcheck="false" placeholder="Montant du prêt : 120 000 DT · Durée : 180 mois · Taux : TMM + 2,75 % · Frais de dossier : 1 %"></textarea></div>' +
+          '<div class="cr-outil__sortie" aria-live="polite"></div>';
+      },
+      CHAMPS: [["capital", "Montant emprunté", "DT"], ["mois", "Durée", "mois"], ["taux", "Taux annuel fixe", "%"], ["marge", "Marge (TMM +)", "%"],
+        ["fraisPct", "Frais de dossier", "%"], ["fraisFixe", "Frais de dossier fixes", "DT"], ["assurance", "Assurance annuelle", "%"], ["teg", "TEG annoncé", "%"], ["mensualite", "Mensualité annoncée", "DT"]],
+      calc: function (c) {
+        var txt = (c.querySelector('[data-c="offre"]') || {}).value || "", out = sortie(c);
+        if (!txt.trim()) { out.innerHTML = ""; return; }
+        var r = window.CreditAudit ? window.CreditAudit.analyserOffre(txt) : {}, CH = OUTIL_FN.offre.CHAMPS;
+        var n = CH.filter(function (x) { return isFinite(r[x[0]]); }).length;
+        if (!n) { out.innerHTML = encart("alerte", "info", "<p>Aucune valeur reconnue. Vérifiez la photo (nette, bien éclairée) ou collez le texte de l'offre.</p>"); return; }
+        out.innerHTML = '<p class="cr-texte"><strong>' + pluriel(n, "valeur repérée", "valeurs repérées") + '</strong> : vérifiez-les, corrigez si besoin.</p>' +
+          '<div class="cr-grille-champs cr-offre-champs">' + CH.map(function (x) {
+            var v = r[x[0]], id = "cr-offre-" + x[0];
+            return '<div class="champ' + (isFinite(v) ? " cr-offre--trouve" : "") + '"><label for="' + id + '">' + x[1] + '</label><div class="saisie"><input id="' + id + '" type="text" inputmode="decimal" autocomplete="off" data-offre="' + x[0] + '" value="' + (isFinite(v) ? esc(x[0] === "mois" ? String(v) : saisieNb(v)) : "") + '"><span class="saisie__unite">' + x[2] + '</span></div></div>';
+          }).join("") + '</div>' +
+          (isFinite(r.teg) ? '<p class="cr-texte cr-texte--doux">Après l\'application, comparez le TEG calculé par Orbite avec le TEG annoncé (' + pc(r.teg, 2) + ').</p>' : "") +
+          '<div class="cr-ligne-actions"><button type="button" class="bouton bouton--credit bouton--petit" data-offre-appliquer>' + ico("valide") + 'Utiliser dans mon scénario</button></div>';
       }
     }
   };
@@ -1815,6 +1846,73 @@
     });
     return out;
   }
+  function boutonFichier(cle, lib, multiple) {
+    return '<label class="bouton bouton--petit cr-fichier">' + ico("photo") + '<span>' + lib + '</span><input type="file" accept="application/pdf,image/*" ' + (multiple ? "multiple " : "") + 'data-lire-fichier="' + cle + '" class="cache"></label>';
+  }
+  /* Lecture sur l'appareil (fiche-lecture.js : pdf.js et Tesseract auto-hébergés) de un ou plusieurs fichiers, dans l'ordre. */
+  function lireFichiers(corps, cle, fichiers) {
+    var etat = corps.querySelector("[data-lecture-etat]"), zone = corps.querySelector(cle === "audit" ? '[data-c="lignes"]' : '[data-c="offre"]');
+    var FL = window.FicheLecture, CA = window.CreditAudit;
+    if (!FL || !CA || !fichiers.length) return;
+    var textes = [], i = 0;
+    function suivant() {
+      if (i >= fichiers.length) {
+        zone.value = textes.join("\n").slice(0, 400000);
+        var det = zone.closest("details"); if (det && cle === "audit") det.open = false;
+        etat.textContent = "Lecture terminée : " + pluriel(fichiers.length, "fichier lu", "fichiers lus") + ". Vérifiez le résultat ci-dessous.";
+        etat.classList.remove("cr-lecture-etat--erreur");
+        OUTIL_FN[cle].calc(corps);
+        return;
+      }
+      var f = fichiers[i], rang = fichiers.length > 1 ? " (" + (i + 1) + " sur " + fichiers.length + ")" : "";
+      etat.textContent = "Lecture de « " + f.name + " »" + rang + "…";
+      FL.lire(f, { pagesMax: cle === "audit" ? 40 : 3, progres: function (etape, x) { etat.textContent = (etape === "outil" ? "Préparation de la lecture (la première fois, quelques secondes)" : "Lecture de « " + f.name + " »" + rang) + " · " + Math.round((x || 0) * 100) + " %"; } })
+        .then(function (res) { textes.push(CA.texteDeLignes(res.lignes)); i++; suivant(); })
+        .catch(function (e) { etat.textContent = (e && e.message) || "Ce fichier n'a pas pu être lu."; etat.classList.add("cr-lecture-etat--erreur"); });
+    }
+    suivant();
+  }
+  function rendreAuditBanque(au) {
+    var CA = window.CreditAudit, mA = CA.moisAnnee, L = au.lignes;
+    var graves = au.anomalies.filter(function (a) { return a.g === "erreur" || a.g === "alerte"; }), lect = au.anomalies.filter(function (a) { return a.g === "lecture"; });
+    var tete = (au.info.banque ? esc(au.info.banque) + " · " : "") + pluriel(L.length, "échéance lue", "échéances lues") + " (" + mA(L[0].date) + " → " + mA(L[L.length - 1].date) + ")";
+    var h = encart(graves.length ? "alerte" : lect.length ? "" : "succes", graves.length ? "alerte" : lect.length ? "info" : "valide",
+      "<p><strong>" + tete + "</strong></p><p>" + (au.nonDetaille ? "Document non détaillé : pas de contrôle au millime." :
+        graves.length ? pluriel(graves.length, "point à vérifier", "points à vérifier") + " avec votre banque." :
+        lect.length ? "Aucune erreur de calcul, mais " + pluriel(lect.length, "ligne n'a pas pu être lue", "lignes n'ont pas pu être lues") + "." :
+        "Aucune erreur : chaque échéance est exacte au millime.") + "</p>");
+    if (!au.nonDetaille) {
+      h += '<div class="cr-stats">' +
+        stat("Intérêts facturés", dt(au.totI), "sur les échéances lues") +
+        stat("Capital remboursé", dt(au.totA), au.complet ? "jusqu'au solde" : "tableau partiel") +
+        stat("Taux recalculé" + (au.phases.length > 1 ? "s" : ""), au.phases.map(function (p) { return pc(p.taux, 3); }).filter(function (x, k, a) { return a.indexOf(x) === k; }).slice(0, 3).join(" · ") || "—", au.periode > 1 ? "échéances tous les " + au.periode + " mois" : "par an, d'après les intérêts") +
+      '</div>';
+      if (au.reductions.length) h += encart("succes", "valide", au.reductions.map(function (z) { return "<p>Réduction de moitié du taux appliquée en " + mA(z.date) + " : " + pc(z.avant, 3) + " → " + pc(z.apres, 3) + (z.conforme ? "." : " (ratio insuffisant, voir ci-dessous).") + "</p>"; }).join(""));
+      if (au.possibles.length && !au.possibles[0].passe) h += encart("", "cible", "<p>Règle des 8 % : la réduction de moitié du taux deviendra possible en <strong>" + mA(au.possibles[0].date) + "</strong>. L'outil « Quand demander la réduction ? » prépare la lettre.</p>");
+    }
+    var tous = au.anomalies.concat(au.infos);
+    if (tous.length) h += '<ul class="cr-constats">' + tous.slice(0, 40).map(function (a) { return '<li data-g="' + a.g + '">' + ico(a.g === "info" ? "info" : "alerte") + '<span>' + esc(a.txt) + '</span></li>'; }).join("") + (tous.length > 40 ? '<li data-g="info">' + ico("info") + '<span>… et ' + (tous.length - 40) + ' autres constats.</span></li>' : "") + '</ul>';
+    if (!au.nonDetaille) h += '<details class="cr-coller"><summary>Voir les ' + L.length + ' échéances recalculées</summary><div class="cr-table-zone" tabindex="0" role="region" aria-label="Échéances recalculées"><table class="cr-table cr-table--audit"><thead><tr><th scope="col">N°</th><th scope="col">Date</th><th scope="col">Capital dû</th><th scope="col">Intérêts facturés</th><th scope="col">Intérêts attendus</th><th scope="col">Écart</th></tr></thead><tbody>' +
+      L.map(function (l) { var ko = isFinite(l.ecart) && Math.abs(l.ecart) > 0.0015; return '<tr' + (ko ? ' class="cr-ligne-ko"' : l.corrige ? ' class="cr-ligne-corrigee"' : "") + '><td>' + l.n + '</td><td>' + mA(l.date) + '</td><td class="chiffre">' + F.dt3(l.crdAv) + '</td><td class="chiffre">' + (isFinite(l.int) ? F.dt3(l.int) : "—") + '</td><td class="chiffre">' + (isFinite(l.attendu) ? F.dt3(l.attendu) : "—") + '</td><td class="chiffre">' + (isFinite(l.ecart) ? (ko ? "<strong>" + signe(l.ecart) + "</strong>" : "0") : "—") + '</td></tr>'; }).join("") +
+      '</tbody></table></div></details>';
+    return h;
+  }
+  /* Valeurs relues dans les champs de l'outil « Lire une offre », appliquées au scénario. */
+  function appliquerOffre(corps) {
+    function v(k) { var i = corps.querySelector('[data-offre="' + k + '"]'), r = i && i.value.trim() !== "" ? lireNombre(i.value) : null; return r && r.valide ? r.valeur : NaN; }
+    var C = v("capital"), n = Math.round(v("mois")), ta = v("taux"), mg = v("marge"), fp = v("fraisPct"), ff = v("fraisFixe"), as = v("assurance");
+    var sc = sc0();
+    if (!(C > 0 || sc.capital > 0) || !(n >= 1 || sc.mois >= 1) || !(isFinite(ta) || isFinite(mg) || sc.mode)) { toast("Il manque le montant, la durée ou le taux : complétez les champs.", { erreur: true }); return; }
+    if (C >= 100) { sc.capital = arr(C); sc.apport.on = false; S.cible = null; sc.capitalSaisi = true; }
+    if (n >= 1 && n <= 300) sc.mois = Math.max(sc.periodicite, Math.round(n / sc.periodicite) * sc.periodicite);
+    if (isFinite(mg)) { sc.mode = "tmm"; sc.marge = mg; } else if (isFinite(ta)) { sc.mode = "fixe"; sc.taux = ta; }
+    if (isFinite(fp) || isFinite(ff)) sc.frais = { on: true, dossierPct: isFinite(fp) ? fp : 0, dossierFixe: isFinite(ff) ? ff : 0, garantie: sc.frais.garantie || 0, autres: sc.frais.autres || 0 };
+    if (isFinite(as)) sc.assurance = { on: true, taux: as, base: "initial" };
+    apresDuree(sc); ecrireEditeur(); majVisibilite(); calculer(true); signalerModif();
+    toast("Offre appliquée à votre scénario.");
+    var res = $("cr-res-m"); if (res && res.scrollIntoView) res.scrollIntoView({ behavior: mouvementReduit.matches ? "auto" : "smooth", block: "center" });
+  }
+
   function auditer(L, r, e) {
     var anomalies = [], prevCrd = null, totIB = 0, totIS = 0, int36 = [];
     L.forEach(function (b, i) {
@@ -1890,6 +1988,7 @@
     corps.addEventListener("change", function (ev) {
       var O = Orb();
       if (ev.target.matches("[data-choix-credit]")) { if (ev.target.value !== "") remplirDepuisCredit(cle, corps, +ev.target.value); fn.calc(corps); return; }
+      if (ev.target.matches("[data-lire-fichier]")) { lireFichiers(corps, cle, [].slice.call(ev.target.files || [])); ev.target.value = ""; return; }
       if (ev.target.matches("[data-audit-fichier]")) {
         var f = ev.target.files && ev.target.files[0];
         if (f) { var rd = new FileReader(); rd.onload = function () { corps.querySelector('[data-c="lignes"]').value = String(rd.result || "").slice(0, 200000); fn.calc(corps); }; rd.readAsText(f); }
@@ -2016,9 +2115,11 @@
       if (pa) { var cp = $("cr-o-plan"); OUTIL_FN.plan.lire(cp); if (OUTIL_FN.plan.prets.length < 5) OUTIL_FN.plan.prets.push({ nom: "Prêt " + (OUTIL_FN.plan.prets.length + 1), capital: 10000, mois: 60, taux: 10, differe: 0 }); OUTIL_FN.plan.liste(cp); OUTIL_FN.plan.calc(cp); return; }
       var pr = t.closest("[data-plan-retirer]");
       if (pr) { var cp2 = $("cr-o-plan"); OUTIL_FN.plan.lire(cp2); OUTIL_FN.plan.prets.splice(+pr.getAttribute("data-plan-retirer"), 1); OUTIL_FN.plan.liste(cp2); OUTIL_FN.plan.calc(cp2); return; }
+      if (t.closest("[data-offre-appliquer]")) { appliquerOffre($("cr-o-offre")); return; }
       if (t.closest("[data-audit-exemple]")) {
         var ca = $("cr-o-audit"), rr = S.dernier.r;
-        ca.querySelector('[data-c="lignes"]').value = rr.lignes.slice(0, 60).map(function (l) { return [l.mois, l.date ? l.date.toLocaleDateString("fr-FR") : "", F.dt3(l.paiement), F.dt3(l.interet), F.dt3(l.principal), F.dt3(l.reste)].join(" ; "); }).join("\n");
+        ca.querySelector('[data-c="lignes"]').value = rr.lignes.slice(0, 60).map(function (l) { return [l.mois, l.date ? l.date.toLocaleDateString("fr-FR") : "", F.dt3(arr(l.reste + l.principal)), F.dt3(l.principal), F.dt3(l.interet), F.dt3(l.paiement)].join(" ; "); }).join("\n");
+        var dz = ca.querySelector(".cr-coller"); if (dz) dz.open = true;
         OUTIL_FN.audit.calc(ca); return;
       }
       if (t.closest("[data-lettre-copier]")) { copierTexte($("cr-o-quand").querySelector("[data-lettre-texte]").textContent, "Lettre copiée."); return; }

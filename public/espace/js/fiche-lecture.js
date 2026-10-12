@@ -74,12 +74,12 @@
   }
 
   /* ---------- PDF ---------- */
-  function lirePdf(octets, progres) {
+  function lirePdf(octets, progres, pagesMax) {
     return pdfjs().then(function (lib) {
       progres("ouvrir", 0.1);
       return lib.getDocument({ data: octets, isEvalSupported: false, disableFontFace: true, useSystemFonts: false, enableXfa: false, stopAtErrors: false }).promise;
     }).then(function (doc) {
-      var n = Math.min(doc.numPages, PAGES_MAX), pages = [];
+      var n = Math.min(doc.numPages, pagesMax || PAGES_MAX), pages = [];
       var suite = Promise.resolve();
       for (var i = 1; i <= n; i++) (function (k) {
         suite = suite.then(function () { return doc.getPage(k); }).then(function (page) {
@@ -211,7 +211,8 @@
     var progres = (options && options.progres) || function () {};
     if (!fichier) return Promise.reject(erreur("vide", "Aucun fichier choisi."));
     if (fichier.size > TAILLE_MAX) return Promise.reject(erreur("taille", "Ce fichier dépasse 15 Mo. Envoyez la première page seulement, ou une photo."));
-    if (estPdf(fichier)) return fichier.arrayBuffer().then(function (b) { return lirePdf(new Uint8Array(b), progres); });
+    /* options.pagesMax : 3 par défaut (fiche de paie) ; un tableau d'amortissement en demande davantage. */
+    if (estPdf(fichier)) return fichier.arrayBuffer().then(function (b) { return lirePdf(new Uint8Array(b), progres, options && options.pagesMax); });
     if (estImage(fichier)) return preparerImage(fichier).then(function (c) { progres("image", 0.1); return lireCanevas(c, progres); });
     return Promise.reject(erreur("format", "Choisissez un PDF ou une photo (JPG, PNG)."));
   }
