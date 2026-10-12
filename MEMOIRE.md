@@ -677,6 +677,17 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 septseptuagies. Visite guidée en trois chapitres (12 oct.)
+
+- **Demande** : mettre la visite guidée à jour avec les nouveautés (ordre validé : Lot 1 → visite → Lot 2 → point 5).
+- `visite.js` : trois chapitres sur l'écran de choix.
+  - **L'essentiel** (8 étapes) : inchangé. L'étape Crédit cite aussi le contrôle du tableau de la banque.
+  - **Les nouveautés**, version `2026-10-12`, 8 étapes : Ctrl K (`#palette-ouvrir`) → Mes applications (`#apps-ouvrir`) → négociation (`#salaire`, `#nego-ouvrir`) → crédit en une phrase (`#cr-phrase-bloc`) → lire une offre (`#cr-outil-offre`) → contrôler le tableau de la banque (`#cr-outil-audit`) → voyage dans le temps et documents (`.cr-temps`) → dossier banque (`#dossier-ouvrir`).
+  - **Pour aller plus loin** (`plus`, 10 étapes) : les anciennes nouveautés (fiche de paie → rappels).
+- Le badge « 8 nouvelles » reste jusqu'à la fin du chapitre des nouveautés (`user_metadata.orbite_visite_nouveautes = "2026-10-12"`). Message de fin propre à « Pour aller plus loin ».
+- e2e « visite guidée » : les trois chapitres, avec les pages ouvertes à chaque étape.
+- SW `orbite-2026-10-12i`.
+
 ## 3 sexseptuagies. Lot 1 « crédit complet » (12 oct.)
 
 - **Demande** (maquette validée https://claude.ai/artifact/DfKbFaPFpPDD6ei3Z1GgKJ, puis « applique 1, 2, 4 et 5 ») : reprendre dans Orbite les fonctions du simulateur de crédit qui lui manquaient.
