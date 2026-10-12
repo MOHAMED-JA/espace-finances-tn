@@ -677,6 +677,18 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 quinseptuagies. Vidéo 4 : « Orbite » en 3D, 30 s, 16:9 (12 oct., livrée)
+
+- **Demande** (12 oct.) : une vidéo promotionnelle 3D pour LinkedIn et YouTube, inspirée d'une nouvelle vidéo TikTok (ordinateur portable dans le noir, écran qui raconte l'histoire, volets lumineux entre les plans, musique électro). Storyboard de 8 plans validé dans la maquette https://claude.ai/artifact/DfKbFaPFpPDD6ei3Z1GgKJ (« 30 s, storyboard validé »).
+- **Livrable** : `orbite-video4-16x9.mp4` (1920 × 1080, 60 i/s, H.264 + AAC, −14 LUFS, sous 30 Mo). **Non versionné** (`*.mp4`, `*.wav`).
+- **Sources** `promo/video4/` (régénérables) :
+  - `scene.html` : Three.js 0.160 en local (`lib/`, licence MIT), ordinateur portable en métal dans une pièce sombre, sol miroir, `UnrealBloomPass`. L'écran est un canevas 2D de 1600 × 1000 redessiné à chaque image ; la lumière de la pièce prend la couleur moyenne de l'écran. Plan 4 : une seconde scène 3D (noyau, anneau, satellites) rendue dans l'écran. Plans 7–8 : le logo éclate en pixels 3D puis se reforme. Calque 2D devant pour l'adresse et la signature (petit drapeau tunisien devant « Conçue en Tunisie »). `render(t)` déterministe ;
+  - `rendu.js preview [--h 540] t…` (aperçus dans `apercu/`) ou `rendu.js all 60 sortie.mp4 4 1080` (4 onglets ; ajoute `musique.wav` s'il existe) ;
+  - `musique.py` : 30 s synthétisées, 120 BPM, ré majeur, reprend les instruments de `video3`. Frappes au clavier calées sur les deux saisies, battement de cœur, impacts à 3,0 (envoi), 17,0 (« 1 seule application »), 23,0 (explosion), 25,45 (logo reformé), 27,0 (final), compteur qui ralentit 15,7–17,0, icônes qui tombent, cloches sur le drapeau ; fondu 28,6–30.
+- **Déroulé** : question « Combien je touche vraiment ? » tapée puis envoyée → courbe brut → net, « 2 161,884 DT net par mois » → pistes de montage (crédit auto qui se termine en avril 2029, « +520 DT par mois » d'épargne) → noyau 3D et satellites → compteur LED « 1 seule application » → lanceur (Crédit, Assurance vie, Assurance auto, Salaire) puis palette Ctrl K « assurance auto » → le logo éclate et se reforme, drapeau qui ondule → Orbite, « Votre salaire au centre. Tout le reste en orbite. », adresse, signature.
+- **Corrections du 12 oct.** : caméra plus proche et visée plus haute (l'écran ne touche plus le bord du haut), textes de l'écran agrandis, pistes décalées pour des étiquettes plus grandes, pastille « avril 2029 » moins lumineuse, éclat du final réduit, touches « Ctrl K » dans le bon ordre.
+- Règle tenue : aucune mention de prix, d'essai, d'offre ni de parrainage ; chiffres du profil fictif.
+
 ## 3 quinsexagies. Vidéo promotionnelle 3D « Fintech cinéma » 30 s, 16:9 + 9:16 (12 oct., livrée)
 
 - **Pourquoi** : la vidéo de 45 s a été jugée trop proche de la première (mêmes couleurs, même interface à plat). L'utilisateur veut une promo « comme celle des grandes entreprises », sur le modèle d'une vidéo TikTok de theuxda (application mobile en 3D, musique électro-pop). Choix : **musique originale dans le même style** (la chanson de la vidéo est protégée par le droit d'auteur), **style « Fintech cinéma »**, **30 s**, **16:9 (YouTube, LinkedIn) + 9:16 (Reels, TikTok, Shorts)**.

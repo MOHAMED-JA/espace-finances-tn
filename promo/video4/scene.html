@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Orbite · vidéo 4</title>
+<style>html,body{margin:0;background:#000}canvas{display:block}#gl{position:absolute;left:-99999px}</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.min.js", "three/addons/": "./lib/addons/" } }</script>
+</head>
+<body><canvas id="gl"></canvas><canvas id="c"></canvas>
+<script type="module">
+/* ===== Orbite — vidéo 4 « L'écran comme seule lumière », 30 s, 16:9.
+   Un ordinateur portable dans une pièce noire, posé sur un sol laqué qui le reflète. L'écran est la seule
+   source de lumière : il joue une suite d'animations de « motion design » dessinées sur un canevas 2D
+   (1600 × 1000) transmis à la 3D comme texture. Le cube/planète (plan 4) est une petite scène 3D rendue
+   dans une cible de rendu et composée sur l'écran ; les pixels du logo (plan 7) sont des points 3D qui
+   jaillissent de l'écran dans la pièce. Le reflet du sol est une copie inversée (échelle y = −1) de
+   l'ordinateur sous un sol noir semi-transparent dont l'opacité augmente avec la distance.
+   render(t) est déterministe : aucune horloge, aucun hasard non graîné. ===== */
+import * as THREE from "three";
+import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+
+const COL = { vert: "#12B76A", vertL: "#4ADE80", vio: "#7A5AF8", vioL: "#A78BFA", bleu: "#2F5BEA", bleuL: "#7EA2FF", ambre: "#F5B70A",
+  blanc: "#EEF2FF", fond: "#05070B", gris: "#AEB6C8", mut: "#7D869A", tn: "#E70013" };
+const NB = " ";   /* espace insécable */
+let W = 1920, H = 1080, K = 1;   /* K : échelle du calque 2D par rapport au 1080p */
+const GL = document.getElementById("gl"), C = document.getElementById("c");
+let F, X, calque;                /* F : image finale, X : calque des textes posés devant la 3D */
+const SW = 1600, SH = 1000;      /* canevas de l'écran (16:10) */
+let SC, S, texEcran, PET, PX;    /* PET : petit canevas pour la couleur moyenne de l'écran */
+let renderer, scene, camera, composer, bloom, rtI, iScene, iCam;
+const O = {}, IMG = {};
+
+/* ---------- utilitaires ---------- */
+const cl = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const seg = (t, a, b) => cl((t - a) / (b - a));
+const eo = x => 1 - Math.pow(1 - x, 3);
+const eo5 = x => 1 - Math.pow(1 - x, 5);
+const eio = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const eio5 = x => x < .5 ? 16 * Math.pow(x, 5) : 1 - Math.pow(-2 * x + 2, 5) / 2;
+const back = x => { const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+function rebond(x) { const n = 7.5625, d = 2.75; if (x < 1 / d) return n * x * x; if (x < 2 / d) return n * (x -= 1.5 / d) * x + .75;
+  if (x < 2.5 / d) return n * (x -= 2.25 / d) * x + .9375; return n * (x -= 2.625 / d) * x + .984375; }
+const lerp = (a, b, k) => a + (b - a) * k;
+const v3 = (x, y, z) => new THREE.Vector3(x, y, z);
+function rgba(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${n >> 8 & 255},${n & 255},${a})`; }
+function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+/* Saisie du plan 1 : un caractère toutes les 2,0/27 s entre 0,8 et 2,8 s (mêmes instants dans musique.py). */
+const Q1 = "Combien je touche vraiment" + NB + "?", Q1_T0 = .8, Q1_T1 = 2.8;
+const Q6 = "assurance auto", Q6_T0 = 21.35, Q6_T1 = 22.1;
+function tapes(t, s, t0, t1) { if (t < t0) return 0; return Math.min(s.length, Math.floor((t - t0) / ((t1 - t0) / (s.length - 1)) + 1e-6) + 1); }
+
+/* ====================================================================================
+   ÉCRAN : dessin 2D (coordonnées 1600 × 1000)
+   ==================================================================================== */
+function rr(x, y, w, h, r) { S.beginPath(); S.roundRect(x, y, w, h, r); }
+function txt(s, x, y, size, o = {}) {
+  S.save(); S.font = `${o.w || 700} ${size}px ${o.f || "Mona"}`; S.textAlign = o.a || "left"; S.textBaseline = o.b || "alphabetic";
+  S.letterSpacing = (o.ls || 0) + "px"; S.globalAlpha *= (o.alpha == null ? 1 : o.alpha);
+  if (o.glow) { S.shadowColor = o.glow; S.shadowBlur = o.blur || 24; }
+  S.fillStyle = o.c || COL.blanc; S.fillText(s, x, y); S.restore();
+}
+function mesure(s, size, w = 700, f = "Mona", ls = 0) { S.save(); S.font = `${w} ${size}px ${f}`; S.letterSpacing = ls + "px"; const m = S.measureText(s).width; S.restore(); return m; }
+/* Logo Orbite : noyau, ellipse inclinée à −30° (dégradé vert → bleu → violet) et un satellite. */
+function logo(g, cx, cy, rx, a = 1, o = {}) {
+  if (a <= 0) return;
+  const ry = rx * .419, sw = rx * .12, rc = rx * .307, rs = rx * .15;
+  g.save(); g.globalAlpha *= a; g.translate(cx, cy);
+  g.save(); g.rotate(34 * Math.PI / 180); g.beginPath(); g.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2); g.lineWidth = sw * .55; g.strokeStyle = "rgba(238,242,255,.16)"; g.stroke(); g.restore();
+  g.save(); g.rotate(-Math.PI / 6);
+  const gr = g.createLinearGradient(-rx, 0, rx, 0); gr.addColorStop(0, COL.vert); gr.addColorStop(.55, COL.bleu); gr.addColorStop(1, COL.vio);
+  if (o.glow) { g.shadowColor = rgba(COL.vio, .8); g.shadowBlur = o.glow; }
+  g.beginPath(); g.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2); g.lineWidth = sw; g.strokeStyle = gr; g.stroke();
+  const th = o.th == null ? -.2 : o.th;
+  g.beginPath(); g.arc(rx * Math.cos(th), ry * Math.sin(th), rs, 0, Math.PI * 2); g.fillStyle = COL.vertL; g.fill();
+  g.restore();
+  if (o.glow) { g.shadowColor = "rgba(238,242,255,.9)"; g.shadowBlur = o.glow; }
+  g.beginPath(); g.arc(0, 0, rc, 0, Math.PI * 2); g.fillStyle = "#FFFFFF"; g.fill();
+  g.restore();
+}
+/* Icônes (tracés 24 × 24 inspirés de public/orbite/icones.svg) */
+const ICO = {
+  credit: () => [new Path2D("M3 10 12 4l9 6"), new Path2D("M5 10v8M9.5 10v8M14.5 10v8M19 10v8"), new Path2D("M3 20h18")],
+  vie: () => [new Path2D("M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6Z"), new Path2D("M12 15.6s-3.3-1.9-3.3-4.2a1.75 1.75 0 0 1 3.3-.8 1.75 1.75 0 0 1 3.3.8c0 2.3-3.3 4.2-3.3 4.2Z")],
+  auto: () => [new Path2D("M5 16V11l2-5h10l2 5v5"), new Path2D("M3 16h18v3H3Z"), (() => { const p = new Path2D(); p.arc(7.5, 13, .8, 0, 7); p.moveTo(17.3, 13); p.arc(16.5, 13, .8, 0, 7); return p; })()],
+  salaire: () => [(() => { const p = new Path2D(); p.roundRect(3, 6, 18, 12, 3); return p; })(), (() => { const p = new Path2D(); p.arc(12, 12, 2.6, 0, 7); return p; })(), new Path2D("M6.5 9.5v5M17.5 9.5v5")],
+  recherche: () => [(() => { const p = new Path2D(); p.arc(11, 11, 7, 0, 7); return p; })(), new Path2D("m20 20-4-4")],
+};
+function icone(nom, cx, cy, taille, couleur, lw = 1.75) {
+  S.save(); S.translate(cx - taille / 2, cy - taille / 2); S.scale(taille / 24, taille / 24);
+  S.lineWidth = lw; S.lineCap = "round"; S.lineJoin = "round"; S.strokeStyle = couleur;
+  IMG.ico[nom].forEach(p => S.stroke(p)); S.restore();
+}
+function tuile(nom, cx, cy, s, c, cL, rot = 0, a = 1) {
+  if (a <= 0) return;
+  S.save(); S.globalAlpha *= a; S.translate(cx, cy); S.rotate(rot);
+  S.shadowColor = rgba(c, .55); S.shadowBlur = 50;
+  const g = S.createLinearGradient(-s / 2, -s / 2, s / 2, s / 2); g.addColorStop(0, cL); g.addColorStop(1, c);
+  rr(-s / 2, -s / 2, s, s, s * .26); S.fillStyle = g; S.fill(); S.shadowBlur = 0;
+  const h = S.createLinearGradient(0, -s / 2, 0, s / 2); h.addColorStop(0, "rgba(255,255,255,.35)"); h.addColorStop(.5, "rgba(255,255,255,0)");
+  rr(-s / 2 + 2, -s / 2 + 2, s - 4, s - 4, s * .25); S.strokeStyle = h; S.lineWidth = 3; S.stroke();
+  S.translate(-cx, -cy); icone(nom, cx, cy, s * .56, "#FFFFFF", 1.9); S.restore();
+}
+
+/* ---- Plan 1 (0–3 s) : l'écran s'allume, trait de lumière, barre de saisie ---- */
+function plan1(t) {
+  const ks = seg(t, .3, 1.1);
+  if (ks > 0 && ks < 1) {
+    const xs = lerp(-600, SW + 600, eio(ks));
+    S.save(); S.translate(xs, SH * .62); S.rotate(-.2); S.globalAlpha = Math.sin(Math.PI * ks);
+    const g = S.createLinearGradient(-300, 0, 300, 0);
+    g.addColorStop(0, "rgba(238,242,255,0)"); g.addColorStop(.4, "rgba(200,255,225,.25)"); g.addColorStop(.5, "rgba(255,255,255,1)");
+    g.addColorStop(.6, "rgba(220,210,255,.25)"); g.addColorStop(1, "rgba(238,242,255,0)");
+    S.fillStyle = g; S.fillRect(-300, -1000, 600, 2000); S.restore();
+  }
+  const kb = seg(t, .75, 1.2); if (kb <= 0) return;
+  const bw = lerp(760, 1300, eo5(kb)), bh = 150, bx = SW / 2 - bw / 2, by = SH / 2 - bh / 2 - 20;
+  S.save(); S.globalAlpha = cl(kb * 1.6);
+  rr(bx, by, bw, bh, bh / 2); S.fillStyle = "rgba(238,242,255,.045)"; S.fill();
+  const p = seg(t, .9, 1.9), base = "rgba(238,242,255,.28)", g = S.createLinearGradient(bx, 0, bx + bw, 0);
+  g.addColorStop(0, base); g.addColorStop(1, base);
+  if (p > 0 && p < 1) { g.addColorStop(cl(p - .12), base); g.addColorStop(cl(p), "rgba(255,255,255,1)"); g.addColorStop(cl(p + .04), base); }
+  S.lineWidth = 3; S.strokeStyle = g; rr(bx, by, bw, bh, bh / 2); S.stroke();
+  const ke = seg(t, 2.82, 2.95);
+  if (ke > 0) { S.save(); S.shadowColor = COL.vertL; S.shadowBlur = 30; S.lineWidth = 4; S.strokeStyle = rgba(COL.vertL, ke); rr(bx, by, bw, bh, bh / 2); S.stroke(); S.restore(); }
+  logo(S, bx + 82, by + bh / 2, 34, 1);
+  const n = tapes(t, Q1, Q1_T0, Q1_T1), s = Q1.slice(0, n);
+  S.font = `600 62px Mona`; S.letterSpacing = "0px";
+  const tx = bx + 150, ty = by + bh / 2 + 22;
+  if (n === 0) txt("Posez votre question…", tx, ty, 62, { w: 500, c: "rgba(174,182,200,.35)" });
+  txt(s, tx, ty, 62, { w: 600 });
+  const cw = mesure(s, 62, 600);
+  if (t < 2.9 || Math.floor(t * 3) % 2 === 0) { S.fillStyle = COL.vertL; S.fillRect(tx + cw + 6, by + 40, 4, bh - 80); }
+  /* bouton d'envoi */
+  const bxx = bx + bw - 78, byy = by + bh / 2;
+  S.beginPath(); S.arc(bxx, byy, 44, 0, 7); S.fillStyle = ke > 0 ? rgba(COL.vert, .25 + .75 * ke) : "rgba(238,242,255,.08)"; S.fill();
+  S.strokeStyle = "#FFFFFF"; S.lineWidth = 5; S.lineCap = "round"; S.lineJoin = "round";
+  S.beginPath(); S.moveTo(bxx - 16, byy); S.lineTo(bxx + 16, byy); S.moveTo(bxx + 3, byy - 14); S.lineTo(bxx + 17, byy); S.lineTo(bxx + 3, byy + 14); S.stroke();
+  S.restore();
+}
+
+/* ---- Plan 2 (3–7 s) : grille, courbe d'accélération, brut puis net ---- */
+const P2 = { x: 200, y: 120, w: 1200, h: 760, X0: 300, X1: 1300, Y0: 790, Y1: 250 };
+const courbe = u => [P2.X0 + u * (P2.X1 - P2.X0), P2.Y0 - (1 - Math.pow(1 - u, 4)) * (P2.Y0 - P2.Y1)];
+function traceCourbe(u0, u1) { S.beginPath(); const n = 140; for (let i = 0; i <= n; i++) { const [x, y] = courbe(lerp(u0, u1, i / n)); i ? S.lineTo(x, y) : S.moveTo(x, y); } }
+function plan2(t) {
+  const kg = eo(seg(t, 2.95, 3.6));
+  S.save();
+  /* cadre */
+  S.globalAlpha = cl(kg * 1.5); rr(P2.x, P2.y, P2.w, P2.h, 40); S.fillStyle = "rgba(238,242,255,.02)"; S.fill();
+  S.lineWidth = 3; S.strokeStyle = "rgba(238,242,255,.62)"; S.stroke();
+  /* grille, dessinée de gauche à droite */
+  S.save(); rr(P2.x, P2.y, P2.w * kg, P2.h, 40); S.clip(); S.strokeStyle = "rgba(238,242,255,.11)"; S.lineWidth = 2; S.beginPath();
+  for (let x = P2.x + 100; x < P2.x + P2.w; x += 100) { S.moveTo(x, P2.y); S.lineTo(x, P2.y + P2.h); }
+  for (let y = P2.y + 95; y < P2.y + P2.h; y += 95) { S.moveTo(P2.x, y); S.lineTo(P2.x + P2.w, y); }
+  S.stroke(); S.restore();
+  txt("salaire · brut → net", P2.x + 44, P2.y + 66, 40, { f: "JB", w: 500, c: "rgba(238,242,255,.55)" });
+  /* courbe qui s'élance */
+  const kc = eo(seg(t, 3.15, 4.15));
+  if (kc > 0) {
+    traceCourbe(0, kc); S.lineCap = "round"; S.lineJoin = "round";
+    S.strokeStyle = rgba(COL.vert, .28); S.lineWidth = 26; S.stroke();
+    S.strokeStyle = COL.vertL; S.lineWidth = 9; S.stroke();
+    S.strokeStyle = "#FFFFFF"; S.lineWidth = 3.5; S.stroke();
+    if (kc < 1) { const [hx, hy] = courbe(kc); halo(hx, hy, 70, COL.vertL, 1); }
+  }
+  /* point lumineux qui remonte la courbe */
+  const kd = eio(seg(t, 4.1, 5.6));
+  if (t >= 4.1) {
+    const u = kd; traceCourbe(Math.max(0, u - .16), u); S.strokeStyle = "rgba(255,255,255,.95)"; S.lineWidth = 12; S.stroke();
+    const [px, py] = courbe(u), pul = t > 5.6 ? 1 + .15 * Math.sin((t - 5.6) * 9) : 1;
+    halo(px, py, 95 * pul, COL.vertL, 1); S.beginPath(); S.arc(px, py, 15 * pul, 0, 7); S.fillStyle = "#FFFFFF"; S.fill();
+  }
+  /* départ : point au pied de la courbe */
+  if (kc > 0) { S.beginPath(); S.arc(P2.X0, P2.Y0, 12, 0, 7); S.fillStyle = COL.vertL; S.fill(); }
+  /* cadran de progression */
+  S.beginPath(); S.arc(P2.x + P2.w - 70, P2.y + 64, 22, 0, 7); S.strokeStyle = "rgba(238,242,255,.25)"; S.lineWidth = 4; S.stroke();
+  if (kd > 0) { S.beginPath(); S.arc(P2.x + P2.w - 70, P2.y + 64, 22, -Math.PI / 2, -Math.PI / 2 + kd * Math.PI * 2); S.strokeStyle = COL.vertL; S.stroke(); }
+  /* textes */
+  const kbr = seg(t, 3.4, 3.8), kn = seg(t, 5.55, 5.9);
+  txt("3" + NB + "000" + NB + "DT brut", P2.X0 + 46, P2.Y0 - 14, 54, { f: "JB", w: 600, alpha: kbr * (1 - .5 * kn), c: COL.blanc });
+  if (kn > 0) { S.save(); const s = lerp(.85, 1, back(kn)); S.translate(P2.X1, P2.Y1 + 330); S.scale(s, s);
+    txt("2" + NB + "161,884" + NB + "DT", 0, 0, 92, { f: "JB", w: 800, a: "right", c: COL.vertL, glow: rgba(COL.vert, .9), blur: 30, alpha: cl(kn * 2) });
+    txt("net par mois", 0, 70, 50, { f: "Mona", w: 600, a: "right", c: COL.blanc, alpha: cl(kn * 2) * .8 }); S.restore(); }
+  S.restore();
+}
+function halo(x, y, r, c, a) { const g = S.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, rgba(c, .9 * a)); g.addColorStop(.25, rgba(c, .35 * a)); g.addColorStop(1, rgba(c, 0)); S.fillStyle = g; S.fillRect(x - r, y - r, 2 * r, 2 * r); }
+
+/* ---- Plan 3 (7–11 s) : pistes de montage et tête de lecture ---- */
+const P3 = { XS: 520, XE: 1560, XA: 1060, ys: [330, 470, 610] };
+function plan3(t) {
+  const { XS, XE, XA, ys } = P3;
+  const kr = eo(seg(t, 6.95, 7.5));
+  S.save();
+  /* règle */
+  S.strokeStyle = "rgba(238,242,255,.35)"; S.lineWidth = 2; S.beginPath(); S.moveTo(XS, 200); S.lineTo(lerp(XS, XE, kr), 200);
+  for (let i = 0, x = XS; x <= lerp(XS, XE, kr); i++, x += 29) { const h = i % 4 === 0 ? 22 : 10; S.moveTo(x, 200); S.lineTo(x, 200 - h); }
+  S.stroke();
+  /* pistes */
+  const pistes = [["Crédit auto", COL.vert, COL.vertL], ["Crédit immobilier", COL.bleu, COL.bleuL], ["Épargne", COL.vio, COL.vioL]];
+  const ph = lerp(XS, XA, eio5(seg(t, 7.9, 9.5)));
+  pistes.forEach(([nom, c, cL], i) => {
+    const y = ys[i], kx = eo5(seg(t, 7.05 + i * .15, 7.9 + i * .15)), dx = (1 - kx) * 1100;
+    txt(nom, 40, y + 16, 46, { w: 650, c: cL, alpha: kx });
+    S.globalAlpha = kx; S.strokeStyle = "rgba(238,242,255,.08)"; S.lineWidth = 2; S.beginPath(); S.moveTo(XS, y); S.lineTo(XE, y); S.stroke();
+    const barres = i === 0 ? [[XS, XA, 56]] : i === 1 ? [[XS, XE + 200, 56]] : [[XS, XE + 200, 22]];
+    barres.forEach(([a, b, h]) => {
+      const g = S.createLinearGradient(a + dx, 0, b + dx, 0); g.addColorStop(0, rgba(c, .5)); g.addColorStop(1, rgba(c, i === 0 ? .5 : 0));
+      rr(a + dx, y - h / 2, b - a, h, h / 2); S.fillStyle = g; S.fill();
+      /* partie déjà lue, plus lumineuse */
+      S.save(); S.beginPath(); S.rect(0, 0, ph, SH); S.clip(); rr(a + dx, y - h / 2, b - a, h, h / 2); S.fillStyle = cL; S.fill(); S.restore();
+      S.strokeStyle = rgba(cL, .9); S.lineWidth = 2; rr(a + dx, y - h / 2, b - a, h, h / 2); S.stroke();
+    });
+    /* repères (losanges) */
+    const r = mulberry(31 + i); for (let k = 0; k < 5; k++) { const x = XS + 80 + r() * (XE - XS - 160) + dx; if (i === 0 && x > XA - 20) continue;
+      S.save(); S.translate(x, y); S.rotate(Math.PI / 4); S.fillStyle = "rgba(5,7,11,.85)"; S.fillRect(-7, -7, 14, 14); S.restore(); }
+    S.globalAlpha = 1;
+  });
+  /* lignes fines décoratives sous les pistes */
+  const r = mulberry(77);
+  for (let row = 0; row < 6; row++) { const y = 730 + row * 26, k = eo5(seg(t, 7.3 + row * .07, 8.1 + row * .07));
+    let x = XS - 40 + r() * 60; while (x < XE) { const w = 30 + r() * 170, gap = 14 + r() * 60;
+      S.fillStyle = `rgba(238,242,255,${(.1 + r() * .18) * k})`; S.fillRect(x + (1 - k) * 900, y, w, 4); x += w + gap; } }
+  /* fin du crédit auto */
+  const kf = seg(t, 9.5, 9.9);
+  if (kf > 0) { halo(XA, ys[0], 150 * (1 + .3 * (1 - kf)), COL.vertL, (1 - kf * .6));
+    txt("fin du crédit auto", XA + 32, ys[0] + 16, 48, { w: 600, c: COL.blanc, alpha: kf }); }
+  /* l'épargne grossit après la fin du crédit */
+  const kb = eo5(seg(t, 9.75, 10.6));
+  if (kb > 0) { const y = ys[2], g = S.createLinearGradient(XA, 0, XE, 0); g.addColorStop(0, COL.vioL); g.addColorStop(1, rgba(COL.vio, .2));
+    S.save(); S.shadowColor = COL.vio; S.shadowBlur = 30; rr(XA, y - 28, (XE - XA) * kb, 56, 28); S.fillStyle = g; S.fill(); S.restore(); }
+  const k5 = seg(t, 9.85, 10.2);
+  if (k5 > 0) txt("+520" + NB + "DT par mois", XA + 24, 572 - (1 - eo5(k5)) * 20, 52, { f: "JB", w: 700, c: COL.vioL, glow: rgba(COL.vio, .9), blur: 26, alpha: k5 });
+  /* tête de lecture */
+  const kp = seg(t, 7.6, 7.9);
+  if (kp > 0) {
+    S.globalAlpha = kp;
+    S.fillStyle = "rgba(238,242,255,.18)"; S.fillRect(ph - 7, 205, 14, 680);
+    S.fillStyle = "#FFFFFF"; S.fillRect(ph - 1.5, 205, 3, 680);
+    S.beginPath(); S.moveTo(ph - 16, 176); S.lineTo(ph + 16, 176); S.lineTo(ph, 204); S.closePath(); S.fill();
+    const ka = eo5(seg(t, 9.45, 9.75));
+    if (ka > 0) { const s = "avril" + NB + "2029", w = mesure(s, 50, 700, "JB") + 56;
+      S.save(); S.globalAlpha = kp * ka; rr(ph - w / 2, 84, w, 78, 39); S.fillStyle = "rgba(10,14,22,.95)"; S.fill(); S.lineWidth = 2; S.strokeStyle = rgba(COL.vertL, .55); S.stroke();
+      txt(s, ph, 140, 50, { f: "JB", w: 700, a: "center", c: COL.blanc }); S.restore(); }
+    S.globalAlpha = 1;
+  }
+  S.restore();
+}
+
+/* ---- Plan 4 (11–15 s) : fond de traits lumineux (le cube est en 3D, voir scène intérieure) ---- */
+function plan4(t) {
+  const k = seg(t, 10.9, 11.4);
+  const r = mulberry(5);
+  S.save(); S.globalAlpha = k;
+  for (let i = 0; i < 10; i++) {
+    const y = 140 + r() * 720, c = [COL.vertL, COL.vioL, COL.blanc][i % 3], w = 300 + r() * 700, v = 60 + r() * 160;
+    const x = ((r() * SW + (t - 11) * v) % (SW + w)) - w * .5, g = S.createLinearGradient(x - w / 2, 0, x + w / 2, 0);
+    g.addColorStop(0, rgba(c, 0)); g.addColorStop(.7, rgba(c, .5 + r() * .3)); g.addColorStop(1, rgba(c, 0));
+    S.fillStyle = g; S.fillRect(x - w / 2, y, w, 2 + r() * 3);
+  }
+  S.fillStyle = "rgba(238,242,255,.35)"; S.fillRect(1220, 0, 2, SH);
+  txt("noyau", 1240, 850, 36, { f: "JB", w: 500, c: "rgba(238,242,255,.45)" });
+  S.restore();
+}
+
+/* ---- Plan 5 (15–19 s) : mur de points, compteur, « 1 seule application » ---- */
+const UN = ["..#..", ".##..", "#.#..", "..#..", "..#..", "..#..", "#####"];
+function plan5(t) {
+  const k0 = seg(t, 14.9, 15.1);
+  S.save(); S.globalAlpha = k0;
+  /* mur en perspective */
+  for (const d of IMG.mur) {
+    const kf = seg(t, 15.0 + d.r * .9, 15.3 + d.r * .9); if (kf <= 0) continue;
+    const w = Math.pow(.5 + .5 * Math.sin(d.u * .32 - t * 3.6 + Math.sin(d.v * .27 + t * 1.3) * 1.8), 3);
+    const h = .5 + .5 * Math.sin(d.u * .09 + d.v * .05 + t * .8);
+    const a = kf * (.12 + .88 * w), cc = h > .5 ? [74, 222, 128] : [167, 139, 250], m = w > .85 ? (w - .85) / .15 : 0;
+    S.fillStyle = `rgba(${lerp(cc[0], 238, m) | 0},${lerp(cc[1], 242, m) | 0},${lerp(cc[2], 255, m) | 0},${a.toFixed(3)})`;
+    S.fillRect(d.x - d.s / 2, d.y - d.s / 2, d.s, d.s);
+  }
+  /* voile sombre derrière le compteur */
+  const kv = seg(t, 15.6, 16.2), vg = S.createRadialGradient(800, 500, 50, 800, 500, 760);
+  vg.addColorStop(0, `rgba(3,4,8,${.88 * kv})`); vg.addColorStop(.6, `rgba(3,4,8,${.6 * kv})`); vg.addColorStop(1, "rgba(3,4,8,0)");
+  S.fillStyle = vg; S.fillRect(0, 0, SW, SH);
+  /* compteur (tambour de motifs LED qui ralentit puis s'arrête sur « 1 ») */
+  const kc = seg(t, 15.6, 15.9); if (kc > 0) {
+    const cell = 46, gap = 9, gw = 5 * cell + 4 * gap, gh = 7 * cell + 6 * gap, NP = IMG.motifs.length - 1;
+    const tw = mesure("seule application", 104, 800, "Brico", -2), tot = gw + 60 + tw, gx = 800 - tot / 2, gy = 500 - gh / 2;
+    const pos = NP * eo(seg(t, 15.7, 17.0)), vit = NP * (eo(seg(t + .02, 15.7, 17.0)) - eo(seg(t, 15.7, 17.0))) / .02;
+    const i0 = Math.floor(pos), fr = pos - i0;
+    S.save(); S.globalAlpha *= kc; S.beginPath(); S.rect(gx - 10, gy - 10, gw + 20, gh + 20); S.clip();
+    [[i0, -fr], [i0 + 1, 1 - fr]].forEach(([idx, off]) => {
+      const m = IMG.motifs[Math.min(idx, NP)], oy = off * (gh + 40), st = Math.min(1, vit / 14);
+      for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) {
+        const x = gx + c * (cell + gap), y = gy + r * (cell + gap) + oy, on = m[r][c] === "#";
+        S.fillStyle = on ? (idx >= NP ? "#EFFFF5" : rgba(COL.vertL, 1 - st * .5)) : "rgba(238,242,255,.07)";
+        const hh = on ? cell + st * 60 : cell; rr(x, y - (hh - cell) / 2, cell, hh, 9); S.fill();
+      }
+    });
+    S.restore();
+    const kl = seg(t, 17.0, 17.4);
+    if (kl > 0) halo(gx + gw / 2, 500, 260 * (1 - .5 * kl) + 120, COL.vertL, .9 * (1 - kl));
+    const kt = eo5(seg(t, 17.15, 17.6));
+    if (kt > 0) { S.save(); S.filter = kt < 1 ? `blur(${((1 - kt) * 8).toFixed(1)}px)` : "none";
+      txt("seule application", gx + gw + 60 - (1 - kt) * 30, 500 + 38, 104, { f: "Brico", w: 800, ls: -2, alpha: kt }); S.restore(); }
+  }
+  S.restore();
+}
+
+/* ---- Plan 6 (19–22,7 s) : icônes qui tombent dans un lanceur, puis palette Ctrl K ---- */
+const APPS = [["credit", "Crédit", COL.bleu, COL.bleuL, -.5], ["vie", "Assurance vie", COL.vio, COL.vioL, .4], ["auto", "Assurance auto", COL.ambre, "#FFD45C", -.35], ["salaire", "Salaire", COL.vert, COL.vertL, .55]];
+function plan6(t) {
+  S.save();
+  const kp = eo5(seg(t, 21.0, 21.3)), dim = 1 - .7 * kp;
+  /* grille du lanceur : emplacements discrets */
+  const kg = seg(t, 18.9, 19.3);
+  S.globalAlpha = kg * dim; S.setLineDash([10, 10]); S.strokeStyle = "rgba(238,242,255,.16)"; S.lineWidth = 2;
+  for (let r = 0; r < 2; r++) for (let i = 0; i < 4; i++) { rr(800 + (i - 1.5) * 330 - 115, 360 + r * 340 - 115, 230, 230, 58); S.stroke(); }
+  S.setLineDash([]); S.globalAlpha = dim;
+  APPS.forEach(([ic, nom, c, cL, rot0], i) => {
+    const t0 = 19.05 + i * .18, k = seg(t, t0, t0 + .8); if (k <= 0) return;
+    const x = 800 + (i - 1.5) * 330, y = lerp(-260, 360, rebond(k));
+    tuile(ic, x, y, 230, c, cL, rot0 * (1 - eo(k)), 1);
+    txt(nom, x, 548, 48, { w: 650, a: "center", c: COL.blanc, alpha: seg(t, t0 + .6, t0 + .9) * .95 });
+  });
+  S.globalAlpha = 1;
+  /* palette de recherche Ctrl K */
+  if (kp > 0) {
+    S.fillStyle = `rgba(3,4,8,${.45 * kp})`; S.fillRect(0, 0, SW, SH);
+    const s = lerp(1.06, 1.15, kp), pw = 1000, phh = 460, px = 800 - pw / 2, py = 500 - phh / 2;
+    S.save(); S.globalAlpha = kp; S.translate(800, 500); S.scale(s, s); S.translate(-800, -500);
+    S.shadowColor = "rgba(0,0,0,.8)"; S.shadowBlur = 60; rr(px, py, pw, phh, 34); S.fillStyle = "rgba(14,18,28,.97)"; S.fill(); S.shadowBlur = 0;
+    S.strokeStyle = "rgba(238,242,255,.22)"; S.lineWidth = 2; S.stroke();
+    icone("recherche", px + 64, py + 70, 46, COL.gris, 2);
+    const n = tapes(t, Q6, Q6_T0, Q6_T1), q = Q6.slice(0, n);
+    if (n === 0) txt("Rechercher un module…", px + 112, py + 87, 44, { w: 500, c: "rgba(174,182,200,.45)" });
+    txt(q, px + 112, py + 87, 44, { w: 500 });
+    const cw = mesure(q, 44, 500); if (t < 22.2 || Math.floor(t * 3) % 2 === 0) { S.fillStyle = COL.ambre; S.fillRect(px + 116 + cw, py + 46, 3, 52); }
+    /* touches Ctrl K */
+    [["K", 52], ["Ctrl", 96]].reduce((x, [k, w]) => { rr(x - w, py + 46, w, 50, 10); S.fillStyle = "rgba(238,242,255,.08)"; S.fill(); S.strokeStyle = "rgba(238,242,255,.25)"; S.stroke();
+      txt(k, x - w / 2, py + 82, 30, { f: "JB", w: 600, a: "center", c: COL.gris }); return x - w - 12; }, px + pw - 40);
+    S.fillStyle = "rgba(238,242,255,.12)"; S.fillRect(px + 30, py + 140, pw - 60, 2);
+    /* résultats */
+    const kr = seg(t, 21.55, 21.75), k2 = 1 - seg(t, 21.95, 22.1), kh = seg(t, 21.95, 22.15);
+    [[2, "Assurance auto", "Module · assurance", 1], [1, "Assurance vie", "Module · assurance", k2]].forEach(([ai, nom, sous, a], j) => {
+      if (a * kr <= 0) return; const y = py + 180 + j * 120, [ic, , c, cL] = APPS[ai];
+      S.save(); S.globalAlpha *= a * kr;
+      if (j === 0 && kh > 0) { rr(px + 24, y, pw - 48, 104, 22); S.fillStyle = rgba(COL.ambre, .14 * kh); S.fill(); S.fillStyle = rgba(COL.ambre, kh); S.fillRect(px + 24, y + 22, 5, 60); }
+      tuile(ic, px + 100, y + 52, 70, c, cL, 0, 1);
+      txt(nom, px + 160, y + 52, 44, { w: 650 }); txt(sous, px + 160, y + 90, 30, { w: 500, c: COL.mut });
+      if (j === 0 && kh > 0) { rr(px + pw - 170, y + 30, 120, 44, 10); S.fillStyle = "rgba(238,242,255,.08)"; S.fill(); txt("Entrée", px + pw - 110, y + 61, 24, { f: "JB", w: 600, a: "center", c: COL.gris, alpha: kh }); }
+      S.restore();
+    });
+    S.restore();
+  }
+  S.restore();
+}
+
+/* ---- Plans 7 et 8 (22,7–30 s) : logo qui éclate en pixels, drapeau, mot de la fin ---- */
+const LOGO = { x: 800, y: 440, rx: 210 };
+function plan78(t) {
+  /* le logo est caché pendant que ses pixels volent (23,0 → 25,5 s) */
+  const vis = t < 23.0 ? 1 : seg(t, 25.45, 25.75);
+  const km = eio5(seg(t, 27.0, 27.6));   /* le logo monte et rétrécit pour le final */
+  const charge = seg(t, 22.85, 23.0), th = -.2 + Math.max(0, t - 25.6) * .7;
+  logo(S, LOGO.x, lerp(LOGO.y, 250, km), lerp(LOGO.rx, 118, km) * (1 - .06 * charge), vis, { glow: 10 + 30 * charge, th });
+  /* éclair de l'explosion */
+  const ke = seg(t, 23.0, 23.35); if (ke > 0 && ke < 1) halo(LOGO.x, LOGO.y, 200 + 700 * eo(ke), "#EEF2FF", (1 - ke));
+  /* drapeau tunisien qui ondule une seconde sous le logo */
+  const kd = seg(t, 25.75, 26.0) * (1 - seg(t, 26.75, 27.0));
+  if (kd > 0) drapeau(LOGO.x, 790, 230, t, kd);
+  /* mot de la fin */
+  const ko = eo5(seg(t, 27.15, 27.65));
+  if (ko > 0) { S.save(); S.filter = ko < 1 ? `blur(${((1 - ko) * 10).toFixed(1)}px)` : "none";
+    txt("Orbite", 800, 580 + (1 - ko) * 30, 230, { f: "Brico", w: 800, a: "center", ls: -6, alpha: ko }); S.restore(); }
+  const kt = eo5(seg(t, 27.7, 28.15));
+  if (kt > 0) txt("Votre salaire au centre. Tout le reste en orbite.", 800, 712 + (1 - kt) * 16, 58, { w: 600, a: "center", c: "#C9D0E0", alpha: kt });
+}
+function drapeau(cx, cy, w, t, k) {
+  const h = w * 2 / 3, n = 30, sw = w / n, img = IMG.drapeau;
+  S.save(); S.globalAlpha *= k;
+  for (let i = 0; i < n; i++) { const ph = t * 6 - i * .32, dy = Math.sin(ph) * h * .06 * (i / n * .8 + .2);
+    S.drawImage(img, i * img.width / n, 0, img.width / n + 1, img.height, cx - w / 2 + i * sw, cy - h / 2 + dy, sw + 1, h);
+    S.fillStyle = `rgba(0,0,0,${((.14 - .14 * Math.cos(ph)) * 1.4).toFixed(3)})`; S.fillRect(cx - w / 2 + i * sw, cy - h / 2 + dy, sw + 1, h); }
+  S.restore();
+}
+function faireDrapeau() {
+  const c = document.createElement("canvas"); c.width = 600; c.height = 400; const x = c.getContext("2d");
+  x.fillStyle = COL.tn; x.fillRect(0, 0, 600, 400); x.translate(300, 200); x.scale(5, 5);
+  x.fillStyle = "#fff"; x.beginPath(); x.arc(0, 0, 20, 0, 7); x.fill(); x.fillStyle = COL.tn; x.beginPath(); x.arc(0, 0, 15, 0, 7); x.fill();
+  x.fillStyle = "#fff"; x.beginPath(); x.arc(4, 0, 12, 0, 7); x.fill();
+  x.fillStyle = COL.tn; x.beginPath(); x.moveTo(-5, 0); x.lineTo(11.281, -5.29); x.lineTo(1.22, 8.56); x.lineTo(1.22, -8.56); x.lineTo(11.28, 5.29); x.closePath(); x.fill();
+  return c;
+}
+
+/* Enchaînement des plans : chaque changement est un volet balayé par un trait de lumière vertical. */
+const PLANS = [[0, 3, plan1], [3, 7, plan2], [7, 11, plan3], [11, 15, plan4], [15, 19, plan5], [19, 22.7, plan6], [22.7, 31, plan78]];
+const VOLET = .18;
+function volet(t, b) { return eio(seg(t, b - VOLET, b + VOLET)); }
+function ecran(t) {
+  S.setTransform(1, 0, 0, 1, 0, 0); S.globalAlpha = 1; S.filter = "none"; S.shadowBlur = 0;
+  S.fillStyle = "#030408"; S.fillRect(0, 0, SW, SH);
+  const j = PLANS.findIndex((p, i) => i > 0 && t >= p[0] - VOLET && t < p[0] + VOLET);
+  if (j > 0) {
+    const lx = SW * volet(t, PLANS[j][0]);
+    S.save(); S.beginPath(); S.rect(lx, 0, SW - lx, SH); S.clip(); PLANS[j - 1][2](t); S.restore();
+    S.save(); S.beginPath(); S.rect(0, 0, lx, SH); S.clip(); PLANS[j][2](t); S.restore();
+    const g = S.createLinearGradient(lx - 90, 0, lx + 90, 0); g.addColorStop(0, "rgba(74,222,128,0)"); g.addColorStop(.5, "rgba(200,255,225,.5)"); g.addColorStop(1, "rgba(167,139,250,0)");
+    S.fillStyle = g; S.fillRect(lx - 90, 0, 180, SH); S.fillStyle = "#FFFFFF"; S.fillRect(lx - 2.5, 0, 5, SH);
+  } else (PLANS.find(p => t < p[1]) || PLANS[PLANS.length - 1])[2](t);
+  texEcran.needsUpdate = true;
+}
+
+/* ====================================================================================
+   3D
+   ==================================================================================== */
+function rectArrondi(w, h, r) {
+  const s = new THREE.Shape(), x = -w / 2, y = -h / 2;
+  s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + h - r);
+  s.quadraticCurveTo(x + w, y + h, x + w - r, y + h); s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+  s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+  const g = new THREE.ShapeGeometry(s, 12), p = g.attributes.position, uv = g.attributes.uv;
+  for (let i = 0; i < p.count; i++) uv.setXY(i, (p.getX(i) + w / 2) / w, (p.getY(i) + h / 2) / h);
+  return g;
+}
+const SCR_W = 3.04, SCR_H = 1.9;
+function construire() {
+  renderer = new THREE.WebGLRenderer({ canvas: GL, antialias: false, preserveDrawingBuffer: true, powerPreference: "high-performance" });
+  renderer.setPixelRatio(1); renderer.setSize(W, H, false);
+  renderer.toneMapping = THREE.NoToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.setClearColor(0x000000, 1);
+  scene = new THREE.Scene(); scene.background = new THREE.Color(0x000000);
+  /* environnement très sombre : un seul panneau clair « à la place de l'écran », pour que le métal ait des reflets */
+  const es = new THREE.Scene(); es.background = new THREE.Color(0x000000);
+  const pan = new THREE.Mesh(new THREE.PlaneGeometry(7, 4.4), new THREE.MeshBasicMaterial({ color: 0xffffff })); pan.position.set(0, 2.2, -6); es.add(pan);
+  const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(es, .04).texture;
+  camera = new THREE.PerspectiveCamera(30, W / H, .05, 120);
+
+  O.alu = new THREE.MeshStandardMaterial({ color: 0x30343e, metalness: .92, roughness: .3 });
+  O.noir = new THREE.MeshStandardMaterial({ color: 0x050608, metalness: .3, roughness: .35 });
+  O.touche = new THREE.MeshStandardMaterial({ color: 0x101218, metalness: .45, roughness: .42 });
+
+  /* ordinateur portable */
+  const lap = new THREE.Group();
+  const socle = new THREE.Mesh(new RoundedBoxGeometry(3.3, .09, 2.3, 4, .04), O.alu); socle.position.y = .045; lap.add(socle);
+  const clavier = new THREE.Mesh(rectArrondi(2.9, 1.04, .05), O.noir); clavier.rotation.x = -Math.PI / 2; clavier.position.set(0, .091, -.42); lap.add(clavier);
+  const touches = new THREE.InstancedMesh(new RoundedBoxGeometry(.168, .016, .152, 2, .02), O.touche, 70), m4 = new THREE.Matrix4();
+  for (let r = 0, i = 0; r < 5; r++) for (let k = 0; k < 14; k++, i++) { m4.makeTranslation(-1.333 + k * .205, .098, -.82 + r * .19); touches.setMatrixAt(i, m4); }
+  lap.add(touches);
+  const pave = new THREE.Mesh(rectArrondi(1.12, .64, .06), O.pave = new THREE.MeshStandardMaterial({ color: 0x15181f, metalness: .8, roughness: .38 }));
+  pave.rotation.x = -Math.PI / 2; pave.position.set(0, .0915, .58); lap.add(pave);
+  const charniere = new THREE.Group(); charniere.position.set(0, .09, -1.12); lap.add(charniere);
+  const couvercle = new THREE.Mesh(new RoundedBoxGeometry(3.3, 2.12, .05, 4, .022), O.alu); couvercle.position.set(0, 1.06, 0); charniere.add(couvercle);
+  const cadre = new THREE.Mesh(rectArrondi(3.24, 2.06, .06), O.noir); cadre.position.set(0, 1.06, .026); charniere.add(cadre);
+  O.matEcran = new THREE.ShaderMaterial({
+    uniforms: { tC: { value: texEcran }, tI: { value: rtI.texture }, uI: { value: 0 }, uL: { value: 0 }, uR: { value: 0 }, uB: { value: 1 } },
+    vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
+    fragmentShader: `uniform sampler2D tC; uniform sampler2D tI; uniform float uI, uL, uR, uB; varying vec2 vUv;
+      void main(){
+        vec3 c = texture2D(tC, vUv).rgb;
+        float m = step(uL, vUv.x) * step(vUv.x, uR) * uI;
+        c += texture2D(tI, vUv).rgb * m;
+        float lustre = .004 * smoothstep(.22, 0., abs(vUv.x * .7 - vUv.y + .35));
+        gl_FragColor = vec4(c * uB + lustre * min(uB, 1.), 1.);
+      }` });
+  O.ecran = new THREE.Mesh(rectArrondi(SCR_W, SCR_H, .02), O.matEcran); O.ecran.position.set(0, 1.08, .028); charniere.add(O.ecran);
+  const logoDos = new THREE.Mesh(new THREE.RingGeometry(.16, .2, 48), new THREE.MeshStandardMaterial({ color: 0x9aa6c4, metalness: 1, roughness: .15 }));
+  logoDos.position.set(0, 1.06, -.026); logoDos.rotation.y = Math.PI; charniere.add(logoDos);
+  O.lap = lap; O.charniere = charniere; scene.add(lap);
+
+  /* pixels du logo : points 3D attachés à l'écran */
+  construirePixels();
+  O.ecran.add(O.pix);
+
+  /* reflet : copie inversée sous le sol */
+  const mir = lap.clone(true); mir.scale.y = -1; scene.add(mir); O.mir = mir;
+  mir.traverse(o => { if (o.isPoints) { o.material = O.pixMatM; o.renderOrder = 1; } });
+  O.pix.renderOrder = 3;
+
+  /* sol laqué : noir, semi-transparent près de l'ordinateur, opaque au loin */
+  O.matSol = new THREE.ShaderMaterial({ transparent: true, depthWrite: false,
+    uniforms: { uG: { value: new THREE.Color(0, 0, 0) } },
+    vertexShader: `varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position,1.); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
+    fragmentShader: `uniform vec3 uG; varying vec3 vW;
+      void main(){
+        float d = length((vW.xz - vec2(0., -.1)) * vec2(.8, 1.));
+        float a = mix(.34, 1., smoothstep(.9, 5.2, d));
+        float g = exp(-pow(length((vW.xz - vec2(0., 1.3)) * vec2(.42, .7)), 2.));
+        vec3 c = uG * g * .05 * (1. - smoothstep(3., 7., d));
+        gl_FragColor = vec4(c, a);
+      }` });
+  const sol = new THREE.Mesh(new THREE.PlaneGeometry(90, 90), O.matSol); sol.rotation.x = -Math.PI / 2; sol.position.y = .0005; sol.renderOrder = 2; scene.add(sol);
+
+  /* lumière de l'écran (et son image dans le miroir) */
+  O.lum = new THREE.PointLight(0xffffff, 0, 0, 2); scene.add(O.lum);
+  O.lumM = new THREE.PointLight(0xffffff, 0, 0, 2); scene.add(O.lumM);
+  O.amb = new THREE.AmbientLight(0x8090b0, .015); scene.add(O.amb);
+
+  const rt = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, samples: 4 });
+  composer = new EffectComposer(renderer, rt);
+  composer.addPass(new RenderPass(scene, camera));
+  bloom = new UnrealBloomPass(new THREE.Vector2(W, H), .5, .5, .7); composer.addPass(bloom);
+  composer.addPass(new OutputPass());
+}
+
+/* Pixels : on échantillonne le logo dessiné sur un canevas à la taille de l'écran. */
+function construirePixels() {
+  const c = document.createElement("canvas"); c.width = SW; c.height = SH; const g = c.getContext("2d");
+  logo(g, LOGO.x, LOGO.y, LOGO.rx, 1, {});
+  const d = g.getImageData(0, 0, SW, SH).data, r = mulberry(2026), home = [], dir = [], col = [], rnd = [];
+  const vert = new THREE.Color(COL.vertL), vio = new THREE.Color(COL.vioL), vert2 = new THREE.Color(COL.vert), vio2 = new THREE.Color(COL.vio), blanc = new THREE.Color("#EEF2FF");
+  for (let y = 0; y < SH; y += 2) for (let x = 0; x < SW; x += 2) {
+    const i = (y * SW + x) * 4; if (d[i + 3] < 140) continue;
+    const lx = (x / SW - .5) * SCR_W, ly = (.5 - y / SH) * SCR_H, ox = lx - (LOGO.x / SW - .5) * SCR_W, oy = ly - (.5 - LOGO.y / SH) * SCR_H;
+    home.push(lx, ly, .004);
+    const rl = Math.hypot(ox, oy) + 1e-4, a = r() * Math.PI * 2, sp = .25 + .9 * Math.pow(r(), .7);
+    dir.push((ox / rl) * sp * 1.1 + Math.cos(a) * .45 * r(), (oy / rl) * sp * .9 + Math.sin(a) * .45 * r() + .15, .25 + 1.25 * Math.pow(r(), 1.2));
+    const coeur = rl < LOGO.rx * .33 / SW * SCR_W, u = cl((ox * Math.cos(-Math.PI / 6) - oy * Math.sin(-Math.PI / 6)) / (LOGO.rx / SW * SCR_W) * .5 + .5);
+    let k = r() < u ? (r() < .5 ? vio : vio2) : (r() < .5 ? vert : vert2);
+    if (coeur && r() < .45) k = blanc;
+    const b = .75 + r() * .5; col.push(k.r * b, k.g * b, k.b * b); rnd.push(r());
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(home, 3));
+  geo.setAttribute("aDir", new THREE.Float32BufferAttribute(dir, 3));
+  geo.setAttribute("aCol", new THREE.Float32BufferAttribute(col, 3));
+  geo.setAttribute("aR", new THREE.Float32BufferAttribute(rnd, 1));
+  geo.boundingSphere = new THREE.Sphere(v3(0, 0, 1.5), 8);
+  const U = { uE: { value: 0 }, uS: { value: 0 }, uA: { value: 0 }, uT: { value: 0 }, uSize: { value: .0105 }, uPx: { value: 1000 },
+    uC: { value: new THREE.Vector2((LOGO.x / SW - .5) * SCR_W, (.5 - LOGO.y / SH) * SCR_H) } };
+  const mk = mir => new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: { ...U, uMir: { value: mir } },
+    vertexShader: `uniform float uE, uS, uA, uT, uSize, uPx, uMir; uniform vec2 uC; attribute vec3 aDir, aCol; attribute float aR; varying vec3 vC; varying float vA;
+      void main(){
+        vec3 off = aDir * uE;
+        off += vec3(sin(uT * 1.7 + aR * 40.), cos(uT * 1.3 + aR * 31.), sin(uT * 1.1 + aR * 23.)) * .07 * uE;
+        vec3 p = position + off;
+        float an = uS * (aR - .5) * 4.;
+        vec2 q = p.xy - uC; p.xy = uC + mat2(cos(an), sin(an), -sin(an), cos(an)) * q;
+        vec4 w = modelMatrix * vec4(p, 1.);
+        w.y = uMir * max(w.y * uMir, .03);
+        vec4 mv = viewMatrix * w;
+        gl_PointSize = clamp(uSize * uPx / -mv.z * (1. + .5 * uE), 1., 14.);
+        vC = aCol; vA = uA * (.45 + .55 * aR) * (1. - .45 * uE);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `varying vec3 vC; varying float vA; void main(){ gl_FragColor = vec4(vC * vA * 1.05, 1.); }` });
+  O.pixMat = mk(1); O.pixMatM = mk(-1);
+  O.pix = new THREE.Points(geo, O.pixMat); O.pix.frustumCulled = false;
+  O.nPix = rnd.length;
+}
+
+/* Scène intérieure du plan 4 : cube de verre → planète, anneau violet, trois satellites. */
+function construireInterieur() {
+  rtI = new THREE.WebGLRenderTarget(1024, 640, { type: THREE.HalfFloatType, samples: 4 });
+  iScene = new THREE.Scene(); iCam = new THREE.PerspectiveCamera(30, 1.6, .1, 50); iCam.position.set(0, 0, 6.4);
+  const Uc = { uK: { value: 0 }, uS: { value: 0 }, uA: { value: 1 }, uR: { value: .98 }, uCol: { value: new THREE.Color(COL.vert) }, uColL: { value: new THREE.Color(COL.vertL) } };
+  const vs = `uniform float uK, uR; varying vec3 vN, vV, vP;
+    void main(){ vec3 sp = normalize(position) * uR; vec3 p = mix(position, sp, uK); vec3 n = normalize(mix(normal, normalize(position), uK));
+      vP = normalize(position); vN = normalize(normalMatrix * n); vec4 mv = modelViewMatrix * vec4(p, 1.); vV = -mv.xyz; gl_Position = projectionMatrix * mv; }`;
+  const fs = `uniform float uK, uS, uA; uniform vec3 uCol, uColL; varying vec3 vN, vV, vP;
+    void main(){
+      vec3 n = normalize(vN), v = normalize(vV); if (!gl_FrontFacing) n = -n;
+      float f = pow(1. - abs(dot(n, v)), 2.2);
+      vec3 L = normalize(vec3(-.5, .7, .6)); float dif = max(dot(n, L), 0.);
+      float sp = pow(max(dot(reflect(-L, n), v), 0.), 60.);
+      vec3 verre = uColL * f * 1.5 + uCol * .12 + vec3(1.) * sp * 1.2;
+      float bandes = .5 + .5 * sin(vP.y * 16. + sin(vP.x * 4. + vP.z * 3.) * 1.4);
+      vec3 corps = mix(uCol * .18, uColL * 1.1, dif) * (.82 + .18 * bandes) + uColL * f * 1.3 + vec3(1.) * sp * .7;
+      gl_FragColor = vec4(mix(verre, corps, uS), mix(.22 + .78 * f, 1., uS) * uA);
+    }`;
+  const geo = new THREE.BoxGeometry(1.5, 1.5, 1.5, 18, 18, 18);
+  O.cubeAr = new THREE.Mesh(geo, new THREE.ShaderMaterial({ uniforms: Uc, vertexShader: vs, fragmentShader: fs, transparent: true, depthWrite: false, side: THREE.BackSide }));
+  O.cube = new THREE.Mesh(geo, new THREE.ShaderMaterial({ uniforms: Uc, vertexShader: vs, fragmentShader: fs, transparent: true, depthWrite: false }));
+  O.cubeAr.renderOrder = 0; O.cube.renderOrder = 2;
+  /* arêtes du cube, subdivisées pour suivre l'arrondi */
+  const pts = [], e = .75, cs = [-e, e];
+  const coins = []; for (const x of cs) for (const y of cs) for (const z of cs) coins.push(v3(x, y, z));
+  for (let i = 0; i < 8; i++) for (let j = i + 1; j < 8; j++) { const a = coins[i], b = coins[j]; if (a.distanceTo(b) > 1.51) continue;
+    for (let s = 0; s < 24; s++) { const p0 = a.clone().lerp(b, s / 24), p1 = a.clone().lerp(b, (s + 1) / 24); pts.push(p0.x, p0.y, p0.z, p1.x, p1.y, p1.z); } }
+  const ge = new THREE.BufferGeometry(); ge.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+  O.aretes = new THREE.LineSegments(ge, new THREE.ShaderMaterial({ uniforms: Uc, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: `uniform float uK, uR; void main(){ vec3 p = mix(position, normalize(position) * uR * 1.01, uK); gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.); }`,
+    fragmentShader: `uniform float uK, uA; uniform vec3 uColL; void main(){ gl_FragColor = vec4(mix(uColL, vec3(1.), .4) * (1. - uK) * uA, 1.); }` }));
+  O.aretes.renderOrder = 1;
+  O.cubeG = new THREE.Group(); O.cubeG.add(O.cubeAr, O.aretes, O.cube); iScene.add(O.cubeG); O.Uc = Uc;
+  /* anneau : tube le long d'un cercle, tracé progressivement (drawRange) */
+  class Cercle extends THREE.Curve { getPoint(u, o = new THREE.Vector3()) { const a = u * Math.PI * 2; return o.set(Math.cos(a) * 1.85, 0, Math.sin(a) * 1.85); } }
+  const tube = new THREE.TubeGeometry(new Cercle(), 320, .016, 6, true);
+  O.anneau = new THREE.Mesh(tube, new THREE.MeshBasicMaterial({ color: new THREE.Color(COL.vioL).multiplyScalar(1.6), transparent: true }));
+  O.anneauN = tube.index.count;
+  O.orbite = new THREE.Group(); O.orbitePlan = new THREE.Group();
+  O.orbitePlan.rotation.x = .43;           /* inclinaison : ellipse de rapport ≈ 0,42 */
+  O.orbite.rotation.z = Math.PI / 6;       /* puis −30° à l'écran (sens trigonométrique en 3D) */
+  O.orbitePlan.add(O.anneau); O.orbite.add(O.orbitePlan); iScene.add(O.orbite);
+  O.sats = [COL.vioL, COL.bleuL, COL.ambre].map(c => { const m = new THREE.Mesh(new THREE.SphereGeometry(.1, 24, 16), new THREE.MeshBasicMaterial({ color: new THREE.Color(c).multiplyScalar(1.5), transparent: true })); O.orbitePlan.add(m); return m; });
+}
+function poserInterieur(t) {
+  const k = eio(seg(t, 12.4, 13.4)), s = eio(seg(t, 13.0, 13.7)), ka = eo5(seg(t, 10.9, 11.6));
+  O.Uc.uK.value = k; O.Uc.uS.value = s; O.Uc.uA.value = 1;
+  O.cube.material.depthWrite = s > .5; O.cubeAr.visible = s < .98;
+  O.cubeG.rotation.set(.5 + .3 * Math.sin(t * .6), t * .9 + .4, .15 * Math.sin(t * .4));
+  O.cubeG.scale.setScalar(lerp(.55, 1, ka));
+  const kr = eo(seg(t, 13.3, 14.1)); O.anneau.visible = kr > 0; O.anneau.geometry.setDrawRange(0, Math.floor(O.anneauN * kr / 3) * 3);
+  O.orbitePlan.rotation.y = -t * .15;
+  O.sats.forEach((m, i) => { const a = seg(t, 13.75 + i * .12, 14.05 + i * .12), an = t * 1.1 + i * 2.094;
+    m.visible = a > 0; m.material.opacity = a; m.scale.setScalar(lerp(.2, 1, eo5(a))); m.position.set(Math.cos(an) * 1.85, 0, Math.sin(an) * 1.85); });
+  iCam.position.set(.15 * Math.sin(t * .3), .05, lerp(6.6, 6.0, seg(t, 11, 15)));
+  iCam.lookAt(0, 0, 0);
+}
+
+/* ---------- mise en scène ---------- */
+function luminosite(t) { return cl(seg(t, .25, .45) + (t > .25 && t < .45 ? -.4 * Math.abs(Math.sin(t * 90)) : 0)) * (1 - .85 * seg(t, 29.7, 30)); }
+function poser(t) {
+  O.charniere.rotation.x = -.3;
+  /* caméra : avance très lente, légèrement en biais */
+  const u = t / 30, e = u * .85 + .15 * eio(u);
+  camera.position.set(lerp(-1.45, -.85, e) + .04 * Math.sin(t * .25), lerp(1.2, 1.12, e), lerp(5.9, 4.9, e));
+  camera.lookAt(lerp(-.15, -.06, e), lerp(.97, .98, e), lerp(-.45, -.5, e));
+  camera.updateMatrixWorld();
+  O.matEcran.uniforms.uB.value = 1.12 * luminosite(t);
+  /* couleur moyenne de l'écran → lumière de la pièce */
+  PX.clearRect(0, 0, 8, 5); PX.drawImage(SC, 0, 0, 8, 5);
+  const d = PX.getImageData(0, 0, 8, 5).data; let r = 0, g = 0, b = 0;
+  for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; }
+  const n = d.length / 4, lin = v => Math.pow(v / n / 255, 2.2);
+  let cr = lin(r), cg = lin(g), cb = lin(b);
+  const plan4 = seg(t, 11, 11.5) * (1 - seg(t, 14.8, 15.1)); cg += .05 * plan4; cr += .01 * plan4; cb += .02 * plan4;
+  const burst = seg(t, 23.0, 23.1) * (1 - seg(t, 23.1, 24.4)) * .25 + seg(t, 23, 23.2) * (1 - seg(t, 25.4, 25.8)) * .03;
+  cr += burst * .7; cg += burst; cb += burst;
+  const L = luminosite(t), lum = (cr + cg + cb) / 3 + 1e-4;
+  O.lum.color.setRGB(cr / lum, cg / lum, cb / lum).multiplyScalar(.5).addScalar(.5);
+  O.lum.intensity = (.35 + 70 * lum) * L; O.lumM.color.copy(O.lum.color); O.lumM.intensity = O.lum.intensity;
+  const lp = O.ecran.localToWorld(v3(0, -.1, .9)); O.lum.position.copy(lp); O.lumM.position.set(lp.x, -lp.y, lp.z);
+  const ei = (.04 + 9 * lum) * L; O.alu.envMapIntensity = ei; O.touche.envMapIntensity = ei * .8; O.noir.envMapIntensity = ei * .6; O.pave.envMapIntensity = ei * .35;
+  O.matSol.uniforms.uG.value.setRGB(cr, cg, cb).multiplyScalar(18 * L);
+  /* scène intérieure (plan 4) */
+  const pi = volet(t, 11), po = volet(t, 15);
+  O.matEcran.uniforms.uI.value = pi > 0 && po < 1 ? 1 : 0; O.matEcran.uniforms.uL.value = po; O.matEcran.uniforms.uR.value = pi;
+  /* pixels du logo */
+  const U = O.pixMat.uniforms;
+  U.uE.value = eo(seg(t, 23.0, 24.3)) * (1 - eio(seg(t, 24.45, 25.55)));
+  U.uS.value = seg(t, 23.0, 23.8) * (1 - eio(seg(t, 24.45, 25.55)));
+  U.uA.value = (t >= 23.0 ? 1 : 0) * (1 - seg(t, 25.5, 25.8)); U.uT.value = t;
+  U.uPx.value = H / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+  O.pix.visible = O.mir && U.uA.value > 0;
+  O.mir.traverse(o => { if (o.isPoints) o.visible = U.uA.value > 0; });
+  bloom.strength = (.5 + .35 * seg(t, 23, 23.15) * (1 - seg(t, 23.15, 24))) * (1 - .4 * seg(t, 26.8, 27.6));
+}
+
+/* ---------- calque 2D devant la 3D (mot de la fin) ---------- */
+function titre(s, x, y, size, k, o = {}) {
+  if (k <= 0) return; size *= K;
+  X.save(); X.font = `${o.w || 800} ${size}px ${o.f || "Brico"}`; X.letterSpacing = (o.ls || 0) * K + "px";
+  X.textAlign = "center"; X.globalAlpha = cl(k * 1.6);
+  const e = eo5(cl(k)); X.translate(x, y + (1 - e) * size * .4);
+  X.filter = k < 1 ? `blur(${((1 - e) * 8 * K).toFixed(1)}px)` : "none";
+  X.fillStyle = o.c || COL.blanc; X.fillText(s, 0, 0); X.restore();
+}
+function textes(t) {
+  X.clearRect(0, 0, W, H);
+  const k1 = seg(t, 28.2, 28.7), k2 = seg(t, 28.6, 29.1);
+  if (k1 > 0) {
+    titre("espace-finances-tn.jaouadimohamedaziz.workers.dev", W / 2, H * .885, 42, k1, { w: 600, f: "JB", c: COL.bleuL });
+    titre("Conçue en Tunisie · Powered by Mohamed Aziz Jaouadi", W / 2 + 22 * K, H * .945, 32, k2, { w: 500, f: "Mona", c: COL.gris });
+    if (k2 > 0) { X.save(); X.font = `500 ${32 * K}px Mona`; const lw = X.measureText("Conçue en Tunisie · Powered by Mohamed Aziz Jaouadi").width;
+      const fw = 36 * K, fh = fw * 2 / 3, fx = W / 2 + 22 * K - lw / 2 - fw - 12 * K, fy = H * .945 - 23 * K + (1 - eo5(cl(k2))) * 13 * K;
+      X.globalAlpha = cl(k2 * 1.6); X.beginPath(); X.roundRect(fx, fy, fw, fh, 3 * K); X.clip(); X.drawImage(IMG.drapeau, fx, fy, fw, fh); X.restore(); }
+  }
+}
+function render(t) {
+  ecran(t); poser(t);
+  if (O.matEcran.uniforms.uI.value > 0) { poserInterieur(t); renderer.setRenderTarget(rtI); renderer.setClearColor(0x000000, 1); renderer.clear(); renderer.render(iScene, iCam); renderer.setRenderTarget(null); }
+  composer.render(); textes(t);
+  F.globalCompositeOperation = "source-over"; F.globalAlpha = 1; F.drawImage(GL, 0, 0);
+  /* bandeau sombre en bas pour les textes finaux */
+  const kb = seg(t, 28.0, 28.6);
+  if (kb > 0) { const g = F.createLinearGradient(0, H * .78, 0, H); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(.45, `rgba(0,0,0,${.75 * kb})`); g.addColorStop(1, `rgba(0,0,0,${.9 * kb})`); F.fillStyle = g; F.fillRect(0, H * .78, W, H * .22); }
+  F.drawImage(calque, 0, 0);
+  const v = F.createRadialGradient(W / 2, H * .45, Math.min(W, H) * .45, W / 2, H / 2, Math.max(W, H) * .78); v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,.55)");
+  F.fillStyle = v; F.fillRect(0, 0, W, H);
+}
+async function setup(o = {}) {
+  W = o.w || 1920; H = o.h || 1080; K = H / 1080;
+  C.width = W; C.height = H; GL.width = W; GL.height = H; F = C.getContext("2d");
+  calque = document.createElement("canvas"); calque.width = W; calque.height = H; X = calque.getContext("2d");
+  const ff = [["Brico", "polices/bricolage-latin.woff2", "200 800"], ["Brico", "polices/bricolage-latin-ext.woff2", "200 800"],
+    ["Mona", "polices/mona-sans-latin-standard-normal.woff2", "200 900"], ["Mona", "polices/mona-sans-latin-ext-standard-normal.woff2", "200 900"], ["JB", "polices/jetbrains-mono-var.woff2", "100 800"]];
+  for (const [f, u, w] of ff) { const fc = new FontFace(f, `url(${u})`, { weight: w }); await fc.load(); document.fonts.add(fc); }
+  SC = document.createElement("canvas"); SC.width = SW; SC.height = SH; S = SC.getContext("2d");
+  PET = document.createElement("canvas"); PET.width = 8; PET.height = 5; PX = PET.getContext("2d", { willReadFrequently: true });
+  texEcran = new THREE.CanvasTexture(SC); texEcran.colorSpace = THREE.SRGBColorSpace; texEcran.generateMipmaps = false;
+  texEcran.minFilter = THREE.LinearFilter; texEcran.magFilter = THREE.LinearFilter; texEcran.anisotropy = 4;
+  IMG.drapeau = faireDrapeau();
+  IMG.ico = {}; for (const k in ICO) IMG.ico[k] = ICO[k]();
+  /* mur de points (plan 5) : grille posée sur un plan tourné, projetée en perspective */
+  IMG.mur = []; const NU = 60, NV = 36, th = .42;
+  for (let v = 0; v < NV; v++) for (let u = 0; u < NU; u++) {
+    const Xw = (u / (NU - 1) - .5) * 4.4, Yw = (v / (NV - 1) - .5) * 2.6, x = Xw * Math.cos(th), z = 4 + Xw * Math.sin(th);
+    const px = SW / 2 - 60 + 1500 * x / z, py = SH / 2 + 1500 * Yw / z; if (px < -20 || px > SW + 20 || py < -20 || py > SH + 20) continue;
+    IMG.mur.push({ u, v, x: px, y: py, s: 15 * 4 / z, r: cl(Math.hypot(px - SW / 2, py - SH / 2) / 950) });
+  }
+  /* motifs du tambour (formes LED aléatoires, aucune n'est un chiffre), le dernier est « 1 » */
+  const r = mulberry(15); IMG.motifs = [];
+  for (let i = 0; i < 14; i++) IMG.motifs.push(Array.from({ length: 7 }, () => Array.from({ length: 5 }, () => r() < .42 ? "#" : ".").join("")));
+  IMG.motifs.push(UN);
+  construireInterieur();
+  construire();
+  return { pixels: O.nPix };
+}
+window.setup = setup; window.render = render;
+</script></body></html>
