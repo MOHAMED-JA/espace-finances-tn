@@ -13,7 +13,7 @@ body { background: var(--fond); }
 .pages-nav::-webkit-scrollbar { display: none; }
 .pages-nav a { flex: none; font-size: 14.5px; font-weight: 650; color: var(--encre-2); text-decoration: none; padding: 8px 13px; border-radius: 999px; transition: background-color 150ms ease, color 150ms ease; }
 .pages-nav a:hover { background: var(--surface-2); color: var(--encre); }
-.pages-nav a[aria-current="page"] { background: var(--sel-doux, var(--salaire-doux)); color: var(--sel-t, var(--salaire-t)); }
+.pages-nav a[aria-current] { background: var(--sel-doux, var(--salaire-doux)); color: var(--sel-t, var(--salaire-t)); }
 @media (max-width: 979px) { .pages-nav { order: 3; width: 100%; margin-inline: -4px; padding-bottom: 8px; } }
 @media (max-width: 480px) { .entete__actions .bouton--fantome { display: none; } .entete__ligne .signature__in { display: none; } }
 
@@ -22,6 +22,8 @@ body { background: var(--fond); }
 .page--credit { --sel: var(--credit); --sel-t: var(--credit-t); --sel-doux: var(--credit-doux); }
 .page--impot { --sel: var(--epargne); --sel-t: var(--epargne-t); --sel-doux: var(--epargne-doux); }
 .page--retraite { --sel: var(--salaire); --sel-t: var(--salaire-t); --sel-doux: var(--salaire-doux); }
+.page--pret { --sel: var(--credit); --sel-t: var(--credit-t); --sel-doux: var(--credit-doux); }
+.page--vie, .page--cea { --sel: var(--epargne); --sel-t: var(--epargne-t); --sel-doux: var(--epargne-doux); }
 
 .pp { display: grid; gap: 56px; padding-block: 28px 64px; }
 .ariane { font-size: 13.5px; color: var(--encre-3); }
@@ -61,6 +63,7 @@ body { background: var(--fond); }
 .barres { display: flex; height: 14px; border-radius: 999px; overflow: hidden; gap: 3px; }
 .barres i { display: block; height: 100%; min-width: 4px; flex: var(--part, 1) 1 0; transition: flex-grow 460ms var(--sortie); }
 .b-net { background: var(--salaire); } .b-cot { background: #3B82F6; } .b-irpp { background: #7C3AED; } .b-css { background: var(--ambre); }
+.b-capital { background: var(--credit); } .b-interets { background: #7C3AED; } .b-verse { background: var(--epargne); } .b-gain { background: var(--salaire); }
 .lignes { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
 .lignes li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: 10px; font-size: 15px; color: var(--encre-2); }
 .lignes li i { width: 10px; height: 10px; border-radius: 3px; }
@@ -130,6 +133,8 @@ body { background: var(--fond); }
 .faq details p { padding-bottom: 16px; color: var(--encre-2); max-width: 72ch; }
 
 .voisins { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; list-style: none; margin: 0; padding: 0; }
+/* Six autres pages : deux rangées de trois sur grand écran, jamais une carte seule. */
+@media (min-width: 900px) { .voisins { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .voisins a { display: grid; gap: 4px; padding: 16px 18px; border-radius: var(--r-int); background: var(--surface); border: 1px solid var(--filet); text-decoration: none; color: inherit; transition: border-color 150ms ease, transform 140ms var(--sortie); }
 .voisins a:hover { border-color: var(--filet-fort); }
 .voisins a:active { transform: scale(var(--appui)); }

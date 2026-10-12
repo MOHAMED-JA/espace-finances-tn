@@ -113,7 +113,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
 
   await etape("pages publiques : liens depuis l'accueil, mini-calculs exacts et en direct, états, téléphone sans débordement", async () => {
     await page.goto(base + "/");
-    for (const slug of ["salaire-net-tunisie", "capacite-credit-tunisie", "impot-assurance-vie-cea", "retraite-cnss-cnrps"]) assert(await page.$(`.pied a[href="/${slug}"]`), "lien vers /" + slug + " dans le pied de l'accueil");
+    for (const slug of ["salaire-net-tunisie", "simulateur-credit-tunisie", "capacite-credit-tunisie", "simulateur-assurance-vie-tunisie", "calcul-cea-tunisie", "impot-assurance-vie-cea", "retraite-cnss-cnrps"]) assert(await page.$(`.pied a[href="/${slug}"]`), "lien vers /" + slug + " dans le pied de l'accueil");
     const ent = (p) => p.evaluate(() => document.querySelector(".grand").textContent);
     /* Salaire : 2 500 DT → net de l'accueil ; chef de famille + 2 enfants fait monter le net ; pont recalculé. */
     await page.goto(base + "/salaire-net-tunisie");
@@ -145,9 +145,30 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.fill("#debut", "2024");
     await page.waitForSelector("[data-si-etat=erreur]:not([hidden])");
     assert(/15 ans/.test(await page.textContent("[data-si-etat=erreur]")), "raison CNRPS affichée");
+    /* Simulateur de crédit : changer de type reprend son exemple ; mensualité = moteur. */
+    await page.goto(base + "/simulateur-credit-tunisie");
+    await page.waitForFunction(() => window.PagesCalcul);
+    await page.check("input[name=type][value=immo]", { force: true });
+    await page.waitForFunction(() => document.getElementById("montant").value.replace(/\s/g, "") === "120000");
+    const pret = await page.evaluate(() => { const a = PagesCalcul.affichage("pret", { type: "immo", montant: 120000, dureeAns: 20, marge: 2.5 }, new Date()); return a.mens_ent + a.mens_dec; });
+    await page.waitForFunction((t) => document.querySelector(".grand").textContent === t, pret);
+    assert((await page.textContent("[data-v=taux]")) === "10\u00a0%", "taux TMM + marge : " + (await page.textContent("[data-v=taux]")));
+    assert(await page.$('.pages-nav a[href="/simulateur-credit-tunisie"][aria-current="page"]'), "menu : Crédit en cours");
+    /* Assurance vie : capital et impôt économisé recalculés ; salaire non imposé → rien à économiser. */
+    await page.goto(base + "/simulateur-assurance-vie-tunisie");
+    await page.fill("#versement", "300");
+    await page.waitForFunction(() => document.querySelector("[data-v=verse]").textContent.replace(/\s/g, "") === "36000DT");
+    await page.fill("#montant", "400");
+    await page.waitForFunction(() => document.querySelector("[data-v=eco]").textContent.replace(/\s/g, "") === "0DT");
+    /* CEA : au-delà du dépôt utile, message ; économie plafonnée. */
+    await page.goto(base + "/calcul-cea-tunisie");
+    await page.fill("#depot", "20000");
+    await page.waitForSelector("[data-si-etat=au_dela]:not([hidden])");
+    const cea = await page.evaluate(() => { const c = PagesCalcul.cea({ montant: 2500, depot: 20000 }, new Date()); return Math.round(c.economie); });
+    assert(Number((await page.textContent(".grand")).replace(/\D/g, "")) === cea, "économie CEA plafonnée = moteur");
     const tel = await navigateur.newPage({ viewport: { width: 390, height: 844 }, colorScheme: "dark" });
     suivre(tel);
-    for (const slug of ["salaire-net-tunisie", "capacite-credit-tunisie", "impot-assurance-vie-cea", "retraite-cnss-cnrps"]) {
+    for (const slug of ["salaire-net-tunisie", "simulateur-credit-tunisie", "capacite-credit-tunisie", "simulateur-assurance-vie-tunisie", "calcul-cea-tunisie", "impot-assurance-vie-cea", "retraite-cnss-cnrps"]) {
       await tel.goto(base + "/" + slug);
       await tel.waitForFunction(() => window.PagesCalcul);
       assert(!(await tel.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), slug + " sans débordement sur téléphone");

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /*
- * Orbite — génère les quatre pages publiques (salaire net, capacité de crédit, impôt, retraite) dans public/.
+ * Orbite — génère les pages publiques (salaire net, capacité de crédit, impôt, retraite, simulateur de crédit,
+ * simulateur d'assurance vie, calcul du CEA) dans public/.
  * Tous les chiffres viennent des moteurs (public/commun/pages-calcul.js) : le HTML contient donc des valeurs justes même
  * sans JavaScript (ce que lisent les moteurs de recherche), puis le navigateur les recalcule à chaque saisie.
  *
@@ -16,9 +17,10 @@ const C = require("../public/commun/pages-calcul.js");
 const P = require("../public/moteurs/salaire/parametres.js");
 const RT = require("../public/espace/js/retraite-calcul.js");
 const B = require("../public/moteurs/vie/baremes.js");
+const OC = require("../public/espace/js/orbite-calcul.js");
 
 /* Date des chiffres écrits dans le HTML (âges d'exemple, jours restants, année de départ). */
-const DATE_PAGES = new Date(2026, 9, 11);
+const DATE_PAGES = new Date(2026, 9, 12);
 const SITE = "https://espace-finances-tn.jaouadimohamedaziz.workers.dev";
 const LINKEDIN = "https://www.linkedin.com/in/mohamed-aziz-jaouadi-%D9%85%D8%AD%D9%85%D8%AF-%D8%B9%D8%B2%D9%8A%D8%B2-%D8%A7%D9%84%D8%AC%D9%88%D8%A7%D8%AF%D9%8A-%C2%AEpsm-i-%C2%AEpspo-l-%C2%AEistqb-851009115/";
 const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
@@ -28,10 +30,21 @@ const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 const sansBalises = (s) => String(s).replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&");
 
 const PAGES = [
-  { cle: "salaire", slug: "salaire-net-tunisie", nav: "Salaire net", voisin: "Calcul du salaire net", voisinTxt: "Du brut au net, au millime" },
-  { cle: "credit", slug: "capacite-credit-tunisie", nav: "Crédit", voisin: "Capacité de crédit", voisinTxt: "Combien la banque peut vous prêter" },
-  { cle: "impot", slug: "impot-assurance-vie-cea", nav: "Impôt", voisin: "Impôt, assurance vie et CEA", voisinTxt: "L'impôt que vous pouvez économiser" },
-  { cle: "retraite", slug: "retraite-cnss-cnrps", nav: "Retraite", voisin: "Retraite CNSS ou CNRPS", voisinTxt: "À quel âge, pour quelle pension" }
+  { cle: "salaire", slug: "salaire-net-tunisie", voisin: "Calcul du salaire net", voisinTxt: "Du brut au net, au millime" },
+  { cle: "pret", slug: "simulateur-credit-tunisie", voisin: "Simulateur de crédit", voisinTxt: "Mensualité et coût total" },
+  { cle: "credit", slug: "capacite-credit-tunisie", voisin: "Capacité de crédit", voisinTxt: "Combien la banque peut vous prêter" },
+  { cle: "vie", slug: "simulateur-assurance-vie-tunisie", voisin: "Simulateur d'assurance vie", voisinTxt: "Capital estimé et impôt économisé" },
+  { cle: "cea", slug: "calcul-cea-tunisie", voisin: "Calcul du CEA", voisinTxt: "L'impôt que fait gagner un CEA" },
+  { cle: "impot", slug: "impot-assurance-vie-cea", voisin: "Impôt, assurance vie et CEA", voisinTxt: "L'impôt que vous pouvez économiser" },
+  { cle: "retraite", slug: "retraite-cnss-cnrps", voisin: "Retraite CNSS ou CNRPS", voisinTxt: "À quel âge, pour quelle pension" }
+];
+/* Menu : 5 entrées ; une entrée est « en cours » sur ses pages (la capacité relève du crédit, l'impôt de l'assurance vie). */
+const NAV = [
+  { slug: "salaire-net-tunisie", nav: "Salaire net", pages: ["salaire"] },
+  { slug: "simulateur-credit-tunisie", nav: "Crédit", pages: ["pret", "credit"] },
+  { slug: "simulateur-assurance-vie-tunisie", nav: "Assurance vie", pages: ["vie", "impot"] },
+  { slug: "calcul-cea-tunisie", nav: "CEA", pages: ["cea"] },
+  { slug: "retraite-cnss-cnrps", nav: "Retraite", pages: ["retraite"] }
 ];
 
 /* ---------- Morceaux communs ---------- */
@@ -109,7 +122,7 @@ ${JSON.stringify(ld, null, 2).replace(/</g, "\\u003c")}
       <a class="signature" href="${LINKEDIN}?isSelfProfile=true" target="_blank" rel="noopener noreferrer" aria-label="Conçu par Mohamed Aziz Jaouadi : profil LinkedIn (nouvel onglet)"><span class="signature__mono" aria-hidden="true">MJ</span><span class="signature__txt"><span class="signature__pre">Conçu par</span><span class="signature__nom" translate="no">Mohamed Aziz Jaouadi</span></span><span class="signature__in"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9.75h4v11H3v-11Zm6.5 0h3.8v1.5h.06c.53-1 1.83-2.06 3.77-2.06 4.03 0 4.77 2.65 4.77 6.1v5.46h-4v-4.84c0-1.16-.02-2.64-1.61-2.64-1.61 0-1.86 1.26-1.86 2.56v4.92h-4v-11Z"/></svg></span></a>
       </div>
       <nav class="pages-nav" aria-label="Calculs gratuits">
-${PAGES.map((p) => `        <a href="/${p.slug}"${p.cle === pg.cle ? ' aria-current="page"' : ""}>${p.nav}</a>`).join("\n")}
+${NAV.map((n) => `        <a href="/${n.slug}"${n.pages.includes(pg.cle) ? (n.slug === pg.slug ? ' aria-current="page"' : ' aria-current="true"') : ""}>${n.nav}</a>`).join("\n")}
       </nav>
       <nav class="entete__actions" aria-label="Compte">
         <a class="bouton bouton--fantome bouton--petit" href="/connexion.html" data-si-deconnecte>Se connecter</a>
@@ -125,12 +138,28 @@ const SAT = {
   salaire: ["Salaire", "sat_salaire"], credit: ["Crédit", "sat_credit"], impot: ["Impôt", "sat_impot"], retraite: ["Retraite", "sat_retraite"]
 };
 function pont(pg, aff, titre) {
-  const autres = PAGES.filter((p) => p.cle !== pg.cle).map((p) => p.cle);
+  const autres = PAGES.filter((p) => SAT[p.cle] && p.cle !== pg.cle).map((p) => p.cle).slice(0, 3);
   return `
       <section class="pont" aria-labelledby="titre-pont">
         <h2 id="titre-pont">${titre}</h2>
         <ul class="satellites" role="list">
 ${autres.map((k) => `          <li class="sat sat--${k}"><span class="sat__nom"><i aria-hidden="true"></i>${SAT[k][0]}</span><span class="sat__val">${v(aff, SAT[k][1])}</span><p>${v(aff, SAT[k][1] + "_txt")}</p></li>`).join("\n")}
+        </ul>
+        <div class="pont__pied">
+          <a class="bouton bouton--plein" href="/connexion.html?mode=inscription" data-si-deconnecte>Essayer gratuitement<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
+          <a class="bouton bouton--plein" href="/espace/" data-si-connecte hidden>Ouvrir mon orbite<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
+          <p data-si-deconnecte>3 jours d'essai gratuit, sans carte bancaire. Un seul profil pour tout calculer.</p>
+        </div>
+      </section>`;
+}
+
+/* Pont des nouvelles pages : ce qu'Orbite fait de plus (sans chiffre), puis l'inscription. */
+function pontFonctions(titre, items) {
+  return `
+      <section class="pont" aria-labelledby="titre-pont">
+        <h2 id="titre-pont">${titre}</h2>
+        <ul class="satellites satellites--fonctions" role="list">
+${items.map((x) => `          <li class="sat sat--${x[0]}"><span class="sat__nom"><i aria-hidden="true"></i>${x[1]}</span><p>${x[2]}</p></li>`).join("\n")}
         </ul>
         <div class="pont__pied">
           <a class="bouton bouton--plein" href="/connexion.html?mode=inscription" data-si-deconnecte>Essayer gratuitement<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
@@ -554,7 +583,273 @@ ${faq(d)}`;
   return tete(pg, d) + heros(pg, d, calc) + corps + fin(pg);
 }
 
-const GEN = { salaire: pageSalaire, credit: pageCredit, impot: pageImpot, retraite: pageRetraite };
+/* ---------- Page simulateur de crédit ---------- */
+function pagePret(pg) {
+  const D0 = C.CREDIT_DEF, ex = C.simulCredit({ type: "auto" }), aff = C.affichage("pret", { type: "auto" }, m), tmm = N(ex.tmm, 1);
+  const immo = C.simulCredit({ type: "immo" }), conso = C.simulCredit({ type: "conso" });
+  const d = {
+    titre: `Simulateur crédit Tunisie ${A} : mensualité et coût total — Orbite`,
+    description: `Simulateur de crédit en Tunisie : mensualité, intérêts et coût total d'un crédit immobilier, auto ou à la consommation, au taux TMM + marge de la banque. Gratuit, sans compte.`,
+    sujet: "Simulation de crédit en Tunisie", ariane: "Simulateur de crédit",
+    surtitre: "TMM + marge de la banque",
+    h1: `Combien vous coûtera votre <em>crédit</em>&nbsp;?`,
+    chapo: "Simulateur de crédit en Tunisie : mensualité, coût des intérêts et coût total pour un crédit immobilier, auto ou à la consommation.",
+    sourcesCourt: `TMM retenu : ${tmm} %`,
+    faq: [
+      ["Qu'est-ce que le TMM&nbsp;?", `Le taux moyen du marché monétaire, publié chaque mois par la Banque centrale de Tunisie. Les banques fixent le taux d'un crédit en ajoutant leur marge au TMM. Orbite retient un TMM de ${tmm} % ; vous pouvez changer la marge pour retrouver le taux de votre offre.`],
+      ["Taux fixe ou taux variable&nbsp;?", "À taux fixe, la mensualité reste la même jusqu'à la fin du crédit. À taux variable, elle suit le TMM : elle monte quand le TMM monte. Le tableau ci-dessus montre l'effet d'une hausse du TMM sur trois crédits types."],
+      ["Combien de temps peut durer un crédit&nbsp;?", `Hors immobilier, la durée d'un crédit est limitée à 7 ans (84 mois). Un crédit immobilier peut aller jusqu'à ${D0.immo.max} ans selon la banque. Plus la durée est longue, plus la mensualité baisse, mais plus les intérêts coûtent cher.`],
+      ["Puis-je rembourser mon crédit avant la fin&nbsp;?", "Oui, en tout ou en partie. La banque peut demander une indemnité prévue au contrat. Après un remboursement partiel, vous choisissez en général entre une mensualité plus basse et une durée plus courte. Orbite compare les deux dans son module Crédit."],
+      ["La mensualité affichée est-elle celle de ma banque&nbsp;?", `C'est une estimation à taux fixe et à échéances constantes. La banque ajoute en général l'assurance du crédit et des frais de dossier, et fixe sa propre marge. Exemple : ${N(ex.montant, 0)} DT sur ${ex.dureeAns} ans à ${N(ex.taux, 1)} % donnent ${DT(ex.mensualite)} par mois, pour ${DT(ex.interets, 0)} d'intérêts.`]
+    ]
+  };
+  const calc = `        <form class="calc" id="calc" novalidate aria-label="Simuler votre crédit">
+${tete_calc("Modifiez les valeurs, tout se recalcule")}
+          <div class="calc__options">
+            <div class="bascule" role="radiogroup" aria-label="Type de crédit">
+${["immo", "auto", "conso"].map((t) => `              <label><input type="radio" name="type" value="${t}"${t === "auto" ? " checked" : ""} data-montant="${D0[t].montant}" data-duree="${D0[t].ans}" data-marge="${D0[t].marge}" data-max="${D0[t].max}"><span>${D0[t].libelle}</span></label>`).join("\n")}
+              <i class="bascule__pastille" aria-hidden="true"></i>
+            </div>
+          </div>
+${champMontant("montant", "Montant emprunté", N(ex.montant, 0))}
+          <div class="calc__duo">
+            <div class="champ"><label for="duree">Durée (en années)</label><div class="saisie"><input id="duree" name="duree" type="text" inputmode="numeric" autocomplete="off" maxlength="2" value="${ex.dureeAns}"><span class="saisie__unite">ans</span></div><span class="champ__aide" data-v="duree_lib">${esc(aff.duree_lib)}</span></div>
+            <div class="champ"><label for="marge">Marge de la banque</label><div class="saisie"><input id="marge" name="marge" type="text" inputmode="decimal" autocomplete="off" maxlength="5" value="${N(ex.marge, 0)}"><span class="saisie__unite">points</span></div><span class="champ__aide">Taux : ${v(aff, "taux")} (${v(aff, "taux_lib")})</span></div>
+          </div>
+          <div class="resultat">
+            <span class="resultat__lib">Mensualité</span>
+            ${grand(aff, "mens")}
+            <div class="barres" aria-hidden="true"><i class="b-capital" data-part="capital"></i><i class="b-interets" data-part="interets"></i></div>
+            <ul class="lignes" role="list">
+              <li><i class="b-capital" aria-hidden="true"></i><span>Capital remboursé</span><b>${v(aff, "capital")}</b></li>
+              <li><i class="b-interets" aria-hidden="true"></i><span>Coût des intérêts</span><b>${v(aff, "interets")}</b></li>
+              <li><i aria-hidden="true"></i><span>Coût total du crédit</span><b>${v(aff, "total")}</b></li>
+            </ul>
+          </div>
+          <p class="calc__note">Mensualité à taux fixe, hors assurance et frais de dossier. Pour savoir combien la banque peut vous prêter : <a href="/capacite-credit-tunisie">capacité d'emprunt</a>. Rien n'est envoyé.</p>
+        </form>`;
+  const montants = [10000, 20000, 50000, 100000, 150000, 200000], durees = [3, 5, 7, 10, 15, 20], tx = ex.taux;
+  const exemples = [immo, ex, conso], hausses = [0, 0.5, 1, 2];
+  const mensH = (k, h) => OC.mensualitePourCapital(k.montant, k.taux + h, k.dureeMois);
+  const corps = `${pontFonctions(`Avec cette mensualité, <b>votre salaire suffit-il</b>&nbsp;?`, [
+    ["credit", "Capacité d'emprunt", "La banque limite vos crédits à 40 % de votre net : Orbite vérifie avec votre propre salaire et vos crédits en cours."],
+    ["salaire", "Règle des 8 %", "Crédit à taux fixe de plus de 7 ans : Orbite vous dit quand votre taux peut être divisé par deux."],
+    ["impot", "Dossier banque", "Un PDF propre à remettre à votre conseiller : revenus, crédits, endettement avant et après, créé sur votre appareil."]])}
+
+      <section class="explique" aria-labelledby="titre-explique">
+        <div class="explique__tete">
+          <h2 class="titre-section" id="titre-explique">Comment se calcule une mensualité&nbsp;?</h2>
+          <p>Quatre étapes. Exemple : voiture, ${N(ex.montant, 0)} DT sur ${ex.dureeAns} ans.</p>
+        </div>
+        <ol class="etapes">
+          <li><div><h3>Le taux du crédit</h3><p>TMM (${tmm} %) + marge de la banque (${N(ex.marge, 0)} points) : <b>${N(ex.taux, 1)} %</b> par an.</p></div></li>
+          <li><div><h3>Des mensualités constantes</h3><p>Chaque mois, la même somme rembourse un peu de capital et paie les intérêts du capital restant : <b>${DT(ex.mensualite)}</b> pendant ${ex.dureeMois} mois.</p></div></li>
+          <li><div><h3>Le coût des intérêts</h3><p>Total des mensualités moins le capital : <b>${DT(ex.interets, 0)}</b>. Il grandit vite avec la durée et le taux.</p></div></li>
+          <li><div><h3>Ce que la banque ajoute</h3><p>L'assurance du crédit et les frais de dossier s'ajoutent en général. Vérifiez-les dans l'offre de votre banque.</p></div></li>
+        </ol>
+      </section>
+
+      <div class="tableaux">
+        <section class="tableau-bloc" aria-labelledby="titre-t1">
+          <h2 class="titre-section" id="titre-t1">Mensualité selon le montant et la durée</h2>
+          <p>Au taux de ${N(tx, 1)} % (TMM + ${N(ex.marge, 0)} points), en dinars par mois.</p>
+          <div class="defile"><table>
+            <thead><tr><th scope="col">Montant</th>${durees.map((a) => `<th scope="col">${a} ans</th>`).join("")}</tr></thead>
+            <tbody>
+${montants.map((k) => `              <tr><td>${N(k, 0)} DT</td>${durees.map((a) => `<td>${N(OC.mensualitePourCapital(k, tx, a * 12), 0)}</td>`).join("")}</tr>`).join("\n")}
+            </tbody>
+          </table></div>
+          <p class="sources">Hors immobilier, la durée d'un crédit est limitée à 7 ans.</p>
+        </section>
+        <section class="tableau-bloc" aria-labelledby="titre-t2">
+          <h2 class="titre-section" id="titre-t2">Si le TMM augmente (taux variable)</h2>
+          <p>Mensualité de trois crédits types selon la hausse du TMM.</p>
+          <div class="defile"><table>
+            <thead><tr><th scope="col">Crédit</th>${hausses.map((h) => `<th scope="col">${h === 0 ? "TMM actuel" : "+ " + N(h, h % 1 ? 1 : 0) + " pt"}</th>`).join("")}</tr></thead>
+            <tbody>
+${exemples.map((k) => `              <tr${k.type === "auto" ? ' class="vu"' : ""}><td>${k.libelle}, ${N(k.montant, 0)} DT sur ${k.dureeAns} ans</td>${hausses.map((h) => `<td${h === 0 ? ' class="fort"' : ""}>${N(mensH(k, h), 0)}</td>`).join("")}</tr>`).join("\n")}
+            </tbody>
+          </table></div>
+        </section>
+      </div>
+${faq(d)}`;
+  return tete(pg, d) + heros(pg, d, calc) + corps + fin(pg);
+}
+
+/* ---------- Page simulateur d'assurance vie ---------- */
+function pageVie(pg) {
+  const e0 = { montant: 2500, versement: 200, dureeAns: 10, rendement: 6 }, a = C.assuranceVie(e0, m), aff = C.affichage("vie", e0, m);
+  const d = {
+    titre: `Simulateur assurance vie Tunisie ${A} : capital et impôt — Orbite`,
+    description: `Simulateur d'assurance vie en Tunisie : capital estimé après plusieurs années de versements et impôt économisé chaque année grâce à la déduction (contrat de ${a.dureeMinimale} ans). Gratuit, sans compte.`,
+    sujet: "Simulation d'assurance vie en Tunisie", ariane: "Simulateur d'assurance vie",
+    surtitre: "Épargne et impôt en même temps",
+    h1: `Combien vous rapportera votre <em>assurance vie</em>&nbsp;?`,
+    chapo: "Simulateur d'assurance vie en Tunisie : capital estimé après plusieurs années de versements, et impôt économisé chaque année grâce à la déduction.",
+    sourcesCourt: `Barème ${P.annee} · contrat d'au moins ${a.dureeMinimale} ans`,
+    faq: [
+      ["Comment l'assurance vie fait-elle baisser l'impôt&nbsp;?", `Les primes versées dans l'année sont déduites du revenu imposable, dans la limite de ${N(a.plafond, 0)} DT par an. Pour 2&nbsp;500 DT brut par mois et 200 DT versés chaque mois, l'impôt baisse de ${DT(a.economie, 0)} par an.`],
+      ["Que se passe-t-il si je retire mon argent avant 8 ans&nbsp;?", `Le contrat doit durer au moins ${a.dureeMinimale} ans. En cas de rachat avant ce délai, les montants déduits sont réintégrés au revenu imposable : l'avantage fiscal est perdu.`],
+      ["Pourquoi l'économie d'impôt a-t-elle une limite&nbsp;?", `Après déduction, l'impôt ne peut pas descendre sous ${PCT(a.impotMinimumTaux)} de l'impôt initial. Au-delà de ce seuil, verser davantage augmente l'épargne mais ne fait plus baisser l'impôt.`],
+      ["Le rendement est-il garanti&nbsp;?", "Non. Le simulateur utilise le rendement que vous choisissez, constant chaque année. Votre contrat indique un taux garanti, souvent plus bas, et un taux servi qui change chaque année ; des frais peuvent aussi s'appliquer."],
+      ["Assurance vie ou CEA&nbsp;?", "L'assurance vie convient à une épargne longue et prudente ; le CEA est placé en bourse et bloqué 5 ans, avec un impôt minimum plus élevé (60 %). Les deux se cumulent : Orbite calcule la meilleure répartition pour votre salaire."]
+    ]
+  };
+  const calc = `        <form class="calc" id="calc" novalidate aria-label="Simuler votre assurance vie">
+${tete_calc("Modifiez les valeurs, tout se recalcule")}
+          <div class="calc__duo">
+            <div class="champ"><label for="versement">Versement par mois</label><div class="saisie"><input id="versement" name="versement" type="text" inputmode="decimal" autocomplete="off" value="200"><span class="saisie__unite">DT</span></div></div>
+            <div class="champ"><label for="duree">Durée</label><div class="saisie"><input id="duree" name="duree" type="text" inputmode="numeric" autocomplete="off" maxlength="2" value="10"><span class="saisie__unite">ans</span></div></div>
+            <div class="champ"><label for="rendement">Rendement estimé</label><div class="saisie"><input id="rendement" name="rendement" type="text" inputmode="decimal" autocomplete="off" maxlength="4" value="6"><span class="saisie__unite">% par an</span></div></div>
+            <div class="champ"><label for="montant">Votre salaire brut par mois</label><div class="saisie"><input id="montant" name="montant" type="text" inputmode="decimal" autocomplete="off" value="2&nbsp;500"><span class="saisie__unite">DT</span></div></div>
+          </div>
+          <div class="resultat">
+            <span class="resultat__lib" data-v="cap_lib">${esc(aff.cap_lib)}</span>
+            ${grand(aff, "cap")}
+            <div class="barres" aria-hidden="true"><i class="b-verse" data-part="verse"></i><i class="b-gain" data-part="interets"></i></div>
+            <ul class="liste-cap" role="list">
+              <li>Vous aurez versé<span>sans les intérêts</span><b>${v(aff, "verse")}</b></li>
+              <li>Intérêts gagnés<span>au rendement choisi</span><b>${v(aff, "interets")}</b></li>
+              <li>Impôt économisé par an<span>${v(aff, "eco_lib")}</span><b>${v(aff, "eco")}</b></li>
+            </ul>
+          </div>
+          <p class="calc__note">Rendement non garanti (exemple), sans frais. Célibataire, secteur privé. Le calcul se fait sur votre appareil : rien n'est envoyé.</p>
+        </form>`;
+  const versements = [100, 200, 300, 500], horizons = [5, 10, 15, 20], bruts = [1500, 2000, 2500, 3000, 4000, 5000];
+  const corps = `${pontFonctions(`Votre impôt économisé, <b>versé avant le 31 décembre</b>`, [
+    ["impot", "Optimiseur fiscal", "Le versement idéal pour votre salaire et votre famille : ni trop, ni trop peu, et le partage avec le CEA."],
+    ["retraite", "Capital à la retraite", "L'épargne qu'il vous faudra pour garder 80 % de votre net, à partir de votre pension estimée."],
+    ["salaire", "Contrats suivis", "Tous vos contrats, leurs versements et leur capital estimé, dans un seul écran, avec un rappel avant le 31 décembre."]])}
+
+      <section class="explique" aria-labelledby="titre-explique">
+        <div class="explique__tete">
+          <h2 class="titre-section" id="titre-explique">Comment fonctionne l'assurance vie&nbsp;?</h2>
+          <p>Exemple : 200 DT par mois pendant 10 ans, rendement de 6 % par an, salaire de 2&nbsp;500 DT brut.</p>
+        </div>
+        <ol class="etapes">
+          <li><div><h3>Les versements</h3><p>Chaque mois, 200 DT sont placés sur le contrat : <b>${DT(a.verse, 0)}</b> en 10 ans.</p></div></li>
+          <li><div><h3>Le rendement</h3><p>Les intérêts s'ajoutent au capital et rapportent à leur tour : <b>${DT(a.interets, 0)}</b> d'intérêts, ${DT(a.capital, 0)} au total.</p></div></li>
+          <li><div><h3>La déduction d'impôt</h3><p>Les versements de l'année sont déduits du revenu imposable : <b>${DT(a.economie, 0)}</b> d'impôt en moins chaque année.</p></div></li>
+          <li><div><h3>La durée</h3><p>Le contrat doit durer au moins ${a.dureeMinimale} ans pour garder l'avantage fiscal. L'impôt ne descend jamais sous ${PCT(a.impotMinimumTaux)} de l'impôt initial.</p></div></li>
+        </ol>
+      </section>
+
+      <div class="tableaux">
+        <section class="tableau-bloc" aria-labelledby="titre-t1">
+          <h2 class="titre-section" id="titre-t1">Capital estimé selon le versement</h2>
+          <p>Rendement de 6 % par an, sans frais, en dinars.</p>
+          <div class="defile"><table>
+            <thead><tr><th scope="col">Par mois</th>${horizons.map((h) => `<th scope="col">${h} ans</th>`).join("")}</tr></thead>
+            <tbody>
+${versements.map((x) => `              <tr${x === 200 ? ' class="vu"' : ""}><td>${N(x, 0)} DT</td>${horizons.map((h) => `<td${h === 10 ? ' class="fort"' : ""}>${N(C.assuranceVie({ montant: 2500, versement: x, dureeAns: h, rendement: 6 }, m).capital, 0)}</td>`).join("")}</tr>`).join("\n")}
+            </tbody>
+          </table></div>
+        </section>
+        <section class="tableau-bloc" aria-labelledby="titre-t2">
+          <h2 class="titre-section" id="titre-t2">Impôt économisé selon le salaire</h2>
+          <p>Par an, célibataire, secteur privé, 12 salaires.</p>
+          <div class="defile"><table>
+            <thead><tr><th scope="col">Brut par mois</th><th scope="col">Impôt de l'année</th><th scope="col">200 DT par mois</th><th scope="col">500 DT par mois</th></tr></thead>
+            <tbody>
+${bruts.map((b) => { const r2 = C.assuranceVie({ montant: b, versement: 200 }, m), r5 = C.assuranceVie({ montant: b, versement: 500 }, m); return `              <tr${b === 2500 ? ' class="vu"' : ""}><td>${N(b, 0)} DT</td><td>${N(r2.impot, 3)}</td><td class="fort">${N(r2.economie, 0)}</td><td>${N(r5.economie, 0)}</td></tr>`; }).join("\n")}
+            </tbody>
+          </table></div>
+          <p class="sources">Code de l'IRPP et de l'IS, article 39. Valeurs susceptibles de changer avec une loi de finances.</p>
+        </section>
+      </div>
+${faq(d)}`;
+  return tete(pg, d) + heros(pg, d, calc) + corps + fin(pg);
+}
+
+/* ---------- Page calcul du CEA ---------- */
+function pageCea(pg) {
+  const e0 = { montant: 2500, depot: 3000 }, c = C.cea(e0, m), aff = C.affichage("cea", e0, m), av = B.annees[B.parDefaut].produits.av;
+  const d = {
+    titre: `Calcul CEA Tunisie ${A} : impôt économisé et blocage — Orbite`,
+    description: `Calcul du CEA (compte épargne en actions) en Tunisie : impôt économisé selon votre dépôt et votre salaire, dépôt utile au maximum, blocage de ${c.blocage} ans. Barème ${P.annee}. Gratuit, sans compte.`,
+    sujet: "Compte épargne en actions (CEA) en Tunisie", ariane: "Calcul du CEA",
+    surtitre: "Compte épargne en actions",
+    h1: `Combien d'impôt vous fait gagner un <em>CEA</em>&nbsp;?`,
+    chapo: `Calcul du CEA en Tunisie : impôt économisé selon votre dépôt et votre salaire, dépôt utile au maximum et blocage de ${c.blocage} ans.`,
+    sourcesCourt: `Barème ${P.annee} · bloqué ${c.blocage} ans`,
+    faq: [
+      ["Qu'est-ce qu'un CEA&nbsp;?", `Le compte épargne en actions est un compte placé en bourse (actions et fonds). Les dépôts de l'année sont déduits du revenu imposable, dans la limite de ${N(c.plafond, 0)} DT par an, et restent bloqués ${c.blocage} ans à partir du 1er janvier qui suit le dépôt.`],
+      ["Pourquoi un dépôt « utile » au maximum&nbsp;?", `Après déduction, l'impôt ne peut pas descendre sous ${PCT(c.impotMinimumTaux)} de l'impôt dû. Pour 2&nbsp;500 DT brut par mois, ce seuil est atteint avec ${DT(c.utile, 0)} de dépôt : au-delà, l'impôt de l'année ne baisse plus.`],
+      ["Que se passe-t-il si je retire avant 5 ans&nbsp;?", `Les sommes sont bloquées ${c.blocage} ans. Un retrait anticipé fait perdre l'avantage fiscal obtenu : renseignez-vous auprès de votre banque ou de votre intermédiaire avant de déposer.`],
+      ["Le CEA est-il risqué&nbsp;?", "Oui, plus que l'assurance vie : il est placé en bourse, sa valeur monte et descend avec les marchés. L'avantage fiscal est acquis, le rendement ne l'est pas."],
+      ["Peut-on cumuler CEA et assurance vie&nbsp;?", `Oui. Chacun a son plafond, mais l'impôt minimum limite l'économie totale (${PCT(av.impotMinimumTaux)} de l'impôt initial avec l'assurance vie, ${PCT(c.impotMinimumTaux)} avec le CEA). Orbite calcule la répartition qui économise le plus pour votre salaire.`]
+    ]
+  };
+  const calc = `        <form class="calc" id="calc" novalidate aria-label="Calculer l'impôt économisé avec un CEA">
+${tete_calc("Modifiez les valeurs, le calcul suit")}
+          <div class="calc__duo">
+            <div class="champ"><label for="depot">Dépôt cette année</label><div class="saisie"><input id="depot" name="depot" type="text" inputmode="decimal" autocomplete="off" value="3&nbsp;000"><span class="saisie__unite">DT</span></div></div>
+            <div class="champ"><label for="montant">Votre salaire brut par mois</label><div class="saisie"><input id="montant" name="montant" type="text" inputmode="decimal" autocomplete="off" value="2&nbsp;500"><span class="saisie__unite">DT</span></div></div>
+          </div>
+          <div class="resultat">
+            <span class="resultat__lib">Impôt économisé cette année</span>
+            ${grand(aff, "eco")}
+            <div class="jauge" aria-hidden="true"><i data-jauge></i></div>
+            <p class="calc__alerte" data-si-etat="sans_impot" hidden>Avec ce salaire, vous ne payez pas d'impôt sur le revenu : le CEA ne fait rien gagner cette année.</p>
+            <p class="calc__alerte" data-si-etat="au_dela" hidden>${v(aff, "au_dela")}</p>
+            <ul class="liste-cap" role="list">
+              <li>Dépôt utile au maximum<span>au-delà, l'impôt ne baisse plus</span><b>${v(aff, "utile")}</b></li>
+              <li>${v(aff, "impot_min_lib")}<span>quel que soit le dépôt</span><b>${v(aff, "impot_min")}</b></li>
+              <li>Disponible à partir du<span>bloqué ${c.blocage} ans</span><b>${v(aff, "dispo")}</b></li>
+            </ul>
+          </div>
+${noteCalc}
+        </form>`;
+  const bruts = [1500, 2000, 2500, 3000, 4000, 5000];
+  const corps = `${pontFonctions(`CEA, assurance vie, <b>ou les deux</b>&nbsp;?`, [
+    ["impot", "Répartition idéale", "Orbite calcule le partage entre CEA et assurance vie qui économise le plus d'impôt pour votre salaire."],
+    ["credit", "Date limite", "Un rappel avant le 31 décembre, pour ne pas perdre l'avantage de l'année."],
+    ["salaire", "Votre salaire réel", "Le calcul sur votre propre salaire, vos primes et votre situation de famille."]])}
+
+      <section class="explique" aria-labelledby="titre-explique">
+        <div class="explique__tete">
+          <h2 class="titre-section" id="titre-explique">Comment le CEA fait-il baisser l'impôt&nbsp;?</h2>
+          <p>Exemple : 3&nbsp;000 DT déposés cette année, salaire de 2&nbsp;500 DT brut par mois, célibataire. Impôt de l'année : ${DT(c.impot)}.</p>
+        </div>
+        <ol class="etapes">
+          <li><div><h3>La déduction</h3><p>Le dépôt est retiré du revenu imposable, jusqu'à ${N(c.plafond, 0)} DT par an : <b>${DT(c.economie, 0)}</b> d'impôt en moins.</p></div></li>
+          <li><div><h3>L'impôt minimum</h3><p>L'impôt ne descend pas sous ${PCT(c.impotMinimumTaux)} de l'impôt dû, soit <b>${DT(c.impotMinimum, 0)}</b> ici.</p></div></li>
+          <li><div><h3>Le dépôt utile</h3><p>Au-delà de <b>${DT(c.utile, 0)}</b>, un dépôt de plus ne fait plus baisser l'impôt de l'année.</p></div></li>
+          <li><div><h3>Le blocage</h3><p>Les sommes restent bloquées ${c.blocage} ans à partir du 1er janvier suivant : un dépôt de ${A} est disponible le <b>1er janvier ${c.disponible}</b>.</p></div></li>
+        </ol>
+      </section>
+
+      <div class="tableaux">
+        <section class="tableau-bloc" aria-labelledby="titre-t1">
+          <h2 class="titre-section" id="titre-t1">Dépôt utile selon le salaire</h2>
+          <p>Par an, célibataire, secteur privé, 12 salaires.</p>
+          <div class="defile"><table>
+            <thead><tr><th scope="col">Brut par mois</th><th scope="col">Impôt de l'année</th><th scope="col">Dépôt utile</th><th scope="col">Économie</th></tr></thead>
+            <tbody>
+${bruts.map((b) => { const r = C.cea({ montant: b, depot: 1e6 }, m); return `              <tr${b === 2500 ? ' class="vu"' : ""}><td>${N(b, 0)} DT</td><td>${N(r.impot, 3)}</td><td>${N(r.utile, 0)}</td><td class="fort">${N(r.economie, 0)}</td></tr>`; }).join("\n")}
+            </tbody>
+          </table></div>
+        </section>
+        <section class="tableau-bloc" aria-labelledby="titre-t2">
+          <h2 class="titre-section" id="titre-t2">CEA ou assurance vie</h2>
+          <p>Les règles prises en compte par le calcul.</p>
+          <div class="defile"><table>
+            <thead><tr><th scope="col">Règle</th><th scope="col">CEA</th><th scope="col">Assurance vie</th></tr></thead>
+            <tbody>
+              <tr><td>Placement</td><td>bourse (actions, fonds)</td><td>contrat d'assurance</td></tr>
+              <tr><td>Déduction par an</td><td>${N(c.plafond, 0)} DT</td><td>${N(av.plafond, 0)} DT</td></tr>
+              <tr><td>Impôt minimum</td><td>${PCT(c.impotMinimumTaux)}</td><td>${PCT(av.impotMinimumTaux)}</td></tr>
+              <tr><td>Durée</td><td>bloqué ${c.blocage} ans</td><td>${av.dureeMinimaleAns} ans au moins</td></tr>
+            </tbody>
+          </table></div>
+          <p class="sources">Code de l'IRPP et de l'IS, article 39. Valeurs susceptibles de changer avec une loi de finances.</p>
+        </section>
+      </div>
+${faq(d)}`;
+  return tete(pg, d) + heros(pg, d, calc) + corps + fin(pg);
+}
+
+const GEN = { salaire: pageSalaire, credit: pageCredit, impot: pageImpot, retraite: pageRetraite, pret: pagePret, vie: pageVie, cea: pageCea };
 function generer() { const out = {}; PAGES.forEach((p) => { out[p.slug + ".html"] = GEN[p.cle](p); }); return out; }
 
 module.exports = { generer, PAGES, DATE_PAGES, SITE };
