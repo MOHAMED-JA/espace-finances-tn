@@ -308,7 +308,7 @@
       '<div class="ep-outils" id="ep-outils"></div>' +
     "</section>" +
 
-    '<dialog class="dialogue ep-recu" id="ep-recu" aria-labelledby="ep-recu-titre"><div class="dialogue__tete"><h2 id="ep-recu-titre">Reçu fiscal</h2><button type="button" class="bouton bouton--icone bouton--fantome" id="ep-recu-fermer" aria-label="Fermer">' + ico("fermer") + '</button></div>' +
+    '<dialog class="dialogue ep-recu" id="ep-recu" aria-labelledby="ep-recu-titre"><div class="dialogue__tete"><h2 id="ep-recu-titre">Reçu fiscal</h2><button type="button" class="bouton bouton--icone bouton--fantome bouton--fermer" id="ep-recu-fermer" aria-label="Fermer">' + ico("fermer") + '</button></div>' +
       '<div class="dialogue__corps"><canvas id="ep-recu-canvas" width="1080" height="1350" role="img" aria-label="Aperçu du reçu fiscal à partager"></canvas><p class="champ__aide">Image 1080 × 1350 sans donnée personnelle, prête pour WhatsApp ou LinkedIn.</p></div>' +
       '<div class="dialogue__pied"><button type="button" class="bouton" id="ep-recu-partager" hidden>' + ico("partager") + 'Partager</button><button type="button" class="bouton bouton--plein" id="ep-recu-dl">' + ico("telecharger") + "Télécharger</button></div></dialog>" +
     "</div>";
