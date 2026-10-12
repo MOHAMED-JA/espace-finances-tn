@@ -1454,7 +1454,10 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     }, photo);
     await page.goto(base + "/espace/#recevoir");
     await page.reload();
-    await page.waitForSelector("#dlg-recevoir[open]");
+    await page.waitForSelector("#dlg-recevoir[open]", { timeout: 20000 }).catch(async () => {
+      const d = await page.evaluate(async () => [location.href, await caches.has("orbite-recus"), Array.from(document.querySelectorAll(".toast")).map((t) => t.textContent), Array.from(document.querySelectorAll("dialog[open]")).map((x) => x.id), !!window.OrbiteRecevoir, window.Orbite && window.Orbite.pret]);
+      throw new Error("fenêtre du document reçu absente : " + JSON.stringify(d));
+    });
     await page.waitForSelector("#recevoir-choix:not([hidden])");
     assert(await page.isHidden("#recevoir-resultat"), "photo : pas de supposition");
     assert((await page.$$('#recevoir-choix [data-recevoir]:not([hidden])')).length === 3, "photo : les trois choix");
