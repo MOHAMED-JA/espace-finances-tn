@@ -454,6 +454,19 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
 - **Confidentialité** : nouvelle rubrique « Assistant Orbite (IA) ».
 - **Tests** : unitaires 308, e2e 26/26 (le faux Supabase répond et garde la dernière requête ; on vérifie qu'aucune adresse e-mail n'est transmise), axe sans violation.
 
+## 3 quatersexagies. Vidéo promotionnelle 45 s « Robuste. Précise. Tunisienne. » (12 oct., livrée)
+
+- **Demande** : vidéo moderne qui donne l'impression de robustesse d'une application unique en Tunisie, avec des nouveautés en continu. Choix : **45 s, 16:9 seulement (YouTube et LinkedIn)**, **musique + textes animés** (français + touche de darija). Storyboard validé dans la maquette https://claude.ai/artifact/DkMd6TSJQBiCpzgR7TN4Sb.
+- **Livrable** : `orbite-promo-45s.mp4` envoyé à l'utilisateur (1920 × 1080, 60 i/s, H.264 2 passes 4,7 Mb/s + AAC 192 k, −14 LUFS, 26,5 Mo : l'envoi est limité à 30 Mo). Original CRF 16 (81 Mo) régénérable. **Non versionné** (`.gitignore` : `*.mp4`, aperçus, `.wav`).
+- **Sources** `promo/video2/` (régénérables) :
+  - `captures.js` : vraies captures (faux Supabase, faux Turnstile, `bypassCSP` pour masquer toasts et visite) avec un **profil fictif** « Aziz Démo » (2 700 + 300 DT brut, célibataire, embauché en 2014, crédit auto fin avril 2029) ; écrit `captures/*.png` et `chiffres.json` (valeurs calculées par Orbite) ; la fiche de paie lue est celle des tests (`e2e/fixtures`), photo recadrée dans `captures/fiche-photo.png` ;
+  - `scene.html` : reprend le moteur de `promo/video` (fond cosmique, verre, slam, logo, CTA, signature) + 10 nouvelles scènes et un drapeau tunisien qui flotte (40 bandes en vague) ; `render(t)` déterministe ;
+  - `rendu.js h all 60 sortie.mp4` (4 onglets, ~4 min) ou `rendu.js h preview t…` ;
+  - `musique.py` : 120 BPM, la mineur, cadence finale fa–sol–do ; intro avec impacts sur « Un salaire. » (0,25 s) et « Mille décisions. » (1,75 s), demi-temps au logo (4–8), drop 8–22, respiration 22–30, roulement + second drop 30–40, final 40–45 ; signaux d'interface calés sur les lignes et les pastilles.
+  - Assemblage : `ffmpeg -i images.mp4 -i musique.wav -c:v copy -af loudnorm=I=-14:TP=-1.5:LRA=11 -c:a aac -b:a 256k -shortest -movflags +faststart`.
+- **Scènes** : accroche → logo + drapeau (« Conçue en Tunisie, pour la Tunisie. », « Kol chay wadhe7. ») → au millime (3 000 brut → 2 161,884 DT net, CNSS 290,400, IRPP 535,001, CSS 12,715) → fiche de paie lue sur l'appareil (« Rien n'est envoyé ») → contrôle (IRPP +19,999 DT) → crédit (avril 2029, 680 → 1 200 DT/mois) → pouvoir d'achat (−41,2 % depuis 2015, « il faudrait 5 105 DT brut ») → mur « Solide. Précise. Vérifiée. » (8 garanties exactes) → « Et ce n'est que le début. » (nouveautés en orbite) → CTA, adresse, « Powered by Mohamed Aziz Jaouadi ».
+- Règle tenue : **aucune mention de prix, d'essai, d'offre ni de parrainage**. Chiffres tous issus des captures et calculs d'Orbite.
+
 ## 3 tersexagies. Drapeau tunisien animé et visite guidée en deux chapitres (12 oct., livré)
 
 - **Demande** : un petit drapeau tunisien animé à côté du logo (accueil, connexion, puis Espace) ; visite guidée à mettre à jour avec toutes les nouveautés. Choix : drapeau qui **flotte doucement** ; visite en **deux chapitres**. Maquette validée : https://claude.ai/artifact/DkMd6TSJQBiCpzgR7TN4Sb.

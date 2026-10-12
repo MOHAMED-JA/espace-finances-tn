@@ -1,0 +1,34 @@
+{
+  "netMensuel": 2161.884,
+  "brutMensuel": 3000,
+  "prenom": "Aziz",
+  "controle": [
+    [
+      "Cotisations CNSS",
+      "290,400",
+      "290,400",
+      "✓"
+    ],
+    [
+      "Impôt (IRPP)",
+      "555,000",
+      "535,001",
+      "+19,999"
+    ],
+    [
+      "CSS",
+      "12,715",
+      "12,715",
+      "✓"
+    ],
+    [
+      "Net à payer",
+      "2 141,885",
+      "2 161,884",
+      "−19,999"
+    ]
+  ],
+  "phrase": "Votre brut est passé de 2 600 à 3 000 DT, mais les prix ont augmenté plus vite. Pour garder le pouvoir d'achat de 2015, il faudrait aujourd'hui 5 105 DT brut, soit 2 105 DT de plus par mois : un argument chiffré pour votre prochain entretien. (Inflation 2026 provisoire.)",
+  "pouvoir": "−35,3 %",
+  "retraite": "2 162"
+}
