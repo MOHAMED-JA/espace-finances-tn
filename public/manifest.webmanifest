@@ -15,9 +15,9 @@
     { "src": "/orbite/icone-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Mon orbite", "url": "/espace/#orbite" },
-    { "name": "Salaire", "url": "/espace/#salaire" },
-    { "name": "Épargne vie & CEA", "url": "/espace/#epargne" },
-    { "name": "Crédit", "url": "/espace/#credit" }
+    { "name": "Mettre à jour mon salaire", "short_name": "Salaire", "description": "Nouveau montant et mois d'effet", "url": "/espace/#profil?section=salaire&salaire=1", "icons": [{ "src": "/orbite/raccourcis/salaire.png", "sizes": "96x96", "type": "image/png" }] },
+    { "name": "Dossier banque", "short_name": "Dossier", "description": "PDF à remettre au conseiller", "url": "/espace/#credit?dossier=1", "icons": [{ "src": "/orbite/raccourcis/dossier.png", "sizes": "96x96", "type": "image/png" }] },
+    { "name": "Mon orbite", "short_name": "Orbite", "description": "Vue d'ensemble", "url": "/espace/#orbite", "icons": [{ "src": "/orbite/raccourcis/orbite.png", "sizes": "96x96", "type": "image/png" }] },
+    { "name": "Ma progression", "short_name": "Progression", "description": "Pouvoir d'achat, objectifs, retraite", "url": "/espace/#progression", "icons": [{ "src": "/orbite/raccourcis/progression.png", "sizes": "96x96", "type": "image/png" }] }
   ]
 }

@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="/espace/annee.css">
   <link rel="stylesheet" href="/espace/fiche.css">
   <link rel="stylesheet" href="/espace/dossier.css">
+  <link rel="stylesheet" href="/espace/palette.css">
   <link rel="stylesheet" href="/orbite/signature.css">
   <script src="/commun/config.js"></script>
   <script src="/commun/garde.js"></script>
@@ -87,6 +88,7 @@
         </a>
         <p class="barre__titre" id="barre-titre" aria-hidden="true">Mon orbite</p>
         <span class="barre__etat temoin" id="etat-enregistrement" hidden></span>
+        <button type="button" class="bouton bouton--fantome bouton--petit barre__aide barre__palette" id="palette-ouvrir" aria-label="Rechercher ou agir (Ctrl K)" title="Rechercher ou agir : Ctrl K, ou /"><svg aria-hidden="true"><use href="/orbite/icones.svg#recherche"/></svg><kbd aria-hidden="true">Ctrl K</kbd></button>
         <button type="button" class="bouton bouton--fantome bouton--petit barre__aide" id="aide-visite" aria-label="Guide : revoir la visite guidée" title="Revoir la visite guidée"><svg aria-hidden="true"><use href="/orbite/icones.svg#boussole"/></svg><span class="barre__aide-lib" aria-hidden="true">Guide</span></button>
         <a class="pastille-acces" id="pastille-acces" href="#abonnement" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#couronne"/></svg><span id="pastille-acces-lib"></span></a>
         <div class="barre__actions" id="barre-actions" hidden>
@@ -1557,6 +1559,17 @@
     </form>
   </dialog>
 
+  <!-- Palette : Ctrl K, « / » ou la loupe de la barre ; quelques lettres pour sauter n'importe où -->
+  <dialog class="dialogue palette" id="dlg-palette" aria-label="Rechercher ou agir">
+    <div class="palette__saisie">
+      <svg aria-hidden="true"><use href="/orbite/icones.svg#recherche"/></svg>
+      <input type="text" id="palette-q" placeholder="Où aller, que faire ? (ex. crédit, salaire, dossier, retraite…)" autocomplete="off" spellcheck="false" enterkeyhint="go" role="combobox" aria-expanded="true" aria-controls="palette-liste" aria-autocomplete="list" aria-label="Rechercher une vue, une section ou une action">
+      <kbd aria-hidden="true">Esc</kbd>
+    </div>
+    <ul class="palette__liste" id="palette-liste" role="listbox" aria-label="Résultats"></ul>
+    <p class="palette__pied"><span><kbd>↑</kbd> <kbd>↓</kbd> choisir</span><span><kbd>Entrée</kbd> ouvrir</span><span><kbd>Esc</kbd> fermer</span><span>Une phrase entière ? Elle part à l'Assistant.</span></p>
+  </dialog>
+
   <!-- Dossier banque : PDF à remettre au conseiller, fabriqué sur l'appareil -->
   <dialog class="dialogue dialogue--large dossier" id="dlg-dossier" aria-labelledby="db-titre">
     <form method="dialog" id="form-dossier" novalidate>
@@ -1807,6 +1820,7 @@
   <script src="/espace/js/fiche-calcul.js"></script>
   <script src="/espace/js/dossier-calcul.js"></script>
   <script src="/espace/js/vue-dossier.js"></script>
+  <script src="/espace/js/palette.js"></script>
   <script src="/espace/js/vue-fiche.js"></script>
   <script src="/espace/js/rappels-calcul.js"></script>
   <script src="/espace/js/nouveautes.js"></script>

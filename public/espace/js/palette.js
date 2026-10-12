@@ -1,0 +1,195 @@
+/*
+ * Orbite — palette de commandes (maquette validée le 12 oct. 2026). Ctrl/⌘ + K, « / » hors d'un champ, ou la loupe de
+ * la barre ouvrent une fenêtre : quelques lettres suffisent pour sauter à une vue, une section ou une action, ou pour
+ * poser une question à l'Assistant. Recherche sans accents, par morceaux de mots, avec quelques mots de darija.
+ * Palette vide : les 3 derniers choix (identifiants seulement, gardés sur l'appareil) et les actions du moment.
+ * Aucun chiffre du profil n'apparaît ici. CSP stricte : aucun style en ligne.
+ */
+(function () {
+  "use strict";
+  var O = window.Orbite, doc = document;
+  if (!O) return;
+  var $ = O.$, dlg = $("dlg-palette");
+  if (!dlg) return;
+  var champ = $("palette-q"), liste = $("palette-liste");
+  var CLE_RECENTS = "orbite_palette_recents";
+
+  /* ---------- Catalogue ---------- */
+  function vue(id, hash, titre, sous, mots, teinte) { return { id: id, groupe: "Vues", titre: titre, sous: sous, mots: mots, teinte: teinte, fin: hash, faire: function () { aller(hash); } }; }
+  function section(id, hash, titre, sous, mots, teinte) { return { id: id, groupe: "Sections", titre: titre, sous: sous, mots: mots, teinte: teinte, fin: hash, faire: function () { aller(hash); } }; }
+  function action(id, titre, sous, mots, faire) { return { id: id, groupe: "Actions", titre: titre, sous: sous, mots: mots, teinte: "action", fin: "Entrée", faire: faire }; }
+
+  /* Même adresse qu'actuellement : on réaffiche la vue (le navigateur ignorerait le changement d'adresse). */
+  function aller(hash) { if (location.hash === hash) O.enregistrerModule(O.lireRoute().vue); else location.hash = hash; }
+  /* Une action sur une autre vue : on y va, puis on agit une fois la vue affichée. */
+  function surVue(nom, fn) {
+    var r = O.lireRoute();
+    if (r.vue === nom) { fn(); return; }
+    var une = function (e) { if (e.detail.vue !== nom) return; doc.removeEventListener("orbite:vue", une); setTimeout(fn, 80); };
+    doc.addEventListener("orbite:vue", une);
+    location.hash = "#" + nom;
+  }
+  function cliquer(id) { var b = $(id); if (b && !b.disabled) b.click(); }
+
+  function catalogue() {
+    var sombre = doc.documentElement.getAttribute("data-theme") !== "light";
+    var expert = O.expert(), retraite = O.profil() && O.profil().activite === "retraite";
+    var L = [
+      vue("v-orbite", "#orbite", "Mon orbite", "Vue d'ensemble", "orbite accueil tableau de bord", "orbite"),
+      vue("v-profil", "#profil", "Mon profil", "Vous, votre salaire, vos crédits", "profil moi compte", "orbite"),
+      vue("v-salaire", "#salaire", retraite ? "Ma pension" : "Salaire", retraite ? "Pension nette, impôt" : "Brut ⇄ net, impôt, augmentation", "salaire paie net brut khedma chhar pension", "salaire"),
+      vue("v-epargne", "#epargne", "Épargne vie & CEA", "Impôt économisé, capital", "epargne assurance vie cea impot dhariba", "epargne"),
+      vue("v-credit", "#credit", "Crédit", "Mensualité, capacité, renégociation", "credit pret banque kridi dyn", "credit"),
+      vue("v-progression", "#progression", "Ma progression", "Pouvoir d'achat, objectifs, retraite", "progression carriere objectifs retraite t9a3od", "orbite"),
+      vue("v-vie", "#vie", "Vie & impôts", "Score, Et si…, optimiseur fiscal", "vie impots scenarios et si fiscal", "epargne"),
+      vue("v-assistant", "#assistant", "Assistant", "Posez une question sur vos chiffres", "assistant question aide", "orbite"),
+      vue("v-simulations", "#simulations", "Mes simulations", "Simulations enregistrées", "simulations enregistrees", "orbite"),
+      vue("v-compte", "#compte", "Paramètres", "Thème, photo, préférences, données", "parametres reglages theme compte", "orbite"),
+      section("s-retraite", "#progression?onglet=retraite", "Retraite", "Ma progression › Retraite", "retraite cnss cnrps pension t9a3od", "orbite"),
+      section("s-objectifs", "#progression?onglet=objectifs", "Objectifs", "Ma progression › Objectifs", "objectifs epargne defis", "orbite"),
+      section("s-annee", "#progression?onglet=annee", "Mon année en orbite", "Ma progression › Mon année", "annee bilan", "orbite"),
+      section("s-credits", "#profil?section=credits", "Mes crédits en cours", "Mon profil › Crédits", "credits en cours profil kridi", "credit"),
+      section("s-historique", "#profil?section=salaire", "Historique du salaire", "Mon profil › Salaire", "historique salaire hausse augmentation", "salaire"),
+      section("s-budget", "#profil?section=budget", "Budget et épargne disponible", "Mon profil › Budget", "budget loyer charges epargne", "epargne"),
+      section("s-banque", "#profil?section=banque", "Ma banque", "Mon profil › Banque", "banque quotite taux", "credit"),
+      section("s-foyer", "#profil?section=foyer", "Mode couple / foyer", "Mon profil › Foyer", "foyer couple conjoint mariage", "orbite"),
+      section("s-fiscal", "#vie?onglet=fiscal", "Optimiseur fiscal", "Vie & impôts › Impôt", "optimiseur fiscal impot 31 decembre dhariba", "epargne"),
+      section("s-etsi", "#vie?onglet=scenarios", "Et si…", "Vie & impôts › Scénarios", "et si scenarios mariage enfant achat", "epargne"),
+      section("s-marge", "#orbite?section=marge", "Calendrier de la marge", "Mon orbite › Marge", "marge calendrier fin credit", "credit"),
+      section("s-preferences", "#compte?onglet=preferences", "Préférences", "Paramètres › Préférences", "preferences theme page ouverture expert", "orbite"),
+      section("s-donnees", "#compte?onglet=donnees", "Mes données", "Paramètres › Données", "donnees export suppression", "orbite"),
+      action("a-salaire", retraite ? "Mettre à jour ma pension" : "Mettre à jour mon salaire", "Nouveau montant et mois d'effet", "mettre a jour salaire augmentation hausse nouveau pension", function () { O.mettreAJourSalaire(); }),
+      action("a-dossier", "Préparer mon dossier banque", "PDF à remettre au conseiller", "dossier banque pdf pret credit kridi", function () { surVue("credit", function () { O.ouvrirDossier(); }); }),
+      action("a-fiche", "Contrôler ma fiche de paie", "Lecture sur l'appareil, sans envoi", "fiche de paie controler verifier bulletin", function () { surVue("salaire", function () { cliquer("fiche-controle"); }); }),
+      action("a-visite", "Revoir la visite guidée", "L'essentiel ou les nouveautés", "visite guide aide nouveautes", function () { cliquer("aide-visite"); }),
+      Object.assign(action("a-theme", sombre ? "Passer en thème clair" : "Passer en thème sombre", "Le thème « Soleil » est dans les Préférences", "theme clair sombre soleil lune nuit jour", function () { cliquer("bascule-theme"); }), { ico: sombre ? "soleil" : "lune" }),
+      action("a-expert", expert ? "Désactiver le mode Expert" : "Activer le mode Expert", "Paie mois par mois, classeur Excel", "mode expert excel csv", function () { O.definirExpert(!O.expert()); O.toast(O.expert() ? "Mode Expert activé." : "Mode Expert désactivé."); }),
+      action("a-export", "Exporter mes données", "Fichier JSON de tout votre profil", "exporter donnees json sauvegarde", function () { aller("#compte?onglet=donnees"); surVue("compte", function () { cliquer("exporter"); }); }),
+      action("a-deconnexion", "Se déconnecter", "", "deconnexion sortir quitter", function () { cliquer("deconnexion"); })
+    ];
+    if (retraite) L = L.filter(function (x) { return x.id !== "a-fiche"; });
+    return L;
+  }
+
+  /* Actions du moment (dates seulement, aucun chiffre du profil). */
+  function moment() {
+    var m = new Date(), mois = m.getMonth(), jour = m.getDate(), L = [];
+    if (mois >= 9 && (mois > 9 || jour >= 15)) {
+      var reste = Math.ceil((new Date(m.getFullYear(), 11, 31) - new Date(m.getFullYear(), mois, jour)) / 864e5);
+      L.push({ id: "m-fiscal", groupe: "En ce moment", titre: "Verser avant le 31 décembre", sous: "Optimiseur fiscal : il reste " + reste + (reste > 1 ? " jours" : " jour"), teinte: "action", fin: "#vie?onglet=fiscal", faire: function () { aller("#vie?onglet=fiscal"); } });
+    }
+    if ((mois === 11 && jour >= 15) || mois === 0) L.push({ id: "m-annee", groupe: "En ce moment", titre: "Mon année en orbite", sous: "Votre bilan de l'année, en cartes", teinte: "orbite", fin: "#progression?onglet=annee", faire: function () { aller("#progression?onglet=annee"); } });
+    return L;
+  }
+
+  /* ---------- Recherche ---------- */
+  function norm(s) { return String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[’']/g, " "); }
+  function recents() { try { return JSON.parse(localStorage.getItem(CLE_RECENTS) || "[]").slice(0, 3); } catch (e) { return []; } }
+  function noterRecent(id) {
+    if (!/^[vsa]-/.test(id)) return;
+    try { localStorage.setItem(CLE_RECENTS, JSON.stringify([id].concat(recents().filter(function (x) { return x !== id; })).slice(0, 3))); } catch (e) {}
+  }
+  function chercher(q) {
+    var cat = catalogue(), nq = norm(q).trim();
+    if (!nq) {
+      var r = [];
+      recents().forEach(function (id) { var e = cat.filter(function (x) { return x.id === id; })[0]; if (e) r.push(Object.assign({}, e, { groupe: "Récents" })); });
+      return r.concat(moment());
+    }
+    var mots = nq.split(/\s+/);
+    var trouves = cat.map(function (e) {
+      var base = norm(e.titre + " " + e.sous + " " + e.mots), t = norm(e.titre);
+      if (!mots.every(function (m) { return base.indexOf(m) !== -1; })) return null;
+      return { e: e, score: t.indexOf(mots[0]) === 0 ? 0 : t.indexOf(mots[0]) >= 0 ? 1 : 2 };
+    }).filter(Boolean);
+    /* Un groupe par titre : le groupe qui a le meilleur résultat passe devant (à égalité : Vues, Sections, Actions). */
+    var ORDRE = { Vues: 0, Sections: 1, Actions: 2 }, meilleur = {};
+    trouves.forEach(function (x) { var g = x.e.groupe; if (meilleur[g] == null || x.score < meilleur[g]) meilleur[g] = x.score; });
+    trouves = trouves.sort(function (a, b) {
+      var ga = a.e.groupe, gb = b.e.groupe;
+      return (meilleur[ga] - meilleur[gb]) || (ORDRE[ga] - ORDRE[gb]) || (a.score - b.score);
+    }).map(function (x) { return x.e; });
+    var phrase = q.trim().split(/\s+/).length >= 3 || !trouves.length;
+    if (phrase && q.trim().length <= 200) {
+      var question = q.trim();
+      trouves.push({ id: "q", groupe: "Assistant", titre: "Demander à l'Assistant : « " + question + " »", sous: "Réponse calculée sur vos chiffres", teinte: "orbite", fin: "Entrée", brut: true,
+        faire: function () { location.hash = "#assistant?q=" + encodeURIComponent(question); } });
+    }
+    return trouves;
+  }
+
+  /* ---------- Rendu ---------- */
+  var resultats = [], sel = 0;
+  function cree(tag, cls, txt) { var e = doc.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  function titreSurligne(b, titre, q) {
+    var n = norm(titre), m = norm(q).trim().split(/\s+/)[0] || "", i = m ? n.indexOf(m) : -1;
+    if (i < 0) { b.textContent = titre; return; }
+    b.appendChild(doc.createTextNode(titre.slice(0, i)));
+    b.appendChild(cree("mark", null, titre.slice(i, i + m.length)));
+    b.appendChild(doc.createTextNode(titre.slice(i + m.length)));
+  }
+  function rendre() {
+    var q = champ.value;
+    resultats = chercher(q);
+    sel = Math.min(sel, Math.max(0, resultats.length - 1));
+    liste.textContent = "";
+    if (!resultats.length) { liste.appendChild(cree("li", "palette__vide", "Rien ne correspond. Essayez un autre mot, ou posez votre question en une phrase.")); champ.removeAttribute("aria-activedescendant"); return; }
+    var groupe = "";
+    resultats.forEach(function (e, i) {
+      if (e.groupe !== groupe) { groupe = e.groupe; var g = cree("li", "palette__groupe", groupe); g.setAttribute("role", "presentation"); liste.appendChild(g); }
+      var li = cree("li", "palette__item palette__item--" + e.teinte);
+      li.id = "palette-opt-" + i; li.setAttribute("role", "option"); li.setAttribute("aria-selected", i === sel ? "true" : "false"); li.setAttribute("data-id", e.id);
+      var ico = cree("span", "palette__ico"), svg = doc.createElementNS("http://www.w3.org/2000/svg", "svg"), use = doc.createElementNS("http://www.w3.org/2000/svg", "use");
+      use.setAttribute("href", "/orbite/icones.svg#" + (e.ico || ICO[e.id] || ICONES[e.teinte])); svg.setAttribute("aria-hidden", "true"); svg.appendChild(use); ico.appendChild(svg);
+      var txt = cree("span", "palette__txt"), b = cree("b");
+      if (e.brut) b.textContent = e.titre; else titreSurligne(b, e.titre, q);
+      txt.appendChild(b); if (e.sous) txt.appendChild(cree("small", null, e.sous));
+      li.appendChild(ico); li.appendChild(txt); li.appendChild(cree("span", "palette__fin", e.fin));
+      li.addEventListener("mousemove", function () { if (sel !== i) { sel = i; majSelection(); } });
+      li.addEventListener("click", function () { choisir(e); });
+      liste.appendChild(li);
+    });
+    majSelection();
+  }
+  var ICONES = { orbite: "orbite", salaire: "salaire", epargne: "epargne", credit: "credit", action: "etoile" };
+  /* Une icône par entrée : la couleur dit le module, le dessin dit la chose. */
+  var ICO = { "v-orbite": "orbite", "v-profil": "profil", "v-salaire": "salaire", "v-epargne": "epargne", "v-credit": "credit", "v-progression": "hausse", "v-vie": "bouclier", "v-assistant": "etoile", "v-simulations": "liste", "v-compte": "compte", "s-retraite": "horloge", "s-objectifs": "cible", "s-annee": "etoile", "s-credits": "credit", "s-historique": "hausse", "s-budget": "epargne", "s-banque": "credit", "s-foyer": "profil", "s-fiscal": "epargne", "s-etsi": "comparer", "s-marge": "horloge", "s-preferences": "outils", "s-donnees": "telecharger", "a-salaire": "hausse", "a-dossier": "fiche", "a-fiche": "fiche", "a-visite": "boussole", "a-expert": "outils", "a-export": "telecharger", "a-deconnexion": "sortie", "m-fiscal": "horloge", "m-annee": "etoile" };
+  function majSelection() {
+    liste.querySelectorAll("[role=option]").forEach(function (li, i) { li.setAttribute("aria-selected", i === sel ? "true" : "false"); });
+    var s = liste.querySelector('[aria-selected="true"]');
+    if (s) { champ.setAttribute("aria-activedescendant", s.id); s.scrollIntoView({ block: "nearest" }); }
+  }
+  function choisir(e) {
+    fermer();
+    noterRecent(e.id);
+    try { e.faire(); } catch (er) { if (window.console) console.warn(er); }
+  }
+
+  /* ---------- Ouverture / fermeture ---------- */
+  function ouvrir(texte) {
+    if (dlg.open) return;
+    champ.value = texte || ""; sel = 0;
+    dlg.showModal();
+    rendre();
+    champ.focus();
+  }
+  function fermer() { if (dlg.open) dlg.close(); }
+  function champActif(t) { return t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable); }
+
+  doc.addEventListener("keydown", function (ev) {
+    if ((ev.ctrlKey || ev.metaKey) && !ev.altKey && (ev.key === "k" || ev.key === "K")) { ev.preventDefault(); dlg.open ? fermer() : ouvrir(""); return; }
+    if (dlg.open) {
+      if (ev.key === "ArrowDown") { ev.preventDefault(); sel = Math.min(resultats.length - 1, sel + 1); majSelection(); }
+      else if (ev.key === "ArrowUp") { ev.preventDefault(); sel = Math.max(0, sel - 1); majSelection(); }
+      else if (ev.key === "Enter") { ev.preventDefault(); if (resultats[sel]) choisir(resultats[sel]); }
+      return;
+    }
+    /* « / » hors d'un champ et hors d'une autre fenêtre : ouverture rapide, sans écrire le « / ». */
+    if (ev.key === "/" && !ev.ctrlKey && !ev.metaKey && !ev.altKey && !champActif(ev.target) && !doc.querySelector("dialog[open]") && !O.profilVierge()) { ev.preventDefault(); ouvrir(""); }
+  });
+  champ.addEventListener("input", function () { sel = 0; rendre(); });
+  dlg.addEventListener("click", function (ev) { if (ev.target === dlg) fermer(); });
+  $("palette-ouvrir").addEventListener("click", function () { ouvrir(""); });
+
+  O.ouvrirPalette = ouvrir;
+})();

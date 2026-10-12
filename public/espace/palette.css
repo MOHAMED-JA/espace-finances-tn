@@ -1,0 +1,42 @@
+/* Orbite — palette de commandes (Ctrl + K, « / », loupe de la barre). */
+
+/* Loupe dans la barre : icône seule sur téléphone, « Ctrl K » rappelé sur PC. */
+.barre__palette { gap: 8px; }
+.barre__palette:hover svg, .barre__palette:focus-visible svg { transform: none; }
+.barre__palette kbd { display: none; font-family: var(--mono); font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 6px; border: 1px solid var(--filet-fort); color: var(--encre-3); }
+@media (min-width: 1024px) { .barre__palette kbd { display: inline-block; } }
+
+dialog.palette { width: min(620px, calc(100vw - 24px)); max-height: min(78vh, 640px); margin-top: max(48px, 8vh); padding: 0; display: none; grid-template-rows: auto minmax(0, 1fr) auto; }
+dialog.palette[open] { display: grid; animation: palette-entre 180ms var(--sortie); }
+@keyframes palette-entre { from { opacity: 0; transform: translateY(-6px) scale(.98); } }
+dialog.palette::backdrop { background: rgba(7, 9, 15, .52); backdrop-filter: blur(4px); }
+/* Téléphone : feuille basse. */
+@media (max-width: 640px) { dialog.palette { margin: auto 12px 12px; max-height: 70vh; width: calc(100vw - 24px); } }
+
+.palette__saisie { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--filet); }
+.palette__saisie svg { width: 18px; height: 18px; flex: none; color: var(--encre-3); }
+.palette__saisie input { flex: 1; min-width: 0; border: 0; background: transparent; font: 500 16px var(--texte); color: var(--encre); outline: none; }
+.palette__saisie input::placeholder { color: var(--encre-3); }
+.palette__saisie kbd { font-family: var(--mono); font-size: 11px; color: var(--encre-3); border: 1px solid var(--filet-fort); border-radius: 6px; padding: 1px 6px; }
+
+.palette__liste { list-style: none; margin: 0; padding: 6px; overflow: auto; }
+.palette__groupe { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--encre-3); padding: 10px 10px 4px; }
+.palette__item { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 12px; cursor: pointer; }
+.palette__item[aria-selected="true"] { background: var(--surface-2); }
+.palette__ico { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--surface-2); color: var(--encre); }
+.palette__item[aria-selected="true"] .palette__ico { background: var(--surface-3); }
+.palette__ico svg { width: 17px; height: 17px; }
+.palette__item--salaire .palette__ico { color: var(--salaire); }
+.palette__item--credit .palette__ico { color: var(--credit); }
+.palette__item--epargne .palette__ico { color: var(--epargne); }
+.palette__item--action .palette__ico { color: var(--ambre); }
+.palette__txt { display: grid; min-width: 0; }
+.palette__txt b { font-weight: 600; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.palette__txt small { color: var(--encre-3); font-size: 12.5px; }
+.palette__txt mark { background: transparent; color: var(--sel, var(--salaire)); font-weight: 700; }
+.palette__fin { font-family: var(--mono); font-size: 12px; color: var(--encre-3); white-space: nowrap; }
+.palette__vide { padding: 22px 14px; color: var(--encre-3); text-align: center; font-size: 14px; }
+.palette__pied { display: flex; gap: 14px; flex-wrap: wrap; padding: 8px 16px; border-top: 1px solid var(--filet); font-size: 12px; color: var(--encre-3); }
+.palette__pied kbd { font-family: var(--mono); font-size: 11px; border: 1px solid var(--filet-fort); border-radius: 5px; padding: 0 5px; color: var(--encre-2); }
+@media (max-width: 640px) { .palette__pied span:not(:last-child) { display: none; } .palette__fin { display: none; } }
+@media (prefers-reduced-motion: reduce) { dialog.palette[open] { animation: none; } }
