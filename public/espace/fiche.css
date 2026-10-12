@@ -136,8 +136,9 @@ select.fiche-val { appearance: none; cursor: pointer; text-align: left; padding-
 /* En-tête du module Salaire : pastille et titre sur la même ligne, le bouton passe dessous s'il manque de place. */
 #vue-salaire .module__tete { flex-wrap: wrap; }
 #vue-salaire .module__tete > div { flex: 1 1 260px; min-width: 0; }
-.module__action { margin-left: auto; }
-#vue-salaire.module--pension .module__action { display: none; }
+.module__action, .module__actions { margin-left: auto; }
+.module__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+#vue-salaire.module--pension .module__actions { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .fiche__ecran, .fiche-feuille__l { animation: none; }

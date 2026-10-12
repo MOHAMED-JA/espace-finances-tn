@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="/espace/annee.css">
   <link rel="stylesheet" href="/espace/fiche.css">
   <link rel="stylesheet" href="/espace/dossier.css">
+  <link rel="stylesheet" href="/espace/negociateur.css">
   <link rel="stylesheet" href="/espace/palette.css">
   <link rel="stylesheet" href="/orbite/signature.css">
   <script src="/commun/config.js"></script>
@@ -495,7 +496,10 @@
           <header class="vue__tete module__tete">
             <span class="module__pastille" aria-hidden="true"><svg><use href="/orbite/icones.svg#salaire"/></svg></span>
             <div><h1 id="titre-salaire">Salaire</h1><p class="vue__sous" id="sous-salaire">Brut ⇄ net, tranche d'impôt, augmentation, coût employeur et offres. Barèmes <span data-annee>2026</span>.</p></div>
-            <button type="button" class="bouton bouton--petit module__action" id="fiche-controle"><svg aria-hidden="true"><use href="/orbite/icones.svg#fiche"/></svg>Contrôler ma fiche de paie</button>
+            <div class="module__actions">
+              <button type="button" class="bouton bouton--petit" id="nego-ouvrir"><svg aria-hidden="true"><use href="/orbite/icones.svg#hausse"/></svg>Préparer ma négociation</button>
+              <button type="button" class="bouton bouton--petit" id="fiche-controle"><svg aria-hidden="true"><use href="/orbite/icones.svg#fiche"/></svg>Contrôler ma fiche de paie</button>
+            </div>
           </header>
           <section class="pension-vue" id="pension-vue" aria-labelledby="pv-t" hidden>
             <div class="panneau pension-vue__saisie">
@@ -1290,6 +1294,11 @@
                 <ol class="pg-etapes" id="pg-etapes"></ol>
                 <div class="pg-actions"><button type="button" class="bouton bouton--fantome bouton--petit" data-hausse><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg>Ajouter une hausse passée</button></div>
               </section>
+              <section class="panneau pg-nego" id="pg-nego-carte" aria-labelledby="pg-t-nego" hidden>
+                <h2 id="pg-t-nego">Prêt à demander plus ?</h2>
+                <p class="panneau__sous">Dites ce que vous voulez toucher : Orbite calcule le brut à demander, vos trois paliers, vos arguments chiffrés et une note à télécharger.</p>
+                <div class="pg-actions"><button type="button" class="bouton bouton--plein bouton--petit" id="pg-nego"><svg aria-hidden="true"><use href="/orbite/icones.svg#hausse"/></svg>Préparer ma négociation</button></div>
+              </section>
             </div>
           </div>
 
@@ -1570,6 +1579,141 @@
     <p class="palette__pied"><span><kbd>↑</kbd> <kbd>↓</kbd> choisir</span><span><kbd>Entrée</kbd> ouvrir</span><span><kbd>Esc</kbd> fermer</span><span>Une phrase entière ? Elle part à l'Assistant.</span></p>
   </dialog>
 
+  <!-- Négociateur de salaire : brut à demander, paliers, arguments, note PDF (maquette validée le 12 oct. 2026) -->
+  <dialog class="dialogue nego" id="dlg-nego" aria-labelledby="ng-titre">
+    <form method="dialog" id="form-nego" novalidate>
+      <div class="dialogue__tete nego__tete">
+        <div><h2 id="ng-titre">Préparer ma négociation</h2><p class="nego__sous">Dites ce que vous voulez toucher. Orbite trouve le brut à demander, vos trois paliers et des arguments chiffrés.</p></div>
+        <div class="bascule nego__modes" role="radiogroup" aria-label="Situation">
+          <label><input type="radio" name="ng-mode" value="hausse" checked><span>Augmentation</span></label>
+          <label><input type="radio" name="ng-mode" value="offre"><span>Offre reçue</span></label>
+          <i class="bascule__pastille" aria-hidden="true"></i>
+        </div>
+      </div>
+      <div class="dialogue__corps nego__corps">
+        <div class="nego__reglages">
+          <div class="nego__bloc">
+            <p class="nego__lib">Repris de votre profil</p>
+            <dl class="nego__situation" id="ng-situation"></dl>
+            <a class="nego__lien" href="#profil?section=salaire" id="ng-profil">Compléter dans mon profil</a>
+          </div>
+          <div class="nego__bloc" data-ng="hausse">
+            <p class="nego__lib" id="ng-vise-lib">Ce que je vise</p>
+            <div class="bascule nego__vise" role="radiogroup" aria-labelledby="ng-vise-lib">
+              <label><input type="radio" name="ng-vise" value="pct" checked><span>+ % net</span></label>
+              <label><input type="radio" name="ng-vise" value="net"><span>Net en DT</span></label>
+              <label><input type="radio" name="ng-vise" value="brut"><span>Brut en DT</span></label>
+              <i class="bascule__pastille" aria-hidden="true"></i>
+            </div>
+            <div class="champ">
+              <label class="cache" for="ng-objectif" id="ng-objectif-lib">Hausse du net visée</label>
+              <div class="saisie"><input id="ng-objectif" type="text" inputmode="decimal" autocomplete="off" aria-describedby="ng-objectif-aide"><span class="saisie__unite" id="ng-unite">% net</span></div>
+              <input type="range" id="ng-curseur" class="nego__curseur" aria-labelledby="ng-objectif-lib">
+              <p class="champ__aide" id="ng-objectif-aide" aria-live="polite"></p>
+              <p class="erreur-champ" id="ng-erreur" role="alert" hidden></p>
+            </div>
+          </div>
+          <div class="nego__bloc" data-ng="hausse">
+            <div class="champ">
+              <label for="ng-marge">Marge de négociation</label>
+              <div class="saisie"><input id="ng-marge" type="text" inputmode="decimal" maxlength="4" autocomplete="off"><span class="saisie__unite">%</span></div>
+              <p class="champ__aide">Vous annoncez un peu plus que votre cible : la discussion a de la place pour redescendre vers elle. De 0 à 25 %.</p>
+            </div>
+          </div>
+          <div class="nego__bloc" data-ng="offre" hidden>
+            <p class="nego__lib">L'offre reçue</p>
+            <div class="grille-champs">
+              <div class="champ"><label for="ng-offre-brut">Brut par mois</label><div class="saisie"><input id="ng-offre-brut" type="text" inputmode="decimal" autocomplete="off"><span class="saisie__unite">DT</span></div></div>
+              <div class="champ"><label for="ng-offre-salaires">Salaires par an</label><div class="saisie"><input id="ng-offre-salaires" type="text" inputmode="numeric" maxlength="2" autocomplete="off"></div></div>
+            </div>
+            <p class="champ__aide">Même situation de famille que dans votre profil ; les primes de votre employeur actuel ne sont pas reprises.</p>
+            <p class="erreur-champ" id="ng-offre-erreur" role="alert" hidden></p>
+          </div>
+          <div class="nego__bloc" data-ng="hausse">
+            <div class="champ">
+              <label for="ng-reussites">Mes réussites <span class="champ__facultatif">pour la note</span></label>
+              <textarea id="ng-reussites" rows="3" maxlength="720" spellcheck="true" placeholder="Projet livré en avance&#10;Nouveau client signé"></textarea>
+              <p class="champ__aide">Une par ligne, cinq au plus. Elles restent sur cet appareil et n'apparaissent que dans votre note.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="nego__verdict" aria-live="polite">
+          <div class="nego__heros" data-ng="hausse">
+            <p class="nego__sur">Votre cible</p>
+            <p class="nego__grand"><b class="chiffre" id="ng-cible"></b><small>DT brut par mois</small></p>
+            <p class="nego__ligne" id="ng-ligne"></p>
+          </div>
+          <p class="nego__alerte" id="ng-sous-plancher" data-ng="hausse" hidden></p>
+          <div class="nego__garde" data-ng="hausse">
+            <p class="nego__lib" id="ng-garde-lib"></p>
+            <div class="nego__barre" aria-hidden="true"><i class="ng-g-net" id="ng-g-net"></i><i class="ng-g-cnss" id="ng-g-cnss"></i><i class="ng-g-irpp" id="ng-g-irpp"></i><i class="ng-g-css" id="ng-g-css"></i></div>
+            <p class="nego__legende" id="ng-g-leg"></p>
+          </div>
+          <section class="nego__section" data-ng="hausse" aria-labelledby="ng-t-paliers">
+            <div class="nego__section-t"><h3 id="ng-t-paliers">Vos trois paliers</h3><span>Du salaire d'aujourd'hui au chiffre à annoncer</span></div>
+            <div class="nego__echelle" aria-hidden="true">
+              <span class="nego__rail"></span>
+              <span class="nego__jalon nego__jalon--actuel" id="ng-j-actuel"><em>Aujourd'hui</em><i></i></span>
+              <span class="nego__jalon nego__jalon--plancher" id="ng-j-plancher"><em>Plancher</em><i></i></span>
+              <span class="nego__jalon nego__jalon--cible" id="ng-j-cible"><em>Cible</em><i></i></span>
+              <span class="nego__jalon nego__jalon--ancre" id="ng-j-ancre"><em>Ancre</em><i></i></span>
+            </div>
+            <div class="nego__cartes">
+              <div class="nego__carte nego__carte--plancher"><p class="nego__carte-t">Plancher : ne pas accepter moins</p><p class="nego__carte-v chiffre" id="ng-plancher"></p><p class="nego__carte-d" id="ng-plancher-d"></p></div>
+              <div class="nego__carte nego__carte--cible"><p class="nego__carte-t">Cible : ce que vous voulez</p><p class="nego__carte-v chiffre" id="ng-cible2"></p><p class="nego__carte-d" id="ng-cible-d"></p></div>
+              <div class="nego__carte nego__carte--ancre"><p class="nego__carte-t">Ancre : le chiffre à annoncer</p><p class="nego__carte-v chiffre" id="ng-ancre"></p><p class="nego__carte-d" id="ng-ancre-d"></p></div>
+            </div>
+          </section>
+          <section class="nego__section" data-ng="hausse" aria-labelledby="ng-t-alt">
+            <div class="nego__section-t"><h3 id="ng-t-alt">Si le salaire mensuel bloque</h3><span>Même gain net sur la première année</span></div>
+            <div class="nego__cartes">
+              <div class="nego__carte"><p class="nego__carte-t">Une prime unique</p><p class="nego__carte-v chiffre" id="ng-prime"></p><p class="nego__carte-d">brut, versée une fois dans l'année</p></div>
+              <div class="nego__carte" id="ng-plus-carte"><p class="nego__carte-t" id="ng-plus-t"></p><p class="nego__carte-v chiffre" id="ng-plus"></p><p class="nego__carte-d" id="ng-plus-d"></p></div>
+              <div class="nego__carte"><p class="nego__carte-t">En deux temps</p><p class="nego__carte-v chiffre" id="ng-deux"></p><p class="nego__carte-d" id="ng-deux-d"></p></div>
+            </div>
+          </section>
+          <section class="nego__section" data-ng="hausse" aria-labelledby="ng-t-arg">
+            <div class="nego__section-t"><h3 id="ng-t-arg">Vos arguments chiffrés</h3><span>Seulement des faits vérifiables</span></div>
+            <ul class="nego__arguments" id="ng-arguments"></ul>
+          </section>
+          <div class="nego__phrase" data-ng="hausse">
+            <p id="ng-phrase"></p>
+            <div class="nego__phrase-pied"><span>Phrase prête, à dire ou à écrire. Elle annonce l'ancre, jamais le plancher.</span><button type="button" class="bouton bouton--petit nego__copier" id="ng-copier"><svg aria-hidden="true"><use href="/orbite/icones.svg#copier"/></svg><span id="ng-copier-lib">Copier</span></button></div>
+          </div>
+          <fieldset class="nego__section nego__note" data-ng="hausse">
+            <legend class="nego__lib">Ma note (PDF)</legend>
+            <div class="bascule nego__version" role="radiogroup" aria-label="Version de la note">
+              <label><input type="radio" name="ng-version" value="moi" checked><span>Pour moi</span></label>
+              <label><input type="radio" name="ng-version" value="responsable"><span>Pour mon responsable</span></label>
+              <i class="bascule__pastille" aria-hidden="true"></i>
+            </div>
+            <p class="champ__aide" id="ng-version-aide"></p>
+          </fieldset>
+
+          <section class="nego__section" data-ng="offre" hidden aria-labelledby="ng-t-offre">
+            <div class="nego__section-t"><h3 id="ng-t-offre">L'offre, en net</h3><span>Comparée à votre salaire actuel</span></div>
+            <div class="nego__cartes nego__cartes--2">
+              <div class="nego__carte"><p class="nego__carte-t">Net par mois</p><p class="nego__carte-v chiffre" id="ng-o-net"></p><p class="nego__carte-d" id="ng-o-net-d"></p></div>
+              <div class="nego__carte"><p class="nego__carte-t">Net sur l'année</p><p class="nego__carte-v chiffre" id="ng-o-an"></p><p class="nego__carte-d" id="ng-o-an-d"></p></div>
+            </div>
+          </section>
+          <div class="nego__heros" data-ng="offre" hidden>
+            <p class="nego__sur" id="ng-o-sur"></p>
+            <p class="nego__grand"><b class="chiffre" id="ng-o-contre"></b><small id="ng-o-contre-lib"></small></p>
+            <p class="nego__ligne" id="ng-o-contre-d"></p>
+          </div>
+        </div>
+      </div>
+      <div class="dialogue__pied nego__pied">
+        <p class="nego__prive" data-ng="hausse"><svg aria-hidden="true"><use href="/orbite/icones.svg#cadenas"/></svg>Après l'entretien, « J'ai obtenu… » met à jour votre salaire avec son mois d'effet.</p>
+        <button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Fermer</button>
+        <button type="button" class="bouton" id="ng-obtenu" data-ng="hausse">J'ai obtenu…</button>
+        <button type="submit" class="bouton bouton--plein" value="ok" id="ng-telecharger" data-ng="hausse"><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg><span class="nego__long">Télécharger ma note</span><span class="nego__court">Ma note</span></button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- Dossier banque : PDF à remettre au conseiller, fabriqué sur l'appareil -->
   <dialog class="dialogue dialogue--large dossier" id="dlg-dossier" aria-labelledby="db-titre">
     <form method="dialog" id="form-dossier" novalidate>
@@ -1819,7 +1963,9 @@
   <script src="/espace/js/fiche-lecture.js"></script>
   <script src="/espace/js/fiche-calcul.js"></script>
   <script src="/espace/js/dossier-calcul.js"></script>
+  <script src="/espace/js/negociateur-calcul.js"></script>
   <script src="/espace/js/vue-dossier.js"></script>
+  <script src="/espace/js/vue-negociateur.js"></script>
   <script src="/espace/js/palette.js"></script>
   <script src="/espace/js/vue-fiche.js"></script>
   <script src="/espace/js/rappels-calcul.js"></script>

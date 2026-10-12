@@ -59,6 +59,7 @@
       section("s-preferences", "#compte?onglet=preferences", "Préférences", "Paramètres › Préférences", "preferences theme page ouverture expert", "orbite"),
       section("s-donnees", "#compte?onglet=donnees", "Mes données", "Paramètres › Données", "donnees export suppression", "orbite"),
       action("a-salaire", retraite ? "Mettre à jour ma pension" : "Mettre à jour mon salaire", "Nouveau montant et mois d'effet", "mettre a jour salaire augmentation hausse nouveau pension", function () { O.mettreAJourSalaire(); }),
+      action("a-nego", "Préparer ma négociation", "Brut à demander, paliers, arguments", "negociation negocier augmentation hausse demander offre emploi zyeda", function () { surVue("salaire", function () { O.ouvrirNegociation(); }); }),
       action("a-dossier", "Préparer mon dossier banque", "PDF à remettre au conseiller", "dossier banque pdf pret credit kridi", function () { surVue("credit", function () { O.ouvrirDossier(); }); }),
       action("a-fiche", "Contrôler ma fiche de paie", "Lecture sur l'appareil, sans envoi", "fiche de paie controler verifier bulletin", function () { surVue("salaire", function () { cliquer("fiche-controle"); }); }),
       action("a-visite", "Revoir la visite guidée", "L'essentiel ou les nouveautés", "visite guide aide nouveautes", function () { cliquer("aide-visite"); }),
@@ -68,6 +69,7 @@
       action("a-deconnexion", "Se déconnecter", "", "deconnexion sortir quitter", function () { cliquer("deconnexion"); })
     ];
     if (retraite) L = L.filter(function (x) { return x.id !== "a-fiche"; });
+    if (!O.negociationPossible || !O.negociationPossible()) L = L.filter(function (x) { return x.id !== "a-nego"; });
     return L;
   }
 
@@ -153,7 +155,7 @@
   }
   var ICONES = { orbite: "orbite", salaire: "salaire", epargne: "epargne", credit: "credit", action: "etoile" };
   /* Une icône par entrée : la couleur dit le module, le dessin dit la chose. */
-  var ICO = { "v-orbite": "orbite", "v-profil": "profil", "v-salaire": "salaire", "v-epargne": "epargne", "v-credit": "credit", "v-progression": "hausse", "v-vie": "bouclier", "v-assistant": "etoile", "v-simulations": "liste", "v-compte": "compte", "s-retraite": "horloge", "s-objectifs": "cible", "s-annee": "etoile", "s-credits": "credit", "s-historique": "hausse", "s-budget": "epargne", "s-banque": "credit", "s-foyer": "profil", "s-fiscal": "epargne", "s-etsi": "comparer", "s-marge": "horloge", "s-preferences": "outils", "s-donnees": "telecharger", "a-salaire": "hausse", "a-dossier": "fiche", "a-fiche": "fiche", "a-visite": "boussole", "a-expert": "outils", "a-export": "telecharger", "a-deconnexion": "sortie", "m-fiscal": "horloge", "m-annee": "etoile" };
+  var ICO = { "v-orbite": "orbite", "v-profil": "profil", "v-salaire": "salaire", "v-epargne": "epargne", "v-credit": "credit", "v-progression": "hausse", "v-vie": "bouclier", "v-assistant": "etoile", "v-simulations": "liste", "v-compte": "compte", "s-retraite": "horloge", "s-objectifs": "cible", "s-annee": "etoile", "s-credits": "credit", "s-historique": "hausse", "s-budget": "epargne", "s-banque": "credit", "s-foyer": "profil", "s-fiscal": "epargne", "s-etsi": "comparer", "s-marge": "horloge", "s-preferences": "outils", "s-donnees": "telecharger", "a-salaire": "hausse", "a-nego": "cible", "a-dossier": "fiche", "a-fiche": "fiche", "a-visite": "boussole", "a-expert": "outils", "a-export": "telecharger", "a-deconnexion": "sortie", "m-fiscal": "horloge", "m-annee": "etoile" };
   function majSelection() {
     liste.querySelectorAll("[role=option]").forEach(function (li, i) { li.setAttribute("aria-selected", i === sel ? "true" : "false"); });
     var s = liste.querySelector('[aria-selected="true"]');
