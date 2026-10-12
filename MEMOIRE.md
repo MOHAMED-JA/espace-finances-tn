@@ -713,6 +713,10 @@ Branche `point5`. Choix validés par l'utilisateur (options conseillées) ; règ
 - Accès : rail « Mon mois », onglet « Moi » sur téléphone, Mon profil, Ctrl K (« Noter une dépense », « Calendrier de l'argent »).
 - Icônes ajoutées : `panier`, `calendrier`.
 
+**Corrections après mise en ligne (12 oct.)**
+- Budget : la proposition dépassait le revenu de quelques dinars (vu sur un vrai profil : 2 769 DT prévus pour 2 768 DT), car chaque enveloppe libre était arrondie à la dizaine la plus proche. Désormais : dizaine inférieure, et « Divers » reçoit le reste exact au dinar inférieur ; un test vérifie qu'aucune proposition ne dépasse le revenu, de 0 à 6 000 DT.
+- Visite guidée : le halo est recalé quand la page finit de s'afficher (`ResizeObserver` sur la page et sur la rubrique visée), pas seulement au défilement ou au redimensionnement.
+
 **Barre du haut** : actions secondaires en icône seule de 641 à 1480 px (`confort.css`), pour ne plus déborder.
 
 **Livraison** : SW `orbite-2026-10-12k`, Nouveautés `2026-10-12i`, visite « Les nouveautés » `2026-10-12c` (Mon mois, calendrier, onglets du Crédit en premier) ; « Envoyer un document » passe dans « Pour aller plus loin ». Unitaires 535 ; étapes e2e « crédit, point 5 », « TMM du mois », « Mon mois ».
