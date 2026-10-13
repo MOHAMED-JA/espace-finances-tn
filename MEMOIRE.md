@@ -23,6 +23,7 @@ Exigences :
 
 Règles permanentes de l'utilisateur :
 - toujours donner les liens de l'application dans chaque réponse ;
+- **à la fin de chaque réponse, lister les tâches en instance** (ce que je peux faire, ce qui dépend de l'utilisateur, ce qui attend un événement extérieur) ; s'il n'y en a aucune, écrire « Il n'y a pas de tâches en instance. » (demandé le 13 oct.) ;
 - fusionner soi-même (PR puis merge) ;
 - carte blanche sur les dépôts ;
 - sécurité élevée : dépôt privé, CSP stricte, RLS.
@@ -1628,6 +1629,7 @@ Branche `lot2`. Tout tourne sur l'appareil ; aucune nouvelle table, aucune migra
    - ~~coller dans le SQL Editor les `revoke` des fonctions de rappels~~ : **fait par l'utilisateur le 11 oct.** Vérifié : fonctions serveur exécutables par `service_role` seulement ; fonctions utilisateur refusées à `anon` ; liens par jeton ouverts à `anon` (voulu) ; tables : aucune écriture pour `authenticated`, aucune lecture pour `anon` ; envoi quotidien toujours 200 ;
    - nom de domaine : **écarté (payant)**. Pistes gratuites seulement : renommer le sous-domaine `workers.dev` (gratuit) ; domaine gratuit `eu.org` (validation lente, permettrait aussi d'authentifier l'expéditeur Brevo) ; sinon garder l'existant (emails déjà reçus en boîte de réception) ;
    - facultatif : vérifier l'article 56 de la LF 2026 au JORT (abattement des pensions).
+   - **guide de sa fiche de paie (13 oct.)** : étapes 1 à 3 faites (profil, autres lignes, impôt aligné → net 2 645,392) ; étape 4 donnée : ajouter le crédit mariage (prêt exceptionnel retenu sur la paie, 497,930 DT par mois) dans **Mon profil › Crédits et épargne** seulement, **pas** dans les « retenues sur le net » (sinon compté deux fois). Ses chiffres réels restent dans son compte, jamais dans le dépôt.
    - ~~connexion Google refusée pour un autre compte (11 oct.)~~ : **résolu tout seul**. La femme de l'utilisateur a vu « Accès bloqué : erreur d'autorisation, Erreur 400 : invalid_request » sur accounts.google.com (Android, Chrome) à 17 h 13 ; journaux Supabase : cette tentative s'est arrêtée chez Google (aucun retour `/callback`), puis la suivante, même adresse IP, à 17 h 16, a réussi (`user_signedup`, fournisseur google, 17 h 17). Rien à corriger dans Orbite (appel `signInWithOAuth` standard, d'autres comptes passent). Si cela revient : ouvrir le lien directement dans Chrome (pas depuis Messenger / Facebook), réessayer, ou créer le compte par email + mot de passe ; lire « détails de l'erreur » pour la cause exacte.
 
 ## 5. Pièges connus
