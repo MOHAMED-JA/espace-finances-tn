@@ -192,3 +192,53 @@ test('lecture : lignes reconstruites par position (PDF), cellules séparées par
   assert.deepEqual(lignes.map((l) => l.cellules), [['Retenue CNSS', '9,68 %', '290,400'], ['IRPP', '555,000']]);
   assert.ok(FL.estPdf({ name: 'fiche.PDF', type: '' }) && FL.estImage({ name: 'x', type: 'image/jpeg' }) && !FL.estImage({ name: 'a.txt', type: 'text/plain' }));
 });
+
+/* ---------- Autres lignes de la fiche (13 oct. 2026) : lues, rangées, reprises dans le profil. Fiche fictive. ---------- */
+const AUTRES = ['Bulletin de paie  Période : Octobre 2026', 'Salaire de base  3 000,000', 'Salaire brut  3 000,000',
+  'Retenue CNSS  3 000,000  9,68 %  290,400', 'CAVIS  38,400', 'Assurance groupe  72,000', 'IRPP  480,000', 'CSS  0,5 %  13,000',
+  'Bonification crédit logement  60,000', 'Cotisation syndicale  3,000', 'Assurance auto  95,000', 'Prêt exceptionnel  350,000',
+  'Net à payer  1 718,200'].join('\n');
+
+test('autres lignes : rangées par groupe (impôt, versement, net, crédit) et total qui tombe juste', () => {
+  const r = FC.analyser(AUTRES, OCT);
+  assert.deepEqual(r.autres.map((x) => [x.libelle, x.montant, x.groupe]), [
+    ['CAVIS', 38.4, 'sociales'], ['Assurance groupe', 72, 'sociales'], ['Bonification crédit logement', 60, 'gains'],
+    ['Cotisation syndicale', 3, 'nettes'], ['Assurance auto', 95, 'nettes'], ['Prêt exceptionnel', 350, 'credit']]);
+  assert.equal(r.coherent, true, JSON.stringify(r.alertes));
+  const v = FC.valeurs(r.champs);
+  proche(v.cotisations, 290.4); proche(v.gains, 60); proche(v.autresRetenues, 558.4);
+  assert.equal(FC.groupeAutre('retraite complementaire'), 'sociales');
+  assert.equal(FC.groupeAutre('complement retraite'), 'nettes');
+});
+
+test('autres lignes : contrôle avec les retenues déduites de l\'impôt, puis profil mis à jour (lignes, crédit, impôt aligné)', () => {
+  const r = FC.analyser(AUTRES, OCT), v = FC.valeurs(r.champs);
+  delete v.autresRetenues;
+  Object.assign(v, { sociales: 110.4, nettes: 98 + 350, gains: 60, autres: r.autres.map(({ libelle, montant, groupe }) => ({ libelle, montant, groupe })) });
+  const profil = OC.normaliser(Object.assign(OC.profilParDefaut(), { montant: 3000, sens: 'brut', periode: 'mensuel', secteur: 'prive' }));
+  const k = FC.controle(v, profil, r.famille);
+  /* Les retenues sociales baissent l'impôt d'Orbite comme celui de la fiche ; le net tient compte de toutes les lignes. */
+  const sans = FC.controle(Object.assign({}, v, { sociales: 0 }), profil, r.famille);
+  assert.ok(k.orbite.irpp < sans.orbite.irpp, 'IRPP calculé avec les retenues sociales');
+  const ap = FC.appliquer(v, { salaire: true, primes: true, autres: true, credit: true, impot: true }, profil, OCT);
+  const lf = ap.partiel.lignesFiche;
+  assert.deepEqual(lf.sociales.map((x) => x.libelle), ['CAVIS', 'Assurance groupe']);
+  assert.deepEqual(lf.gains.map((x) => x.montant), [60]);
+  assert.deepEqual(lf.nettes.map((x) => x.libelle), ['Cotisation syndicale', 'Assurance auto']);
+  assert.ok(ap.partiel.credits.some((c) => c.libelle === 'Prêt exceptionnel' && c.mensualite === 350), 'prêt ajouté aux crédits');
+  assert.deepEqual(ap.partiel.impotFiche, { actif: true, irpp: 480, css: 13, brut: 3000 });
+  /* Net d'Orbite avec ces réglages = net de la fiche avant le prêt. */
+  const n = FC.netApres(v, ap.partiel, profil, 350);
+  assert.ok(n.egal, JSON.stringify(n));
+  /* Sans « crédit » : le prêt reste hors du profil. Une ligne déjà là, autre montant : changement daté du mois de la fiche. */
+  const p2 = OC.normaliser(Object.assign({}, profil, { lignesFiche: { sociales: [{ libelle: 'Cavis', montant: 30 }] } }));
+  const ap2 = FC.appliquer(v, { autres: true }, p2, OCT);
+  assert.ok(!ap2.partiel.credits);
+  const cav = ap2.partiel.lignesFiche.sociales.filter((x) => /cavis/i.test(x.libelle));
+  assert.deepEqual(cav.map((x) => [x.montant, x.debut, x.fin]), [[30, '', '2026-09'], [38.4, '2026-10', '']]);
+  /* Aperçu avant → après : une ligne pour les autres lignes, les crédits et l'impôt. */
+  const L = FC.apercu(v, profil, OCT).map((l) => l.cle);
+  assert.ok(['autres', 'credit', 'impot'].every((c) => L.includes(c)), JSON.stringify(L));
+  /* Mois inhabituel (brut différent du salaire repris) : l'impôt n'est pas aligné. */
+  assert.ok(!FC.appliquer(Object.assign({}, v, { brut: 3500, base: 3000 }), { impot: true }, profil, OCT).partiel.impotFiche);
+});

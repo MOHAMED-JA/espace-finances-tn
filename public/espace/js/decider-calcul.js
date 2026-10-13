@@ -4,6 +4,7 @@
  *                             rembourser par anticipation le crédit le plus cher (durée plus courte, même mensualité),
  *                             verser en assurance vie / CEA (économie d'impôt du moteur fiscal, puis rendement),
  *                             garder en épargne de précaution ; puis un conseil (réserve de 3 mois d'abord).
+ *   banques(sy, liste, type)  : combien chaque banque prêterait selon sa règle (net / brut, mois / année ÷ 12, quotité).
  *   patrimoine(sy, options) : ce que l'on possède (logement, autres biens, épargne, contrats) moins ce que l'on doit
  *                             (reste dû des crédits), courbe année par année et jalons (fin des crédits…).
  * Toutes les règles viennent d'OrbiteCalcul (crédits, contrats) et d'OrbiteIntelligence (impôt) : rien n'est dupliqué.
@@ -207,5 +208,45 @@
     };
   }
 
-  return { DEFAUTS: DEFAUTS, RESERVE_MOIS: RESERVE_MOIS, hypotheses: hypotheses, resteDu: resteDu, solder: solder, comparer: comparer, prochainesPrimes: prochainesPrimes, patrimoine: patrimoine };
+  /* ===================================================================
+     Comparateur de banques (Crédit › Banques, maquette validée le 13 oct. 2026)
+     Chaque banque : base (net ou brut), revenu retenu (salaire du mois, ou salaires et primes de l'année ÷ 12),
+     quotité. Mêmes crédits en cours, même âge, mêmes taux pour toutes : seule la règle change.
+     =================================================================== */
+  var MAX_BANQUES = 6;
+  function revenuBanque(sy, base, revenu) {
+    var s = sy.salaire, p = sy.profil;
+    var m = base === "brut" ? (revenu === "annee" ? s.brutAnnuel / 12 : s.brutMensuel) : (revenu === "annee" ? s.netAnnuel / 12 : s.netMensuel);
+    return m + (p.autresRevenus || 0);
+  }
+  function maBanque(p) {
+    return { nom: p.banque || "Ma banque", base: p.baseBanque === "brut" ? "brut" : "net", revenu: p.revenuBanque === "annuel" ? "annee" : "mois",
+      quotite: p.baseBanque === "brut" ? p.quotiteBrut : p.quotiteNet };
+  }
+  /* Sans banque enregistrée : la règle de la banque du profil, puis les trois autres règles (quotité de 40 %). */
+  function banquesParDefaut(p) {
+    var m = maBanque(p), out = [m], noms = ["Banque B", "Banque C", "Banque D"], k = 0;
+    [["net", "mois"], ["net", "annee"], ["brut", "mois"], ["brut", "annee"]].forEach(function (r) {
+      if (r[0] === m.base && r[1] === m.revenu) return;
+      out.push({ nom: noms[k++], base: r[0], revenu: r[1], quotite: OC.QUOTITE });
+    });
+    return out;
+  }
+  function banques(sy, liste, cle) {
+    var p = sy.profil, L = (liste && liste.length ? liste : banquesParDefaut(p)).slice(0, MAX_BANQUES), taux = OC.tauxNouveaux(p);
+    var lignes = L.map(function (b) {
+      var base = b.base === "brut" ? "brut" : "net", revenu = b.revenu === "annee" ? "annee" : "mois", q = borne(num(b.quotite, OC.QUOTITE), 0.1, 0.8);
+      var rev = revenuBanque(sy, base, revenu), cap = OC.capacite(rev, q, sy.chargesCredits, sy.age, taux);
+      var c = cap.credits.filter(function (x) { return x.cle === (cle || "immo"); })[0] || cap.credits[0];
+      return { nom: b.nom || "Banque", base: base, revenu: revenu, quotite: q, revenuMensuel: rev, mensualite: cap.mensualiteMax,
+        capital: c.capital, dureeMois: c.dureeMois, tauxPct: c.tauxPct, dureeLimitee: c.dureeLimitee };
+    });
+    var vals = lignes.map(function (x) { return x.capital; }), max = Math.max.apply(null, vals.concat([0])), min = Math.min.apply(null, vals.concat([max]));
+    var meilleur = lignes.length ? vals.indexOf(max) : -1;
+    return { lignes: lignes, meilleur: meilleur, max: max, ecart: max - min, ecartMienne: lignes.length ? max - lignes[0].capital : 0,
+      charges: sy.chargesCredits, type: cle || "immo" };
+  }
+
+  return { DEFAUTS: DEFAUTS, RESERVE_MOIS: RESERVE_MOIS, MAX_BANQUES: MAX_BANQUES, hypotheses: hypotheses, resteDu: resteDu, solder: solder, comparer: comparer, prochainesPrimes: prochainesPrimes, patrimoine: patrimoine,
+    revenuBanque: revenuBanque, banquesParDefaut: banquesParDefaut, banques: banques };
 });

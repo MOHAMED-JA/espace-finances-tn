@@ -113,3 +113,25 @@ test('conseil de Mon orbite quand une prime arrive (mois en cours ou suivant)', 
   const aout = O.synthese(BASE, {}, new Date('2026-08-10T12:00:00'));
   assert.ok(!aout.conseils.some((x) => /^Une prime arrive/.test(x.titre)), 'pas de prime en août ni en septembre');
 });
+
+test('comparateur de banques : règle de chaque banque (net / brut, mois / année ÷ 12, quotité), crédits en cours déduits', () => {
+  const S = sy({ dateNaissance: '1990-03-01' }), s = S.salaire;
+  const r = D.banques(S, null, 'immo');
+  /* Par défaut : la banque du profil puis les trois autres règles. */
+  assert.equal(r.lignes.length, 4);
+  assert.deepEqual(r.lignes.map((x) => x.base + '/' + x.revenu).sort(), ['brut/annee', 'brut/mois', 'net/annee', 'net/mois']);
+  const bruteAn = r.lignes.find((x) => x.base === 'brut' && x.revenu === 'annee');
+  proche(bruteAn.revenuMensuel, s.brutAnnuel / 12, 0.001);
+  proche(bruteAn.mensualite, s.brutAnnuel / 12 * 0.4 - S.chargesCredits, 0.001, 'quotité moins les crédits en cours');
+  proche(bruteAn.capital, O.capitalPourMensualite(bruteAn.mensualite, bruteAn.tauxPct, bruteAn.dureeMois), 0.01);
+  assert.equal(r.lignes[r.meilleur].base + '/' + r.lignes[r.meilleur].revenu, 'brut/annee', '14 salaires sur le brut : la plus favorable');
+  assert.ok(r.ecart > 0);
+  /* Liste de l'utilisateur, quotité bornée ; type de crédit choisi. */
+  const r2 = D.banques(S, [{ nom: 'X', base: 'net', revenu: 'mois', quotite: 0.95 }], 'auto');
+  assert.equal(r2.lignes[0].quotite, 0.8);
+  assert.equal(r2.type, 'auto');
+  /* Profil : liste normalisée (6 au plus). */
+  const p = O.normaliser({ banques: Array.from({ length: 9 }, (_, i) => ({ nom: 'B' + i, base: 'brut', revenu: 'annee', quotite: 0.45 })) });
+  assert.equal(p.banques.length, 6);
+  assert.deepEqual(p.banques[0], { nom: 'B0', base: 'brut', revenu: 'annee', quotite: 0.45 });
+});

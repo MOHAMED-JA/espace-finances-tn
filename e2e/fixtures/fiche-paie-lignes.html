@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Bulletin de paie fictif (autres lignes)</title>
+<style>
+  body { margin: 0; background: #f7f3ea; font: 15px/1.35 Arial, Helvetica, sans-serif; color: #111; }
+  .fiche { width: 760px; margin: 28px auto; padding: 34px 40px; background: #fffdf8; border: 1px solid #d9d2c3; }
+  h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: .02em; }
+  .ent { display: flex; justify-content: space-between; margin-bottom: 18px; }
+  .info { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 30px; padding: 10px 0; border-top: 2px solid #111; border-bottom: 1px solid #111; margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 6px 6px; text-align: right; border-bottom: 1px solid #ddd; }
+  th:first-child, td:first-child { text-align: left; }
+  th { border-bottom: 2px solid #111; font-size: 13px; text-transform: uppercase; }
+  tr.tot td { font-weight: bold; border-top: 2px solid #111; }
+  .net { margin-top: 18px; display: flex; justify-content: space-between; font-size: 19px; font-weight: bold; border: 2px solid #111; padding: 10px 14px; }
+  .pat { margin-top: 16px; font-size: 13px; color: #444; }
+</style></head>
+<body><div class="fiche">
+  <div class="ent"><div><h1>SOCIÉTÉ EXEMPLE SARL</h1>Zone industrielle, Tunis<br>Matricule fiscal : 0000000/A/M/000</div>
+  <div><h1>Bulletin de paie</h1>Période : Octobre 2026</div></div>
+  <div class="info">
+    <div>Nom : Salariée Fictive</div><div>Matricule : 0042</div>
+    <div>Date d'entrée : 01/09/2014</div><div>Catégorie : Cadre</div>
+    <div>Situation familiale : Célibataire</div><div>Enfants à charge : 0</div>
+  </div>
+  <table>
+    <thead><tr><th>Rubrique</th><th>Base</th><th>Taux</th><th>Gains</th><th>Retenues</th></tr></thead>
+    <tbody>
+      <tr><td>Salaire de base</td><td>26,00</td><td></td><td>2 700,000</td><td></td></tr>
+      <tr><td>Prime de transport</td><td></td><td></td><td>300,000</td><td></td></tr>
+      <tr class="tot"><td>Salaire brut</td><td></td><td></td><td>3 000,000</td><td></td></tr>
+      <tr><td>Retenue CNSS</td><td>3 000,000</td><td>9,68 %</td><td></td><td>290,400</td></tr>
+      <tr class="tot"><td>Salaire imposable</td><td></td><td></td><td>2 599,200</td><td></td></tr>
+      <tr><td>CAVIS</td><td></td><td></td><td></td><td>38,400</td></tr>
+      <tr><td>Assurance groupe</td><td></td><td></td><td></td><td>72,000</td></tr>
+      <tr><td>IRPP</td><td></td><td></td><td></td><td>520,000</td></tr>
+      <tr><td>CSS</td><td></td><td>0,5 %</td><td></td><td>12,163</td></tr>
+      <tr><td>Bonification crédit logement</td><td></td><td></td><td>60,000</td><td></td></tr>
+      <tr><td>Cotisation syndicale</td><td></td><td></td><td></td><td>3,000</td></tr>
+      <tr><td>Assurance auto</td><td></td><td></td><td></td><td>95,000</td></tr>
+      <tr><td>Prêt exceptionnel</td><td></td><td></td><td></td><td>350,000</td></tr>
+      <tr class="tot"><td>Total retenues</td><td></td><td></td><td></td><td>1 380,963</td></tr>
+    </tbody>
+  </table>
+  <div class="net"><span>Net à payer</span><span>1 679,037</span></div>
+  <div class="pat">CNSS part patronale 16,57 % : 497,100 · Congés acquis : 2,5 jours</div>
+</div></body></html>

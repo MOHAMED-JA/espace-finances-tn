@@ -749,12 +749,14 @@
             <button type="button" role="tab" id="ce-tab-simuler" aria-controls="credit-racine" aria-selected="true" data-espace="simuler">Simuler</button>
             <button type="button" role="tab" id="ce-tab-projet" aria-controls="credit-projet" aria-selected="false" tabindex="-1" data-espace="projet">Mon projet immobilier</button>
             <button type="button" role="tab" id="ce-tab-offres" aria-controls="credit-offres" aria-selected="false" tabindex="-1" data-espace="offres">Comparer mes offres</button>
+            <button type="button" role="tab" id="ce-tab-banques" aria-controls="credit-banques" aria-selected="false" tabindex="-1" data-espace="banques">Comparer les banques</button>
             <button type="button" role="tab" id="ce-tab-regrouper" aria-controls="credit-regrouper" aria-selected="false" tabindex="-1" data-espace="regrouper">Regrouper mes crédits</button>
             <button type="button" role="tab" id="ce-tab-tmm" aria-controls="credit-tmm" aria-selected="false" tabindex="-1" data-espace="tmm">Le TMM</button>
           </div>
           <div id="credit-racine" class="module__racine" role="tabpanel" aria-labelledby="ce-tab-simuler"><div class="squelette module__attente"></div></div>
           <div id="credit-projet" class="module__racine ce-espace" role="tabpanel" aria-labelledby="ce-tab-projet" hidden></div>
           <div id="credit-offres" class="module__racine ce-espace" role="tabpanel" aria-labelledby="ce-tab-offres" hidden></div>
+          <div id="credit-banques" class="module__racine ce-espace" role="tabpanel" aria-labelledby="ce-tab-banques" hidden></div>
           <div id="credit-regrouper" class="module__racine ce-espace" role="tabpanel" aria-labelledby="ce-tab-regrouper" hidden></div>
           <div id="credit-tmm" class="module__racine ce-espace" role="tabpanel" aria-labelledby="ce-tab-tmm" hidden></div>
         </section>
@@ -2099,6 +2101,7 @@
           <h3 id="fiche-maj-titre">Ce qui va changer dans votre profil</h3>
           <p class="fiche-aide" id="fiche-maj-sous"></p>
           <table class="maj-diff" aria-labelledby="fiche-maj-titre"><thead><tr><th scope="col"><span class="cache">Reprendre</span></th><th scope="col">Dans votre profil</th><th scope="col"><span class="cache">devient</span></th><th scope="col">D'après la fiche</th></tr></thead><tbody id="fiche-maj-corps"></tbody></table>
+          <p class="fiche-maj-net" id="fiche-maj-net" hidden></p>
         </div>
         <button type="button" class="lien-action fiche-main" id="fiche-corriger">Une valeur mal lue ? Corriger les valeurs<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></button>
       </section>
@@ -2384,6 +2387,7 @@
   <script src="/espace/js/vue-vie.js"></script>
   <script src="/espace/js/vue-decider.js"></script>
   <script src="/espace/js/vue-patrimoine.js"></script>
+  <script src="/espace/js/credit-banques.js"></script>
   <script src="/espace/js/scenarios-calcul.js"></script>
   <script src="/espace/js/expert-calcul.js"></script>
   <script src="/espace/js/vue-scenarios.js"></script>

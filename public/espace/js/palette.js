@@ -60,6 +60,7 @@
       section("s-calendrier", "#mois?onglet=calendrier", "Calendrier de l'argent", "Mon mois › Calendrier : paie, prélèvements, 31 décembre", "calendrier agenda dates paie prelevement echeance ics", "orbite"),
       section("s-projet", "#credit?espace=projet", "Mon projet immobilier", "Crédit › Projet : frais, crédit, quand acheter", "projet immobilier logement maison appartement achat promoteur frais notaire enregistrement premier logement dar", "credit"),
       section("s-offres", "#credit?espace=offres", "Comparer mes offres", "Crédit › Offres de plusieurs banques", "comparer offres banques comparateur cout total moins cher", "credit"),
+      section("s-banques", "#credit?espace=banques", "Comparer les banques", "Crédit › Combien chaque banque me prêterait", "banques comparer quotite brut net capacite emprunt regle banque", "credit"),
       section("s-tmm", "#credit?espace=tmm", "Le TMM et mes crédits", "Crédit › TMM du mois, courbe, effet", "tmm taux marche monetaire bct variable revision", "credit"),
       section("s-regrouper", "#credit?espace=regrouper", "Regrouper mes crédits", "Crédit › Rachat et regroupement", "regrouper rachat regroupement credits restructurer", "credit"),
       section("s-marge", "#orbite?section=marge", "Calendrier de la marge", "Mon orbite › Marge", "marge calendrier fin credit", "credit"),

@@ -49,6 +49,7 @@
       { cle: "outils", lib: "Outils avancés", espace: "simuler", cibles: [".cr-outils"] },
       { cle: "projet", lib: "Projet immobilier", espace: "projet" },
       { cle: "offres", lib: "Comparer mes offres", espace: "offres" },
+      { cle: "banques", lib: "Comparer les banques", espace: "banques" },
       { cle: "regrouper", lib: "Regrouper mes crédits", espace: "regrouper" },
       { cle: "tmm", lib: "Le TMM", espace: "tmm" }
     ], depuis: function (pr) { var e = pr.get("espace"); return e && e !== "simuler" ? e : null; } },

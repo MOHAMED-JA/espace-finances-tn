@@ -7,7 +7,9 @@
  * controle(valeurs, profil) : compare la fiche au calcul d'Orbite pour un mois habituel (même brut, même caisse,
  *   situation de famille du profil) ; écart signalé au-delà de 1 DT, avec des pistes d'explication.
  * appliquer(valeurs, choix, profil, maintenant) : le changement de profil à enregistrer (salaire de base, primes,
- *   caisse, date d'embauche) et l'entrée de l'historique du salaire au mois de la fiche.
+ *   caisse, date d'embauche) et l'entrée de l'historique du salaire au mois de la fiche ; depuis le 13 oct. 2026, aussi
+ *   les autres lignes de la fiche (retenues déduites de l'impôt, versements, retenues sur le net, prêts → crédits)
+ *   et l'impôt aligné sur la fiche (analyser() les range dans « autres » avec un groupe proposé).
  */
 (function (racine, fabrique) {
   if (typeof module === "object" && module.exports) {
@@ -115,6 +117,23 @@
   };
   var RE_COTIS = /\bcnss\b|\bc\.n\.s\.s\b|cnrps|cnam|cotisations?|securite sociale|perte d'?\s?emploi|capital deces|prevoyance sociale|assurance maladie|\bretraite\b|pensions? civiles?/;
   var RE_AUTRES = /avance|acompte|\bpret\b|mutuelle|assurance groupe|cantine|opposition|saisie|retenue diverse|cotisation syndicale|syndicat|remboursement de pret/;
+  /* Autres lignes de la fiche (13 oct. 2026), rangées dans les groupes du profil (lignesFiche) ou dans les crédits. */
+  var RE_GAIN_NET = /bonif/;
+  var RE_SOCIALE = /\bcavis\b|retraite complementaire|regime complementaire|assurance groupe|ass\.? groupe|mutuelle|prevoyance complementaire/;
+  var RE_CREDIT = /\bpret\b|remboursement de pret|echeance (?:du )?pret|\bcredit\b/;
+  var RE_NETTE = /avance|acompte|cantine|opposition|saisie|retenue diverse|cotisation syndicale|syndica|\bugtt\b|assurance auto|ass\.? auto|tickets? restaurant|complement (?:de )?retraite/;
+  function groupeAutre(lib) {
+    if (RE_GAIN_NET.test(lib)) return "gains";
+    if (RE_SOCIALE.test(lib)) return "sociales";
+    if (RE_CREDIT.test(lib)) return "credit";
+    if (RE_NETTE.test(lib)) return "nettes";
+    return null;
+  }
+  /* Libellé d'une ligne : la première cellule avec des lettres, sans montant ni taux. */
+  function libelleDe(l) {
+    var c = l.cellules.filter(function (x) { return /[a-zà-ÿ]/i.test(x); })[0] || l.texte;
+    return c.replace(/[-−]?\d[\d .,]*\s*%?/g, " ").replace(/\s+/g, " ").replace(/[:·]\s*$/, "").trim().slice(0, 40) || "Ligne de la fiche";
+  }
   var RE_PRIME = /prime|indemnite|gratification|bonus|heures? sup|majoration|allocation|avantage|commission|13e mois|treizieme|sursalaire|rappel/;
   var RE_PAS_PRIME = /salaire de base|brut|net|total|imposable|cotisable|retenue|cumul|patronal|employeur|irpp|\bcss\b|cnss|cnrps|conge/;
 
@@ -203,10 +222,19 @@
 
     /* Cotisations sociales : toutes les lignes salariales (CNSS, perte d'emploi, CNRPS, CNAM, capital décès…). */
     var cot = 0, cotConf = 1, cotSources = [], caisse = null;
-    var primes = [], autres = 0, autresSources = [];
+    var primes = [], autres = 0, autresSources = [], extras = [], gains = 0, gainsSources = [];
     lignes.forEach(function (l, i) {
       var lib = norm(l.texte), sansNon = lib.replace(/non (?:imposable|cotisable|soumis)/g, "");
       if (EXCLU_PAT.test(lib) || /total|imposable|cotisable|brut|net a/.test(sansNon)) return;
+      /* Autres lignes (retraite complémentaire, assurance groupe, bonification, syndicat, prêt…) : avant les cotisations,
+         car « retraite complémentaire » contient « retraite ». */
+      var grp = groupeAutre(lib);
+      if (grp) {
+        var x = dernier(l); if (!x || x.v <= 0) return;
+        extras.push({ libelle: libelleDe(l), montant: x.v, groupe: grp, source: l.texte, conf: x.conf, ligne: i });
+        if (grp === "gains") { gains += x.v; gainsSources.push(l.texte); } else { autres += x.v; autresSources.push(l.texte); }
+        return;
+      }
       if (RE_COTIS.test(lib) && !RE_AUTRES.test(lib)) {
         var r = retenueDe(l); if (!r) return;
         cot += r.v; cotConf = Math.min(cotConf, r.conf); cotSources.push(l.texte);
@@ -223,6 +251,7 @@
     if (cotSources.length) c.cotisations = champ({ valeur: Math.round(cot * 1000) / 1000, conf: cotConf, source: cotSources.join(" · ") });
     if (caisse) c.caisse = { valeur: caisse, secteur: caisse === "CNRPS" ? "public" : "prive", source: cotSources[0], etat: "lu", conf: 1 };
     if (autresSources.length) c.autresRetenues = champ({ valeur: Math.round(autres * 1000) / 1000, conf: 1, source: autresSources.join(" · ") });
+    if (gainsSources.length) c.gains = champ({ valeur: Math.round(gains * 1000) / 1000, conf: 1, source: gainsSources.join(" · ") });
 
     /* Primes par catégorie du profil ; le brut fait foi : ce qui manque entre le salaire de base et le brut
        est compté comme prime imposable (ligne non reconnue). */
@@ -255,7 +284,7 @@
     var coherent = null;
     if (c.brut && c.net && c.cotisations && c.irpp) {
       var attendu = c.brut.valeur - c.cotisations.valeur - c.irpp.valeur - (c.css ? c.css.valeur : 0) - (c.autresRetenues ? c.autresRetenues.valeur : 0)
-        - (c.avantagesNature ? c.avantagesNature.valeur : 0) + (c.indemnitesNonImposables ? c.indemnitesNonImposables.valeur : 0);
+        - (c.avantagesNature ? c.avantagesNature.valeur : 0) + (c.indemnitesNonImposables ? c.indemnitesNonImposables.valeur : 0) + (c.gains ? c.gains.valeur : 0);
       coherent = Math.abs(attendu - c.net.valeur) <= TOLERANCE;
       if (!coherent && totalRet) {
         /* Retenues non reconnues une à une mais présentes dans le total de la fiche. */
@@ -277,7 +306,8 @@
       if (!coherent) alertes.push("Les montants lus ne tombent pas juste (brut − retenues ≠ net) : vérifiez les cases marquées « à vérifier ».");
     }
     var trouve = ["brut", "base", "net", "irpp", "cotisations"].filter(function (k) { return c[k]; }).length;
-    return { champs: c, primes: primes, famille: familleDe(lignes), coherent: coherent, alertes: alertes, lisible: trouve >= 2 && !!(c.brut || c.net), lignes: lignes.length };
+    extras.forEach(function (x) { x.etat = x.conf < SEUIL_CONFIANCE && !coherent ? "verifier" : "lu"; });
+    return { champs: c, primes: primes, autres: extras, famille: familleDe(lignes), coherent: coherent, alertes: alertes, lisible: trouve >= 2 && !!(c.brut || c.net), lignes: lignes.length };
   }
 
   /* Valeurs simples (nombres) depuis les champs analysés, que l'interface laisse corriger. */
@@ -298,8 +328,9 @@
     var base = v.base != null ? v.base : brut - primes - nonCot - av;
     return OC.normaliser(Object.assign({}, profil || {}, {
       activite: "salarie", historiqueSalaire: [], calendrierPrimes: [], nombreSalaires: 12,
-      /* Le contrôle compare la fiche au barème seul : sans les autres lignes ni l'impôt aligné du profil. */
-      lignesFiche: {}, impotFiche: {},
+      /* Le contrôle compare la fiche au barème : sans les lignes ni l'impôt aligné du profil, mais avec les retenues
+         déduites de l'impôt lues sur cette fiche (retraite complémentaire, assurance groupe), qui changent l'IRPP. */
+      lignesFiche: v.sociales > 0 ? { sociales: [{ libelle: "Retenues de la fiche", montant: v.sociales }] } : {}, impotFiche: {},
       montant: Math.max(0, base), sens: "brut", periode: "mensuel",
       primesImposables: Math.max(0, primes), primesNonCotisables: nonCot, avantagesNature: av, indemnitesNonImposables: v.indemnitesNonImposables || 0,
       secteur: v.secteur || (profil && profil.secteur) || "prive"
@@ -309,7 +340,7 @@
   function controle(v, profil, famille) {
     if (!(v && v.brut > 0)) return { possible: false, raison: "Il faut au moins le salaire brut de la fiche pour la contrôler." };
     var p = profilDeControle(v, profil), s = OC.salaire(p), a = s.resultat.annuel;
-    var orbite = { cotisations: a.cotisations / 12, irpp: a.irpp / 12, css: a.css / 12, net: a.netAPayer / 12 - (v.autresRetenues || 0) };
+    var orbite = { cotisations: a.cotisations / 12, irpp: a.irpp / 12, css: a.css / 12, net: a.netAPayer / 12 - (v.autresRetenues || 0) - (v.nettes || 0) + (v.gains || 0) };
     var lignes = ["cotisations", "irpp", "css", "net"].filter(function (k) { return v[k] != null && !isNaN(v[k]); }).map(function (k) {
       var e = v[k] - orbite[k];
       return { cle: k, libelle: k === "cotisations" ? "Cotisations " + (p.secteur === "public" ? "CNRPS" : "CNSS") : LIB[k], fiche: v[k], orbite: orbite[k], ecart: e, ok: Math.abs(e) <= TOLERANCE };
@@ -395,7 +426,71 @@
       partiel.dateEmbauche = v.dateEmbauche;
       resume.push("date d'embauche");
     }
+    var al = autresLignes(v, ch, pr, m);
+    if (al.lignesFiche) { partiel.lignesFiche = al.lignesFiche; resume.push(al.nLignes + " autre" + (al.nLignes > 1 ? "s" : "") + " ligne" + (al.nLignes > 1 ? "s" : "") + " de la fiche"); }
+    if (al.credits) { partiel.credits = al.credits; resume.push(al.nCredits > 1 ? al.nCredits + " crédits ajoutés" : "crédit « " + al.nomCredit + " » ajouté"); }
+    var imp = impotAligne(v, ch, pr, partiel);
+    if (imp) { partiel.impotFiche = imp; resume.push("impôt aligné sur la fiche"); }
     return { partiel: partiel, resume: resume, vide: !Object.keys(partiel).length };
+  }
+
+  /* ---------- Autres lignes de la fiche → profil ---------- */
+  var GROUPES = ["sociales", "gains", "nettes"];
+  function cleLib(t) { return norm(t).replace(/[^a-z0-9]+/g, " ").trim(); }
+  function moisV(v, m) { return v.mois && v.mois.annee ? OC.cleMois(v.mois.annee, v.mois.mois - 1) : OC.cleMois(m.getFullYear(), m.getMonth()); }
+  /* Lignes retenues ({ libelle, montant, groupe }) : une ligne du même nom en vigueur ce mois-là change de montant à partir
+     du mois de la fiche (lignes datées) ; une nouvelle ligne vaut pour tous les mois ; un prêt devient un crédit du profil. */
+  function autresLignes(v, ch, pr, m) {
+    /* v.autres : lignes cochées à l'écran de vérification ; ch.autres / ch.credit : cases de l'aperçu avant → après. */
+    var choisies = (v.autres || []).filter(function (x) { return x && x.montant > 0 && x.libelle && (x.groupe === "credit" ? ch.credit : ch.autres); });
+    if (!choisies.length) return {};
+    var cle = moisV(v, m), lf = OC.normaliser({ lignesFiche: pr.lignesFiche }).lignesFiche, change = false, n = 0;
+    var credits = (pr.credits || []).map(function (c) { return Object.assign({}, c); }), nC = 0, nomC = "";
+    choisies.forEach(function (x) {
+      var montant = Math.round(x.montant * 1000) / 1000;
+      if (x.groupe === "credit") {
+        var deja = credits.some(function (c) { return Math.abs((c.mensualite || 0) - montant) < 0.0005 || cleLib(c.libelle) === cleLib(x.libelle); });
+        if (!deja) { credits.push({ libelle: x.libelle, type: "autre", mensualite: montant }); nC++; nomC = x.libelle; }
+        return;
+      }
+      if (GROUPES.indexOf(x.groupe) === -1) return;
+      var l = lf[x.groupe], i = l.findIndex(function (y) { return cleLib(y.libelle) === cleLib(x.libelle) && OC.ligneActive(y, cle); });
+      if (i >= 0) {
+        if (Math.abs(l[i].montant - montant) < 0.0005) return;
+        lf[x.groupe] = OC.ficheChanger(l, i, montant, cle);
+      } else {
+        if (l.length >= OC.MAX_LIGNES_FICHE) return;
+        l.push({ libelle: x.libelle, montant: montant, debut: "", fin: "" });
+      }
+      change = true; n++;
+    });
+    return { lignesFiche: change ? lf : null, nLignes: n, credits: nC ? credits : null, nCredits: nC, nomCredit: nomC };
+  }
+  /* Impôt aligné : IRPP et CSS de la fiche, pour le brut d'un mois habituel du profil (après mise à jour). Pas repris si
+     la fiche est celle d'un mois inhabituel (brut différent : prime, rappel…). */
+  function brutHabituel(pr, partiel) {
+    try { return OC.salaire(OC.normaliser(Object.assign({}, pr, partiel, { impotFiche: {} }))).brutMensuel; } catch (e) { return 0; }
+  }
+  function impotAligne(v, ch, pr, partiel) {
+    if (!ch.impot || !(v.irpp > 0) || !(v.brut > 0)) return null;
+    var b = brutHabituel(pr, partiel || {});
+    if (Math.abs(b - v.brut) > TOLERANCE) return null;
+    var f = { actif: true, irpp: Math.round(v.irpp * 1000) / 1000, css: Math.round((v.css || 0) * 1000) / 1000, brut: b };
+    /* Impôt de la fiche égal à celui d'Orbite (au millime près) : rien à aligner. */
+    try {
+      var al = OC.salaire(OC.normaliser(Object.assign({}, pr, partiel || {}, { impotFiche: f }))).impotAligne;
+      if (al && Math.abs(al.ecart) < 0.0015) return null;
+    } catch (e) { /* calcul impossible : on garde la proposition */ }
+    var a = pr.impotFiche || {};
+    return a.actif && Math.abs(a.irpp - f.irpp) < 0.0005 && Math.abs(a.css - f.css) < 0.0005 && Math.abs(a.brut - f.brut) < 0.0005 ? null : f;
+  }
+  /* Net d'Orbite une fois le profil mis à jour, comparé au net de la fiche (prêts retenus sur la paie remis). */
+  function netApres(v, partiel, profil, credits) {
+    try {
+      var n = OC.salaire(OC.normaliser(Object.assign({}, profil, partiel))).netMensuel;
+      var fiche = v.net != null ? v.net + (credits || 0) : null;
+      return { orbite: n, fiche: fiche, egal: fiche != null && Math.abs(n - fiche) <= TOLERANCE };
+    } catch (e) { return null; }
   }
 
   /* Avant → après pour l'écran de contrôle (maquette validée le 13 oct. 2026) : une ligne par réglage repris de la fiche,
@@ -422,9 +517,33 @@
       var fr = function (d) { var x = d.split("-"); return x[2] + "/" + x[1] + "/" + x[0]; };
       L.push({ cle: "dateEmbauche", lib: "Date d'embauche", avant: pr.dateEmbauche ? fr(pr.dateEmbauche) : "non renseignée", apres: fr(v.dateEmbauche), egal: v.dateEmbauche === pr.dateEmbauche });
     }
+    /* Autres lignes cochées à l'écran de vérification (13 oct. 2026). */
+    var autres = (v.autres || []).filter(function (x) { return x.montant > 0; });
+    var lignes = autres.filter(function (x) { return x.groupe !== "credit"; }), prets = autres.filter(function (x) { return x.groupe === "credit"; });
+    if (lignes.length) {
+      var al = autresLignes(v, { autres: true }, pr, m), tot = function (lf) { return GROUPES.reduce(function (t, g) { return t + ((lf && lf[g]) || []).filter(function (y) { return OC.ligneActive(y, moisV(v, m)); }).length; }, 0); };
+      var nA = tot(OC.normaliser({ lignesFiche: pr.lignesFiche }).lignesFiche);
+      L.push({ cle: "autres", lib: "Autres lignes de la fiche", avant: nA ? nA + " ligne" + (nA > 1 ? "s" : "") : "aucune",
+        apres: al.lignesFiche ? tot(al.lignesFiche) + " ligne" + (tot(al.lignesFiche) > 1 ? "s" : "") : (nA ? nA + " ligne" + (nA > 1 ? "s" : "") : "aucune"), egal: !al.lignesFiche,
+        note: al.lignesFiche ? "dont " + al.nLignes + " nouvelle" + (al.nLignes > 1 ? "s" : "") + " ou modifiée" + (al.nLignes > 1 ? "s" : "") : "" });
+    }
+    if (prets.length) {
+      var ac = autresLignes(v, { credit: true }, pr, m), nb = (pr.credits || []).length;
+      L.push({ cle: "credit", lib: "Crédits", avant: nb ? nb + " crédit" + (nb > 1 ? "s" : "") : "aucun", apres: ac.credits ? ac.credits.length + " crédit" + (ac.credits.length > 1 ? "s" : "") : (nb ? nb + " crédit" + (nb > 1 ? "s" : "") : "aucun"),
+        egal: !ac.credits, note: ac.credits ? "+ « " + ac.nomCredit + " » " + dt(prets[0].montant) + " DT par mois" : "" });
+    }
+    if (v.irpp > 0) {
+      /* Brut d'un mois habituel une fois le salaire et les primes de la fiche repris. */
+      var p0 = appliquer(v, { salaire: true, primes: true }, pr, m).partiel;
+      var ok = impotAligne(v, { impot: true }, pr, p0), a = pr.impotFiche || {}, b = brutHabituel(pr, p0);
+      if (Math.abs(b - v.brut) <= TOLERANCE || ok) {
+        L.push({ cle: "impot", lib: "Impôt aligné sur la fiche", avant: a.actif ? "IRPP " + dt(a.irpp) + " + CSS " + dt(a.css) : "calcul d'Orbite",
+          apres: "IRPP " + dt(v.irpp) + " + CSS " + dt(v.css || 0), egal: !ok });
+      }
+    }
     return L;
   }
 
   return { norm: norm, versLignes: versLignes, montant: montant, nombres: nombres, analyser: analyser, valeurs: valeurs,
-    controle: controle, appliquer: appliquer, apercu: apercu, MOIS: MOIS, TOLERANCE: TOLERANCE };
+    controle: controle, appliquer: appliquer, apercu: apercu, netApres: netApres, groupeAutre: groupeAutre, MOIS: MOIS, TOLERANCE: TOLERANCE };
 });
