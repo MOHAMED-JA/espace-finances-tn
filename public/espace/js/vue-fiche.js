@@ -146,7 +146,7 @@
     { cle: "cotisations", lib: "Cotisations sociales", type: "montant" },
     { cle: "irpp", lib: "Impôt (IRPP)", type: "montant" },
     { cle: "css", lib: "CSS", type: "montant" },
-    { cle: "autresRetenues", lib: "Autres retenues", type: "montant", siLu: true },
+    { cle: "autresRetenues", lib: "Autres retenues", type: "montant", siLu: true, sansAutres: true },
     { cle: "net", lib: "Net à payer", type: "montant" }
   ];
   var ETATS = { lu: "lu", verifier: "à vérifier", calcule: "calculé", absent: "non lu", corrige: "corrigé" };
@@ -177,6 +177,8 @@
   function ligneChamp(def, c, profil) {
     var ch = def.cle === "primes" ? champPrimes(c) : c[def.cle];
     if (def.siLu && !ch) return null;
+    /* Les autres lignes ont leur propre groupe : le total « autres retenues » n'est plus montré à part. */
+    if (def.sansAutres && etat.analyse && etat.analyse.autres && etat.analyse.autres.length) return null;
     var e = ch ? ch.etat : "absent";
     var row = cree("div", "fiche-champ" + (e === "verifier" ? " fiche-champ--doute" : ""));
     row.dataset.cle = def.cle;
@@ -220,11 +222,60 @@
     return row;
   }
 
+  /* ---------- Autres lignes de la fiche (13 oct. 2026) ---------- */
+  var GROUPES_AUTRES = [["sociales", "Déduite de l'impôt"], ["gains", "Versement non imposable"], ["nettes", "Retenue sur le net"], ["credit", "Ajouter à mes crédits"]];
+  function ligneAutre(x, i) {
+    var row = cree("div", "fiche-champ fiche-autre fiche-autre--" + x.groupe + (x.etat === "verifier" ? " fiche-champ--doute" : ""));
+    row.dataset.cle = "autre-" + i;
+    var cb = cree("input"); cb.type = "checkbox"; cb.dataset.autre = String(i);
+    /* Un prêt se déclare dans les crédits : à cocher par l'utilisateur. */
+    cb.checked = x.groupe !== "credit";
+    cb.setAttribute("aria-label", "Reprendre « " + x.libelle + " » dans mon profil");
+    row.appendChild(cb);
+    var lib = cree("span", "fiche-champ__lib"), b = cree("b"), l = cree("label", null, x.libelle), idv = "fiche-autre-" + i;
+    l.htmlFor = idv; b.appendChild(l); etiquette(b, x.etat || "lu"); lib.appendChild(b);
+    var src = cree("small", null, "« " + x.source + " »" + (x.groupe === "credit" ? " · un prêt se déclare dans vos crédits" : "")); src.title = x.source; lib.appendChild(src);
+    row.appendChild(lib);
+    var sel = cree("select", "fiche-val fiche-autre__groupe"); sel.dataset.autreGroupe = String(i);
+    sel.setAttribute("aria-label", "Groupe de « " + x.libelle + " »");
+    GROUPES_AUTRES.forEach(function (g) { var o = cree("option", null, g[1]); o.value = g[0]; sel.appendChild(o); });
+    sel.value = x.groupe;
+    sel.addEventListener("change", function () { row.className = row.className.replace(/fiche-autre--\w+/, "fiche-autre--" + sel.value); cb.checked = true; });
+    row.appendChild(sel);
+    var champ = cree("input", "fiche-val"); champ.type = "text"; champ.inputMode = "decimal"; champ.autocomplete = "off"; champ.id = idv; champ.dataset.autreMontant = String(i);
+    champ.value = dt3(x.montant);
+    champ.addEventListener("input", function () { row.classList.remove("fiche-champ--doute", "fiche-champ--faux"); etiquette(b, "corrige"); cb.checked = true; });
+    row.appendChild(champ);
+    return row;
+  }
+  /* Impôt aligné : l'IRPP et la CSS de la fiche remplacent le calcul d'Orbite pour un mois habituel. */
+  function ligneImpot(c) {
+    if (!c.irpp) return null;
+    var row = cree("div", "fiche-champ fiche-impot"); row.dataset.cle = "impot";
+    var cb = cree("input"); cb.type = "checkbox"; cb.dataset.choix = "impot"; cb.checked = true; cb.id = "fiche-c-impot";
+    row.appendChild(cb);
+    var lib = cree("span", "fiche-champ__lib"), b = cree("b"), l = cree("label", null, "Aligner l'impôt sur la fiche");
+    l.htmlFor = "fiche-c-impot"; b.appendChild(l); lib.appendChild(b);
+    lib.appendChild(cree("small", null, "IRPP et CSS de la fiche : votre net sera exactement le sien (réglable dans votre profil)."));
+    row.appendChild(lib);
+    return row;
+  }
+
   function verifier() {
     var a = etat.analyse || { champs: {}, alertes: [], famille: {} }, c = a.champs, profil = O.profil() || {};
     var cont = $("fiche-champs"); cont.textContent = "";
     LIGNES.forEach(function (def) {
-      if (def.groupe) { cont.appendChild(cree("p", "fiche-groupe", def.groupe)); return; }
+      if (def.groupe) {
+        /* Avant « Pour le contrôle » : l'impôt aligné, puis les autres lignes de la fiche. */
+        if (/contrôle/.test(def.groupe)) {
+          var ri = ligneImpot(c); if (ri) cont.appendChild(ri);
+          if (a.autres && a.autres.length) {
+            cont.appendChild(cree("p", "fiche-groupe", "Autres lignes de votre fiche"));
+            a.autres.forEach(function (x, i) { cont.appendChild(ligneAutre(x, i)); });
+          }
+        }
+        cont.appendChild(cree("p", "fiche-groupe", def.groupe)); return;
+      }
       var r = ligneChamp(def, c, profil); if (r) cont.appendChild(r);
     });
     /* Les deux cases « primes » (primes et indemnités) vont ensemble. */
@@ -283,6 +334,22 @@
     var choix = {};
     Array.prototype.forEach.call($("fiche-champs").querySelectorAll("input[data-choix]"), function (x) { if (x.checked) choix[x.dataset.choix] = true; });
     if (!choix.primes) choix.primes = false;
+    /* Autres lignes : toutes servent au contrôle (elles sont sur la fiche) ; les cochées vont dans le profil. */
+    var autres = [], tous = { sociales: 0, gains: 0, nettes: 0 };
+    Array.prototype.forEach.call($("fiche-champs").querySelectorAll("[data-autre]"), function (cb) {
+      var i = cb.dataset.autre, x = (etat.analyse.autres || [])[+i]; if (!x) return;
+      var mt = FC.montant($("fiche-autre-" + i).value), g = $("fiche-champs").querySelector('[data-autre-groupe="' + i + '"]').value;
+      if (mt == null || mt < 0) { fautes.push("autre-" + i); return; }
+      tous[g === "credit" ? "nettes" : g] += mt;
+      if (cb.checked && mt > 0) autres.push({ libelle: x.libelle, montant: mt, groupe: g });
+    });
+    if (etat.analyse && etat.analyse.autres && etat.analyse.autres.length) {
+      delete v.autresRetenues;
+      v.sociales = tous.sociales; v.nettes = tous.nettes; v.gains = tous.gains;
+      v.autres = autres;
+      if (autres.some(function (x) { return x.groupe !== "credit"; })) choix.autres = true;
+      if (autres.some(function (x) { return x.groupe === "credit"; })) choix.credit = true;
+    }
     return { v: v, fautes: fautes, choix: choix };
   }
 
@@ -357,6 +424,17 @@
       corps.appendChild(tr);
     });
     lierPrimes();
+    netEgal(r, profil);
+  }
+  /* Net d'Orbite avec ces réglages, face au net de la fiche (les prêts retenus sur la paie remis). */
+  function netEgal(r, profil) {
+    var z = $("fiche-maj-net"); if (!z) return;
+    var ap = FC.appliquer(r.v, r.choix, profil, new Date()), prets = (r.v.autres || []).filter(function (x) { return x.groupe === "credit"; }).reduce(function (t, x) { return t + x.montant; }, 0);
+    var n = r.v.net != null && FC.netApres ? FC.netApres(r.v, ap.partiel, profil, prets) : null;
+    z.hidden = !n || n.fiche == null;
+    if (!n || n.fiche == null) return;
+    z.className = "fiche-maj-net" + (n.egal ? " fiche-maj-net--ok" : "");
+    z.textContent = (n.egal ? "✓ " : "") + "Net d'Orbite avec ces réglages : " + dt3(n.orbite) + " DT · net de la fiche" + (prets ? " avant le prêt" : "") + " : " + dt3(n.fiche) + " DT" + (n.egal ? "" : " (écart " + signe(n.orbite - n.fiche) + " DT)");
   }
   /* Les primes ne sont reprises qu'avec le salaire (même règle que FC.appliquer). */
   function lierPrimes() {
@@ -405,9 +483,11 @@
     var cle = e.target.dataset && e.target.dataset.choixMaj; if (!cle || !etat.k) return;
     var r = etat.k.r;
     r.choix[cle] = e.target.checked ? true : (cle === "primes" ? false : undefined);
+    if (cle === "impot" && !e.target.checked) r.choix.impot = undefined;
     if (cle === "salaire") { lierPrimes(); var p = $("fiche-maj-primes"); if (p && !p.closest(".maj-diff__pareil")) r.choix.primes = p.checked ? true : false; }
     Object.keys(r.choix).forEach(function (k) { if (r.choix[k] === undefined) delete r.choix[k]; });
     majBouton(r, O.profil() || {});
+    netEgal(r, O.profil() || {});
   });
   $("fiche-fermer-sans").addEventListener("click", function () { dlg.close(); });
   $("fiche-fermer").addEventListener("click", function () { dlg.close(); });

@@ -3,12 +3,12 @@
  * Changer « version » pour les montrer de nouveau ; 2 à 4 points courts, du point de vue de l'utilisateur.
  */
 window.ORBITE_NOUVEAUTES = {
-  version: "2026-10-13g",
+  version: "2026-10-13h",
   date: "13 octobre 2026",
   points: [
-    { titre: "Rembourser ou épargner ?", texte: "Vie & impôts › Décider : pour une prime ou une somme de côté, Orbite compare rembourser votre crédit le plus cher, placer en assurance vie ou CEA (avec l'économie d'impôt) et garder en réserve, sur 5 ou 10 ans, puis vous conseille un partage." },
-    { titre: "Votre patrimoine net.", texte: "Mon orbite › Patrimoine : ce que vous possédez moins ce que vous devez, ce qu'il gagne chaque mois, sa courbe et les grandes étapes (fin de chaque crédit). Ajoutez la valeur de votre logement pour un chiffre complet." },
-    { titre: "Moins de défilement, des pages découpées.", texte: "Les pages longues (Mon orbite, Mon profil, Salaire, Épargne, Crédit) s'affichent maintenant une partie à la fois. Sur ordinateur, la rubrique active de la barre de gauche se déplie et liste ses sous-rubriques ; sur téléphone, des pastilles restent en haut de la page. Un clic, et vous êtes dans la bonne partie." },
-    { titre: "Votre net, exactement celui de votre fiche.", texte: "Profil › Salaire › « Autres lignes de ma fiche de paie » : retraite complémentaire et assurance groupe (qui baissent l'impôt), bonification et autres versements, retenues sur le net (syndicat, assurance auto, tickets restaurant), et l'impôt aligné sur votre fiche. Le net obtenu sert partout dans Orbite. Un montant qui change ou une ligne retirée : Orbite demande à partir de quel mois, les mois d'avant restent exacts." }
+    { titre: "Combien chaque banque vous prêterait.", texte: "Crédit › Comparer les banques : même salaire, mais chaque banque a sa règle (net ou brut, salaire du mois ou toute l'année ÷ 12, quotité). Nommez et réglez vos banques : Orbite calcule ce que chacune vous prête, crédits en cours déduits, et montre l'écart." },
+    { titre: "Toutes les lignes de votre fiche lues.", texte: "En lisant votre fiche de paie, Orbite reconnaît maintenant aussi la retraite complémentaire, l'assurance groupe, les bonifications, le syndicat, l'assurance auto et les prêts retenus sur la paie. Vous cochez ce qui s'applique ; l'impôt peut être aligné sur celui de la fiche et Orbite vérifie que votre net tombe juste." },
+    { titre: "Rembourser ou épargner ?", texte: "Vie & impôts › Décider : pour une prime ou une somme de côté, Orbite compare rembourser votre crédit le plus cher, placer en assurance vie ou CEA (avec l'économie d'impôt) et garder en réserve, puis vous conseille un partage." },
+    { titre: "Votre patrimoine net.", texte: "Mon orbite › Patrimoine : ce que vous possédez moins ce que vous devez, sa courbe et les grandes étapes (fin de chaque crédit)." }
   ]
 };

@@ -371,6 +371,11 @@
       /* Patrimoine net (13 oct. 2026) : valeur estimée du logement et des autres biens, hausse annuelle supposée du logement. */
       patrimoine: { logement: nombre(p.patrimoine && p.patrimoine.logement, 0, 0, 1e9), autres: nombre(p.patrimoine && p.patrimoine.autres, 0, 0, 1e9),
         hausseLogement: nombre(p.patrimoine && p.patrimoine.hausseLogement, 2, -10, 15) },
+      /* Comparateur de banques : règle de chaque banque nommée par l'utilisateur (6 au plus). */
+      banques: liste(p.banques, function (b) {
+        b = b || {};
+        return { nom: texte(b.nom, 30) || "Banque", base: b.base === "brut" ? "brut" : "net", revenu: b.revenu === "annee" ? "annee" : "mois", quotite: nombre(b.quotite, QUOTITE, 0.1, 0.8) };
+      }, 6),
       /* « Rembourser ou épargner ? » : rendements supposés (assurance vie / CEA, compte d'épargne), en % par an. */
       decider: { rendementAv: nombre(p.decider && p.decider.rendementAv, 6, 0, 15), rendementEpargne: nombre(p.decider && p.decider.rendementEpargne, 5, 0, 15) },
       autresRevenus: nombre(p.autresRevenus, 0, 0, 1e7),

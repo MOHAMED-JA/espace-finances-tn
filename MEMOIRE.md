@@ -678,6 +678,23 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centunvicies. Lecture des autres lignes de la fiche et comparateur de banques (13 oct.)
+
+Points 3 et 6 du programme d'améliorations (maquette validée « Oui, construis les 4 »). Restent : 5 import du relevé bancaire, 7 bilan annuel PDF, puis 8 audit accessibilité et vitesse.
+
+- **Lecture automatique des autres lignes** (`fiche-calcul.js`, `vue-fiche.js`, `fiche.css`) :
+  - `analyser` reconnaît, avant les cotisations, les lignes hors salaire de base : retenues **sociales** qui baissent l'impôt (`RE_SOCIALE` : CAVIS, retraite complémentaire, assurance groupe, mutuelle…), **gains** (`RE_GAIN_NET` : bonification…), **prêts** retenus sur la paie (`RE_CREDIT`), **retenues sur le net** (`RE_NETTE` : syndicat, UGTT, assurance auto, tickets restaurant, complément de retraite…). Résultat `v.autres` [{libelle, montant, groupe, source, conf, ligne, etat}] ; `groupeAutre(lib)` exporté ;
+  - contrôle : net d'Orbite = net de la fiche ramené au mois − autres retenues − retenues sur le net + gains ;
+  - fenêtre : groupe « Autres lignes de votre fiche » (case, groupe modifiable, montant ; le prêt est **décoché** par défaut), ligne « Impôt aligné sur la fiche » (`#fiche-c-impot`) seulement si le brut habituel est dans la tolérance et si l'écart dépasse 0,0015 ; phrase `#fiche-maj-net` « ✓ Net d'Orbite avec ces réglages : … · net de la fiche avant le prêt : … » ;
+  - application (`appliquer`) : `autresLignes` met à jour une ligne existante du même libellé (`ficheChanger`) ou en ajoute une ; un prêt coché devient un crédit `{type: "autre", mensualite}` (sans doublon) ; `impotAligne` pose `impotFiche` ; « Annuler » rétablit tout ;
+  - tests : `tests/espace/fiche.test.js` (14) ; fixture e2e `e2e/fixtures/fiche-paie-lignes.html` → `.pdf` (générée par `e2e/fiche-fixture.js`, profil fictif).
+- **Comparateur de banques** (Crédit › « Comparer les banques », `#credit?espace=banques`, sous-rubrique `banques`, palette `s-banques`) :
+  - moteur `DeciderCalcul.banques(sy, liste, type)` : pour chaque banque, revenu retenu (net ou brut ; salaire du mois ou année ÷ 12, primes comprises) × quotité (10 à 80 %) − crédits en cours = mensualité possible, puis capital au taux et à la durée des nouveaux crédits du type (`OC.tauxNouveaux`, durée réduite par l'âge si besoin) ; `meilleur`, `ecart`, `ecartMienne` ; `banquesParDefaut(p)` = la règle du profil (« Ma banque ») + les trois autres combinaisons à 40 % (Banque B, C, D) ; 6 banques au plus (`MAX_BANQUES`) ;
+  - profil : `banques` [{nom, base, revenu, quotite}] normalisé (6 au plus) ;
+  - interface `credit-banques.js` : puces Immobilier / Auto / Consommation (créées une fois puis **mises à jour sur place** : un rendu entre l'appui et le relâchement faisait perdre le clic), lignes éditables (nom, base, revenu, quotité, montant, ×), « + Ajouter une banque », barres, avis sur fond sombre, note ; enregistrement différé (400 ms) ; un changement de profil ne reconstruit les lignes que si la liste des banques a changé ; téléphone : nom + × puis base / revenu / quotité, sélecteurs resserrés ;
+  - Orbite ne connaît pas les règles internes des banques : aucune règle n'est attribuée à une banque réelle.
+- e2e : étape fiche (autres lignes, impôt aligné, net juste, Annuler) et étape Décider étendue au comparateur (montants = moteur, quotité et nom gardés, type, ajout/retrait, téléphone). Nouveautés `2026-10-13h`, SW `orbite-2026-10-13j`.
+
 ## 3 centvicies. « Rembourser ou épargner ? » et « Patrimoine net » (13 oct.)
 
 Programme d'améliorations choisi par l'utilisateur le 13 oct. : 1 Rembourser ou épargner, 2 Patrimoine net (faits ici, maquette validée « Oui, construis les deux »), puis 3 lecture automatique des autres lignes de la fiche de paie, 5 import du relevé bancaire, 6 comparateur de banques, 7 bilan annuel PDF, 8 audit accessibilité et vitesse (**à faire, maquette d'abord pour chacun**). La double authentification (4) n'a pas été retenue.

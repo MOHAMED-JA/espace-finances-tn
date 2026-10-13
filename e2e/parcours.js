@@ -2431,21 +2431,51 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     page.off("request", surveiller);
     /* Avant → après, visible avant de valider ; décocher le salaire retire aussi les primes. */
     const diff = await page.$$eval("#fiche-maj-corps tr", (t) => t.map((r) => [r.querySelector(".maj-diff__lib").textContent, (r.querySelector(".maj-diff__avant") || {}).textContent || "", r.querySelector(".maj-diff__apres").textContent]));
-    assert(JSON.stringify(diff) === JSON.stringify([["Salaire de base brut", "2 500,000 DT brut", "2 700,000 DT depuis octobre 2026"], ["Primes et avantages", "aucune", "300,000 DT par mois"], ["Caisse", "CNRPS (public)", "CNSS (privé)"], ["Date d'embauche", "non renseignée", "01/09/2014"]]), "avant → après : " + JSON.stringify(diff));
+    assert(JSON.stringify(diff) === JSON.stringify([["Salaire de base brut", "2 500,000 DT brut", "2 700,000 DT depuis octobre 2026"], ["Primes et avantages", "aucune", "300,000 DT par mois"], ["Caisse", "CNRPS (public)", "CNSS (privé)"], ["Date d'embauche", "non renseignée", "01/09/2014"], ["Impôt aligné sur la fiche", "calcul d'Orbite", "IRPP 555,000 + CSS 12,715"]]), "avant → après : " + JSON.stringify(diff));
     await page.uncheck("#fiche-maj-salaire");
     assert(await page.isDisabled("#fiche-maj-primes") && !(await page.isChecked("#fiche-maj-primes")), "sans le salaire, pas de primes");
     await page.uncheck("#fiche-maj-caisse");
     await page.uncheck("#fiche-maj-dateEmbauche");
+    await page.uncheck("#fiche-maj-impot");
     assert(await page.isDisabled("#fiche-maj") && (await page.textContent("#fiche-maj")) === "Rien de coché à reprendre", "tout décoché : rien à reprendre");
-    for (const id of ["salaire", "primes", "caisse", "dateEmbauche"]) await page.check("#fiche-maj-" + id);
+    for (const id of ["salaire", "primes", "caisse", "dateEmbauche", "impot"]) await page.check("#fiche-maj-" + id);
     assert(!(await page.isDisabled("#fiche-maj")), "tout recoché : mise à jour possible");
     await page.click("#fiche-maj");
     await page.waitForSelector("#dlg-fiche", { state: "hidden" });
     let p = await page.evaluate(() => window.Orbite.profil());
     assert(p.montant === 2700 && p.primesImposables === 300 && p.secteur === "prive" && p.dateEmbauche === "2014-09-01", "profil mis à jour : " + JSON.stringify([p.montant, p.primesImposables, p.secteur, p.dateEmbauche]));
     assert(p.historiqueSalaire.some((h) => h.montant === 2700 && h.mois === 10 && h.annee === 2026), "historique au mois de la fiche");
+    assert(p.impotFiche.actif && p.impotFiche.irpp === 555 && p.impotFiche.brut === 3000, "impôt aligné : " + JSON.stringify(p.impotFiche));
     await page.click(".toast button:has-text('Annuler')");
-    await page.waitForFunction(() => window.Orbite.profil().montant === 2500 && window.Orbite.profil().secteur === "public");
+    await page.waitForFunction(() => window.Orbite.profil().montant === 2500 && window.Orbite.profil().secteur === "public" && !window.Orbite.profil().impotFiche.actif);
+    /* Fiche avec d'autres lignes (13 oct. 2026) : chaque ligne lue et rangée, prêt à cocher, net identique à la fiche. */
+    await page.goto(base + "/espace/#profil?section=salaire");
+    await page.waitForSelector("#fiche-remplir", { state: "visible" });
+    const lfAvant = await page.evaluate(() => JSON.stringify({ l: window.Orbite.profil().lignesFiche, c: window.Orbite.profil().credits, i: window.Orbite.profil().impotFiche }));
+    await page.click("#fiche-remplir");
+    await page.waitForSelector('#dlg-fiche[open][data-ecran="depot"]');
+    await page.setInputFiles("#fiche-fichier", path.join(__dirname, "fixtures", "fiche-paie-lignes.pdf"));
+    await page.waitForSelector('#dlg-fiche[data-ecran="verifier"] .fiche-autre', { timeout: 20000 });
+    const autresLues = await page.$$eval("#fiche-champs .fiche-autre", (rs) => rs.map((r) => [r.querySelector("label").textContent, r.querySelector("select").value, r.querySelector("input[type=checkbox]").checked]));
+    assert(JSON.stringify(autresLues) === JSON.stringify([["CAVIS", "sociales", true], ["Assurance groupe", "sociales", true], ["Bonification crédit logement", "gains", true], ["Cotisation syndicale", "nettes", true], ["Assurance auto", "nettes", true], ["Prêt exceptionnel", "credit", false]]), "autres lignes : " + JSON.stringify(autresLues));
+    assert(await page.isChecked("#fiche-c-impot"), "impôt aligné proposé");
+    assert(!(await page.$('[data-cle="autresRetenues"]')), "plus de total « autres retenues » à part");
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: path.join(CAPTURES, "fiche-autres-lignes.png") });
+    await page.check('[data-autre="5"]');
+    await page.click("#fiche-controler");
+    await page.waitForSelector('#dlg-fiche[data-ecran="controle"]');
+    const diff2 = await page.$$eval("#fiche-maj-corps tr", (t) => t.map((r) => r.querySelector(".maj-diff__lib").textContent));
+    assert(["Autres lignes de la fiche", "Crédits", "Impôt aligné sur la fiche"].every((x) => diff2.includes(x)), "aperçu : " + JSON.stringify(diff2));
+    assert(/^✓ Net d'Orbite avec ces réglages : 2 029,037 DT · net de la fiche avant le prêt : 2 029,037 DT$/.test((await page.textContent("#fiche-maj-net")).replace(/[\u00a0\u202f]/g, " ")), "net identique : " + await page.textContent("#fiche-maj-net"));
+    await page.click("#fiche-maj");
+    await page.waitForSelector("#dlg-fiche", { state: "hidden" });
+    p = await page.evaluate(() => window.Orbite.profil());
+    assert(p.lignesFiche.sociales.length === 2 && p.lignesFiche.gains[0].montant === 60 && p.lignesFiche.nettes.length === 2, "lignes reprises : " + JSON.stringify(p.lignesFiche));
+    assert(p.credits.some((c) => c.libelle === "Prêt exceptionnel" && c.mensualite === 350) && p.impotFiche.irpp === 520, "prêt et impôt repris");
+    await page.waitForSelector("#lf-bloc .lf__ligne", { state: "visible" });
+    await page.click(".toast button:has-text('Annuler')");
+    await page.waitForFunction((a) => JSON.stringify({ l: window.Orbite.profil().lignesFiche, c: window.Orbite.profil().credits, i: window.Orbite.profil().impotFiche }) === a, lfAvant);
     /* Photo depuis le module Salaire : mêmes valeurs, contrôle sans changer le profil. */
     await page.goto(base + "/espace/#salaire");
     await page.waitForSelector("#fiche-controle", { state: "visible" });
@@ -3031,7 +3061,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.setViewportSize({ width: 1360, height: 900 });
   });
 
-  await etape("rembourser ou épargner ? (Décider) et patrimoine net : choix comparés, conseil, hypothèses gardées, valeur du logement", async () => {
+  await etape("rembourser ou épargner ? (Décider), patrimoine net et comparateur de banques : choix comparés, conseil, hypothèses gardées, valeur du logement, règles des banques", async () => {
     await page.setViewportSize({ width: 1360, height: 900 });
     const avant = await page.evaluate(() => JSON.stringify(window.Orbite.profil()));
     await page.evaluate(() => window.Orbite.majProfil({ nombreSalaires: 14, calendrierPrimes: [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1], epargneDisponible: 4000, chargesFixes: 500,
@@ -3078,6 +3108,35 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.goto(base + "/espace/#vie?onglet=decider");
     await page.waitForSelector("#dc-choix li:nth-child(3)");
     assert(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), "Décider sans débordement sur téléphone");
+    await page.setViewportSize({ width: 1360, height: 900 });
+    /* Comparateur de banques : règle de chaque banque, montants du moteur, réglages gardés dans le profil. */
+    await page.evaluate(() => window.Orbite.majProfil({ credits: [{ type: "immo", libelle: "Crédit immobilier", tauxPct: 3, mensualite: 650, moisRestants: 200 }], banques: [] }, { immediat: true }));
+    await page.goto(base + "/espace/#credit?espace=banques");
+    await page.waitForSelector("#credit-banques:not([hidden]) #cb-liste li:nth-child(4)");
+    assert(await page.getAttribute('.rail__sous-lien[data-sr="banques"]', "aria-current") === "true", "sous-rubrique « Comparer les banques »");
+    const montants = () => page.$$eval("#cb-liste .cb-v strong", (l) => l.map((e) => e.textContent));
+    const attendus = () => page.evaluate(() => window.DeciderCalcul.banques(window.Orbite.synthese(), window.Orbite.profil().banques.length ? window.Orbite.profil().banques : null, document.querySelector("#cb-types [aria-checked=true]").getAttribute("data-type")).lignes.map((x) => window.Orbite.F.dt0(x.capital)));
+    assert(JSON.stringify(await montants()) === JSON.stringify(await attendus()), "montants du moteur : " + await montants());
+    assert(await page.isVisible(".cb-ligne--top") && /^Jusqu'à .+ de plus selon la banque/.test(await page.textContent("#cb-avis")), "la plus favorable signalée : " + await page.textContent("#cb-avis"));
+    /* Régler une banque : quotité et nom retenus dans le profil, montant recalculé. */
+    const avantB = (await montants())[1];
+    await page.fill('#cb-liste li[data-i="1"] [data-b="quotite"]', "45");
+    await page.fill('#cb-liste li[data-i="1"] [data-b="nom"]', "Banque du quartier");
+    await page.waitForFunction(() => { const b = window.Orbite.profil().banques; return b.length === 4 && b[1].quotite === 0.45 && b[1].nom === "Banque du quartier"; });
+    assert((await montants())[1] !== avantB && JSON.stringify(await montants()) === JSON.stringify(await attendus()), "recalculé à 45 %");
+    await page.selectOption('#cb-liste li[data-i="1"] [data-b="revenu"]', "annee");
+    await page.waitForFunction(() => window.Orbite.profil().banques[1].revenu === "annee");
+    /* Type de crédit, ajout et retrait d'une banque. */
+    await page.click('#cb-types [data-type="auto"]');
+    assert(await page.getAttribute('#cb-types [data-type="auto"]', "aria-checked") === "true" && JSON.stringify(await montants()) === JSON.stringify(await attendus()), "crédit auto");
+    await page.click("#cb-plus");
+    await page.waitForSelector("#cb-liste li:nth-child(5)");
+    await page.click('#cb-liste li[data-i="4"] [data-retirer]');
+    await page.waitForFunction(() => document.querySelectorAll("#cb-liste li").length === 4 && window.Orbite.profil().banques.length === 4);
+    await page.screenshot({ path: path.join(CAPTURES, "banques.png") });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(300);
+    assert(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), "comparateur sans débordement sur téléphone");
     await page.setViewportSize({ width: 1360, height: 900 });
     await page.evaluate((a) => window.Orbite.majProfil(JSON.parse(a), { immediat: true }), avant);
   });

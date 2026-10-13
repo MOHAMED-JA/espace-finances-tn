@@ -1,6 +1,7 @@
 /*
  * Orbite — module Crédit, point 5 (validé le 12 oct. 2026) : onglets « Simuler », « Mon projet immobilier »,
- * « Comparer mes offres », « Regrouper mes crédits ». Route : #credit?espace=projet|offres|regrouper.
+ * « Comparer mes offres », « Regrouper mes crédits » (et « Comparer les banques » : credit-banques.js).
+ * Route : #credit?espace=projet|offres|banques|regrouper|tmm.
  * Calculs : public/moteurs/credit/projets.js (pur, testé). Les règles (frais d'achat, indemnité, Premier logement)
  * sont celles validées par l'utilisateur ; toutes restent modifiables et « à confirmer » quand la source n'est pas officielle.
  */
@@ -9,7 +10,7 @@
   var O = window.Orbite, P = window.CreditProjets, OC = window.OrbiteCalcul, doc = document;
   if (!O || !P || !OC) return;
   var $ = O.$, F = O.F;
-  var ESPACES = ["simuler", "projet", "offres", "regrouper", "tmm"];
+  var ESPACES = ["simuler", "projet", "offres", "banques", "regrouper", "tmm"];
   var etat = { projet: null, offres: null, regrouper: null };
 
   /* ---------- Petits outils ---------- */
@@ -58,6 +59,7 @@
     if (focus) $("ce-tab-" + cle).focus();
     if (cle === "projet") rendreProjet();
     if (cle === "offres") rendreOffres();
+    if (cle === "banques") doc.dispatchEvent(new CustomEvent("orbite:credit-banques"));
     if (cle === "regrouper") rendreRegrouper();
     if (cle === "tmm" && window.OrbiteTMM) window.OrbiteTMM.rendreOnglet();
     requestAnimationFrame(function () { O.placerPastilles($("vue-credit")); });
