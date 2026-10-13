@@ -689,7 +689,7 @@ Deux vidéos de l'utilisateur (« la transition entre les étapes n'est pas flui
   - le voile clair qui clignotait au changement de page venait du fondu de page (`document.startViewTransition`) qui emportait aussi le voile de la visite. `app.js` ne fait plus ce fondu, ni l'animation d'entrée `.vue--entree`, tant que `body.visite-ouverte` ;
   - plus d'attente fixe de 420 ms : `quandPrete()` attend `orbite:vue` de la bonne page puis une rubrique immobile sur 2 images (140 ms au moins, le temps que la bulle s'efface ; 900 ms au plus) ;
   - même page : la bulle reste et glisse, seul le texte se renouvelle (`.visite__bulle--texte`, 220 ms). Changement de page : le halo se referme sur place (`fermerHalo`), la bulle s'efface en 140 ms, puis elle est posée à sa nouvelle place sans traverser l'écran (`.visite--pose`) et apparaît, pendant que le halo glisse jusqu'à la rubrique.
-- SW `orbite-2026-10-13b`.
+- SW `orbite-2026-10-13b`. PR #123 fusionnée ; **vérifié en ligne par l'utilisateur** (Voyage dans le temps et visite « Pour aller plus loin »).
 - **Tests e2e** : piste juste à 30/60 puis à chaque échantillon pendant la lecture, durée de la fin de lecture (1,2 à 3,6 s), arrêt propre ; pendant la visite, aucun fondu de page ni entrée animée, passage d'une page à l'autre < 1,1 s.
 
 ## 3 centduodecies. Apparence personnelle (13 oct.)
