@@ -57,6 +57,7 @@
       section("s-fiscal", "#vie?onglet=fiscal", "Optimiseur fiscal", "Vie & impôts › Impôt", "optimiseur fiscal impot 31 decembre dhariba", "epargne"),
       section("s-etsi", "#vie?onglet=scenarios", "Et si…", "Vie & impôts › Scénarios", "et si scenarios mariage enfant achat", "epargne"),
       section("s-depense", "#mois?onglet=budget", "Noter une dépense", "Mon mois › Budget", "depense noter ajouter courses essence cafe masrouf", "orbite"),
+      section("s-releve", "#mois?onglet=budget&releve=1", "Importer mon relevé bancaire", "Mon mois › Budget : dépenses rangées par enveloppe", "releve bancaire importer csv pdf operations depenses banque extrait compte", "orbite"),
       section("s-calendrier", "#mois?onglet=calendrier", "Calendrier de l'argent", "Mon mois › Calendrier : paie, prélèvements, 31 décembre", "calendrier agenda dates paie prelevement echeance ics", "orbite"),
       section("s-projet", "#credit?espace=projet", "Mon projet immobilier", "Crédit › Projet : frais, crédit, quand acheter", "projet immobilier logement maison appartement achat promoteur frais notaire enregistrement premier logement dar", "credit"),
       section("s-offres", "#credit?espace=offres", "Comparer mes offres", "Crédit › Offres de plusieurs banques", "comparer offres banques comparateur cout total moins cher", "credit"),

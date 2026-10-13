@@ -64,7 +64,15 @@
       var d = {}; Object.keys(x.mois[k] || {}).forEach(function (c) { if (cles.indexOf(c) !== -1) { var v = Math.min(1e6, Math.max(0, num(x.mois[k][c], 0))); if (v > 0) d[c] = arr(v); } });
       mois[k] = d;
     });
-    return { enveloppes: env, mois: mois };
+    /* Import du relevé (13 oct. 2026) : mémoire « commerçant → enveloppe » (choix de l'utilisateur) et empreintes
+       des relevés déjà ajoutés (dates et montants hachés, sans libellé). */
+    var memoire = {}, n = 0;
+    if (x.memoire && typeof x.memoire === "object") Object.keys(x.memoire).forEach(function (k) {
+      var c = String(k).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 30), v = x.memoire[k];
+      if (c.length >= 3 && n < 300 && (cles.indexOf(v) !== -1 || v === "ignore")) { memoire[c] = v; n++; }
+    });
+    var imports = Array.isArray(x.imports) ? x.imports.filter(function (e) { return typeof e === "string" && /^[0-9a-f]{8}-\d{1,4}$/.test(e); }).slice(-24) : [];
+    return { enveloppes: env, mois: mois, memoire: memoire, imports: imports };
   }
 
   /** Jours à tenir jusqu'à la prochaine paie (jourPaie 0 = dernier jour du mois) : aujourd'hui compris, le jour de paie non (au moins 1). */

@@ -1595,7 +1595,7 @@
                   <div class="champ"><label for="mo-env">Enveloppe</label><div class="saisie"><select id="mo-env"></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
                   <button type="submit" class="bouton bouton--plein" id="mo-ajouter"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg>Ajouter</button>
                 </form>
-                <p class="ce-note"><svg aria-hidden="true"><use href="/orbite/icones.svg#cadenas"/></svg><span>Seuls les totaux par enveloppe sont gardés, dans votre profil. L'import d'un relevé bancaire viendra plus tard.</span></p>
+                <p class="ce-note"><svg aria-hidden="true"><use href="/orbite/icones.svg#cadenas"/></svg><span>Seuls les totaux par enveloppe sont gardés, dans votre profil. Votre relevé bancaire peut aussi être importé, plus bas.</span></p>
               </section>
             </div>
             <section class="panneau mo-env-panneau" aria-labelledby="mo-t-env">
@@ -1604,6 +1604,30 @@
                 <button type="button" class="bouton bouton--fantome bouton--petit" id="mo-env-reinit" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#annuler"/></svg>Revenir à la proposition</button>
               </div>
               <ul class="mo-env" id="mo-env-liste" role="list"></ul>
+            </section>
+            <section class="panneau mo-rel" id="mo-releve" aria-labelledby="mo-t-releve">
+              <div class="mo-env-tete">
+                <div><h2 id="mo-t-releve">Importer mon relevé</h2><p class="panneau__sous">Le relevé de votre banque en PDF, en CSV ou en photo : Orbite range chaque dépense dans son enveloppe. Il est lu sur votre appareil, rien n'est envoyé ; seuls les totaux par enveloppe sont gardés.</p></div>
+              </div>
+              <div class="mo-rel__depot" id="mo-rel-depot">
+                <span class="mo-rel__depot-ico" aria-hidden="true"><svg><use href="/orbite/icones.svg#fiche"/></svg></span>
+                <div class="mo-rel__depot-txt"><b>Déposez votre relevé ici</b><span>PDF, CSV ou photo · un fichier Excel s'enregistre d'abord en CSV</span></div>
+                <button type="button" class="bouton bouton--petit" id="mo-rel-choisir"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg>Choisir le relevé</button>
+                <input type="file" id="mo-rel-fichier" accept=".pdf,.csv,.txt,application/pdf,text/csv,text/plain,image/*" hidden>
+              </div>
+              <p class="mo-rel__etat" id="mo-rel-etat" role="status" aria-live="polite" hidden></p>
+              <div class="mo-rel__resultat" id="mo-rel-resultat" hidden>
+                <h3 class="mo-rel__titre" id="mo-rel-titre" tabindex="-1"></h3>
+                <ol class="mo-rel__ops" id="mo-rel-ops" role="list"></ol>
+                <p class="mo-rel__info" id="mo-rel-info" hidden></p>
+                <div class="mo-rel__tuiles" id="mo-rel-tuiles"></div>
+                <div class="mo-rel__actions">
+                  <button type="button" class="bouton bouton--fantome" id="mo-rel-annuler">Annuler</button>
+                  <span class="mo-rel__total chiffre" id="mo-rel-total"></span>
+                  <button type="button" class="bouton bouton--plein" id="mo-rel-ajouter"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg><span id="mo-rel-ajouter-lib">Ajouter au budget</span></button>
+                </div>
+                <p class="ce-note"><svg aria-hidden="true"><use href="/orbite/icones.svg#cadenas"/></svg><span>Changez une étiquette pour changer d'enveloppe : Orbite s'en souvient pour vos prochains relevés (CARREFOUR → Courses). Les entrées d'argent sont ignorées. Une dépense déjà notée à la main serait comptée deux fois : mettez-la sur « Ignorer ».</span></p>
+              </div>
             </section>
           </div>
 
@@ -2338,6 +2362,7 @@
   <script src="/moteurs/vie/scenario.js"></script>
   <script src="/moteurs/salaire/pension.js"></script>
   <script src="/espace/js/budget-calcul.js"></script>
+  <script src="/espace/js/releve-calcul.js"></script>
   <script src="/espace/js/orbite-calcul.js"></script>
   <script src="/espace/js/orbite-intelligence.js"></script>
   <script src="/espace/js/assistant-local.js"></script>
@@ -2400,6 +2425,7 @@
   <script src="/espace/js/annee-calcul.js"></script>
   <script src="/espace/js/vue-annee.js"></script>
   <script src="/espace/js/fiche-lecture.js"></script>
+  <script src="/espace/js/releve-import.js"></script>
   <script src="/espace/js/fiche-calcul.js"></script>
   <script src="/espace/js/dossier-calcul.js"></script>
   <script src="/espace/js/negociateur-calcul.js"></script>

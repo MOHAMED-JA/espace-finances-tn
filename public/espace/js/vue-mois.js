@@ -343,6 +343,8 @@
     if ($("vue-mois").hidden) return;
     if (ongletActif() === "calendrier") rendreCalendrier(); else rendreBudget();
   }
+  /* Pour l'import du relevé (releve-import.js) : plan du mois et enregistrement avec « Annuler ». */
+  window.OrbiteBudget = { plan: plan, enregistrer: enregistrer };
   doc.addEventListener("orbite:vue", function (e) {
     if (e.detail.vue !== "mois") return;
     ouvrirOnglet(e.detail.params.get("onglet") || ongletActif());
