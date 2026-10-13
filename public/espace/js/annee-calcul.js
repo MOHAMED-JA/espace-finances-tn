@@ -24,7 +24,7 @@
 
   function salaireMois(p, Y, k) {
     var h = OC.salaireEnVigueur(p, Y, k) || { montant: p.montant, sens: p.sens, periode: p.periode };
-    return { entree: h, s: OC.salaireDe(p, h, Y) };
+    return { entree: h, s: OC.salaireDe(OC.profilAuMois(p, Y, k), h, Y) };
   }
 
   /* Salaire, impôt et cotisations sur les mois couverts (primes réparties selon le calendrier du profil). */

@@ -104,18 +104,33 @@
     };
   }
 
-  /* Autres lignes de la fiche de paie : trois listes de { libelle, montant } (8 lignes au plus chacune, montants par mois). */
-  var GROUPES_FICHE = ["sociales", "gains", "nettes"];
+  /* Autres lignes de la fiche de paie : trois listes de { libelle, montant, debut, fin } (montants par mois).
+     debut / fin : « AAAA-MM » (vide = depuis toujours / sans fin). Un changement daté ferme l'ancienne ligne (fin = mois
+     précédent) et en ouvre une nouvelle (debut = mois du changement) : chaque mois garde ses propres montants.
+     16 lignes au plus par groupe (lignes en cours, terminées et à venir). */
+  var GROUPES_FICHE = ["sociales", "gains", "nettes"], MAX_LIGNES_FICHE = 16;
+  function moisFiche(v) { return typeof v === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(v) && v >= "1990-01" && v <= "2100-12" ? v : ""; }
+  function cleMois(annee, mois0) { return annee + "-" + String(mois0 + 1).padStart(2, "0"); }
   function normaliserLignesFiche(v) {
     var x = v && typeof v === "object" ? v : {}, out = {};
     GROUPES_FICHE.forEach(function (g) {
-      out[g] = (Array.isArray(x[g]) ? x[g] : []).slice(0, 8).map(function (l) {
-        return { libelle: texte(l && l.libelle, 40), montant: Math.round(nombre(l && l.montant, 0, 0, 1e5) * 1000) / 1000 };
-      }).filter(function (l) { return l.libelle || l.montant > 0; });
+      out[g] = (Array.isArray(x[g]) ? x[g] : []).slice(0, MAX_LIGNES_FICHE).map(function (l) {
+        return { libelle: texte(l && l.libelle, 40), montant: Math.round(nombre(l && l.montant, 0, 0, 1e5) * 1000) / 1000, debut: moisFiche(l && l.debut), fin: moisFiche(l && l.fin) };
+      }).filter(function (l) { return (l.libelle || l.montant > 0) && !(l.debut && l.fin && l.fin < l.debut); });
     });
     return out;
   }
-  function sommeFiche(p, g) { return ((p.lignesFiche && p.lignesFiche[g]) || []).reduce(function (t, l) { return t + (l.montant || 0); }, 0); }
+  function ligneActive(l, cle) { return (!l.debut || l.debut <= cle) && (!l.fin || l.fin >= cle); }
+  /* Lignes en vigueur un mois donné (par défaut : le mois du profil « _moisFiche », sinon le mois en cours). */
+  function lignesAuMois(p, annee, mois0) {
+    var cle = annee != null ? cleMois(annee, mois0) : p._moisFiche || cleMois(new Date().getFullYear(), new Date().getMonth()), out = {};
+    GROUPES_FICHE.forEach(function (g) { out[g] = ((p.lignesFiche && p.lignesFiche[g]) || []).filter(function (l) { return ligneActive(l, cle); }); });
+    return out;
+  }
+  function sommeFiche(p, g) { return lignesAuMois(p)[g].reduce(function (t, l) { return t + (l.montant || 0); }, 0); }
+  /* Profil vu un mois donné : ses lignes de fiche sont celles de ce mois (paie mois par mois, Mon année, hausses futures). */
+  function profilAuMois(p, annee, mois0) { return Object.assign({}, p, { _moisFiche: cleMois(annee, mois0) }); }
+  function signatureFiche(p) { var l = lignesAuMois(p); return GROUPES_FICHE.map(function (g) { return l[g].reduce(function (t, x) { return t + x.montant; }, 0).toFixed(3); }).join("/"); }
   /* Impôt aligné : IRPP et CSS retenus sur la fiche, pour le brut mensuel de cette fiche (au-delà, le calcul d'Orbite reprend). */
   function normaliserImpotFiche(v) {
     var x = v && typeof v === "object" ? v : {};
@@ -527,7 +542,7 @@
     for (var k = i - 1; k >= 0; k--) if (!memeSalaire(hist[k], ici)) { prec = hist[k]; break; }
     var sPrec = prec ? salaireDe(p, prec) : null;
     var futurs = hist.filter(function (h) { return cleHausse(h) > cle; }).map(function (h) {
-      var sf = salaireDe(p, h);
+      var sf = salaireDe(profilAuMois(p, h.annee, h.mois - 1), h);
       return { entree: h, mois: cleHausse(h) - cle, date: MOIS[h.mois - 1] + " " + h.annee, brutMensuel: sf.brutMensuel, netMensuel: sf.netMensuel, netAnnuel: sf.netAnnuel, brutAnnuel: sf.brutAnnuel };
     });
     return { liste: hist, enVigueur: ici, depuis: ici && ici.annee ? MOIS[ici.mois - 1] + " " + ici.annee : null,
@@ -542,7 +557,7 @@
       for (var y = Y + 1; y <= Y + 10; y++) if (CP.tauxAbattement(y) !== CP.tauxAbattement(y - 1)) { var k = y * 12 - cle0; genres[k] = Object.assign(genres[k] || {}, { loi: true }); }
     }
     return Object.keys(genres).map(Number).sort(function (a, b) { return a - b; }).map(function (t) {
-      var d = new Date(Y, m.getMonth() + t, 1), h = salaireEnVigueur(p, d.getFullYear(), d.getMonth()) || p, sf = salaireDe(p, h, d.getFullYear());
+      var d = new Date(Y, m.getMonth() + t, 1), h = salaireEnVigueur(p, d.getFullYear(), d.getMonth()) || p, sf = salaireDe(profilAuMois(p, d.getFullYear(), d.getMonth()), h, d.getFullYear());
       return { mois: t, date: MOIS[d.getMonth()] + " " + d.getFullYear(), salaire: !!genres[t].salaire, loi: !!genres[t].loi, tauxAbattement: sf.abattementTaux || null,
         brutMensuel: sf.brutMensuel, netMensuel: sf.netMensuel, netAnnuel: sf.netAnnuel, brutAnnuel: sf.brutAnnuel };
     });
@@ -551,21 +566,77 @@
   /* Salaire de l'année civile calculé mois par mois : chaque mois (et chaque prime) au salaire alors en vigueur.
      L'impôt annuel porte sur le total de l'année. Renvoie null si le salaire ne change pas dans l'année. */
   function salaireAnnee(p, maintenant) {
-    if (!(p.historiqueSalaire || []).length) return null;
-    var Y = (maintenant || new Date()).getFullYear(), cal = calendrierPrimes(p), cache = {}, parMois = [], brutAn = 0, ids = {};
+    if (!(p.historiqueSalaire || []).length && !lignesDatees(p)) return null;
+    var Y = (maintenant || new Date()).getFullYear(), cal = calendrierPrimes(p), cache = {}, parMois = [], brutAn = 0, ids = {}, moy = { sociales: 0, gains: 0, nettes: 0 };
     for (var k = 0; k < 12; k++) {
-      var h = salaireEnVigueur(p, Y, k) || { montant: p.montant, sens: p.sens, periode: p.periode };
-      var id = h.montant + "|" + h.sens + "|" + h.periode, S = cache[id] || (cache[id] = salaireDe(p, h));
+      var h = salaireEnVigueur(p, Y, k) || { montant: p.montant, sens: p.sens, periode: p.periode }, pm = profilAuMois(p, Y, k);
+      var id = h.montant + "|" + h.sens + "|" + h.periode + "|" + signatureFiche(pm), S = cache[id] || (cache[id] = salaireDe(pm, h));
       ids[id] = true;
-      parMois.push({ mois: k, brutMensuel: S.brutMensuel, primes: cal[k], retenue: S.impotMois + cal[k] * S.impotParVersement, salaire: h });
+      GROUPES_FICHE.forEach(function (g) { moy[g] += sommeFiche(pm, g) / 12; });
+      parMois.push({ mois: k, brutMensuel: S.brutMensuel, primes: cal[k], retenue: S.impotMois + cal[k] * S.impotParVersement, salaire: h, netMensuel: S.netMensuel });
       brutAn += S.brutMensuel * (1 + cal[k]);
     }
     if (Object.keys(ids).length < 2) return null;
     var n = 12 + cal.reduce(function (a, b) { return a + b; }, 0);
-    var sA = salaire(Object.assign({}, p, { sens: "brut", periode: "mensuel", montant: brutAn / n, nombreSalaires: n }));
+    /* Impôt de l'année : brut moyen et lignes de fiche moyennes de l'année (une ligne par groupe, sans date). */
+    var lm = {}; GROUPES_FICHE.forEach(function (g) { lm[g] = moy[g] > 0 ? [{ libelle: "Moyenne de l'année", montant: moy[g], debut: "", fin: "" }] : []; });
+    var sA = salaire(Object.assign({}, p, { sens: "brut", periode: "mensuel", montant: brutAn / n, nombreSalaires: n, lignesFiche: lm, impotFiche: {} }));
     sA.parMois = parMois; sA.annee = Y; sA.varie = true;
     return sA;
   }
+
+  /* ---------- Changements datés d'une liste de lignes (un groupe), sans effet de bord : renvoient une nouvelle liste ---------- */
+  function moisPrecedent(cle) { var a = +cle.slice(0, 4), m = +cle.slice(5, 7) - 2; if (m < 0) { m = 11; a--; } return cleMois(a, m); }
+  function moisSuivant(cle) { var a = +cle.slice(0, 4), m = +cle.slice(5, 7); if (m > 11) { m = 0; a++; } return cleMois(a, m); }
+  function copieLignes(l) { return (l || []).map(function (x) { return Object.assign({ debut: "", fin: "" }, x); }); }
+  /* Ligne qui précède (même libellé, terminée le mois d'avant son début) et ligne qui suit (même libellé, commence le mois suivant sa fin). */
+  function predecesseur(l, i) { var x = l[i]; if (!x.debut) return -1; var f = moisPrecedent(x.debut); for (var k = 0; k < l.length; k++) if (k !== i && l[k].libelle === x.libelle && l[k].fin === f) return k; return -1; }
+  function successeur(l, i) { var x = l[i]; if (!x.fin) return -1; var d = moisSuivant(x.fin); for (var k = 0; k < l.length; k++) if (k !== i && l[k].libelle === x.libelle && l[k].debut === d) return k; return -1; }
+  /* Nouveau montant à partir du mois « mois » (AAAA-MM) ; mois vide = correction (tous les mois de la ligne). */
+  function ficheChanger(lignes, i, montant, mois) {
+    var l = copieLignes(lignes), x = l[i];
+    if (!x) return l;
+    if (!mois || (x.debut && mois <= x.debut)) { x.montant = montant; return l; }
+    var nouvelle = { libelle: x.libelle, montant: montant, debut: mois, fin: x.fin };
+    var s = successeur(l, i);
+    if (s >= 0 && l[s].debut <= mois) { l[s].montant = montant; return l; }
+    x.fin = moisPrecedent(mois);
+    if (s >= 0) { nouvelle.fin = moisPrecedent(l[s].debut); }
+    l.splice(i + 1, 0, nouvelle);
+    return l;
+  }
+  /* Ligne retirée à partir de « mois » ; mois vide ou avant son début = supprimée (erreur de saisie). */
+  function ficheRetirer(lignes, i, mois) {
+    var l = copieLignes(lignes), x = l[i];
+    if (!x) return l;
+    if (!mois || (x.debut && mois <= x.debut)) { l.splice(i, 1); return l; }
+    var s = successeur(l, i);
+    if (s >= 0) l.splice(s, 1);
+    x.fin = moisPrecedent(mois);
+    return copieLignes(l.filter(function (y, k) { return k === l.indexOf(x) || !(y.libelle === x.libelle && y.debut && y.debut > x.fin); }));
+  }
+  /* Annule ce qui est prévu après la ligne i : le changement de montant à venir ou le retrait à venir. */
+  function ficheAnnulerFutur(lignes, i) {
+    var l = copieLignes(lignes), x = l[i];
+    if (!x) return l;
+    var s = successeur(l, i);
+    if (s >= 0) { x.fin = l[s].fin; l.splice(s, 1); } else x.fin = "";
+    return l;
+  }
+  /* Ce que montre le profil au mois « cle » : lignes en cours ou à venir (avec leur étiquette), lignes terminées. */
+  function ficheVue(lignes, cle) {
+    var l = copieLignes(lignes), vue = { visibles: [], terminees: [] };
+    l.forEach(function (x, i) {
+      var p = predecesseur(l, i), s = successeur(l, i);
+      if (x.fin && x.fin < cle) { vue.terminees.push({ i: i, ligne: x }); return; }
+      if (x.debut && x.debut > cle && p >= 0 && !(l[p].fin && l[p].fin < cle)) return; /* changement à venir : montré sur la ligne en cours */
+      vue.visibles.push({ i: i, ligne: x, active: ligneActive(x, cle), avant: p >= 0 ? l[p] : null, suivante: s >= 0 ? l[s] : null });
+    });
+    return vue;
+  }
+
+  /* Le profil a-t-il des lignes de fiche datées (début ou fin) ? */
+  function lignesDatees(p) { return GROUPES_FICHE.some(function (g) { return ((p.lignesFiche && p.lignesFiche[g]) || []).some(function (l) { return l.debut || l.fin; }); }); }
 
   function calendrierPrimes(p) {
     if (p.activite === "retraite") return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -1132,7 +1203,7 @@
   }
 
   var API = {
-    TMM: TMM, definirTMM: definirTMM, CREDITS_TYPES: CREDITS_TYPES, calculAligne: calculAligne, sommeFiche: sommeFiche, GROUPES_FICHE: GROUPES_FICHE, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, pension: pension, futursRevenu: futursRevenu, lireEmail: lireEmail, lireTelephone: lireTelephone, formatTelephone: formatTelephone, contratCommence: contratCommence, normaliserChangement: normaliserChangement, normaliserScenario: normaliserScenario, MAX_SCENARIOS: MAX_SCENARIOS, MAX_CHANGEMENTS: MAX_CHANGEMENTS, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
+    TMM: TMM, definirTMM: definirTMM, CREDITS_TYPES: CREDITS_TYPES, calculAligne: calculAligne, sommeFiche: sommeFiche, GROUPES_FICHE: GROUPES_FICHE, MAX_LIGNES_FICHE: MAX_LIGNES_FICHE, lignesAuMois: lignesAuMois, profilAuMois: profilAuMois, ligneActive: ligneActive, cleMois: cleMois, signatureFiche: signatureFiche, lignesDatees: lignesDatees, ficheChanger: ficheChanger, ficheRetirer: ficheRetirer, ficheAnnulerFutur: ficheAnnulerFutur, ficheVue: ficheVue, moisPrecedent: moisPrecedent, moisSuivant: moisSuivant, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, pension: pension, futursRevenu: futursRevenu, lireEmail: lireEmail, lireTelephone: lireTelephone, formatTelephone: formatTelephone, contratCommence: contratCommence, normaliserChangement: normaliserChangement, normaliserScenario: normaliserScenario, MAX_SCENARIOS: MAX_SCENARIOS, MAX_CHANGEMENTS: MAX_CHANGEMENTS, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
     profilParDefaut: profilParDefaut, normaliser: normaliser, creditTermine: creditTermine, age: age, etatSalaire: etatSalaire, entreeBrut: entreeBrut,
     tranche: tranche, salaire: salaire, augmentation: augmentation, calendrierPrimes: calendrierPrimes, impotRestantAnnee: impotRestantAnnee,
     capitalPourMensualite: capitalPourMensualite, mensualitePourCapital: mensualitePourCapital, capacite: capacite,

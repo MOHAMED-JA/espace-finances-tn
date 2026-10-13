@@ -784,7 +784,7 @@
     /* Point de départ : le profil de l'utilisateur (salaire, famille, primes). */
     depuisProfil: function (profil) {
       var pn = O.normaliser(profil);
-      fiche = { lignes: pn.lignesFiche, impot: pn.activite === "retraite" ? null : pn.impotFiche };
+      fiche = { lignes: O.lignesAuMois(pn), impot: pn.activite === "retraite" ? null : pn.impotFiche };
       var e = O.etatSalaire(pn);
       e.tauxAccidentTravailPct = null;
       e.industrieManufacturiere = false;
@@ -830,7 +830,7 @@
   var AO = window.Orbite;
   if (AO && AO.surProfil) AO.surProfil(function (sy, profil) {
     var pn = O.normaliser(profil), avant = JSON.stringify(fiche);
-    fiche = { lignes: pn.lignesFiche, impot: pn.activite === "retraite" ? null : pn.impotFiche };
+    fiche = { lignes: O.lignesAuMois(pn), impot: pn.activite === "retraite" ? null : pn.impotFiche };
     if (JSON.stringify(fiche) !== avant && dernier) calculer(false);
   });
 

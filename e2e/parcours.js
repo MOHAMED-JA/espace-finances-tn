@@ -1864,6 +1864,40 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     /* Comparaison d'offres : à barèmes égaux, sans les lignes de l'employeur actuel. */
     const offre = await page.evaluate(() => window.OrbiteCalcul.salaire(window.OrbiteCalcul.normaliser(Object.assign({}, window.Orbite.profil(), { lignesFiche: {}, impotFiche: {} }))).netMensuel);
     assert(offre > 2159.649, "sans les lignes, le net est plus élevé");
+    /* Lignes datées : nouveau montant à partir du mois en cours, puis changement à venir annulé, puis retrait. */
+    await page.goto(base + "/espace/#profil?section=salaire");
+    await page.waitForSelector('#lf-bloc .lf__ligne[data-g="nettes"]', { state: "visible" });
+    const netAvant = await page.evaluate(() => window.OrbiteCalcul.salaire(window.Orbite.profil()).netMensuel);
+    const auto = page.locator('.lf__ligne[data-g="nettes"]').first().locator(".lf__montant");
+    await auto.fill("140"); await auto.press("Tab");
+    await page.waitForSelector(".lf-dt #lf-dt-mois");
+    assert(/136,000 → 140,000/.test((await page.textContent(".lf-dt__q")).replace(/[\u00a0\u202f]/g, " ")), "question « à partir de quel mois ? »");
+    await page.click('[data-lf-dt="appliquer"]');
+    await page.waitForSelector(".lf__info .lf-puce");
+    assert(/avant 136,000/.test((await page.textContent(".lf__groupe--nettes .lf__info")).replace(/[\u00a0\u202f]/g, " ")), "étiquette « depuis … · avant 136,000 DT »");
+    assert(/Lignes terminées \(1\)/.test(await page.textContent(".lf__groupe--nettes")), "ancienne ligne terminée");
+    await page.waitForFunction((n) => Math.abs(window.OrbiteCalcul.salaire(window.Orbite.profil()).netMensuel - (n - 4)) < 0.001, netAvant);
+    const moisPasses = await page.evaluate(() => { const p = window.Orbite.profil(), m = new Date(); return m.getMonth() > 0 ? window.OrbiteCalcul.lignesAuMois(p, m.getFullYear(), m.getMonth() - 1).nettes[0].montant : 136; });
+    assert(moisPasses === 136, "le mois d'avant garde 136 DT : " + moisPasses);
+    /* Changement à venir (janvier prochain) : étiquette « passe à … », puis annulé. */
+    const auto2 = page.locator('.lf__ligne[data-g="nettes"]').first().locator(".lf__montant");
+    await auto2.fill("150"); await auto2.press("Tab");
+    await page.waitForSelector(".lf-dt #lf-dt-mois");
+    await page.selectOption("#lf-dt-mois", "0");
+    await page.selectOption("#lf-dt-an", String(new Date().getFullYear() + 1));
+    await page.click('[data-lf-dt="appliquer"]');
+    await page.waitForSelector("[data-lf-annuler-futur]");
+    assert(/passe à 150,000/.test((await page.textContent(".lf__groupe--nettes")).replace(/[\u00a0\u202f]/g, " ")), "changement à venir affiché");
+    assert(Math.abs(await page.evaluate(() => window.OrbiteCalcul.salaire(window.Orbite.profil()).netMensuel) - (netAvant - 4)) < 0.001, "le net du mois ne change pas encore");
+    await page.click("[data-lf-annuler-futur]");
+    await page.waitForFunction(() => !document.querySelector("[data-lf-annuler-futur]"));
+    /* Retrait d'une ligne enregistrée : à partir de quel mois ; « erreur » la supprime. */
+    await page.locator('.lf__ligne[data-g="gains"] .lf__retirer').first().click();
+    await page.waitForSelector(".lf-dt #lf-dt-mois");
+    await page.click('[data-lf-dt="annuler"]');
+    await page.waitForFunction(() => !document.querySelector(".lf-dt"));
+    assert(await page.$('.lf__ligne[data-g="gains"]'), "annuler garde la ligne");
+
     /* Téléphone : bloc sans débordement. */
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(base + "/espace/#profil?section=salaire");
