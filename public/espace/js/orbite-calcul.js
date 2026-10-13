@@ -104,6 +104,24 @@
     };
   }
 
+  /* Autres lignes de la fiche de paie : trois listes de { libelle, montant } (8 lignes au plus chacune, montants par mois). */
+  var GROUPES_FICHE = ["sociales", "gains", "nettes"];
+  function normaliserLignesFiche(v) {
+    var x = v && typeof v === "object" ? v : {}, out = {};
+    GROUPES_FICHE.forEach(function (g) {
+      out[g] = (Array.isArray(x[g]) ? x[g] : []).slice(0, 8).map(function (l) {
+        return { libelle: texte(l && l.libelle, 40), montant: Math.round(nombre(l && l.montant, 0, 0, 1e5) * 1000) / 1000 };
+      }).filter(function (l) { return l.libelle || l.montant > 0; });
+    });
+    return out;
+  }
+  function sommeFiche(p, g) { return ((p.lignesFiche && p.lignesFiche[g]) || []).reduce(function (t, l) { return t + (l.montant || 0); }, 0); }
+  /* Impôt aligné : IRPP et CSS retenus sur la fiche, pour le brut mensuel de cette fiche (au-delà, le calcul d'Orbite reprend). */
+  function normaliserImpotFiche(v) {
+    var x = v && typeof v === "object" ? v : {};
+    return { actif: !!x.actif, irpp: nombre(x.irpp, 0, 0, 1e5), css: nombre(x.css, 0, 0, 1e4), brut: nombre(x.brut, 0, 0, 1e7) };
+  }
+
   /* Échéances restantes d'après la date de début et la durée (12 échéances par an, la première le mois suivant le déblocage). */
   function echeancier(c, maintenant) {
     var m = maintenant || new Date();
@@ -327,6 +345,10 @@
          Le budget n'est gardé que sur l'espace (module budget-calcul.js chargé) ; les pages publiques n'en ont pas besoin. */
       jourPaie: entier(p.jourPaie, 0, 0, 31),
       budget: BC ? BC.normaliser(p.budget) : undefined,
+      /* Autres lignes de la fiche de paie (13 oct. 2026), par mois : retenues sociales déductibles de l'impôt,
+         versements non imposables, retenues sur le net ; impôt aligné sur la fiche (IRPP + CSS du mois et brut de la fiche). */
+      lignesFiche: normaliserLignesFiche(p.lignesFiche),
+      impotFiche: normaliserImpotFiche(p.impotFiche),
       historiqueSalaire: liste(p.historiqueSalaire, normaliserHausse, 40).filter(function (h) { return h.montant > 0; }).sort(function (a, b) { return cleHausse(a) - cleHausse(b); }),
       loyer: nombre(p.loyer, 0, 0, 1e6),
       chargesFixes: nombre(p.chargesFixes, 0, 0, 1e6),
@@ -388,7 +410,17 @@
     var e = E.etatParDefaut();
     ["sens", "secteur", "periode", "montant", "nombreSalaires", "chefDeFamille", "enfants", "etudiants", "handicapes", "parents",
      "primesImposables", "primesNonCotisables", "avantagesNature", "indemnitesNonImposables"].forEach(function (k) { e[k] = p[k]; });
+    e.retenuesSociales = sommeFiche(p, "sociales"); e.gainsNets = sommeFiche(p, "gains"); e.retenuesNettes = sommeFiche(p, "nettes");
     return e;
+  }
+  /* Calcul de l'année, impôt aligné sur la fiche quand il s'applique : même brut mensuel que la fiche (au millime),
+     salarié. L'écart (impôt d'Orbite d'un mois habituel − IRPP et CSS de la fiche) s'ajoute au net de chaque mois. */
+  function calculAligne(entree, impotFiche) {
+    var av = C.calculerAvecVersements(entree, P), f = impotFiche;
+    if (!f || !f.actif || !(f.brut > 0) || !(f.irpp + f.css > 0) || entree.periode === "annuel" || Math.abs(av.versements.brutMensuel - f.brut) >= 0.0005) return { av: av, entree: entree, aligne: null };
+    var mt = av.moisType.annuel, irppO = mt.irpp / 12, cssO = mt.css / 12, ecart = irppO + cssO - f.irpp - f.css;
+    var e2 = Object.assign({}, entree, { ajustementImpot: ecart });
+    return { av: C.calculerAvecVersements(e2, P), entree: e2, aligne: { irpp: f.irpp, css: f.css, irppOrbite: irppO, cssOrbite: cssO, ecart: ecart } };
   }
 
   /* Entrée « brut » équivalente du moteur de salaire (le net saisi est d'abord converti). */
@@ -438,11 +470,15 @@
 
   function salaire(p, annee) {
     if (p.activite === "retraite") return pension(p, annee);
-    var eb = entreeBrut(p);
-    var av = C.calculerAvecVersements(eb.entree, P);
+    var eb = entreeBrut(p), ca = calculAligne(eb.entree, p.impotFiche);
+    var av = ca.av;
     var a = av.annee.annuel, mt = av.moisType.annuel, supp = av.versements.supplementaires;
+    if (ca.aligne) { mt = Object.assign({}, mt, { irpp: ca.aligne.irppOrbite * 12, css: ca.aligne.cssOrbite * 12 }); }
     return {
-      entree: eb.entree,
+      entree: ca.entree,
+      /* Impôt aligné sur la fiche : IRPP et CSS de la fiche, ceux d'Orbite et l'écart ajouté au net (null sinon). */
+      impotAligne: ca.aligne,
+      lignesFiche: p.lignesFiche || { sociales: [], gains: [], nettes: [] },
       /* Impôt (IRPP + CSS) retenu sur un mois habituel, et sur chaque versement supplémentaire (supplément de l'année). */
       impotMois: (mt.irpp + mt.css) / 12,
       impotParVersement: supp > 0 ? (a.irpp + a.css - mt.irpp - mt.css) / supp : 0,
@@ -1096,7 +1132,7 @@
   }
 
   var API = {
-    TMM: TMM, definirTMM: definirTMM, CREDITS_TYPES: CREDITS_TYPES, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, pension: pension, futursRevenu: futursRevenu, lireEmail: lireEmail, lireTelephone: lireTelephone, formatTelephone: formatTelephone, contratCommence: contratCommence, normaliserChangement: normaliserChangement, normaliserScenario: normaliserScenario, MAX_SCENARIOS: MAX_SCENARIOS, MAX_CHANGEMENTS: MAX_CHANGEMENTS, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
+    TMM: TMM, definirTMM: definirTMM, CREDITS_TYPES: CREDITS_TYPES, calculAligne: calculAligne, sommeFiche: sommeFiche, GROUPES_FICHE: GROUPES_FICHE, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, pension: pension, futursRevenu: futursRevenu, lireEmail: lireEmail, lireTelephone: lireTelephone, formatTelephone: formatTelephone, contratCommence: contratCommence, normaliserChangement: normaliserChangement, normaliserScenario: normaliserScenario, MAX_SCENARIOS: MAX_SCENARIOS, MAX_CHANGEMENTS: MAX_CHANGEMENTS, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
     profilParDefaut: profilParDefaut, normaliser: normaliser, creditTermine: creditTermine, age: age, etatSalaire: etatSalaire, entreeBrut: entreeBrut,
     tranche: tranche, salaire: salaire, augmentation: augmentation, calendrierPrimes: calendrierPrimes, impotRestantAnnee: impotRestantAnnee,
     capitalPourMensualite: capitalPourMensualite, mensualitePourCapital: mensualitePourCapital, capacite: capacite,

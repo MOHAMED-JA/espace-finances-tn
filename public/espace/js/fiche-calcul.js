@@ -298,6 +298,8 @@
     var base = v.base != null ? v.base : brut - primes - nonCot - av;
     return OC.normaliser(Object.assign({}, profil || {}, {
       activite: "salarie", historiqueSalaire: [], calendrierPrimes: [], nombreSalaires: 12,
+      /* Le contrôle compare la fiche au barème seul : sans les autres lignes ni l'impôt aligné du profil. */
+      lignesFiche: {}, impotFiche: {},
       montant: Math.max(0, base), sens: "brut", periode: "mensuel",
       primesImposables: Math.max(0, primes), primesNonCotisables: nonCot, avantagesNature: av, indemnitesNonImposables: v.indemnitesNonImposables || 0,
       secteur: v.secteur || (profil && profil.secteur) || "prive"

@@ -140,7 +140,12 @@
         ? undefined : etat.tauxAccidentTravailPct / 100,
       industrieManufacturiere: etat.industrieManufacturiere,
       autresChargesPct: etat.autresChargesPct,
-      autresChargesMontant: etat.autresChargesMontant
+      autresChargesMontant: etat.autresChargesMontant,
+      /* Autres lignes de la fiche (repris du profil, jamais dans les liens de partage : hors CHAMPS). */
+      retenuesSociales: etat.retenuesSociales,
+      gainsNets: etat.gainsNets,
+      retenuesNettes: etat.retenuesNettes,
+      ajustementImpot: etat.ajustementImpot
     };
   }
 

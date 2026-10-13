@@ -1821,6 +1821,61 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(Number(dt.replace(/[^\d,]/g, "").replace(",", ".")) > 0, "montant converti : " + dt);
   });
 
+  await etape("autres lignes de la fiche de paie : retenues déduites de l'impôt, versement, retenue sur le net, impôt aligné, module Salaire, téléphone", async () => {
+    await page.goto(base + "/espace/#profil?section=salaire");
+    await page.waitForSelector("#lf-bloc .lf__groupe", { state: "visible" });
+    const avant = await page.evaluate(() => { const p = window.Orbite.profil(); return { montant: p.montant, sens: p.sens, periode: p.periode, chefDeFamille: p.chefDeFamille, nombreSalaires: p.nombreSalaires, secteur: p.secteur, enfants: p.enfants }; });
+    /* Profil fictif de la maquette : 3 200 DT brut, chef de famille, 12 salaires. */
+    await page.evaluate(() => window.Orbite.majProfil({ montant: 3200, sens: "brut", periode: "mensuel", chefDeFamille: true, enfants: 0, nombreSalaires: 12, secteur: "prive" }, { immediat: true }));
+    const ajouter = async (g, lib, mt) => {
+      await page.click('[data-ajouter="' + g + '"]');
+      const l = page.locator('.lf__ligne[data-g="' + g + '"]').last();
+      await l.locator(".lf__lib").fill(lib);
+      await l.locator(".lf__montant").fill(mt);
+    };
+    await ajouter("sociales", "Retraite complémentaire", "38,4");
+    await ajouter("sociales", "Assurance groupe", "72");
+    await ajouter("gains", "Bonification crédit logement", "60");
+    await ajouter("nettes", "Assurance auto", "136");
+    await page.waitForFunction(() => /110,400/.test(document.querySelector('[data-total="sociales"]').textContent));
+    const sansAligne = await page.evaluate(() => window.OrbiteCalcul.salaire(window.Orbite.profil()).netMensuel);
+    await page.waitForFunction(() => window.Orbite.profil().lignesFiche.nettes.length === 1);
+    assert(Math.abs(await page.evaluate(() => window.OrbiteCalcul.salaire(window.Orbite.profil()).netMensuel) - (3200 - 309.76 - 110.4 - 549.931 - 12.941 + 60 - 136)) < 0.002, "net avec les lignes, impôt d'Orbite : " + sansAligne);
+    /* Impôt aligné sur la fiche : IRPP et CSS de la fiche, écart affiché, net exact. */
+    await page.check("#lf-aligne", { force: true });
+    await page.waitForSelector("#lf-impot:not([hidden])");
+    await page.fill("#lf-irpp", "531,250"); await page.fill("#lf-css", "12,941");
+    await page.waitForFunction(() => /2\s?159,649/.test(document.getElementById("lf-resume").textContent.replace(/[\u00a0\u202f]/g, " ")), null, { timeout: 8000 });
+    assert(/549,931/.test(await page.textContent("#lf-ecart")) && /18,681/.test(await page.textContent("#lf-ecart")), "écart avec le calcul d'Orbite : " + await page.textContent("#lf-ecart"));
+    /* Conservé après rechargement. */
+    await page.waitForTimeout(1200);
+    await page.reload();
+    await page.waitForSelector('#lf-bloc .lf__ligne[data-g="nettes"]', { state: "visible" });
+    assert((await page.inputValue('.lf__ligne[data-g="gains"] .lf__lib')) === "Bonification crédit logement", "libellé conservé");
+    assert(await page.isChecked("#lf-aligne"), "impôt aligné conservé");
+    /* Module Salaire : même net, détail ligne par ligne, encart « Comme sur votre fiche ». */
+    await page.goto(base + "/espace/#salaire");
+    await page.waitForSelector("#tableau-detail", { state: "attached" });
+    await page.evaluate(() => window.ModuleSalaire.depuisProfil(window.Orbite.profil()));
+    await page.waitForSelector("#fiche-salaire:not([hidden])");
+    const det = (await page.textContent("#tableau-detail")).replace(/[\u00a0\u202f]/g, " ");
+    assert(/Retraite complémentaire/.test(det) && /Assurance auto/.test(det) && /Écart avec l'impôt retenu sur votre fiche/.test(det) && /2 159,649/.test(det), "détail du module Salaire");
+    assert(((await page.textContent("#chiffres")) + (await page.textContent("#decimales"))).replace(/\D/g, "") === "2159649", "grand chiffre = net de la fiche");
+    /* Comparaison d'offres : à barèmes égaux, sans les lignes de l'employeur actuel. */
+    const offre = await page.evaluate(() => window.OrbiteCalcul.salaire(window.OrbiteCalcul.normaliser(Object.assign({}, window.Orbite.profil(), { lignesFiche: {}, impotFiche: {} }))).netMensuel);
+    assert(offre > 2159.649, "sans les lignes, le net est plus élevé");
+    /* Téléphone : bloc sans débordement. */
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(base + "/espace/#profil?section=salaire");
+    await page.waitForSelector("#lf-bloc .lf__ligne", { state: "visible" });
+    assert(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "profil sans débordement sur téléphone");
+    await page.locator("#lf-bloc").screenshot({ path: path.join(CAPTURES, "lignes-fiche-telephone.png") });
+    await page.setViewportSize({ width: 1360, height: 900 });
+    /* Retour au profil d'avant (les étapes suivantes n'ont pas de lignes de fiche). */
+    await page.evaluate((a) => window.Orbite.majProfil(Object.assign({ lignesFiche: {}, impotFiche: {} }, a), { immediat: true }), avant);
+    await page.waitForTimeout(800);
+  });
+
   await etape("historique du salaire : hausse datée, hausse prévue, retrait annulé, depuis le module Salaire", async () => {
     await page.goto(base + "/espace/#profil");
     await page.waitForSelector("#hs-maj", { state: "visible" });

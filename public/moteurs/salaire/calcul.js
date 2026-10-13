@@ -89,7 +89,15 @@
       /* Charges propres à l'entreprise (assurance groupe, retraite complémentaire…) :
          un pourcentage du brut et/ou un montant fixe par mois (12 mois par an). */
       autresChargesTaux: Math.min(positif(e.autresChargesPct), 50) / 100,
-      autresChargesAnnuel: positif(e.autresChargesMontant) * (e.periode === "annuel" ? 1 : params.moisParAn)
+      autresChargesAnnuel: positif(e.autresChargesMontant) * (e.periode === "annuel" ? 1 : params.moisParAn),
+      /* Autres lignes de la fiche de paie (Orbite, 13 oct. 2026), par mois (12 mois par an) :
+         retenues sociales en plus de la caisse (retraite complémentaire, assurance groupe) déduites du revenu imposable,
+         versements non imposables (bonification de crédit…) et retenues sur le net (syndicat, assurance auto…),
+         écart entre l'impôt calculé et celui retenu par l'employeur (impôt aligné sur la fiche, positif = net plus élevé). */
+      retenuesSociales: positif(e.retenuesSociales) * (e.periode === "annuel" ? 1 : params.moisParAn),
+      gainsNets: positif(e.gainsNets) * (e.periode === "annuel" ? 1 : params.moisParAn),
+      retenuesNettes: positif(e.retenuesNettes) * (e.periode === "annuel" ? 1 : params.moisParAn),
+      ajustementImpot: (isFinite(Number(e.ajustementImpot)) ? Number(e.ajustementImpot) : 0) * (e.periode === "annuel" ? 1 : params.moisParAn)
     };
   }
 
@@ -173,7 +181,7 @@
     var tauxCotisations = somme(regime.salarie, "taux");
 
     /* 2. Revenu après cotisations, puis frais professionnels */
-    var revenuApresCotisations = brutTotal - cotisations;
+    var revenuApresCotisations = brutTotal - cotisations - e.retenuesSociales;
     var fp = p.irpp.fraisProfessionnels;
     var fraisProfessionnels = Math.min(revenuApresCotisations * fp.taux, fp.plafondAnnuel);
     var fraisPlafonnes = revenuApresCotisations * fp.taux > fp.plafondAnnuel;
@@ -193,8 +201,8 @@
 
     /* 6. Net */
     var retenues = cotisations + irpp + css;
-    var salaireNet = brutTotal - retenues;
-    var netAPayer = salaireNet - e.avantagesNature + e.indemnitesNonImposables;
+    var salaireNet = brutTotal - retenues - e.retenuesSociales;
+    var netAPayer = salaireNet - e.avantagesNature + e.indemnitesNonImposables + e.gainsNets - e.retenuesNettes + e.ajustementImpot;
 
     /* 7. Coût employeur indicatif */
     var emp = p.employeur;
@@ -231,6 +239,10 @@
         primesNonCotisables: e.primesNonCotisables,
         avantagesNature: e.avantagesNature,
         indemnitesNonImposables: e.indemnitesNonImposables,
+        retenuesSociales: e.retenuesSociales,
+        gainsNets: e.gainsNets,
+        retenuesNettes: e.retenuesNettes,
+        ajustementImpot: e.ajustementImpot,
         brutTotal: brutTotal,
         assietteCotisations: assietteCotisations,
         cotisations: cotisations,
@@ -249,7 +261,7 @@
         netAPayer: netAPayer,
         chargesPatronales: chargesPatronales,
         chargesPatronalesLignes: employeurLignes,
-        coutEmployeur: brutTotal + chargesPatronales + e.indemnitesNonImposables
+        coutEmployeur: brutTotal + chargesPatronales + e.indemnitesNonImposables + e.gainsNets
       },
       indicateurs: {
         tauxCotisations: tauxCotisations,
@@ -415,8 +427,9 @@
 
   /*
    * Ventile le coût total employeur entre le salarié, la caisse sociale et l'État.
-   * Salarié : salaire net + indemnités non imposables (avantages en nature compris).
-   * Caisse  : cotisations salariales + cotisations patronales de la caisse + accidents du travail
+   * Salarié : salaire net + indemnités non imposables (avantages en nature compris) + versements non imposables de la fiche.
+   * Caisse  : cotisations salariales + retenues sociales de la fiche (retraite complémentaire, assurance groupe)
+   *           + cotisations patronales de la caisse + accidents du travail
    *           + autres charges de l'entreprise (protection sociale complémentaire), détaillées à part.
    * État    : IRPP + CSS + TFP + FOPROLOS.
    */
@@ -432,8 +445,8 @@
         if (l.code === "autres") complementaire += l.montant;
       }
     });
-    var salarie = a.salaireNet + a.indemnitesNonImposables;
-    var caisse = a.cotisations + caissePatronale;
+    var salarie = a.salaireNet + a.indemnitesNonImposables + (a.gainsNets || 0);
+    var caisse = a.cotisations + (a.retenuesSociales || 0) + caissePatronale;
     var etat = a.irpp + a.css + etatPatronal;
     var total = a.coutEmployeur;
     function part(x) { return total > 0 ? x / total : 0; }

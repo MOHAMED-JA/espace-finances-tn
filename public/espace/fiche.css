@@ -151,3 +151,38 @@ select.fiche-val { appearance: none; cursor: pointer; text-align: left; padding-
 .fiche-maj-zone[hidden] { display: none; }
 .fiche-maj-zone h3 { font-size: 17px; }
 .fiche-maj-zone .maj-diff input[type="checkbox"] { accent-color: var(--salaire-t); }
+
+/* ---------- Autres lignes de ma fiche de paie (Profil › Salaire, maquette validée le 13 oct. 2026) ---------- */
+.lf { display: grid; gap: 10px; }
+.lf__tete { display: grid; gap: 2px; }
+.lf__tete small { font-size: 13.5px; color: var(--encre-3); }
+.lf__groupe { display: grid; gap: 8px; padding: 14px; border-radius: var(--r-int); background: var(--surface-2); }
+.lf__gt { display: flex; align-items: center; gap: 10px; }
+.lf__gt > i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.lf__groupe--sociales .lf__gt > i { background: #0EA5A4; }
+.lf__groupe--gains .lf__gt > i { background: var(--salaire); }
+.lf__groupe--nettes .lf__gt > i { background: var(--ambre, #F79009); }
+.lf__gtt { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.lf__gtt b { font-size: 15px; } .lf__gtt small { font-size: 12.5px; color: var(--encre-3); }
+.lf__total { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lf__ligne { display: grid; grid-template-columns: minmax(0, 1fr) 140px 40px; gap: 8px; align-items: center; }
+.lf__ligne .saisie { background: var(--surface); min-width: 0; }
+.lf__ligne .saisie input { width: 100%; min-width: 0; }
+.lf__ligne .lf__montant { text-align: right; font-variant-numeric: tabular-nums; }
+.lf__retirer { width: 40px; color: var(--encre-3); }
+.lf__ajouter { justify-self: start; font-size: 14px; color: var(--credit-t); }
+.lf__aligne { display: grid; gap: 10px; padding: 14px; border-radius: var(--r-int); background: var(--surface-2); }
+.lf__duo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.lf__duo[hidden] { display: none; }
+.lf__duo .saisie { background: var(--surface); min-width: 0; }
+.lf__duo .saisie input { width: 100%; min-width: 0; }
+.lf__ecart { font-size: 13.5px; color: var(--encre-2); padding: 10px 12px; border-radius: 12px; background: var(--surface); }
+.lf__ecart b { color: var(--encre); font-variant-numeric: tabular-nums; }
+.encart--fiche a { color: inherit; font-weight: 650; }
+/* Téléphone : libellé sur toute la largeur, montant dessous. */
+@media (max-width: 560px) {
+  .lf__groupe, .lf__aligne { padding: 12px; }
+  .lf__ligne { grid-template-columns: minmax(0, 1fr) 40px; gap: 6px; padding-bottom: 8px; border-bottom: 1px dashed var(--filet); }
+  .lf__ligne > .saisie:first-child { grid-column: 1 / -1; }
+  .lf__gt { flex-wrap: wrap; } .lf__total { margin-left: 20px; }
+}
