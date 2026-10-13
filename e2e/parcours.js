@@ -2497,8 +2497,8 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     const origine = [{ libelle: "Auto", type: "auto", mensualite: 640, moisRestants: 40, capitalRestant: 0, tauxPct: 10, jourPrelevement: 0 }];
     const creditsAvant = await page.evaluate(() => JSON.parse(JSON.stringify(window.Orbite.profil().credits || [])));
     await page.evaluate((c) => window.Orbite.majProfil({ credits: c }, { immediat: true }), origine);
-    await page.goto(base + "/espace/#credit");
-    await page.waitForSelector("#cr-outil-audit", { state: "attached" });
+    await page.goto(base + "/espace/#credit?partie=outils");
+    await page.waitForSelector("#cr-outil-audit", { state: "visible" });
     await page.$eval("#cr-outil-audit", (d) => { d.open = true; d.scrollIntoView({ block: "start" }); });
     await page.waitForSelector("#cr-audit-txt", { state: "attached" });
     await page.$eval("#cr-o-audit .cr-coller", (d) => { d.open = true; });
