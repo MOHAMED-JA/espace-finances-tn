@@ -1828,7 +1828,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     /* Profil fictif de la maquette : 3 200 DT brut, chef de famille, 12 salaires. */
     await page.evaluate(() => window.Orbite.majProfil({ montant: 3200, sens: "brut", periode: "mensuel", chefDeFamille: true, enfants: 0, nombreSalaires: 12, secteur: "prive" }, { immediat: true }));
     const ajouter = async (g, lib, mt) => {
-      await page.click('[data-ajouter="' + g + '"]');
+      await page.click('[data-lf-ajouter="' + g + '"]');
       const l = page.locator('.lf__ligne[data-g="' + g + '"]').last();
       await l.locator(".lf__lib").fill(lib);
       await l.locator(".lf__montant").fill(mt);

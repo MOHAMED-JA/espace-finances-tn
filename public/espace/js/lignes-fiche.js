@@ -49,7 +49,7 @@
         return '<section class="lf__groupe lf__groupe--' + g.cle + '" aria-labelledby="lf-t-' + g.cle + '">' +
           '<div class="lf__gt"><i aria-hidden="true"></i><span class="lf__gtt"><b id="lf-t-' + g.cle + '">' + esc(titre) + '</b><small>' + esc(g.aide) + '</small></span><span class="lf__total" data-total="' + g.cle + '"></span></div>' +
           liste.map(function (l, i) { return ligneHtml(g, l, i); }).join("") +
-          (liste.length < MAX ? '<button type="button" class="lien-action lf__ajouter" data-ajouter="' + g.cle + '"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg>Ajouter une ligne</button>' : "") +
+          (liste.length < MAX ? '<button type="button" class="lien-action lf__ajouter" data-lf-ajouter="' + g.cle + '"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg>Ajouter une ligne</button>' : "") +
           "</section>";
       }).join("") +
       '<div class="lf__aligne">' +
@@ -135,12 +135,12 @@
     if (el.matches(".lf__montant, #lf-irpp, #lf-css")) { var v = lire(el.value); if (v != null && el.value.trim()) el.value = dt(v); }
   });
   bloc.addEventListener("click", function (e) {
-    var aj = e.target.closest("[data-ajouter]"), ret = e.target.closest(".lf__retirer");
+    var aj = e.target.closest("[data-lf-ajouter]"), ret = e.target.closest(".lf__retirer");
     if (!aj && !ret) return;
     lireBloc();
     var p = O.profil() || {};
     if (aj) {
-      var g = aj.getAttribute("data-ajouter");
+      var g = aj.getAttribute("data-lf-ajouter");
       if (etat.lignes[g].length >= MAX) return;
       etat.lignes[g].push({ libelle: "", montant: 0 });
       rendre(p);
@@ -151,7 +151,7 @@
       etat.lignes[gg].splice(i, 1);
       rendre(p);
       var reste = bloc.querySelectorAll('.lf__ligne[data-g="' + gg + '"]'), cible = reste[Math.min(i, reste.length - 1)];
-      (cible ? cible.querySelector(".lf__lib") : bloc.querySelector('[data-ajouter="' + gg + '"]')).focus();
+      (cible ? cible.querySelector(".lf__lib") : bloc.querySelector('[data-lf-ajouter="' + gg + '"]')).focus();
       enregistrer(false);
     }
   });
