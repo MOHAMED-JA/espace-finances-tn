@@ -428,6 +428,8 @@
 .module--credit .cr-temps__barre { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
 .module--credit .cr-temps__barre span { display: block; height: 100%; width: var(--p, 0%); border-radius: inherit; background: linear-gradient(90deg, var(--credit), var(--salaire)); transition: width 120ms linear; }
 @media (prefers-reduced-motion: reduce) { .module--credit .cr-temps__barre span { transition: none; } }
+/* Pendant la lecture, la barre suit chaque image sans retard. */
+.module--credit .cr-temps--lecture .cr-temps__barre span { transition: none; }
 
 /* ---------- Point 5 : onglets du Crédit (projet, offres, regroupement) ---------- */
 .credit-espaces { margin: 4px 0 18px; }
