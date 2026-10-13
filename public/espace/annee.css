@@ -139,3 +139,42 @@ dialog.annee::backdrop { background: rgba(4, 6, 12, .82); backdrop-filter: blur(
 .annee__partage-actions .bouton--plein { background: var(--cosmos-encre); color: var(--cosmos); border-color: var(--cosmos-encre); }
 .annee__partage-actions .bouton:not(.bouton--plein) { background: transparent; color: var(--cosmos-encre); border-color: rgba(255, 255, 255, .2); }
 @media print { dialog.annee { display: none !important; } }
+
+/* ---------- Mon bilan en PDF (13 oct. 2026) ---------- */
+.annee-acces { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.annee-acces .annee-bouton { margin-top: 14px; }
+.bilan__sous { margin: 4px 0 0; color: var(--encre-2); font-size: 14px; line-height: 1.5; }
+.bilan__corps { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 22px; align-items: start; }
+.bilan__apercu { aspect-ratio: 210 / 297; border-radius: 10px; background: #fff; color: #141A33; box-shadow: 0 1px 2px rgba(20, 26, 51, .08), 0 10px 28px rgba(20, 26, 51, .14); padding: 14px 12px; display: grid; align-content: start; gap: 8px; font-size: 9px; overflow: hidden; border: 1px solid var(--filet); }
+.bilan__ap-titre { margin: 0; font-weight: 800; font-size: 10.5px; }
+.bilan__ap-trait { display: block; height: 4px; border-radius: 2px; background: #E3E6F0; width: 70%; }
+.bilan__ap-trait--court { width: 45%; } .bilan__ap-trait--moyen { width: 62%; }
+.bilan__ap-tuiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.bilan__ap-tuiles div { display: grid; gap: 1px; padding: 5px; border-radius: 4px; background: #F5F6FB; min-width: 0; }
+.bilan__ap-tuiles small { font-size: 6.5px; color: #5B6283; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bilan__ap-tuiles b { font-size: 8.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bilan__ap-tuiles div:last-child b { color: #4A3FD0; }
+.bilan__ap-coord { margin: 0; padding: 4px 5px; border-radius: 4px; background: #F3F1FF; color: #4A3FD0; font-size: 7px; font-weight: 700; }
+.bilan__ap-coord[hidden] { display: none; }
+.bilan__ap-courbe { display: block; height: 38px; border-radius: 4px; background: linear-gradient(180deg, rgba(18, 183, 106, .28), rgba(18, 183, 106, .04)); border-top: 2px solid #12B76A; }
+.bilan__ap-lignes { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+.bilan__ap-lignes li { display: flex; justify-content: space-between; gap: 6px; font-size: 7px; color: #343A58; border-bottom: 1px dashed #E3E6F0; padding-bottom: 2px; }
+.bilan__ap-lignes b { font-variant-numeric: tabular-nums; }
+.bilan__choix { border: 0; margin: 0; padding: 0; display: grid; gap: 4px; }
+.bilan__case { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; padding: 10px 12px; border-radius: 14px; cursor: pointer; transition: background-color 150ms ease; }
+.bilan__case:hover { background: var(--fond); }
+.bilan__case input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--encre); cursor: pointer; }
+.bilan__case span { display: grid; gap: 2px; }
+.bilan__case b { font-size: 15px; }
+.bilan__case small { color: var(--encre-3); font-size: 12.5px; line-height: 1.45; }
+.bilan__prive { display: flex; gap: 8px; align-items: center; margin: 8px 0 0; padding: 0 12px; color: var(--encre-3); font-size: 13px; }
+.bilan__prive svg { width: 16px; height: 16px; flex: none; }
+.bilan .dialogue__pied .bouton[disabled] { opacity: .45; pointer-events: none; }
+@media (max-width: 640px) {
+  .bilan__corps { grid-template-columns: minmax(0, 1fr); }
+  .bilan__apercu { width: 48%; justify-self: center; }
+}
+.annee-bouton--pdf { padding: 6px 16px 6px 6px; }
+.annee-bouton__ico { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--fond); color: var(--encre); }
+.annee-bouton__ico svg { width: 17px; height: 17px; }
+.annee-bouton[hidden] { display: none; }

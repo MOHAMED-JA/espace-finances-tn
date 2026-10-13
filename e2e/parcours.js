@@ -3205,6 +3205,38 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.evaluate((a) => window.Orbite.majProfil(JSON.parse(a), { immediat: true }), avant);
   });
 
+  await etape("bilan annuel en PDF : bouton dans Ma progression, aperçu avec les vrais chiffres, sections à cocher, coordonnées décochées, PDF valide, Ctrl K, téléphone", async () => {
+    await page.setViewportSize({ width: 1360, height: 900 });
+    await page.goto(base + "/espace/#progression");
+    await page.waitForSelector("#btn-bilan", { state: "visible" });
+    await page.click("#btn-bilan");
+    await page.waitForSelector("#dlg-bilan[open]");
+    const attendu = await page.evaluate(() => { const b = window.BilanCalcul.construire(window.Orbite.profil(), {}, new Date()); return { net: window.Orbite.F.dt0(b.cles.net) + " DT", score: b.cles.score + "/100", annee: b.annee }; });
+    assert((await page.textContent("#bl-ap-net")) === attendu.net && (await page.textContent("#bl-ap-score")) === attendu.score, "aperçu : " + await page.textContent("#bl-ap-net"));
+    assert((await page.textContent("#bl-titre")) === "Mon bilan " + attendu.annee + " en PDF", "titre");
+    assert(!(await page.isChecked("#bl-coord")) && await page.isChecked("#bl-revenus") && await page.isHidden("#bl-ap-coord"), "coordonnées décochées par défaut");
+    await page.check("#bl-coord");
+    assert(await page.isVisible("#bl-ap-coord"), "aperçu suit les cases");
+    await page.screenshot({ path: path.join(CAPTURES, "bilan-pdf.png") });
+    /* Tout décoché : impossible de télécharger. */
+    for (const id of ["#bl-revenus", "#bl-credits", "#bl-patrimoine", "#bl-sante", "#bl-coord"]) await page.uncheck(id);
+    assert(await page.isDisabled("#bl-valider") && /au moins une partie/.test(await page.textContent("#bl-aide")), "au moins une partie");
+    await page.check("#bl-revenus"); await page.check("#bl-sante");
+    const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#bl-valider")]);
+    assert(dl.suggestedFilename() === "bilan-orbite-" + attendu.annee + ".pdf", "nom : " + dl.suggestedFilename());
+    assert(fs.readFileSync(await dl.path()).slice(0, 5).toString() === "%PDF-", "PDF valide");
+    await page.waitForFunction(() => !document.getElementById("dlg-bilan").open);
+    /* Ctrl K : « Mon bilan en PDF » ouvre la fenêtre. */
+    await page.goto(base + "/espace/#progression?bilan=1");
+    await page.waitForSelector("#dlg-bilan[open]");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(300);
+    assert(await page.evaluate(() => { const d = document.getElementById("dlg-bilan"); return d.scrollWidth <= d.clientWidth + 1; }), "fenêtre sans débordement sur téléphone");
+    await page.screenshot({ path: path.join(CAPTURES, "bilan-pdf-telephone.png") });
+    await page.keyboard.press("Escape");
+    await page.setViewportSize({ width: 1360, height: 900 });
+  });
+
   await etape("apparence personnelle : accent, densité, taille du texte, aperçu, compte et appareil, sombre, Ctrl K, téléphone", async () => {
     await page.setViewportSize({ width: 1360, height: 900 });
     await page.goto(base + "/espace/#compte?onglet=preferences");

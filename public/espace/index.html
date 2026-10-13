@@ -1415,7 +1415,10 @@
             <div>
               <h1 id="titre-progression">Ma progression</h1>
               <p class="vue__sous">Votre salaire face aux prix, votre carrière dans 10 ans, et vos objectifs suivis mois après mois.</p>
-              <button type="button" class="annee-bouton" id="btn-annee" data-ouvrir-annee hidden><span class="annee-bouton__orbe" aria-hidden="true"><i></i></span><span id="btn-annee-lib">Mon année en orbite</span><svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></button>
+              <div class="annee-acces">
+                <button type="button" class="annee-bouton" id="btn-annee" data-ouvrir-annee hidden><span class="annee-bouton__orbe" aria-hidden="true"><i></i></span><span id="btn-annee-lib">Mon année en orbite</span><svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></button>
+                <button type="button" class="annee-bouton annee-bouton--pdf" id="btn-bilan" data-ouvrir-bilan hidden><span class="annee-bouton__ico" aria-hidden="true"><svg><use href="/orbite/icones.svg#telecharger"/></svg></span><span>Mon bilan en PDF</span></button>
+              </div>
             </div>
             <div class="pg-onglets" role="tablist" aria-label="Ma progression" data-o="carriere">
               <i aria-hidden="true"></i>
@@ -2070,6 +2073,42 @@
     </form>
   </dialog>
 
+  <!-- Bilan annuel en PDF (vue-bilan.js) : aperçu, sections à cocher, téléchargement sur l'appareil. -->
+  <dialog class="dialogue dialogue--large bilan" id="dlg-bilan" aria-labelledby="bl-titre">
+    <form method="dialog" id="form-bilan" novalidate>
+      <div class="dialogue__tete"><div><h2 id="bl-titre">Mon bilan en PDF</h2><p class="bilan__sous">Une page à garder ou à remettre à votre conseiller : revenus, impôt, crédits, épargne, patrimoine et score.</p></div></div>
+      <div class="dialogue__corps bilan__corps">
+        <div class="bilan__apercu" aria-hidden="true">
+          <p class="bilan__ap-titre" id="bl-ap-titre">Bilan · Orbite</p>
+          <i class="bilan__ap-trait"></i>
+          <div class="bilan__ap-tuiles">
+            <div><small id="bl-ap-net-lib">Net de l'année</small><b id="bl-ap-net"></b></div>
+            <div><small>Impôt</small><b id="bl-ap-impot"></b></div>
+            <div><small>Score</small><b id="bl-ap-score"></b></div>
+          </div>
+          <p class="bilan__ap-coord" id="bl-ap-coord" hidden>Nom · e-mail · téléphone · employeur</p>
+          <i class="bilan__ap-courbe"></i>
+          <ul class="bilan__ap-lignes" id="bl-ap-lignes"></ul>
+          <i class="bilan__ap-trait bilan__ap-trait--court"></i>
+          <i class="bilan__ap-trait bilan__ap-trait--moyen"></i>
+        </div>
+        <fieldset class="bilan__choix">
+          <legend class="cache">Parties du bilan</legend>
+          <label class="bilan__case"><input type="checkbox" id="bl-revenus" checked><span><b>Revenus et impôt</b><small>Brut, net, cotisations, impôt, pouvoir d'achat</small></span></label>
+          <label class="bilan__case"><input type="checkbox" id="bl-credits" checked><span><b>Crédits et capacité</b><small>Mensualités, reste dû, fin, endettement, ce que vous pouvez emprunter</small></span></label>
+          <label class="bilan__case"><input type="checkbox" id="bl-patrimoine" checked><span><b>Épargne et patrimoine</b><small>Ce que vous possédez, ce que vous devez, versements de l'année</small></span></label>
+          <label class="bilan__case"><input type="checkbox" id="bl-sante" checked><span><b>Score de santé et conseils</b><small>Les six critères et les conseils d'Orbite</small></span></label>
+          <label class="bilan__case"><input type="checkbox" id="bl-coord"><span><b>Mes coordonnées (pour la banque)</b><small>Nom, e-mail et téléphone de contact, employeur</small></span></label>
+          <p class="bilan__prive"><svg aria-hidden="true"><use href="/orbite/icones.svg#cadenas"/></svg><span id="bl-aide">Créé sur votre appareil, envoyé à personne.</span></p>
+        </fieldset>
+      </div>
+      <div class="dialogue__pied">
+        <button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Annuler</button>
+        <button type="submit" class="bouton bouton--plein" value="ok" id="bl-valider"><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg>Télécharger le PDF</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- Lot 7 : fiche de paie lue sur l'appareil (déposer, lecture, vérifier, contrôle) -->
   <dialog class="dialogue fiche" id="dlg-fiche" aria-labelledby="fiche-titre">
     <div class="dialogue__tete">
@@ -2424,6 +2463,8 @@
   <script src="/espace/js/vue-mois.js"></script>
   <script src="/espace/js/annee-calcul.js"></script>
   <script src="/espace/js/vue-annee.js"></script>
+  <script src="/espace/js/bilan-calcul.js"></script>
+  <script src="/espace/js/vue-bilan.js"></script>
   <script src="/espace/js/fiche-lecture.js"></script>
   <script src="/espace/js/releve-import.js"></script>
   <script src="/espace/js/fiche-calcul.js"></script>
