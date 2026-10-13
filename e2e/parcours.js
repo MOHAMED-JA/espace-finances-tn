@@ -3031,6 +3031,57 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.setViewportSize({ width: 1360, height: 900 });
   });
 
+  await etape("rembourser ou épargner ? (Décider) et patrimoine net : choix comparés, conseil, hypothèses gardées, valeur du logement", async () => {
+    await page.setViewportSize({ width: 1360, height: 900 });
+    const avant = await page.evaluate(() => JSON.stringify(window.Orbite.profil()));
+    await page.evaluate(() => window.Orbite.majProfil({ nombreSalaires: 14, calendrierPrimes: [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1], epargneDisponible: 4000, chargesFixes: 500,
+      credits: [{ type: "immo", libelle: "Crédit immobilier", tauxPct: 3, mensualite: 650, moisRestants: 200, capitalRestant: 98000 }, { type: "auto", libelle: "Crédit auto", tauxPct: 9, mensualite: 520, moisRestants: 48 }],
+      patrimoine: { logement: 260000 } }, { immediat: true }));
+    await page.goto(base + "/espace/#vie?onglet=decider&somme=3000");
+    await page.waitForSelector("#vie-panneau-decider:not([hidden]) #dc-choix li:nth-child(3)");
+    assert((await page.inputValue("#dc-somme")).replace(/\s/g, "") === "3000", "somme reprise de l'adresse");
+    assert(await page.getAttribute('.rail__sous-lien[data-sr="decider"]', "aria-current") === "true", "sous-rubrique « Décider » dans la barre latérale");
+    const rb = await page.textContent('[data-choix="rembourser"]');
+    assert(/Rembourser le crédit auto/.test(rb) && /9\s?%/.test(rb) && /intérêts évités/.test(rb), "le crédit le plus cher : " + rb);
+    assert(await page.isVisible(".dc-choix__item--top"), "le plus rentable signalé");
+    assert(/^Notre conseil : partager/.test(await page.textContent("#dc-conseil")) && /D'abord/.test(await page.textContent("#dc-conseil")), "réserve d'abord, puis placement");
+    const v5 = await page.textContent('[data-b="placer"]');
+    await page.click('label:has(input[name="dc-horizon"][value="10"])');
+    await page.waitForFunction((v) => document.querySelector('[data-b="placer"]').textContent !== v, v5);
+    assert(/dans 10 ans/.test(await page.textContent(".dc-barres__titre")), "horizon 10 ans");
+    await page.click("[data-autre]");
+    assert(await page.evaluate(() => document.activeElement.id === "dc-somme"), "« Autre montant » : saisie active");
+    await page.fill("#dc-somme", "50000");
+    await page.waitForFunction(() => /soldé tout de suite/.test(document.querySelector('[data-choix="rembourser"]').textContent));
+    await page.click("#dc-hyp summary");
+    await page.fill("#dc-rend-av", "2"); await page.press("#dc-rend-av", "Tab");
+    await page.waitForFunction(() => window.Orbite.profil().decider.rendementAv === 2);
+    assert(/assurance vie 2 %/.test((await page.textContent("#dc-hyp summary")).replace(/\u00a0/g, " ")), "hypothèse affichée");
+    await page.fill("#dc-somme", "3000");
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: path.join(CAPTURES, "decider.png") });
+    /* Patrimoine net : chiffres du moteur, courbe, autres biens enregistrés. */
+    await page.goto(base + "/espace/#orbite?partie=patrimoine");
+    await page.waitForSelector("#patrimoine:not([data-sr-masque]) #pn-graphe .og-svg");
+    const attendu = await page.evaluate(() => window.Orbite.F.dt0(window.DeciderCalcul.patrimoine(window.Orbite.synthese()).net));
+    assert((await page.textContent("#pn-net")).startsWith(attendu), "patrimoine net : " + await page.textContent("#pn-net"));
+    assert((await page.$$("#pn-jalons li")).length >= 2 && /Crédit auto soldé/.test(await page.textContent("#pn-jalons")), "jalons");
+    await page.fill("#pn-autres", "15 000"); await page.press("#pn-autres", "Tab");
+    await page.waitForFunction(() => window.Orbite.profil().patrimoine.autres === 15000);
+    await page.waitForFunction((a) => document.getElementById("pn-net").textContent !== a + "\u00a0DT", attendu);
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: path.join(CAPTURES, "patrimoine.png") });
+    /* Téléphone : rien ne déborde. */
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(300);
+    assert(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), "patrimoine sans débordement sur téléphone");
+    await page.goto(base + "/espace/#vie?onglet=decider");
+    await page.waitForSelector("#dc-choix li:nth-child(3)");
+    assert(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), "Décider sans débordement sur téléphone");
+    await page.setViewportSize({ width: 1360, height: 900 });
+    await page.evaluate((a) => window.Orbite.majProfil(JSON.parse(a), { immediat: true }), avant);
+  });
+
   await etape("apparence personnelle : accent, densité, taille du texte, aperçu, compte et appareil, sombre, Ctrl K, téléphone", async () => {
     await page.setViewportSize({ width: 1360, height: 900 });
     await page.goto(base + "/espace/#compte?onglet=preferences");

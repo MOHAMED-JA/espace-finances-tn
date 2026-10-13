@@ -368,6 +368,11 @@
       loyer: nombre(p.loyer, 0, 0, 1e6),
       chargesFixes: nombre(p.chargesFixes, 0, 0, 1e6),
       epargneDisponible: nombre(p.epargneDisponible, 0, 0, 1e9),
+      /* Patrimoine net (13 oct. 2026) : valeur estimée du logement et des autres biens, hausse annuelle supposée du logement. */
+      patrimoine: { logement: nombre(p.patrimoine && p.patrimoine.logement, 0, 0, 1e9), autres: nombre(p.patrimoine && p.patrimoine.autres, 0, 0, 1e9),
+        hausseLogement: nombre(p.patrimoine && p.patrimoine.hausseLogement, 2, -10, 15) },
+      /* « Rembourser ou épargner ? » : rendements supposés (assurance vie / CEA, compte d'épargne), en % par an. */
+      decider: { rendementAv: nombre(p.decider && p.decider.rendementAv, 6, 0, 15), rendementEpargne: nombre(p.decider && p.decider.rendementEpargne, 5, 0, 15) },
       autresRevenus: nombre(p.autresRevenus, 0, 0, 1e7),
       quotiteNet: nombre(p.quotiteNet, QUOTITE, 0.1, 0.8),
       quotiteBrut: nombre(p.quotiteBrut, QUOTITE, 0.1, 0.8),
@@ -1116,6 +1121,10 @@
     /* Chaque conseil mène à l'action utile (et non au module en général). */
     var immoAuj = (sy.capacite[b].credits || []).filter(function (c) { return c.cle === "immo"; })[0];
     var versementConseil = (meilleure && meilleure.versementMensuel) || 0;
+    /* Une prime arrive ce mois-ci ou le mois prochain : « Rembourser ou épargner ? » (Vie & impôts › Décider). */
+    var mPrime = sy.maintenant || new Date(), calP = calendrierPrimes(p), primeDec = null;
+    for (var kp = 0; kp < 2 && !primeDec; kp++) { var mm0 = (mPrime.getMonth() + kp) % 12; if (calP[mm0] > 0) primeDec = { mois: MOIS[mm0], montant: Math.round(calP[mm0] * s.netMensuel / 10) * 10 }; }
+    if (primeDec && primeDec.montant > 0) ajouter(1, "epargne", "Une prime arrive en " + primeDec.mois, "Environ " + ent(primeDec.montant) + " DT : rembourser un crédit, placer en assurance vie ou garder en réserve ? Orbite compare les trois avec vos chiffres.");
     var LIENS = [
       [/^Budget dépassé/, "#profil?section=budget", "Revoir mon budget"],
       [/^Endettement/, "#profil?section=credits", "Voir mes crédits"],
@@ -1129,7 +1138,8 @@
       [/^Chef de famille/, "#profil?section=identite", "Compléter ma situation"],
       [/^Contrat à durée/, "#profil?section=identite", "Voir mon profil"],
       [/^(Capital estimé|Votre épargne en cours)/, "#profil?section=contrats", "Mettre à jour mon contrat"],
-      [/^Épargne de précaution/, "#profil?section=budget", "Indiquer mon épargne"]
+      [/^Épargne de précaution/, "#profil?section=budget", "Indiquer mon épargne"],
+      [/^Une prime arrive/, "#vie?onglet=decider" + (primeDec ? "&somme=" + primeDec.montant : ""), "Que faire de cette prime ?"]
     ];
     liste.forEach(function (c) {
       var r = LIENS.filter(function (l) { return l[0].test(c.titre); })[0];

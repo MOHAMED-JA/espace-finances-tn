@@ -64,6 +64,8 @@
       section("s-regrouper", "#credit?espace=regrouper", "Regrouper mes crédits", "Crédit › Rachat et regroupement", "regrouper rachat regroupement credits restructurer", "credit"),
       section("s-marge", "#orbite?section=marge", "Calendrier de la marge", "Mon orbite › Marge", "marge calendrier fin credit", "credit"),
       /* Sous-rubriques (13 oct. 2026) : chaque partie d'une page longue. */
+      section("s-decider", "#vie?onglet=decider", "Rembourser ou épargner ?", "Vie & impôts › Décider : que faire d'une prime ou d'une somme", "decider rembourser epargner placer prime somme anticipe reserve", "epargne"),
+      section("s-patrimoine", "#orbite?partie=patrimoine", "Mon patrimoine net", "Mon orbite › Ce que je possède moins ce que je dois", "patrimoine net fortune logement appartement biens dettes", "orbite"),
       section("s-sal-hausse", "#salaire?partie=hausse", "Simuler une augmentation", "Salaire › Augmentation", "augmentation hausse simuler brut net", "salaire"),
       section("s-sal-repartition", "#salaire?partie=repartition", "Où va votre brut", "Salaire › Sur 100 dinars, coût employeur", "repartition cout employeur cnss 100 dinars charges patronales", "salaire"),
       section("s-sal-offres", "#salaire?partie=offres", "Comparer deux offres d'emploi", "Salaire › Deux offres", "comparer offre emploi nouveau poste", "salaire"),

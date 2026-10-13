@@ -1,0 +1,87 @@
+/* Orbite — « Rembourser ou épargner ? » (Vie & impôts › Décider) et « Patrimoine net » (Mon orbite), 13 oct. 2026. */
+
+/* ---------- Décider ---------- */
+.dc { display: grid; gap: 16px; }
+.dc-somme { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: end; }
+.dc-somme .champ { margin: 0; }
+.dc-horizon .champ__lib { margin: 0 0 6px; }
+.dc-puces { display: flex; flex-wrap: wrap; gap: 6px; }
+.dc-puce { border: 1.5px solid var(--filet); background: var(--surface); border-radius: 999px; padding: 7px 13px; font: 600 13.5px/1.2 var(--texte, inherit); color: var(--encre-2); cursor: pointer; transition: border-color 160ms ease, color 160ms ease, transform 140ms var(--sortie); }
+.dc-puce:hover { border-color: var(--filet-fort); color: var(--encre); }
+.dc-puce:active { transform: scale(.97); }
+.dc-puce--on { border-color: var(--encre); color: var(--encre); }
+.dc-puce:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.dc-choix { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.dc-choix__item { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 14px; border-radius: 16px; border: 1.5px solid var(--filet); background: var(--surface); transition: border-color 200ms ease, background-color 200ms ease; }
+.dc-choix__item--top { border-color: var(--epargne); background: color-mix(in srgb, var(--epargne) 7%, var(--surface)); }
+.dc-choix__item--off { opacity: .6; }
+.dc-ic { width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; }
+.dc-ic svg { width: 22px; height: 22px; }
+.dc-ic--rembourser { background: color-mix(in srgb, var(--credit) 14%, var(--surface)); color: var(--credit-t); }
+.dc-ic--placer { background: color-mix(in srgb, var(--epargne) 16%, var(--surface)); color: var(--epargne-t); }
+.dc-ic--reserve { background: color-mix(in srgb, var(--salaire) 16%, var(--surface)); color: var(--salaire-t); }
+.dc-choix__txt b { font-size: 15.5px; }
+.dc-choix__txt p { margin: 3px 0 0; font-size: 13.5px; line-height: 1.45; color: var(--encre-2); }
+.dc-badge { display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 700; background: var(--epargne); color: #fff; vertical-align: 2px; }
+.dc-choix__v { text-align: right; font-variant-numeric: tabular-nums; }
+.dc-choix__v strong { display: block; font-family: var(--affiche); font-size: 22px; letter-spacing: -.01em; }
+.dc-choix__v small { font-size: 12.5px; color: var(--encre-3); font-weight: 600; }
+.dc-barres { display: grid; gap: 7px; }
+.dc-barres__titre { margin: 0 0 2px; font-size: 13px; font-weight: 650; color: var(--encre-3); }
+.dc-barre { display: grid; grid-template-columns: 150px minmax(0, 1fr) 80px; gap: 10px; align-items: center; font-size: 13.5px; color: var(--encre-2); }
+.dc-barre > span:last-child { text-align: right; font-weight: 700; color: var(--encre); font-variant-numeric: tabular-nums; }
+.dc-barre__b { display: block; height: 12px; border-radius: 6px; width: var(--l, 0); transition: width 420ms var(--sortie); }
+.dc-barre__b--rembourser { background: var(--credit); } .dc-barre__b--placer { background: var(--epargne); } .dc-barre__b--reserve { background: var(--salaire); }
+.dc-conseil { padding: 14px 16px; border-radius: 16px; background: var(--encre); color: var(--surface); display: grid; gap: 6px; }
+.dc-conseil[hidden] { display: none; }
+.dc-conseil b { font-size: 15px; }
+.dc-conseil p { margin: 0; font-size: 14px; line-height: 1.5; opacity: .93; }
+.dc-mix { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 4px; gap: 2px; }
+.dc-mix i { display: block; width: var(--part, 0); }
+.dc-mix--reserve { background: var(--salaire); } .dc-mix--placer { background: var(--epargne); } .dc-mix--rembourser { background: var(--credit); }
+.dc-hyp { border-radius: 14px; background: var(--surface-2); padding: 0 14px; }
+.dc-hyp summary { cursor: pointer; padding: 12px 0; font-size: 13.5px; font-weight: 600; color: var(--encre-2); }
+.dc-hyp__champs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-bottom: 12px; }
+.dc-hyp .saisie { background: var(--surface); }
+.dc-note { margin: 0; font-size: 12.5px; color: var(--encre-3); line-height: 1.5; }
+
+/* ---------- Patrimoine net ---------- */
+.pn__carte { display: grid; gap: 14px; }
+.pn__tete { display: flex; align-items: end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.pn__tete strong { font-family: var(--affiche); font-size: 42px; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.pn__hausse { padding: 6px 12px; border-radius: 999px; background: color-mix(in srgb, var(--salaire) 14%, var(--surface)); color: var(--salaire-t); font-weight: 700; font-size: 13.5px; }
+.pn__hausse--baisse { background: color-mix(in srgb, var(--danger, #D92D20) 12%, var(--surface)); color: var(--danger-t, #B42318); }
+.pn__hausse[hidden] { display: none; }
+.pn__prop { display: flex; height: 14px; border-radius: 7px; overflow: hidden; gap: 2px; background: var(--surface-2); }
+.pn__prop i { display: block; }
+.pn__prop-a { width: var(--a, 100%); background: var(--salaire); transition: width 420ms var(--sortie); }
+.pn__prop-p { flex: 1; background: var(--credit); }
+.pn__leg { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--encre-3); }
+.pn__leg span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.pn__leg-a::before { background: var(--salaire); } .pn__leg-p::before { background: var(--credit); }
+.pn__bilan { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pn__bilan > div { padding: 14px; border-radius: 16px; background: var(--surface-2); display: grid; gap: 8px; align-content: start; }
+.pn__bilan h3 { margin: 0; font-size: 12.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--encre-3); }
+.pn__bilan ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.pn__bilan li { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; color: var(--encre-2); }
+.pn__bilan li b { color: var(--encre); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pn__bilan li small { display: block; font-size: 12px; color: var(--encre-3); }
+.pn__bilan .pn__tot { border-top: 1px solid var(--filet); padding-top: 8px; font-weight: 700; color: var(--encre); }
+.pn__vide span { color: var(--encre-3); }
+.pn__biens { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: start; }
+.pn__biens .champ { margin: 0; }
+.pn__jalons { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.pn__jalons li { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 10px; font-size: 14px; color: var(--encre-2); align-items: baseline; }
+.pn__jalons b { color: var(--encre); font-variant-numeric: tabular-nums; }
+.pn__note { margin: 0; font-size: 12.5px; color: var(--encre-3); line-height: 1.5; }
+
+@media (max-width: 700px) {
+  .dc-somme { grid-template-columns: 1fr; }
+  .dc-choix__item { grid-template-columns: 40px minmax(0, 1fr); }
+  .dc-choix__v { grid-column: 2; text-align: left; }
+  .dc-choix__v strong { display: inline; margin-right: 6px; font-size: 20px; }
+  .dc-barre { grid-template-columns: 110px minmax(0, 1fr) 68px; font-size: 13px; }
+  .dc-hyp__champs, .pn__bilan, .pn__biens { grid-template-columns: 1fr; }
+  .pn__tete strong { font-size: 34px; }
+}
+@media (prefers-reduced-motion: reduce) { .dc-barre__b, .pn__prop-a { transition: none; } }
