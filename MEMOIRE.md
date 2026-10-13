@@ -677,6 +677,29 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centnovodecies. Sous-rubriques : une partie de page à la fois (13 oct.)
+
+Demande : « beaucoup de scrolling » ; la barre latérale doit montrer des sous-rubriques pour chaque rubrique longue ; pas de découpage pour les pages courtes ; belles animations ; terminer et fusionner sans attendre (pas de maquette demandée cette fois).
+
+- **Module** `public/espace/js/sous-rubriques.js` (+ `sous-rubriques.css`, chargé juste avant `visite.js`). `CONFIG` décrit chaque page :
+  - **Mon orbite** : Vue d'ensemble · Santé financière · Conseils · Capacité d'emprunt · Épargne et projets (`#orbite?section=marge` → Capacité) ;
+  - **Mon profil** : Vous · Emploi et salaire · Foyer et budget · Crédits et épargne · Projets et banque (`?section=X` → la partie qui contient `#sec-X` ; les `<details>` de la partie s'ouvrent) ;
+  - **Salaire** : Calcul du net · Augmentation · Où va votre brut · Deux offres · Calcul détaillé ;
+  - **Épargne** : Simulation · Projection · Mode expert (seulement s'il est affiché) ;
+  - **Crédit** : Simuler · Échéancier · Outils avancés (trois parties de l'onglet « Simuler »), puis les onglets existants Projet immobilier, Comparer mes offres, Regrouper mes crédits, Le TMM (`?espace=`) ;
+  - **pages à onglets** (Vie & impôts, Ma progression, Mon mois, Paramètres) : la barre latérale reprend leurs onglets et reste synchronisée, sans découpage en plus. Les autres pages (Simulations, Abonnement, Assistant, Administration) ne sont pas découpées.
+- **Adresse** : `#salaire?partie=offres`. Une adresse sans partie (lien de la rubrique, simulation ouverte, `#credit?type=…`) reprend à la **première** partie ; ajouter `&partie=…` pour viser une autre partie. Une partie masquée porte `data-sr-masque` (jamais `hidden`, que l'application gère elle-même). Une page avec une seule partie disponible affiche tout.
+- **Remise à jour sans navigation** (`reappliquer`) : suit l'onglet que la page a choisi elle-même (Crédit, Mon mois…), ne force jamais l'onglet précédent (sinon « Simuler ce projet » ou le calendrier de Mon mois revenaient en arrière). Flèches du clavier dans les onglets suivies aussi (`keyup`).
+- **Révélation automatique** : `Element.prototype.scrollIntoView` et `focus` (HTML et SVG) sont enveloppés : un élément d'une partie masquée affiche d'abord sa partie (liens internes, « Comparer deux offres », visite guidée, palette, « Ajouter »…), puis l'adresse devient `#vue?partie=…` (`replaceState`). `visite.js` appelle aussi `SousRubriques.reveler(el)` avant de tester la visibilité d'une cible.
+- **Affichage** :
+  - grand écran (≥ 1 024 px) : sous la rubrique active, liste dépliée (hauteur animée `grid-template-rows` 0fr → 1fr), fil vertical et curseur coloré du module qui glisse (`--y`, `--h`) ;
+  - téléphone et tablette : `nav.sr-nav` collante sous la barre du haut (`--barre-h` mesurée), pastilles qui défilent avec une pastille blanche qui glisse (`--x`, `--l`), fondu sur les bords quand il y en a d'autres. **Classe `sr-nav`, pas `sous-nav`** (déjà prise par les liens du profil) ;
+  - changement de partie : entrée douce (opacité + 12 px, 60 ms de décalage) ; rien avec « mouvement réduit » ; à l'impression tout est affiché.
+- **Synchronisation** : `orbite:vue` (après les modules, dans un `requestAnimationFrame`), clics sur les onglets, `MutationObserver` (contenu rendu après coup), `surProfil`, redimensionnement. API `window.SousRubriques = { CONFIG, reveler, appliquer, active, partieDe }`. Événement `orbite:partie`.
+- Palette (Ctrl K) : nouvelles sections, sans mot de darija déjà pris par une action (« zyeda » reste au négociateur) : augmentation, où va votre brut, deux offres, calcul détaillé, santé, conseils, capacité, échéancier, outils avancés, projection de l'épargne).
+- Statistiques : changer de partie (`partie`) ou d'onglet du Crédit (`espace`) ne compte plus comme une simulation.
+- e2e : fonction `partie(page, vue, cle)` (ouvre une partie comme la barre latérale) ; variable `DELAI=ms` pour raccourcir le délai d'attente pendant la mise au point. Nouveautés `2026-10-13f`, SW `orbite-2026-10-13h`.
+
 ## 3 centoctodecies. Autres lignes de ma fiche de paie (13 oct.)
 
 Demande : que le compte affiche le net exact de la fiche de paie de l'utilisateur (données réelles : uniquement dans son compte, **jamais dans le dépôt**). Réponses de l'utilisateur : impôt **aligné sur la fiche** ; chef de famille ; prêt retenu sur la paie **seulement dans ses crédits** (le net affiché est avant ce prêt) ; primes de l'année « plus tard » (à reprendre). Maquette validée le 13 oct. (profil fictif : 3 200 DT brut).

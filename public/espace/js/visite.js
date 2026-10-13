@@ -73,7 +73,12 @@
   }
   function cibleDe(etape) {
     var l = (etape && etape.cibles) || [];
-    for (var k = 0; k < l.length; k++) { var el = doc.querySelector(l[k]); if (visible(el)) return el; }
+    for (var k = 0; k < l.length; k++) {
+      var el = doc.querySelector(l[k]);
+      /* Cible dans une sous-rubrique masquée : on affiche sa partie d'abord. */
+      if (el && window.SousRubriques) window.SousRubriques.reveler(el);
+      if (visible(el)) return el;
+    }
     return null;
   }
   function el(tag, cls, txt) { var e = doc.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }

@@ -593,7 +593,12 @@
     v.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("button, label, [data-appliquer]")) compterSimulation(m); }, true);
   });
   /* Une simulation ouverte depuis un lien (« Simuler », conseil, simulation enregistrée) compte aussi. */
-  doc.addEventListener("orbite:vue", function (e) { if (/^(salaire|epargne|credit)$/.test(e.detail.vue) && e.detail.params && e.detail.params.toString()) compterSimulation(e.detail.vue); });
+  doc.addEventListener("orbite:vue", function (e) {
+    if (!/^(salaire|epargne|credit)$/.test(e.detail.vue) || !e.detail.params) return;
+    /* Changer de sous-rubrique ou d'onglet n'est pas une simulation. */
+    var q = new URLSearchParams(e.detail.params); q.delete("partie"); q.delete("espace");
+    if (q.toString()) compterSimulation(e.detail.vue);
+  });
   var vueAffichee = null;
   function afficher(focus) {
     var r = lireRoute();

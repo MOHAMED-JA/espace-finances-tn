@@ -31,6 +31,12 @@ async function etape(nom, fn) {
   catch (e) { echecs++; console.log("not ok - " + nom + "\n    " + String(e && e.stack || e).split("\n").slice(0, Number(process.env.LIGNES || 4)).join("\n    ")); }
 }
 function assert(cond, msg) { if (!cond) throw new Error(msg || "assertion"); }
+/* Sous-rubriques : les pages longues s'affichent une partie à la fois ; on ouvre la partie comme la barre latérale. */
+async function partie(p, vue, cle) {
+  await p.evaluate((h) => { location.hash = h; }, "#" + vue + "?partie=" + cle);
+  await p.waitForFunction(([v, c]) => window.SousRubriques && window.SousRubriques.active(v) === c, [vue, cle]);
+  await p.waitForTimeout(120);
+}
 const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, "").replace(",", "."));
 
 (async () => {
@@ -44,6 +50,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   const nouveauContexte = navigateur.newContext.bind(navigateur);
   navigateur.newContext = async (o) => {
     const c = await nouveauContexte(o);
+    if (process.env.DELAI) c.setDefaultTimeout(Number(process.env.DELAI));
     await c.route("https://challenges.cloudflare.com/**", (r) => r.fulfill({ contentType: "application/javascript", body: FAUX_TURNSTILE }));
     return c;
   };
@@ -266,10 +273,16 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(/Enregistré/.test(await page.textContent("#etat-enregistrement-annonce")), "annonce pour lecteur d'écran");
     const meta = faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite;
     assert(meta && meta.montant === 2500 && meta.chefDeFamille === true, "profil enregistré dans le compte : " + JSON.stringify(meta));
+    /* Sous-rubriques : la page s'ouvre sur la vue d'ensemble, la capacité est une partie à part. */
+    assert(await page.isVisible("#orbite-contenu") && !(await page.isVisible("#vue-orbite .requiert-naissance")), "Mon orbite s'ouvre sur la vue d'ensemble");
+    await partie(page, "orbite", "capacite");
     assert(await page.isVisible("#vue-orbite .requiert-naissance"), "date de naissance demandée avant la capacité");
     assert(!(await page.isVisible("#capacite")), "capacité masquée sans date de naissance");
     assert((await page.$$("#cap-liste li")).length === 4, "4 crédits types");
     assert((await page.$$("#suggestions li")).length === 3, "3 suggestions d'épargne");
+    /* Adresse sans partie (lien « Mon orbite ») : retour à la première partie. */
+    await page.evaluate(() => { location.hash = "#orbite"; });
+    await page.waitForFunction(() => window.SousRubriques.active("orbite") === "apercu");
     await page.screenshot({ path: path.join(CAPTURES, "02-orbite.png") });
   });
 
@@ -328,7 +341,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.screenshot({ path: path.join(CAPTURES, "visite-credit.png") });
     await page.click("#visite-suiv");
     await page.waitForSelector(".visite", { state: "detached" });
-    await page.waitForFunction(() => location.hash === "#orbite");
+    await page.waitForFunction(() => location.hash === "#orbite").catch(async (e) => { throw new Error("adresse finale : " + await page.evaluate(() => location.hash)); });
     await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite_nouveautes === "2026-10-13a");
     /* « Pour aller plus loin » : les nouveautés précédentes, fiche de paie d'abord. */
     await page.click("#aide-visite");
@@ -368,6 +381,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   });
 
   await etape("capacité : bascule net → brut", async () => {
+    await partie(page, "orbite", "capacite");
     const net = chiffre(await page.textContent("#cap-mensualite"));
     await page.check('input[name="base-capacite"][value="brut"]', { force: true });
     await page.waitForFunction((n) => Number(document.getElementById("cap-mensualite").textContent.replace(/[^\d]/g, "")) > n, net);
@@ -389,18 +403,20 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(!(await page.isDisabled('[data-pp="enfants"][data-pas="1"]')), "enfants débloqués avec chef de famille");
     if (!chefCoche) await page.click('label.interrupteur:has(input[data-p="chefDeFamille"]) .interrupteur__piste');
     await page.fill("#p-naissance", "1990-05-14");
+    await partie(page, "profil", "salaire");
     await page.fill("#p-embauche", "2018-09-01");
-    await page.click("#sec-credits summary");
+    /* Sous-rubrique « Crédits et épargne » : ses volets s'ouvrent d'eux-mêmes. */
+    await partie(page, "profil", "credits");
+    assert(await page.$eval("#sec-credits", (d) => d.open) && await page.$eval("#sec-contrats", (d) => d.open), "volets de la partie ouverts");
     await page.click('[data-ajouter="credits"]');
     await page.fill('#liste-credits li:first-child [data-c="libelle"]', "Voiture");
     await page.fill('#liste-credits li:first-child [data-c="mensualite"]', "300");
-    await page.click("#sec-contrats summary");
     await page.click('[data-ajouter="contrats"]');
     await page.fill('#liste-contrats li:first-child [data-c="versementMensuel"]', "150");
-    await page.click("#sec-budget summary");
+    await partie(page, "profil", "foyer");
     await page.fill("#p-loyer", "500");
     await page.fill("#p-epargne", "15000");
-    await page.click("#sec-projets summary");
+    await partie(page, "profil", "projets");
     await page.click('[data-ajouter="projets"]');
     await page.fill('#liste-projets li:first-child [data-c="montant"]', "180000");
     await page.waitForTimeout(1600);
@@ -467,7 +483,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   await etape("capacité : taux du futur crédit à la consommation modifiable", async () => {
     /* Taux du futur crédit conso : modifiable, il change le capital affiché. */
     const capConso = async () => chiffre(await page.textContent("#cap-liste li:last-child .capacite__capital"));
-    await page.goto(base + "/espace/#orbite");
+    await page.goto(base + "/espace/#orbite?partie=capacite");
     await page.waitForSelector("#cap-taux-conso", { state: "visible" });
     const avant = await capConso();
     await page.fill("#cap-taux-conso", "2");
@@ -497,6 +513,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.click('.rail a[data-vue="salaire"]');
     await page.waitForSelector("#vue-salaire:not([hidden])");
     await page.waitForFunction(() => /1\s?856,935/.test(document.getElementById("montant-lu").textContent));
+    await partie(page, "salaire", "hausse");
     await page.evaluate(() => { const c = document.getElementById("hausse"); c.value = "100"; c.dispatchEvent(new Event("input", { bubbles: true })); });
     await page.waitForFunction(() => document.getElementById("verdict-tranche").textContent.includes("restez"));
     await page.evaluate(() => { const c = document.getElementById("hausse"); c.value = "800"; c.dispatchEvent(new Event("input", { bubbles: true })); });
@@ -1644,8 +1661,8 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   });
 
   await etape("crédit : lire une offre (texte), contrôler le tableau de la banque (exemple exact, PDF avec une erreur)", async () => {
-    await page.goto(base + "/espace/#credit");
-    await page.waitForSelector("#cr-outil-offre");
+    await page.goto(base + "/espace/#credit?partie=outils");
+    await page.waitForSelector("#cr-outil-offre", { state: "visible" });
     await page.click("#cr-outil-offre > summary");
     await page.fill("#cr-offre-txt", "Montant du prêt : 120 000,000 DT\nDurée : 180 mois\nTaux : TMM + 2,75 %\nTEG : 11,2 %\nFrais de dossier : 1 %\nAssurance 0,35 %");
     await page.waitForSelector("#cr-offre-capital");
@@ -1654,6 +1671,9 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => /(^|&)c=120000(&|$)/.test(window.ModuleCredit.etat()));
     const e = await page.evaluate(() => window.ModuleCredit.etat());
     assert(/(^|&)m=180(&|$)/.test(e) && /mg=2\.75/.test(e) && /as=0\.35/.test(e), "offre appliquée : " + e);
+    /* Offre appliquée : on est mené au résultat (partie « Simuler »). Retour aux outils. */
+    assert(await page.evaluate(() => window.SousRubriques.active("credit")) === "simuler", "résultat de l'offre affiché");
+    await partie(page, "credit", "outils");
     /* Tableau de la banque : l'exemple (échéancier exact) ne montre aucune erreur. */
     await page.click("#cr-outil-audit > summary");
     await page.click("[data-audit-exemple]");
@@ -1731,8 +1751,8 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   });
 
   await etape("crédit : voyage dans le temps, échéancier en PDF et en Excel, lettre en Word", async () => {
-    await page.goto(base + "/espace/#credit?type=auto&capital=30000&mois=60&taux=10.5");
-    await page.waitForSelector("#cr-temps-curseur");
+    await page.goto(base + "/espace/#credit?type=auto&capital=30000&mois=60&taux=10.5&partie=echeancier");
+    await page.waitForSelector("#cr-temps-curseur", { state: "visible" });
     await page.waitForFunction(() => document.getElementById("cr-temps-curseur").max === "60");
     await page.fill("#cr-temps-curseur", "30");
     await page.waitForFunction(() => /Échéance 30 sur 60/.test(document.getElementById("cr-temps-date").textContent));
@@ -1764,8 +1784,8 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
       const octets = fs.readFileSync(await dl.path());
       assert(ext === "pdf" ? octets.slice(0, 5).toString() === "%PDF-" : octets.slice(0, 2).toString() === "PK", "fichier " + ext + " valide");
     }
-    await page.goto(base + "/espace/#credit?type=immo&capital=150000&mois=240&taux=8");
-    await page.waitForSelector("#cr-outil-quand");
+    await page.goto(base + "/espace/#credit?type=immo&capital=150000&mois=240&taux=8&partie=outils");
+    await page.waitForSelector("#cr-outil-quand", { state: "visible" });
     await page.click("#cr-outil-quand > summary");
     await page.click("#cr-o-quand details[data-lettre] > summary");
     const [dl] = await Promise.all([page.waitForEvent("download"), page.click("[data-lettre-docx]")]);
@@ -2041,7 +2061,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(await page.isHidden("#exporter-xlsx"), "export Excel caché hors mode Expert");
     await page.click('#choix-expert label:has(input[value="oui"])');
     await page.waitForFunction(() => document.body.classList.contains("expert"));
-    await page.goto(base + "/espace/#profil");
+    await page.goto(base + "/espace/#profil?partie=salaire");
     await page.waitForSelector("#p-paie", { state: "visible" });
     await page.click("#p-paie > summary");
     await page.waitForFunction(() => document.querySelectorAll("#p-paie-table tbody tr").length === 13);
@@ -2588,7 +2608,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(octets.toString("latin1", 0, 5) === "%PDF-" && octets.length > 3000, "PDF valide : " + octets.length + " octets");
     await page.waitForSelector("#dlg-dossier", { state: "hidden" });
     await page.waitForFunction(() => window.Orbite.profil().employeur === "Société Test SA" && window.Orbite.profil().poste === "Analyste");
-    await page.goto(base + "/espace/#profil");
+    await page.goto(base + "/espace/#profil?partie=salaire");
     await page.waitForSelector("#p-employeur");
     assert((await page.inputValue("#p-employeur")) === "Société Test SA", "employeur visible dans le profil");
     /* Lien direct et téléphone : fenêtre sans débordement horizontal. */
@@ -2904,11 +2924,11 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
       return nom;
     };
     const vus = [];
-    vus.push(await verifier("salaire", "#courbe", "salaire"));
+    vus.push(await verifier("salaire?partie=detail", "#courbe", "salaire"));
     await page.screenshot({ path: path.join(CAPTURES, "graphe-salaire.png") });
     /* Légende : chaque série a sa clé de couleur (trait), pas seulement son nom. */
     assert((await page.$$("#courbe .og-legende .og-cle--ligne")).length === 2, "clés de légende du salaire");
-    vus.push(await verifier("credit", "#cr-gr-zone", "crédit"));
+    vus.push(await verifier("credit?partie=echeancier", "#cr-gr-zone", "crédit"));
     await page.locator("#cr-gr-zone").scrollIntoViewIfNeeded();
     await page.screenshot({ path: path.join(CAPTURES, "graphe-credit.png") });
     await page.click("#cr-gr-tab-annee");
@@ -2919,7 +2939,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(await page.evaluate(() => getComputedStyle(document.querySelector("#cr-gr-zone .og-barre")).opacity === "1"), "colonnes visibles après l'apparition");
     await page.screenshot({ path: path.join(CAPTURES, "graphe-credit-annees.png") });
     await page.click("#cr-gr-tab-crd");
-    await page.goto(base + "/espace/#epargne?versement=250");
+    await page.goto(base + "/espace/#epargne?versement=250&partie=projection");
     await page.waitForSelector("#ep-g-courbe .og-svg", { timeout: 15000 });
     vus.push("épargne");
     /* Mode sombre : couleurs de séries recalées (pas les mêmes qu'en clair). */
@@ -2927,7 +2947,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
     const sombre = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--g1").trim());
     assert(clair.toUpperCase() === "#2F5BEA" && sombre.toUpperCase() === "#5A82F2", "palette claire puis sombre : " + clair + " / " + sombre);
-    await page.goto(base + "/espace/#credit");
+    await page.goto(base + "/espace/#credit?partie=echeancier");
     await page.waitForSelector("#cr-gr-zone .og-svg");
     await page.locator("#cr-gr-zone").scrollIntoViewIfNeeded();
     await page.waitForTimeout(1400);
@@ -2935,7 +2955,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.evaluate((t) => { if (t) document.documentElement.setAttribute("data-theme", t); else document.documentElement.removeAttribute("data-theme"); }, themeAvant);
     /* Téléphone : graphiques à la largeur de l'écran, étiquettes sans chevauchement, pas de défilement horizontal. */
     await page.setViewportSize({ width: 390, height: 844 });
-    for (const [vue, sel] of [["salaire", "#courbe"], ["credit", "#cr-gr-zone"]]) {
+    for (const [vue, sel] of [["salaire?partie=detail", "#courbe"], ["credit?partie=echeancier", "#cr-gr-zone"]]) {
       await page.goto(base + "/espace/#" + vue);
       await page.waitForSelector(sel + " .og-svg");
       await page.waitForTimeout(300);
@@ -2951,6 +2971,62 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.screenshot({ path: path.join(CAPTURES, "graphe-credit-telephone.png") });
     await page.setViewportSize({ width: 1280, height: 900 });
     assert(vus.length === 3, "graphiques vus : " + vus.join(", "));
+  });
+
+  await etape("sous-rubriques : barre latérale dépliée, une partie à la fois, révélation automatique, onglets synchronisés, pastilles sur téléphone", async () => {
+    await page.setViewportSize({ width: 1360, height: 900 });
+    await page.goto(base + "/espace/#salaire");
+    await page.waitForSelector("#vue-salaire:not([hidden])");
+    await page.waitForFunction(() => window.SousRubriques.active("salaire") === "calcul");
+    /* Barre latérale : seule la rubrique active est dépliée, avec ses cinq sous-rubriques. */
+    const rail = await page.evaluate(() => ({ ouverts: [...document.querySelectorAll(".rail__liens li.sr-ouvert > a")].map((a) => a.getAttribute("data-vue")), liens: [...document.querySelectorAll(".sr-ouvert .rail__sous-lien")].map((a) => a.textContent) }));
+    assert(rail.ouverts.join() === "salaire" && rail.liens.join("|") === "Calcul du net|Augmentation|Où va votre brut|Deux offres|Calcul détaillé", "barre latérale : " + JSON.stringify(rail));
+    assert(await page.isVisible(".scene-salaire") && await page.isHidden("#section-offres") && await page.isHidden("#section-detail"), "une partie à la fois");
+    const hauteur = await page.evaluate(() => document.documentElement.scrollHeight);
+    await page.click('.rail__sous-lien[data-sr="hausse"]');
+    await page.waitForFunction(() => location.hash === "#salaire?partie=hausse" && window.SousRubriques.active("salaire") === "hausse");
+    assert(await page.isVisible("#section-hausse") && await page.isHidden(".scene-salaire"), "partie « Augmentation » seule");
+    assert(await page.getAttribute('.rail__sous-lien[data-sr="hausse"]', "aria-current") === "true", "sous-rubrique active signalée");
+    await page.waitForTimeout(450);
+    const cur = await page.evaluate(() => { const c = document.querySelector(".sr-ouvert .rail__sous-curseur"), a = document.querySelector('.rail__sous-lien[data-sr="hausse"]').parentElement; return [getComputedStyle(c).opacity, c.style.getPropertyValue("--y"), a.offsetTop + "px"]; });
+    assert(cur[0] === "1" && cur[1] === cur[2], "curseur sur la sous-rubrique : " + JSON.stringify(cur));
+    await page.screenshot({ path: path.join(CAPTURES, "sous-rubriques.png") });
+    /* Un bouton qui mène à une autre partie l'affiche tout seul (« Comparer avec ma situation actuelle » → Deux offres). */
+    await page.evaluate(() => { const c = document.getElementById("hausse"); c.value = "300"; c.dispatchEvent(new Event("input", { bubbles: true })); });
+    await page.click("#hausse-vers-offre");
+    await page.waitForFunction(() => window.SousRubriques.active("salaire") === "offres" && /partie=offres/.test(location.hash));
+    assert(await page.isVisible("#section-offres") && await page.isHidden("#section-hausse"), "partie révélée par le bouton");
+    /* Rechargement : la partie est gardée. Moins de défilement qu'avant. */
+    await page.reload();
+    await page.waitForFunction(() => window.SousRubriques && window.SousRubriques.active("salaire") === "offres");
+    assert(await page.evaluate(() => document.documentElement.scrollHeight) <= hauteur + 400, "page courte");
+    /* Crédit : les onglets existants sont dans la barre latérale et restent synchronisés. */
+    await page.goto(base + "/espace/#credit");
+    await page.waitForSelector("#vue-credit:not([hidden])");
+    await page.click('.rail__sous-lien[data-sr="tmm"]');
+    await page.waitForFunction(() => document.getElementById("ce-tab-tmm").getAttribute("aria-selected") === "true");
+    await page.click("#ce-tab-simuler");
+    await page.waitForFunction(() => window.SousRubriques.active("credit") === "simuler" && document.querySelector('.rail__sous-lien[data-sr="simuler"]').getAttribute("aria-current") === "true");
+    /* Vie & impôts : onglets repris tels quels. */
+    await page.goto(base + "/espace/#vie");
+    await page.click('.rail__sous-lien[data-sr="fiscal"]');
+    await page.waitForFunction(() => document.getElementById("vie-tab-fiscal").getAttribute("aria-selected") === "true");
+    /* Téléphone : pastilles collantes, pas de défilement horizontal. */
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(base + "/espace/#orbite");
+    await page.waitForSelector('#vue-orbite .sr-nav:not([hidden]) .sr-nav__lien[data-sr="sante"]');
+    await page.click('#vue-orbite .sr-nav__lien[data-sr="sante"]');
+    await page.waitForFunction(() => window.SousRubriques.active("orbite") === "sante");
+    assert(await page.isVisible("#sante") && await page.isHidden("#orbite-contenu"), "pastille : partie « Santé » seule");
+    assert(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), "pas de défilement horizontal");
+    await page.evaluate(() => window.scrollTo(0, 400));
+    await page.waitForTimeout(250);
+    const colle = await page.evaluate(() => { const n = document.querySelector("#vue-orbite .sr-nav"), b = document.querySelector(".barre"); return Math.abs(n.getBoundingClientRect().top - b.getBoundingClientRect().bottom) < 2; });
+    assert(colle, "pastilles collées sous la barre du haut");
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: path.join(CAPTURES, "sous-rubriques-telephone.png") });
+    await page.goto(base + "/espace/#orbite?partie=apercu");
+    await page.setViewportSize({ width: 1360, height: 900 });
   });
 
   await etape("apparence personnelle : accent, densité, taille du texte, aperçu, compte et appareil, sombre, Ctrl K, téléphone", async () => {
