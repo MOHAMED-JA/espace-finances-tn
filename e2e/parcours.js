@@ -1466,7 +1466,10 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
       assert(await page.isChecked(immo) && (await page.inputValue("#ce-r-ira")) === "2" && /Indemnité \(2 %\)/.test(await page.textContent("#ce-reg-res")) && /Crédit immo démo/.test(await page.textContent("#ce-reg-res table")), "choix gardés après recalcul du profil");
       await page.screenshot({ path: path.join(CAPTURES, "credit-regrouper.png") });
     } else assert(false, "crédits du profil absents du regroupement");
-    await page.evaluate((c) => window.Orbite.majProfil({ credits: JSON.parse(c) }), creditsAvant);
+    /* Retour aux crédits d'avant, enregistré tout de suite (les étapes suivantes rechargent la page). */
+    await page.evaluate((c) => window.Orbite.majProfil({ credits: JSON.parse(c) }, { immediat: true }), creditsAvant);
+    await page.waitForFunction((c) => JSON.stringify(window.Orbite.profil().credits.map((x) => x.libelle)) === JSON.stringify(JSON.parse(c).map((x) => x.libelle)), creditsAvant);
+    await page.waitForTimeout(800);
     await page.keyboard.press("Home");
     await page.click("#ce-tab-simuler");
     await page.waitForFunction(() => location.hash === "#credit");
