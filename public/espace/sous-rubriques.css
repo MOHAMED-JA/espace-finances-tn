@@ -1,0 +1,53 @@
+/* Orbite — sous-rubriques (13 oct. 2026) : une partie de page à la fois.
+   Barre latérale : la rubrique active se déplie (hauteur animée), un curseur glisse sur la sous-rubrique active.
+   Téléphone et tablette : pastilles collantes sous la barre du haut, pastille active qui glisse. */
+
+/* Partie masquée (sans toucher à « hidden », que l'application gère elle-même). */
+[data-sr-masque] { display: none !important; }
+
+/* ---------- Barre latérale ---------- */
+.rail__sous { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 340ms var(--sortie), opacity 220ms ease; }
+.rail__sous > ul { position: relative; overflow: hidden; min-height: 0; list-style: none; margin: 0; padding: 0 0 0 44px; display: grid; gap: 1px; }
+.sr-ouvert > .rail__sous:not(.rail__sous--vide) { grid-template-rows: 1fr; opacity: 1; }
+.sr-ouvert > .rail__sous > ul { padding-top: 4px; padding-bottom: 6px; }
+/* Fil vertical et curseur de la sous-rubrique active. */
+.rail__sous > ul::before { content: ""; position: absolute; left: 21px; top: 6px; bottom: 8px; width: 2px; border-radius: 2px; background: var(--filet); }
+.rail__sous-curseur { position: absolute; left: 20px; top: var(--y, 0); height: var(--h, 0); width: 4px; border-radius: 4px; background: var(--accent, var(--encre)); opacity: 0; transform: scaleY(.62); transition: top 320ms var(--ressort), height 320ms var(--ressort), opacity 200ms ease; }
+.rail__liens .rail__sous-lien { display: block; min-height: 0; padding: 7px 10px; border-radius: 10px; font-size: 13.5px; font-weight: 550; line-height: 1.3; color: var(--encre-3); gap: 0; transition: background-color 160ms ease, color 160ms ease, transform 140ms var(--sortie); }
+.rail__liens .rail__sous-lien:hover { background: var(--surface-2); color: var(--encre); }
+.rail__liens .rail__sous-lien[aria-current="true"] { color: var(--encre); font-weight: 680; background: transparent; }
+.rail__liens .rail__sous-lien:active { transform: scale(.98); }
+.rail__liens .rail__sous-lien:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+/* Les modules gardent leur couleur. */
+.rail__liens li:has(> a[data-module="salaire"]) .rail__sous-curseur { background: var(--salaire); }
+.rail__liens li:has(> a[data-module="epargne"]) .rail__sous-curseur { background: var(--epargne); }
+.rail__liens li:has(> a[data-module="credit"]) .rail__sous-curseur { background: var(--credit); }
+
+/* ---------- Pastilles (téléphone, tablette) ---------- */
+.sr-nav { position: sticky; top: var(--barre-h, 60px); z-index: 15; margin: -8px -16px 14px; padding: 8px 16px; background: color-mix(in srgb, var(--fond) 88%, transparent); backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px); }
+.sr-nav[hidden] { display: none; }
+.sr-nav__piste { position: relative; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; padding: 4px; border-radius: 999px; background: var(--surface-2); scroll-snap-type: x proximity; }
+.sr-nav__piste::-webkit-scrollbar { display: none; }
+.sr-nav__piste--d { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); }
+.sr-nav__piste--g { -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px); mask-image: linear-gradient(90deg, transparent, #000 36px); }
+.sr-nav__piste--g.sr-nav__piste--d { -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent); }
+.sr-nav__lien { position: relative; z-index: 1; flex: none; display: inline-flex; align-items: center; min-height: 38px; padding: 0 15px; border-radius: 999px; font-size: 14px; font-weight: 650; color: var(--encre-2); text-decoration: none; white-space: nowrap; scroll-snap-align: center; transition: color 200ms ease, transform 140ms var(--sortie); -webkit-tap-highlight-color: transparent; }
+.sr-nav__lien[aria-current="true"] { color: var(--encre); }
+.sr-nav__lien:active { transform: scale(.96); }
+.sr-nav__lien:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; }
+.sr-nav__pastille { position: absolute; z-index: 0; top: 4px; bottom: 4px; left: 0; width: var(--l, 0); transform: translateX(var(--x, 0)); border-radius: 999px; background: var(--surface); box-shadow: 0 1px 2px rgba(10, 13, 22, .08), 0 4px 12px -6px rgba(10, 13, 22, .18); opacity: 0; transition: transform 320ms var(--ressort), width 320ms var(--ressort), opacity 200ms ease; }
+:root[data-theme="dark"] .sr-nav__pastille { background: var(--surface-3); box-shadow: 0 1px 2px rgba(0, 0, 0, .3); }
+.module--salaire .sr-nav__lien[aria-current="true"] { color: var(--salaire-t); }
+.module--epargne .sr-nav__lien[aria-current="true"] { color: var(--epargne-t); }
+.module--credit .sr-nav__lien[aria-current="true"] { color: var(--credit-t); }
+@media (min-width: 1024px) { .sr-nav { display: none !important; } }
+
+/* ---------- Entrée d'une partie ---------- */
+.sr-entree { animation: sr-entree 420ms var(--sortie) both; animation-delay: calc(var(--sr-i, 0) * 60ms); }
+@keyframes sr-entree { from { opacity: 0; transform: translateY(12px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .rail__sous, .rail__sous-curseur, .sr-nav__pastille, .sr-nav__lien { transition: none; }
+  .sr-entree { animation: none; }
+}
+@media print { [data-sr-masque] { display: revert !important; } .sr-nav, .rail__sous { display: none !important; } }
