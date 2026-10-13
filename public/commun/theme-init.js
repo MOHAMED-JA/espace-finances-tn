@@ -40,6 +40,20 @@
   try { if (localStorage.getItem("ef-mouvement") === "reduit") racine.setAttribute("data-mouvement", "reduit"); } catch (e) {}
   /* Haute lisibilité (Lot 2) : retenue sur le compte, recopiée sur l'appareil pour s'appliquer avant l'affichage. */
   try { if (localStorage.getItem("ef-lisible") === "oui") { racine.setAttribute("data-lisible", "oui"); racine.setAttribute("data-mouvement", "reduit"); } } catch (e) {}
-  window.EFTheme = { appliquer: appliquer, effectif: effectif, soleil: soleil, nuitATunis: nuitATunis };
+  /* Apparence personnelle (accent, densité, taille du texte) : retenue sur le compte, recopiée sur l'appareil
+     (« ef-apparence ») pour s'appliquer avant l'affichage ; seulement dans l'espace (accueil et pages publiques inchangés). */
+  var APPARENCE = { accent: ["sidi", "olivier", "djerba", "bougain"], densite: ["compacte"], taille: ["grande", "tres-grande"] };
+  function normaliserApparence(v) {
+    var o = v && typeof v === "object" ? v : {}, r = {};
+    Object.keys(APPARENCE).forEach(function (k) { r[k] = APPARENCE[k].indexOf(o[k]) >= 0 ? o[k] : ""; });
+    return r;
+  }
+  function poserApparence(v) {
+    var a = normaliserApparence(v);
+    Object.keys(a).forEach(function (k) { if (a[k]) racine.setAttribute("data-" + k, a[k]); else racine.removeAttribute("data-" + k); });
+    return a;
+  }
+  try { if (/^\/espace\//.test(location.pathname)) poserApparence(JSON.parse(localStorage.getItem("ef-apparence") || "null")); } catch (e) {}
+  window.EFTheme = { appliquer: appliquer, effectif: effectif, soleil: soleil, nuitATunis: nuitATunis, APPARENCE: APPARENCE, normaliserApparence: normaliserApparence, poserApparence: poserApparence };
   if (typeof module !== "undefined" && module.exports) module.exports = window.EFTheme;
 })();

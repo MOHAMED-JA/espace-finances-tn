@@ -1,7 +1,7 @@
 /*
  * Orbite — visite guidée en trois chapitres (maquette validée le 12 oct. 2026, nouveautés d'octobre ajoutées le même jour, puis celles du Lot 2 et du point 5).
  * Elle s'ouvre toujours sur un choix : « L'essentiel » (8 étapes, proposé aux nouveaux venus), « Les nouveautés »
- * (8 étapes, proposé à ceux qui ont déjà vu l'essentiel ; badge tant que cette version n'a pas été vue) et
+ * (9 étapes, proposé à ceux qui ont déjà vu l'essentiel ; badge tant que cette version n'a pas été vue) et
  * « Pour aller plus loin » (10 étapes : les nouveautés précédentes).
  * Démarre juste après le « premier pas » (une fois par compte, user_metadata.orbite_visite) ; on la revoit avec le
  * bouton « ? » de la barre ou depuis Paramètres → Préférences. Une étape peut ouvrir une autre page (« vue ») avant de
@@ -11,7 +11,7 @@
 (function () {
   "use strict";
   var O = window.Orbite, E = window.Espace, doc = document, $ = O.$;
-  var VERSION_NOUVEAUTES = "2026-10-12c";
+  var VERSION_NOUVEAUTES = "2026-10-13a";
 
   /* cibles : sélecteurs essayés dans l'ordre ; le premier visible est désigné. vue : page à ouvrir d'abord. */
   var CHAPITRES = {
@@ -38,6 +38,7 @@
         { vue: "#credit", cibles: ["#partager-sim", "#vue-credit .partager-mobile"], titre: "Partager une simulation", texte: "Un lien, un QR code, WhatsApp ou un e-mail : la personne ouvre la page publique d'Orbite déjà remplie, sans compte. Seuls les montants voyagent, jamais votre nom ni votre profil." },
         { vue: "#simulations", cibles: ["#comparer-mode"], titre: "Comparer vos simulations", texte: "Cochez 2 ou 3 simulations du même module : elles s'affichent côte à côte, et la meilleure mensualité, le coût le plus bas ou l'économie la plus haute sont marqués." },
         { vue: "#credit", cibles: [".barre__histo", "#palette-ouvrir"], titre: "Annuler, rétablir", texte: "Une erreur de saisie ? ↶ ou Ctrl Z revient en arrière, ↷ ou Ctrl Y rétablit, dans Crédit, Salaire et Épargne. Sur téléphone : Ctrl K (la loupe), « Annuler »." },
+        { vue: "#compte?onglet=preferences", cibles: ["[aria-labelledby='r-perso']"], titre: "Votre apparence", texte: "Une couleur d'accent (Encre, Sidi Bou Saïd, Olivier, Djerba, Bougainvillier), une densité compacte pour voir plus de chiffres, un texte plus grand : vous voyez l'effet en direct, et c'est retenu sur tous vos appareils." },
         { vue: "#compte?onglet=preferences", cibles: ["[aria-labelledby='r-lisible']"], titre: "Haute lisibilité", texte: "Texte plus grand, gris plus foncés, liens soulignés : un réglage retenu sur votre compte, sur tous vos appareils. Le chapitre « Pour aller plus loin » montre les autres fonctions.", fin: true }
       ]
     },

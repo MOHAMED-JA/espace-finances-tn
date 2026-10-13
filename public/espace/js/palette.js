@@ -78,6 +78,21 @@
     /* Lot 2 : haute lisibilité, annuler / rétablir, partager. */
     var LI = window.OrbiteLisibilite, H = window.OrbiteHistorique;
     if (LI) L.push(action("a-lisible", LI.actif() ? "Revenir à la lisibilité normale" : "Activer la haute lisibilité", "Texte plus grand et plus contrasté, sur tous vos appareils", "lisibilite lisible lire texte grand gros taille contraste vue malvoyant accessibilite police", function () { LI.definir(!LI.actif()); }));
+    /* Apparence personnelle : couleur d'accent, densité, taille du texte. */
+    var AP = window.OrbiteApparence;
+    if (AP) {
+      var ap = AP.actuelle(), suite = { "": "grande", grande: "tres-grande", "tres-grande": "" }[ap.taille];
+      L.push(action("a-accent", "Changer la couleur d'accent", "Encre, Sidi Bou Saïd, Olivier, Djerba, Bougainvillier", "couleur accent apparence personnaliser theme bleu vert rose terre cuite olivier djerba sidi bou said bougainvillier lawn", function () {
+        /* Préférences ouvertes sur le nuancier, la couleur actuelle prête au clavier (← →). */
+        var viser = function () { var c = doc.querySelector("#choix-accent input:checked") || doc.querySelector("#choix-accent input"); if (c) { c.closest(".reglage").scrollIntoView({ block: "center" }); c.focus({ preventScroll: true }); } };
+        if (O.lireRoute().vue === "compte") { aller("#compte?onglet=preferences"); setTimeout(viser, 120); return; }
+        var une = function (e) { if (e.detail.vue !== "compte") return; doc.removeEventListener("orbite:vue", une); setTimeout(viser, 120); };
+        doc.addEventListener("orbite:vue", une);
+        location.hash = "#compte?onglet=preferences";
+      }));
+      L.push(action("a-densite", ap.densite ? "Revenir à la densité confortable" : "Passer en densité compacte", ap.densite ? "L'espace habituel d'Orbite" : "Marges et boutons plus serrés, même texte", "densite compacte serre confortable espace marges apparence", function () { AP.definir({ densite: ap.densite ? "" : "compacte" }); }));
+      L.push(action("a-taille", suite ? (ap.taille ? "Agrandir encore le texte" : "Agrandir le texte") : "Revenir au texte normal", "Taille du texte : " + AP.NOMS.taille[suite] , "taille texte agrandir grand gros police zoom lire normal apparence", function () { AP.definir({ taille: suite }); }));
+    }
     if (H && H.possible(-1)) L.push(action("a-annuler", "Annuler la dernière modification", "Ctrl Z", "annuler retour arriere defaire modification ctrl z", function () { H.annuler(); }));
     if (H && H.possible(1)) L.push(action("a-retablir", "Rétablir la modification", "Ctrl Y", "retablir refaire ctrl y", function () { H.retablir(); }));
     if (window.OrbitePartage && /^(salaire|credit|epargne)$/.test(O.lireRoute().vue)) L.push(action("a-partager", "Partager cette simulation", "Lien, QR code, WhatsApp, e-mail", "partager envoyer lien qr whatsapp email mail", function () { window.OrbitePartage.ouvrir(); }));
@@ -177,7 +192,7 @@
   }
   var ICONES = { orbite: "orbite", salaire: "salaire", epargne: "epargne", credit: "credit", action: "etoile" };
   /* Une icône par entrée : la couleur dit le module, le dessin dit la chose. */
-  var ICO = { "v-orbite": "orbite", "v-profil": "profil", "v-salaire": "salaire", "v-epargne": "epargne", "v-credit": "credit", "v-progression": "hausse", "v-mois": "calendrier", "s-depense": "panier", "s-calendrier": "calendrier", "v-vie": "bouclier", "v-assistant": "etoile", "v-simulations": "liste", "v-compte": "compte", "s-retraite": "horloge", "s-objectifs": "cible", "s-annee": "etoile", "s-credits": "credit", "s-historique": "hausse", "s-budget": "epargne", "s-banque": "credit", "s-foyer": "profil", "s-fiscal": "epargne", "s-etsi": "comparer", "s-marge": "horloge", "s-projet": "maison", "s-offres": "comparer", "s-regrouper": "liste", "s-tmm": "hausse", "s-preferences": "outils", "s-donnees": "telecharger", "a-salaire": "hausse", "a-nego": "cible", "a-apps": "grille", "a-dossier": "fiche", "a-fiche": "fiche", "a-visite": "boussole", "a-expert": "outils", "a-export": "telecharger", "a-deconnexion": "sortie", "a-lisible": "lisible", "a-annuler": "annuler", "a-retablir": "retablir", "a-partager": "partager", "m-fiscal": "horloge", "m-annee": "etoile" };
+  var ICO = { "v-orbite": "orbite", "v-profil": "profil", "v-salaire": "salaire", "v-epargne": "epargne", "v-credit": "credit", "v-progression": "hausse", "v-mois": "calendrier", "s-depense": "panier", "s-calendrier": "calendrier", "v-vie": "bouclier", "v-assistant": "etoile", "v-simulations": "liste", "v-compte": "compte", "s-retraite": "horloge", "s-objectifs": "cible", "s-annee": "etoile", "s-credits": "credit", "s-historique": "hausse", "s-budget": "epargne", "s-banque": "credit", "s-foyer": "profil", "s-fiscal": "epargne", "s-etsi": "comparer", "s-marge": "horloge", "s-projet": "maison", "s-offres": "comparer", "s-regrouper": "liste", "s-tmm": "hausse", "s-preferences": "outils", "s-donnees": "telecharger", "a-salaire": "hausse", "a-nego": "cible", "a-apps": "grille", "a-dossier": "fiche", "a-fiche": "fiche", "a-visite": "boussole", "a-expert": "outils", "a-export": "telecharger", "a-deconnexion": "sortie", "a-lisible": "lisible", "a-accent": "outils", "a-densite": "liste", "a-taille": "lisible", "a-annuler": "annuler", "a-retablir": "retablir", "a-partager": "partager", "m-fiscal": "horloge", "m-annee": "etoile" };
   function majSelection() {
     liste.querySelectorAll("[role=option]").forEach(function (li, i) { li.setAttribute("aria-selected", i === sel ? "true" : "false"); });
     var s = liste.querySelector('[aria-selected="true"]');

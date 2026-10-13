@@ -29,6 +29,7 @@
   <link rel="stylesheet" href="/espace/palette.css">
   <link rel="stylesheet" href="/espace/lanceur.css">
   <link rel="stylesheet" href="/espace/confort.css">
+  <link rel="stylesheet" href="/espace/apparence.css">
   <link rel="stylesheet" href="/orbite/signature.css">
   <script src="/commun/config.js"></script>
   <script src="/commun/garde.js"></script>
@@ -1174,6 +1175,51 @@
                 </div>
               </div>
             </section>
+            <section class="panneau reglage" aria-labelledby="r-perso">
+              <div class="reglage__texte"><h2 id="r-perso">Couleur, densité, taille</h2><p>La couleur d'accent habille les boutons principaux, les interrupteurs, le repère du menu et la sélection du texte ; les couleurs des modules et des graphiques gardent leur sens. Retenu sur votre compte, sur tous vos appareils. Aussi dans Ctrl K.</p></div>
+              <div class="reglage__controle">
+                <div class="perso">
+                  <p class="perso__lib" id="lib-accent">Couleur d'accent</p>
+                  <div class="nuancier" id="choix-accent" role="radiogroup" aria-labelledby="lib-accent">
+                    <label class="nuance"><input type="radio" name="accent" value=""><i aria-hidden="true"></i><b>Encre</b><small>par défaut</small></label>
+                    <label class="nuance" data-accent="sidi"><input type="radio" name="accent" value="sidi"><i aria-hidden="true"></i><b>Sidi Bou Saïd</b><small>bleu</small></label>
+                    <label class="nuance" data-accent="olivier"><input type="radio" name="accent" value="olivier"><i aria-hidden="true"></i><b>Olivier</b><small>vert</small></label>
+                    <label class="nuance" data-accent="djerba"><input type="radio" name="accent" value="djerba"><i aria-hidden="true"></i><b>Djerba</b><small>terre cuite</small></label>
+                    <label class="nuance" data-accent="bougain"><input type="radio" name="accent" value="bougain"><i aria-hidden="true"></i><b>Bougain&shy;villier</b><small>rose</small></label>
+                  </div>
+                </div>
+                <div class="perso">
+                  <p class="perso__lib" id="lib-densite">Densité <small>Compacte : marges et boutons plus serrés, même taille de texte.</small></p>
+                  <div class="bascule" id="choix-densite" role="radiogroup" aria-labelledby="lib-densite">
+                    <label><input type="radio" name="densite" value=""><span>Confortable</span></label>
+                    <label><input type="radio" name="densite" value="compacte"><span>Compacte</span></label>
+                    <i class="bascule__pastille" aria-hidden="true"></i>
+                  </div>
+                </div>
+                <div class="perso">
+                  <p class="perso__lib" id="lib-taille">Taille du texte <small>Agrandit tout le contenu, graphiques compris ; la haute lisibilité garde au moins « Grande ».</small></p>
+                  <div class="bascule" id="choix-taille" role="radiogroup" aria-labelledby="lib-taille">
+                    <label><input type="radio" name="taille" value=""><span><em class="perso__a perso__a--1" aria-hidden="true">A</em>Normale</span></label>
+                    <label><input type="radio" name="taille" value="grande"><span><em class="perso__a perso__a--2" aria-hidden="true">A</em>Grande</span></label>
+                    <label><input type="radio" name="taille" value="tres-grande"><span><em class="perso__a perso__a--3" aria-hidden="true">A</em>Très grande</span></label>
+                    <i class="bascule__pastille" aria-hidden="true"></i>
+                  </div>
+                </div>
+                <div class="perso">
+                  <p class="perso__lib">Aperçu</p>
+                  <div class="apercu-perso" aria-hidden="true">
+                    <div class="apercu-perso__carte">
+                      <div class="apercu-perso__ligne"><span>Salaire net mensuel</span><span>Exemple</span></div>
+                      <div class="apercu-perso__gros chiffre">1 862,410 DT</div>
+                      <div class="apercu-perso__champ">Brut : <mark>2 400</mark><i></i></div>
+                      <div class="apercu-perso__ligne"><span>Prime de rendement</span><span class="interrupteur"><input type="checkbox" checked tabindex="-1"><i class="interrupteur__piste"></i></span></div>
+                      <div class="apercu-perso__actions"><span class="bouton bouton--plein">Enregistrer</span><span class="bouton">Partager</span></div>
+                    </div>
+                  </div>
+                  <div class="reglage__boutons"><button type="button" class="bouton bouton--petit" id="apparence-origine" disabled>Revenir aux réglages d'origine</button></div>
+                </div>
+              </div>
+            </section>
             <section class="panneau reglage" aria-labelledby="r-lisible">
               <div class="reglage__texte"><h2 id="r-lisible">Lisibilité</h2><p>Haute lisibilité : texte plus grand, gris plus foncés, liens soulignés, contour bien visible autour de l'élément actif et animations coupées. Retenue sur votre compte, sur tous vos appareils. Aussi dans Ctrl K.</p></div>
               <div class="reglage__controle">
@@ -2266,6 +2312,7 @@
   <script src="/commun/partage-lien.js"></script>
   <script src="/espace/js/partage-simulation.js"></script>
   <script src="/espace/js/lisibilite.js"></script>
+  <script src="/espace/js/apparence.js"></script>
   <script src="/espace/js/historique.js"></script>
   <script src="/espace/js/guidee.js"></script>
   <script src="/espace/js/recevoir-calcul.js"></script>
