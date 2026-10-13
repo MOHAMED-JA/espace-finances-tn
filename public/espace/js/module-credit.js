@@ -1774,7 +1774,7 @@
         var txt = (c.querySelector('[data-c="lignes"]') || {}).value || "", out = sortie(c);
         if (!txt.trim()) { out.innerHTML = ""; return; }
         var CA = window.CreditAudit, tab = CA ? CA.analyserTableau(txt) : { lignes: [] };
-        if (tab.lignes.length >= 3) { var au = CA.auditerTableau(tab); OUTIL_FN.audit.dernier = au; out.innerHTML = rendreAuditBanque(au); return; }
+        if (tab.lignes.length >= 3) { var au = CA.auditerTableau(tab); OUTIL_FN.audit.dernier = au; if (OUTIL_FN.audit.texte !== txt) { OUTIL_FN.audit.texte = txt; OUTIL_FN.audit.cible = undefined; } out.innerHTML = rendreAuditBanque(au); remplirMaj(out); return; }
         /* Lignes sans date : comparaison avec le scénario (ancien format « N° ; échéance ; intérêts ; capital ; restant »). */
         var d = d0(), lignes = lireTableauBancaire(txt);
         if (!lignes.length) { out.innerHTML = encart("alerte", "info", "<p>Aucune ligne d'échéance reconnue : il faut une date (jj/mm/aaaa) suivie des montants. Vérifiez le fichier ou collez le texte.</p>"); return; }
@@ -1899,6 +1899,7 @@
       if (au.reductions.length) h += encart("succes", "valide", au.reductions.map(function (z) { return "<p>Réduction de moitié du taux appliquée en " + mA(z.date) + " : " + pc(z.avant, 3) + " → " + pc(z.apres, 3) + (z.conforme ? "." : " (ratio insuffisant, voir ci-dessous).") + "</p>"; }).join(""));
       if (au.possibles.length && !au.possibles[0].passe) h += encart("", "cible", "<p>Règle des 8 % : la réduction de moitié du taux deviendra possible en <strong>" + mA(au.possibles[0].date) + "</strong>. L'outil « Quand demander la réduction ? » prépare la lettre.</p>");
     }
+    if (!au.nonDetaille) h += '<div class="cr-maj" data-maj-zone></div>';
     var tous = au.anomalies.concat(au.infos);
     if (tous.length) h += '<ul class="cr-constats">' + tous.slice(0, 40).map(function (a) { return '<li data-g="' + a.g + '">' + ico(a.g === "info" ? "info" : "alerte") + '<span>' + esc(a.txt) + '</span></li>'; }).join("") + (tous.length > 40 ? '<li data-g="info">' + ico("info") + '<span>… et ' + (tous.length - 40) + ' autres constats.</span></li>' : "") + '</ul>';
     h += '<div class="cr-ligne-actions"><button type="button" class="bouton bouton--petit" data-audit-pdf>' + ico("telecharger") + 'Rapport PDF</button><button type="button" class="bouton bouton--petit" data-audit-xlsx>' + ico("telecharger") + 'Excel</button></div>';
@@ -1907,6 +1908,90 @@
       '</tbody></table></div></details>';
     return h;
   }
+  /* ---------- Mettre à jour mon crédit en cours d'après le tableau contrôlé (maquette validée le 13 oct. 2026) ----------
+     Avant → après pour le crédit du profil choisi (reconnu par sa mensualité) ou un nouveau crédit ; lignes cochées
+     seulement ; « Annuler » remet les crédits du profil comme avant. Rien n'est gardé du document. */
+  function lignesMaj(v, c) {
+    var aucun = "non renseigné", L = [];
+    function ligne(cle, lib, avant, apres, egal, poser) { L.push({ cle: cle, lib: lib, avant: avant, apres: apres, egal: egal, poser: poser }); }
+    ligne("mensualite", "Mensualité", c ? dt(c.mensualite) : "—", dt(v.mensualite), !!c && Math.abs(c.mensualite - v.mensualite) < 0.0005, function (x) { x.mensualite = v.mensualite; });
+    ligne("capital", "Capital restant dû", c && c.capitalRestant > 0 ? dt(c.capitalRestant) : c ? aucun : "—", dt(v.capitalRestant), !!c && Math.abs((c.capitalRestant || 0) - v.capitalRestant) < 0.0005, function (x) { x.capitalRestant = v.capitalRestant; });
+    if (v.tauxPct !== null) {
+      var tt = v.tauxType ? " · " + v.tauxType : "", ta = c && c.tauxPct > 0 ? pc(c.tauxPct, 3) + (c.tauxType ? " · " + c.tauxType : "") : c ? aucun : "—";
+      ligne("taux", "Taux", ta, pc(v.tauxPct, 3) + tt, !!c && Math.abs((c.tauxPct || 0) - v.tauxPct) < 0.00005 && (!v.tauxType || c.tauxType === v.tauxType),
+        function (x) { x.tauxPct = v.tauxPct; if (v.tauxType) x.tauxType = v.tauxType; });
+    }
+    if (v.dureeMois) {
+      var deb = MOIS[v.moisDebut - 1] + " " + v.anneeDebut + " · " + v.dureeMois + " mois";
+      var debA = c && c.dureeMois > 0 && c.anneeDebut > 0 ? MOIS[c.moisDebut - 1] + " " + c.anneeDebut + " · " + c.dureeMois + " mois" : c ? "non renseignés" : "—";
+      ligne("dates", "Début et durée", debA, deb, !!c && c.moisDebut === v.moisDebut && c.anneeDebut === v.anneeDebut && c.dureeMois === v.dureeMois,
+        function (x) { x.moisDebut = v.moisDebut; x.anneeDebut = v.anneeDebut; x.dureeMois = v.dureeMois; });
+    }
+    ligne("restantes", "Fin du crédit", c && c.moisRestants > 0 ? pluriel(c.moisRestants, "échéance", "échéances") : c ? aucun : "—",
+      (v.finTexte ? v.finTexte + " · " : "") + pluriel(v.moisRestants, "échéance", "échéances"), !!c && c.moisRestants === v.moisRestants, function (x) { x.moisRestants = v.moisRestants; });
+    ligne("jour", "Jour du prélèvement", c && c.jourPrelevement > 0 ? "le " + c.jourPrelevement + " du mois" : c ? aucun : "—", "le " + v.jourPrelevement + " du mois",
+      !!c && c.jourPrelevement === v.jourPrelevement, function (x) { x.jourPrelevement = v.jourPrelevement; });
+    var red = v.reductionAnnee ? MOIS[v.reductionMois - 1] + " " + v.reductionAnnee : "aucune", redA = c && c.reductionAnnee > 0 ? MOIS[c.reductionMois - 1] + " " + c.reductionAnnee : "aucune";
+    ligne("reduction", "Réduction de taux (8 %)", c ? redA : "—", red, c ? redA === red : !v.reductionAnnee, function (x) { x.reductionMois = v.reductionMois; x.reductionAnnee = v.reductionAnnee; });
+    return L;
+  }
+  function remplirMaj(out) {
+    var zone = out && out.querySelector("[data-maj-zone]"), au = OUTIL_FN.audit.dernier, CA = window.CreditAudit, O = Orb();
+    if (!zone) return;
+    var p = O && O.profil ? O.profil() : null, v = au && CA && CA.creditDepuisAudit ? CA.creditDepuisAudit(au, new Date()) : null;
+    if (!p || !v) { zone.hidden = true; return; }
+    zone.hidden = false;
+    var credits = p.credits || [];
+    if (v.termine) { zone.innerHTML = encart("succes", "valide", "<p><strong>D'après ce tableau, le crédit est soldé.</strong> S'il figure encore dans votre profil, retirez-le dans Mon profil › Crédits en cours.</p>"); return; }
+    var cible = OUTIL_FN.audit.cible;
+    if (cible === undefined || cible >= credits.length) cible = OUTIL_FN.audit.cible = CA.creditCorrespondant(credits, v);
+    var c = cible >= 0 ? credits[cible] : null, L = lignesMaj(v, c), graves = au.anomalies.filter(function (a) { return a.g === "erreur" || a.g === "alerte"; }).length;
+    var opts = credits.map(function (x, i) { return '<option value="' + i + '"' + (i === cible ? " selected" : "") + ">" + esc(x.libelle || "Crédit") + " · " + esc(F.dt0(x.mensualite)) + " DT par mois</option>"; }).join("") +
+      '<option value="-1"' + (cible < 0 ? " selected" : "") + ">+ Ajouter comme nouveau crédit</option>";
+    var h = '<div class="cr-maj__tete"><h3>Mettre à jour mon crédit en cours</h3><p>D\'après ce tableau, à la date d\'aujourd\'hui (' + moisAn(new Date()) + ').</p></div>' +
+      '<div class="cr-maj__choix"><div class="champ"><label for="cr-maj-cible">Crédit à mettre à jour</label><div class="saisie"><select id="cr-maj-cible" data-maj-cible>' + opts + '</select>' + ico("chevron", "saisie__chevron") + '</div>' +
+      (cible >= 0 ? '<span class="champ__aide">Reconnu d\'après la mensualité.</span>' : "") + '</div>';
+    if (cible < 0) {
+      var tp = ["immo", "auto", "conso", "autre"].map(function (t) { return '<option value="' + t + '"' + (t === (OUTIL_FN.audit.type || "immo") ? " selected" : "") + ">" + (TYPES[t] ? TYPES[t].nom : "Autre") + "</option>"; }).join("");
+      h += '<div class="champ"><label for="cr-maj-type">Type</label><div class="saisie"><select id="cr-maj-type" data-maj-type>' + tp + '</select>' + ico("chevron", "saisie__chevron") + '</div></div>' +
+        '<div class="champ"><label for="cr-maj-nom">Nom</label><div class="saisie"><input id="cr-maj-nom" data-maj-nom maxlength="60" value="' + esc(v.banque ? "Crédit " + v.banque : "Crédit") + '"></div></div>';
+    }
+    h += '</div><table class="maj-diff"><thead><tr><th scope="col"><span class="cache">Reprendre</span></th><th scope="col">' + (c ? "Dans votre profil" : "Nouveau crédit") + '</th><th scope="col"><span class="cache">devient</span></th><th scope="col">D\'après le tableau</th></tr></thead><tbody>' +
+      L.map(function (l) {
+        var id = "cr-maj-" + l.cle;
+        return '<tr' + (l.egal ? ' class="maj-diff__pareil"' : "") + '><td><input type="checkbox" id="' + id + '" data-maj-champ="' + l.cle + '"' + (l.egal ? " disabled" : " checked") + '></td>' +
+          '<td><label for="' + id + '" class="maj-diff__lib">' + l.lib + '</label>' + (l.egal ? "" : '<span class="maj-diff__avant">' + esc(l.avant) + '</span>') + '</td>' +
+          '<td aria-hidden="true">' + (l.egal ? "" : "→") + '</td><td class="maj-diff__apres chiffre">' + esc(l.apres) + (l.egal ? ' <small>· inchangé</small>' : "") + '</td></tr>';
+      }).join("") + '</tbody></table>';
+    if (graves) h += '<p class="cr-maj__note cr-maj__note--alerte">' + ico("alerte") + '<span>Le tableau a ' + pluriel(graves, "point à vérifier", "points à vérifier") + ' : les chiffres repris sont ceux de la banque, ce que vous payez vraiment.</span></p>';
+    var rien = L.every(function (l) { return l.egal; });
+    h += '<div class="cr-ligne-actions"><button type="button" class="bouton bouton--credit bouton--petit" data-maj-credit' + (rien && c ? " disabled" : "") + '>' + (c ? (rien ? "Crédit déjà à jour" : "Mettre à jour mon crédit") : "Ajouter ce crédit à mon profil") + '</button>' +
+      '<span class="cr-maj__note">Mon orbite, Mon mois, le calendrier et la capacité d\'emprunt suivent aussitôt.</span></div>';
+    zone.innerHTML = h;
+  }
+  function appliquerMaj(zone) {
+    var au = OUTIL_FN.audit.dernier, CA = window.CreditAudit, O = Orb(), p = O && O.profil ? O.profil() : null;
+    var v = au && CA ? CA.creditDepuisAudit(au, new Date()) : null; if (!p || !v || !O.majProfil) return;
+    var credits = p.credits || [], cible = OUTIL_FN.audit.cible, avant = JSON.parse(JSON.stringify(credits));
+    var c = cible >= 0 ? credits[cible] : null, L = lignesMaj(v, c);
+    var coches = {}; zone.querySelectorAll("[data-maj-champ]").forEach(function (b) { if (b.checked && !b.disabled) coches[b.getAttribute("data-maj-champ")] = true; });
+    var x = c ? JSON.parse(JSON.stringify(c)) : { libelle: ((zone.querySelector("[data-maj-nom]") || {}).value || "Crédit").trim().slice(0, 60) || "Crédit", type: (zone.querySelector("[data-maj-type]") || {}).value || "autre" };
+    var n = 0; L.forEach(function (l) { if (coches[l.cle]) { l.poser(x); n++; } });
+    if (!n) { toast("Rien de coché à reprendre.", { erreur: true }); return; }
+    var nouveaux = avant.map(function (y) { return y; }); if (c) nouveaux[cible] = x; else { nouveaux.push(x); OUTIL_FN.audit.cible = nouveaux.length - 1; }
+    O.majProfil({ credits: nouveaux }, { immediat: true });
+    var resume = [];
+    if (coches.mensualite) resume.push("mensualité " + dt(v.mensualite));
+    if (coches.capital) resume.push(dt(v.capitalRestant) + " restants");
+    if (coches.restantes && v.finTexte) resume.push("fin en " + v.finTexte);
+    toast((c ? (x.libelle || "Crédit") + " mis à jour" : (x.libelle || "Crédit") + " ajouté à votre profil") + " avec le tableau de la banque.", {
+      detail: resume.length ? resume.join(", ").replace(/^./, function (k) { return k.toUpperCase(); }) + "." : undefined,
+      action: { libelle: "Annuler", fn: function () { O.majProfil({ credits: avant }, { immediat: true }); OUTIL_FN.audit.cible = undefined; remplirMaj(zone.closest(".cr-outil__sortie")); toast("Crédits revenus comme avant le tableau.", { type: "info" }); } }
+    });
+    if (O.vibrer) O.vibrer(10);
+    remplirMaj(zone.closest(".cr-outil__sortie"));
+  }
+
   /* Valeurs relues dans les champs de l'outil « Lire une offre », appliquées au scénario. */
   function appliquerOffre(corps) {
     function v(k) { var i = corps.querySelector('[data-offre="' + k + '"]'), r = i && i.value.trim() !== "" ? lireNombre(i.value) : null; return r && r.valide ? r.valeur : NaN; }
@@ -1992,6 +2077,7 @@
     corps.addEventListener("input", function (ev) {
       if (ev.target.matches("[data-quand-k]")) { OUTIL_FN.quand.k = +ev.target.value; fn.calc(corps); return; }
       if (ev.target.closest("[data-lettre]")) { OUTIL_FN.quand.lettre(corps); return; }
+      if (ev.target.closest("[data-maj-zone]")) return;
       if (cle === "optim") return;
       lancer();
     });
@@ -2005,6 +2091,13 @@
         return;
       }
       if (ev.target.closest("[data-lettre]")) { OUTIL_FN.quand.lettre(corps); return; }
+      /* Mise à jour du crédit en cours : choisir le crédit redessine l'encadré, cocher ne recalcule rien. */
+      if (ev.target.closest("[data-maj-zone]")) {
+        if (ev.target.matches("[data-maj-cible]")) { OUTIL_FN.audit.cible = +ev.target.value; remplirMaj(corps.querySelector(".cr-outil__sortie")); var s2 = corps.querySelector("[data-maj-cible]"); if (s2) s2.focus(); }
+        else if (ev.target.matches("[data-maj-type]")) OUTIL_FN.audit.type = ev.target.value;
+        else if (ev.target.matches("[data-maj-champ]")) { var z = ev.target.closest("[data-maj-zone]"), b = z.querySelector("[data-maj-credit]"); if (b && !/déjà/.test(b.textContent)) b.disabled = !z.querySelector("[data-maj-champ]:checked:not(:disabled)"); }
+        return;
+      }
       if (ev.target.type === "radio" || ev.target.type === "checkbox" || ev.target.tagName === "SELECT") { if (cle !== "optim") fn.calc(corps); }
       if (O && ev.target.type === "radio") O.placerPastilles(corps);
     });
@@ -2144,6 +2237,7 @@
       }
       if (t.closest("[data-audit-pdf]")) { exporterAudit("pdf", t.closest("[data-audit-pdf]")); return; }
       if (t.closest("[data-audit-xlsx]")) { exporterAudit("xlsx"); return; }
+      if (t.closest("[data-maj-credit]")) { appliquerMaj(t.closest("[data-maj-zone]")); return; }
       if (t.closest("[data-lettre-dl]")) { telecharger("lettre-banque.txt", "﻿" + $("cr-o-quand").querySelector("[data-lettre-texte]").textContent.replace(/\n/g, "\r\n"), "text/plain;charset=utf-8"); toast("Lettre téléchargée."); return; }
       if (t.closest("[data-vers-reneg]")) {
         var cm = $("cr-o-mon"), det2 = $("cr-outil-reneg");

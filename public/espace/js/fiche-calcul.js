@@ -396,6 +396,33 @@
     return { partiel: partiel, resume: resume, vide: !Object.keys(partiel).length };
   }
 
+  /* Avant → après pour l'écran de contrôle (maquette validée le 13 oct. 2026) : une ligne par réglage repris de la fiche,
+     avec la valeur du profil, celle de la fiche et « inchangé » quand elles concordent. Même logique que appliquer(). */
+  function apercu(v, profil, maintenant) {
+    var m = maintenant || new Date(), pr = profil || {}, L = [];
+    if (v.brut > 0) {
+      var pc = profilDeControle(v, pr);
+      var mo = v.mois && v.mois.mois ? v.mois.mois : m.getMonth() + 1, an = v.mois && v.mois.annee ? v.mois.annee : m.getFullYear();
+      var base = Math.round(pc.montant * 1000) / 1000, hist = pr.historiqueSalaire || [];
+      var ev = hist.length ? OC.salaireEnVigueur(pr, an, mo - 1) : { montant: pr.montant, sens: pr.sens, periode: pr.periode };
+      var egal = !!ev && Math.abs(ev.montant - base) < 0.0005 && ev.sens === "brut" && ev.periode === "mensuel";
+      var avant = ev && ev.montant > 0 ? dt(ev.montant) + " DT " + (ev.sens === "net" ? "net" : "brut") + (ev.periode === "annuel" ? " par an" : "") : "non renseigné";
+      L.push({ cle: "salaire", lib: "Salaire de base brut", avant: avant, apres: dt(base) + " DT", note: egal ? "" : "depuis " + MOIS[mo - 1] + " " + an, egal: egal });
+      var totA = (pr.primesImposables || 0) + (pr.primesNonCotisables || 0) + (pr.avantagesNature || 0), totN = pc.primesImposables + pc.primesNonCotisables + pc.avantagesNature;
+      var pEgal = !["primesImposables", "primesNonCotisables", "avantagesNature", "indemnitesNonImposables"].some(function (k) { return Math.abs((pr[k] || 0) - pc[k]) >= 0.0005; });
+      L.push({ cle: "primes", lib: "Primes et avantages", avant: totA > 0 ? dt(totA) + " DT par mois" : "aucune", apres: totN > 0 ? dt(totN) + " DT par mois" : "aucune", egal: pEgal });
+    }
+    if (v.secteur === "public" || v.secteur === "prive") {
+      var nom = function (x) { return x === "public" ? "CNRPS (public)" : "CNSS (privé)"; };
+      L.push({ cle: "caisse", lib: "Caisse", avant: pr.secteur ? nom(pr.secteur) : "non renseignée", apres: nom(v.secteur), egal: v.secteur === (pr.secteur || "prive") });
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v.dateEmbauche || "")) {
+      var fr = function (d) { var x = d.split("-"); return x[2] + "/" + x[1] + "/" + x[0]; };
+      L.push({ cle: "dateEmbauche", lib: "Date d'embauche", avant: pr.dateEmbauche ? fr(pr.dateEmbauche) : "non renseignée", apres: fr(v.dateEmbauche), egal: v.dateEmbauche === pr.dateEmbauche });
+    }
+    return L;
+  }
+
   return { norm: norm, versLignes: versLignes, montant: montant, nombres: nombres, analyser: analyser, valeurs: valeurs,
-    controle: controle, appliquer: appliquer, MOIS: MOIS, TOLERANCE: TOLERANCE };
+    controle: controle, appliquer: appliquer, apercu: apercu, MOIS: MOIS, TOLERANCE: TOLERANCE };
 });

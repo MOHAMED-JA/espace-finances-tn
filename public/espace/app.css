@@ -82,6 +82,8 @@ body.attente .onglets-bas a, body.attente .rail__liens a { pointer-events: none;
   .barre:has(.barre__actions[hidden]) .temoin[data-etat="erreur"] .temoin__reessayer { display: inline; }
   .barre:has(.barre__actions[hidden]):has(.temoin:is([data-etat="envoi"], [data-etat="ok"], [data-etat="erreur"], [data-etat="horsligne"])) .barre__titre { display: none; }
   .barre:has(.barre__actions:not([hidden])) .temoin[data-etat="ancien"] { display: none; }
+  /* Module : la pastille réapparaît quelques secondes après un enregistrement ; le titre lui cède la place (la barre débordait de 20 px). */
+  .barre:has(.barre__actions:not([hidden])):has(.temoin:not([hidden]):not([data-etat="ancien"])) .barre__titre { display: none; }
 }
 
 .principal { width: 100%; max-width: 1240px; margin: 0 auto; padding: 8px 16px 120px; outline: none; }
@@ -1104,3 +1106,19 @@ dialog.dialogue--consentement::backdrop { background: rgba(7, 9, 15, .62); backd
 .consentement__actions .bouton { width: 100%; justify-content: center; }
 .consentement__actions .bouton[aria-busy="true"] { opacity: .6; }
 @media (prefers-reduced-motion: reduce) { .accord, .accord input { transition: none; } }
+
+/* ---------- Mettre à jour le profil depuis un document (Crédit : tableau de la banque ; Salaire : fiche de paie) ----------
+   Avant → après, une case par ligne ; les lignes identiques sont grisées « inchangé ». */
+.maj-diff { width: 100%; border-collapse: collapse; font-size: 14px; }
+.maj-diff th { text-align: left; font-size: 12px; font-weight: 650; color: var(--encre-3); padding: 0 8px 6px; }
+.maj-diff td { padding: 9px 8px; border-top: 1px solid var(--filet); vertical-align: middle; }
+.maj-diff td:first-child { width: 30px; padding-left: 0; }
+.maj-diff td:nth-child(3) { width: 22px; color: var(--encre-3); padding: 0 2px; }
+.maj-diff input[type="checkbox"] { width: 20px; height: 20px; margin: 0; accent-color: var(--accent, var(--encre)); cursor: pointer; }
+.maj-diff input[type="checkbox"]:disabled { cursor: default; opacity: .4; }
+.maj-diff__lib { display: block; font-weight: 600; color: var(--encre); cursor: pointer; }
+.maj-diff__avant { display: block; color: var(--encre-3); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--encre-3) 60%, transparent); }
+.maj-diff__apres { font-weight: 750; overflow-wrap: anywhere; }
+.maj-diff__apres small { font-weight: 500; color: var(--encre-3); }
+.maj-diff__pareil .maj-diff__lib { cursor: default; }
+.maj-diff__pareil .maj-diff__apres { font-weight: 500; color: var(--encre-2); }

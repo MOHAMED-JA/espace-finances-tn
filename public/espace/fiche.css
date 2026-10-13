@@ -145,3 +145,9 @@ select.fiche-val { appearance: none; cursor: pointer; text-align: left; padding-
   .fiche-feuille.lit .fiche-balayage { animation: none; transform: translateY(100px); }
   .fiche-depot.survol { transform: none; }
 }
+
+/* Ce qui va changer dans le profil (avant → après), visible avant « Mettre à jour mon profil ». */
+.fiche-maj-zone { display: grid; gap: 8px; margin-top: 16px; padding: 16px; border: 1.5px solid var(--filet); border-radius: var(--r-int); }
+.fiche-maj-zone[hidden] { display: none; }
+.fiche-maj-zone h3 { font-size: 17px; }
+.fiche-maj-zone .maj-diff input[type="checkbox"] { accent-color: var(--salaire-t); }

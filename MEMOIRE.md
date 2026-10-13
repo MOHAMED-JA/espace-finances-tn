@@ -677,6 +677,21 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centquattuordecies. Mettre à jour le profil depuis un document (13 oct.)
+
+Question de l'utilisateur : que se passe-t-il quand on dépose le tableau d'amortissement dans « Contrôler le tableau de ma banque » ? Réponse : contrôle au millime, lu sur l'appareil, sans effet sur le profil. Demande ensuite : « ajoute [la mise à jour] pour les crédits et aussi pour le salaire ». Maquette validée (« Oui, applique »). L'interface en arabe est abandonnée (« je ne veux pas l'interface en arabe »). Branche `maj-document`.
+
+- **Crédit** (`module-credit.js`, encadré `[data-maj-zone]` sous le contrôle d'un tableau détaillé) :
+  - `CreditAudit.creditDepuisAudit(au, maintenant)` (pure, `public/moteurs/credit/audit.js`) : mensualité de l'échéance suivante (accessoires compris), capital restant dû après la dernière échéance passée, taux de la phase en cours, `tauxType` « variable » si le taux change autrement qu'une réduction de moitié (« fixe » si une réduction existe, sinon non deviné), début (mois précédant l'échéance 1) et durée si tableau mensuel depuis l'échéance 1, échéances restantes avec la même formule que le profil (`OrbiteCalcul.echeancier`), jour du prélèvement, dernière réduction conforme (règle des 8 %), `finTexte`, `termine` ; null si tableau non détaillé ;
+  - `CreditAudit.creditCorrespondant(credits, v)` : crédit du profil dont la mensualité est la plus proche à 10 % près, sinon -1 ;
+  - liste « Crédit à mettre à jour » (crédits du profil + « Ajouter comme nouveau crédit » avec type et nom proposé « Crédit <banque> »), tableau avant → après (`.maj-diff`, une case par ligne, lignes identiques grisées « inchangé »), rappel si le tableau a des points à vérifier, bouton « Mettre à jour mon crédit » / « Ajouter ce crédit à mon profil » / « Crédit déjà à jour » ;
+  - `appliquerMaj` : `Orbite.majProfil({ credits })` immédiat, message avec « Annuler » (crédits remis comme avant) ;
+  - le choix du crédit survit aux recalculs du module (`OUTIL_FN.audit.cible` remis à zéro seulement si le texte du tableau change) ; cases et liste ne relancent pas le calcul.
+- **Salaire** (`vue-fiche.js`, écran de contrôle) : `FicheCalcul.apercu(v, profil, maintenant)` (pure) donne salaire de base brut (avec « depuis <mois> »), primes et avantages, caisse, date d'embauche, avant → après ; cases liées aux choix existants (`r.choix`), les primes ne suivent que le salaire (même règle que `appliquer`) ; retraité : salaire et primes non repris.
+- **Barre du haut sur téléphone étroit** (défaut trouvé par le test) : dans un module avec « Reprendre mon profil » + « Ajouter » + « Enregistrer » et la pastille d'enregistrement, la barre débordait de 20 px. Sous 430 px : boutons de 36 px, écarts de 6 px, « ? » de la visite masqué dans les modules (toujours dans Ctrl K) ; le titre cède sa place à la pastille quand elle s'affiche.
+- « Quoi de neuf » `2026-10-13c`, SW `orbite-2026-10-13c`.
+- **Tests** : 3 tests unitaires (`tests/credit/audit.test.js` : valeurs du crédit, taux variable et correspondance, réduction de taux) ; e2e « crédit : tableau de la banque contrôlé, puis crédit en cours mis à jour… » (avant → après, décocher une ligne, annuler, nouveau crédit conso, téléphone) ; étape fiche de paie complétée (avant → après exact, décocher salaire retire les primes, rien de coché, tout « inchangé »).
+
 ## 3 centtredecies. Fluidité : visite guidée et Voyage dans le temps (13 oct.)
 
 Deux vidéos de l'utilisateur (« la transition entre les étapes n'est pas fluide ») analysées image par image. Corrections validées (« Oui, corrige tout »). Branche `fluidite`.

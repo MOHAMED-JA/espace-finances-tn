@@ -482,3 +482,14 @@
   .ce-table--offres .nb { text-align: left; }
 }
 .tmm-cadre { padding: 4px 0 0; }
+
+/* Mettre à jour mon crédit en cours d'après le tableau contrôlé. */
+.module--credit .cr-maj { display: grid; gap: 14px; padding: 18px; border: 1.5px solid var(--filet); border-radius: var(--r-int); background: var(--surface); }
+.module--credit .cr-maj[hidden] { display: none; }
+.module--credit .cr-maj__tete h3 { font-size: 18px; }
+.module--credit .cr-maj__tete p { color: var(--encre-2); font-size: 14px; margin-top: 2px; }
+.module--credit .cr-maj__choix { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.module--credit .cr-maj .maj-diff input[type="checkbox"] { accent-color: var(--credit); }
+.module--credit .cr-maj__note { font-size: 13px; color: var(--encre-3); }
+.module--credit .cr-maj__note--alerte { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: var(--alerte-doux); color: var(--encre); }
+.module--credit .cr-maj__note--alerte svg { width: 18px; height: 18px; flex: none; color: var(--alerte); }

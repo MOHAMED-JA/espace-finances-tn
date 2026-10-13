@@ -285,9 +285,72 @@
       convAvant: convAvant, complet: complet, totI: somme('int'), totA: somme('am'), totE: somme('ech'), dureeTotale: dureeTot };
   }
 
+  /* ---------- Du tableau contrôlé au crédit en cours du profil ----------
+     Valeurs à la date du jour, au format d'un crédit du profil (orbite-calcul.js › normaliserCredit) :
+     mensualité (échéance suivante, accessoires compris : ce qui est prélevé), capital restant dû après la dernière
+     échéance passée, taux de la période en cours, début et durée (tableau mensuel commençant à l'échéance 1),
+     jour du prélèvement, dernière réduction de taux (règle des 8 %), taux variable si le taux change autrement.
+     Null si le tableau n'est pas détaillé. */
+  var MOIS_LONG = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  function creditDepuisAudit(au, maintenant) {
+    if (!au || au.nonDetaille || !au.lignes || au.lignes.length < 3) return null;
+    var m = maintenant || new Date(), L = au.lignes, fin = new Date(m.getFullYear(), m.getMonth(), m.getDate(), 23, 59, 59);
+    var k = -1; for (var i = 0; i < L.length; i++) if (L[i].date <= fin) k = i;
+    var proch = k + 1 < L.length ? L[k + 1] : null, ref = proch || L[L.length - 1];
+    var kRef = proch ? k + 1 : L.length - 1;
+    var capital = k >= 0 ? Math.max(0, r3(L[k].crdAp)) : Math.max(0, r3(L[0].crdAv));
+    var ph = (au.phases || []).filter(function (p) { return kRef >= p.debut && kRef <= p.fin; })[0] || (au.phases || [])[au.phases.length - 1];
+    var r = {
+      banque: (au.info && au.info.banque) || '',
+      mensualite: proch && isFinite(proch.ech) ? r3(proch.ech) : 0,
+      capitalRestant: capital,
+      tauxPct: ph && isFinite(ph.taux) ? ph.taux : null,
+      tauxType: null,
+      jourPrelevement: ref.date.getDate(),
+      moisDebut: 0, anneeDebut: 0, dureeMois: 0,
+      moisRestants: proch ? L.length - (k + 1) : 0,
+      reductionMois: 0, reductionAnnee: 0,
+      termine: !proch && capital <= 0.01
+    };
+    /* Taux qui change sans être une réduction de moitié : taux variable (TMM). */
+    var reducs = au.reductions || [], chg = 0;
+    for (var p = 1; p < (au.phases || []).length; p++) {
+      var a = au.phases[p - 1], b = au.phases[p];
+      if (Math.abs(b.taux - a.taux) > 0.02 && !reducs.some(function (z) { return z.i === b.debut; })) chg++;
+    }
+    if (chg) r.tauxType = 'variable'; else if (reducs.length) r.tauxType = 'fixe';
+    var der = reducs.filter(function (z) { return z.conforme; }).pop();
+    if (der) { r.reductionMois = der.date.getMonth() + 1; r.reductionAnnee = der.date.getFullYear(); }
+    /* Dates : tableau mensuel complet depuis l'échéance 1 (la première tombe le mois suivant le déblocage). */
+    var n0 = L[0].n;
+    if (au.periode === 1 && (n0 === 1 || !isFinite(n0))) {
+      var d0 = new Date(L[0].date.getFullYear(), L[0].date.getMonth() - 1, 1);
+      r.moisDebut = d0.getMonth() + 1; r.anneeDebut = d0.getFullYear();
+      r.dureeMois = au.complet ? L.length : (au.dureeTotale || 0);
+      if (r.dureeMois) {
+        var payees = Math.max(0, (m.getFullYear() - r.anneeDebut) * 12 + (m.getMonth() + 1 - r.moisDebut));
+        r.moisRestants = Math.max(0, r.dureeMois - Math.min(payees, r.dureeMois));
+      }
+    }
+    var dl = L[L.length - 1].date;
+    r.finTexte = au.complet ? MOIS_LONG[dl.getMonth()] + ' ' + dl.getFullYear() : '';
+    return r;
+  }
+  /* Crédit du profil le plus proche (mensualité à 10 % près), sinon -1. */
+  function creditCorrespondant(credits, valeurs) {
+    var best = -1, ecart = Infinity;
+    (credits || []).forEach(function (c, i) {
+      if (!(c.mensualite > 0) || !(valeurs.mensualite > 0)) return;
+      var e = Math.abs(c.mensualite - valeurs.mensualite) / valeurs.mensualite;
+      if (e <= 0.1 && e < ecart) { ecart = e; best = i; }
+    });
+    return best;
+  }
+
   /* Texte d'un document lu par FicheLecture : une ligne par ligne du document. */
   function texteDeLignes(lignes) { return (lignes || []).map(function (l) { return l.texte; }).join('\n'); }
 
   return { analyserOffre: analyserOffre, analyserTableau: analyserTableau, auditerTableau: auditerTableau, texteDeLignes: texteDeLignes,
+    creditDepuisAudit: creditDepuisAudit, creditCorrespondant: creditCorrespondant,
     montantBanque: montantBanque, mensualite: mensualite, moisAnnee: moisAnnee };
 });
