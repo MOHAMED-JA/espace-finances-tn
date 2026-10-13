@@ -678,9 +678,24 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centtervicies. Bilan annuel en PDF (13 oct.)
+
+Point 7 du programme d'améliorations (maquette validée). Reste : 8 audit accessibilité et vitesse.
+
+- **Moteur** `public/espace/js/bilan-calcul.js` (pur, `BilanCalcul`, testé : `tests/espace/bilan.test.js`, 4 tests, profil fictif) : `construire(profil, donnees, maintenant, sections, contact)` reprend les moteurs existants, sans nouveau calcul :
+  - revenus et impôt (`Annee.bilan` : brut, net, cotisations, impôt, hausses, pouvoir d'achat) ;
+  - crédits (mensualité, taux, reste dû saisi ou estimé par `DeciderCalcul.patrimoine`, fin d'après les échéances restantes, capital et intérêts de l'année, endettement, capacité par type) ;
+  - épargne et patrimoine (`DeciderCalcul.patrimoine`, versements de l'année) ;
+  - score de santé (`OrbiteIntelligence.scoreSante`, 6 critères) et 4 conseils de Mon orbite ;
+  - coordonnées (nom, e-mail de contact, téléphone, employeur, poste) **seulement si cochées** (`PAR_DEFAUT.coordonnees = false`).
+  - Période : celle de « Mon année » (janvier → aujourd'hui ; en janvier, l'année précédente complète). Fichier `bilan-orbite-<année>.pdf`.
+- **PDF** `bilan-pdf.js` (`BilanPDF.generer`, jsPDF local chargé à la demande, même charte que le dossier banque) : tuiles net / impôt / score, tableaux, notes colorées, barres du score, pied « créé sur l'appareil, envoyé à personne ».
+- **Interface** `vue-bilan.js` + fenêtre `#dlg-bilan` (styles dans `annee.css`) : bouton « Mon bilan en PDF » (`#btn-bilan`, à côté de « Mon année en orbite » dans Ma progression), aperçu miniature avec les vrais chiffres, 5 cases (au moins une), téléchargement ; palette « Mon bilan en PDF » (`#progression?bilan=1`).
+- e2e : étape « bilan annuel en PDF ». Nouveautés `2026-10-13j`, SW `orbite-2026-10-13l`.
+
 ## 3 centduovicies. Import du relevé bancaire (13 oct.)
 
-Point 5 du programme d'améliorations (maquette validée). Restent : 7 bilan annuel PDF, puis 8 audit accessibilité et vitesse.
+Point 5 du programme d'améliorations (maquette validée).
 
 - **Moteur** `public/espace/js/releve-calcul.js` (pur, `ReleveCalcul`, testé : `tests/espace/releve.test.js`, 9 tests, relevés fictifs) :
   - `montant(s)` (formats tunisiens « 1 234,500 », « 1.234,500 », signes, parenthèses) ; `estMontant` exige des décimales (sinon c'est une référence) ; `date(s, annee)` (jj/mm[/aa[aa]], ISO) ;
