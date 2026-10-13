@@ -170,15 +170,16 @@
 
   /* Regroupement de crédits : moteur d'Orbite (CreditProjets.regrouper), indemnités et frais de dossier compris.
      Exemple : voiture 320 DT/mois à 10 % (30 mois restants) + consommation 210 DT/mois à 11 % (17 mois), regroupés à 10,5 % sur 36 mois. */
-  var RG_DEF = { credits: [{ mensualite: 320, taux: 10, mois: 30 }, { mensualite: 210, taux: 11, mois: 17 }, { mensualite: 0, taux: 0, mois: 0 }], taux: 10.5, duree: 36, ira: CPJ.IRA_PCT, frais: 150 };
+  var RG_DEF = { credits: [{ mensualite: 320, taux: 10, mois: 30 }, { mensualite: 210, taux: 11, mois: 17 }, { mensualite: 0, taux: 0, mois: 0 }], taux: 10.5, duree: 36, ira: CPJ ? CPJ.IRA_PCT : 1.5, frais: 150 };
   function regroupement(e) {
     var x = e || {}, cr = x.credits || RG_DEF.credits;
     var credits = cr.slice(0, 3).map(function (c, i) {
       return { libelle: "Crédit " + (i + 1), mensualite: borne(c.mensualite, 0, 0, 1e6), tauxPct: borne(c.taux, 0, 0, 40), moisRestants: Math.round(borne(c.mois, 0, 0, 480)), inclus: c.inclus !== false };
     });
-    var r = CPJ.regrouper({ credits: credits, tauxPct: borne(x.taux, RG_DEF.taux, 0, 40), mois: Math.round(borne(x.duree, RG_DEF.duree, 1, 300)),
+    /* Sans le moteur (ancienne copie en cache) : pas de résultat plutôt qu'une page cassée. */
+    var r = !CPJ ? null : CPJ.regrouper({ credits: credits, tauxPct: borne(x.taux, RG_DEF.taux, 0, 40), mois: Math.round(borne(x.duree, RG_DEF.duree, 1, 300)),
       iraPct: borne(x.ira, RG_DEF.ira, 0, 10), fraisDossier: borne(x.frais, RG_DEF.frais, 0, 1e5) });
-    return { credits: credits.map(function (c) { return Object.assign({}, c, { restantDu: c.inclus && c.mensualite > 0 && c.moisRestants > 0 ? CPJ.restantDu(c) : 0 }); }), resultat: r };
+    return { credits: credits.map(function (c) { return Object.assign({}, c, { restantDu: CPJ && c.inclus && c.mensualite > 0 && c.moisRestants > 0 ? CPJ.restantDu(c) : 0 }); }), resultat: r };
   }
 
   /* Coût employeur : brut → net, charges patronales et partage de chaque dinar (salarié, caisse, État), moteur de paie. */
