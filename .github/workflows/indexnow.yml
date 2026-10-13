@@ -1,0 +1,44 @@
+# Orbite — IndexNow : à chaque mise en ligne (fusion sur main), prévient Bing, Yandex, Seznam et Naver
+# des pages publiques du plan du site (Bing alimente aussi DuckDuckGo, Yahoo, Copilot et la recherche de ChatGPT).
+# Gratuit, sans compte. La clé est publique par conception (fichier public/<clé>.txt) : ce n'est pas un secret.
+name: IndexNow
+
+on:
+  push:
+    branches: [main]
+    paths: ["public/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: indexnow
+  cancel-in-progress: true
+
+jobs:
+  prevenir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Attendre la mise en ligne puis prévenir les moteurs
+        env:
+          HOTE: espace-finances-tn.jaouadimohamedaziz.workers.dev
+        run: |
+          set -eu
+          CLE=$(ls public | grep -E '^[0-9a-f]{32}\.txt$' | head -1 | sed 's/\.txt$//')
+          test -n "$CLE"
+          VERSION=$(grep -oE 'orbite-[0-9]{4}-[0-9]{2}-[0-9]{2}[a-z]*' public/sw.js | head -1)
+          echo "Clé : $CLE · version attendue : $VERSION"
+          # Cloudflare publique la nouvelle version en une à trois minutes : on attend qu'elle soit en ligne.
+          for i in $(seq 1 40); do
+            if curl -fsS "https://$HOTE/sw.js?v=$i" | grep -q "$VERSION" && [ "$(curl -fsS "https://$HOTE/$CLE.txt")" = "$CLE" ]; then echo "En ligne."; break; fi
+            if [ "$i" = 40 ]; then echo "La nouvelle version n'est pas en ligne après 13 minutes."; exit 1; fi
+            sleep 20
+          done
+          URLS=$(grep -oE '<loc>[^<]+</loc>' public/sitemap.xml | sed -E 's#</?loc>##g' | sed 's/.*/"&"/' | paste -sd, -)
+          CORPS="{\"host\":\"$HOTE\",\"key\":\"$CLE\",\"keyLocation\":\"https://$HOTE/$CLE.txt\",\"urlList\":[$URLS]}"
+          CODE=$(curl -sS -o reponse.txt -w '%{http_code}' -X POST "https://api.indexnow.org/indexnow" -H "Content-Type: application/json; charset=utf-8" --data "$CORPS")
+          echo "Réponse IndexNow : $CODE"; cat reponse.txt || true
+          case "$CODE" in 200|202) echo "Pages signalées : $(echo "$URLS" | tr ',' '\n' | wc -l)";; *) exit 1;; esac
