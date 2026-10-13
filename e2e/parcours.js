@@ -1888,6 +1888,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.click('[data-lf-dt="appliquer"]');
     await page.waitForSelector("[data-lf-annuler-futur]");
     assert(/passe à 150,000/.test((await page.textContent(".lf__groupe--nettes")).replace(/[\u00a0\u202f]/g, " ")), "changement à venir affiché");
+    await page.locator(".lf__groupe--nettes").screenshot({ path: path.join(CAPTURES, "lignes-datees.png") });
     assert(Math.abs(await page.evaluate(() => window.OrbiteCalcul.salaire(window.Orbite.profil()).netMensuel) - (netAvant - 4)) < 0.001, "le net du mois ne change pas encore");
     await page.click("[data-lf-annuler-futur]");
     await page.waitForFunction(() => !document.querySelector("[data-lf-annuler-futur]"));
