@@ -424,6 +424,7 @@
                 <div class="champ seul-salarie"><label for="p-nco">Primes non cotisables (par mois)</label><div class="saisie"><input id="p-nco" data-p="primesNonCotisables" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
                 <div class="champ seul-salarie"><label for="p-ava">Avantages en nature (par mois)</label><div class="saisie"><input id="p-ava" data-p="avantagesNature" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div></div>
                 <div class="champ seul-salarie"><label for="p-ind">Indemnités non imposables (par mois)</label><div class="saisie"><input id="p-ind" data-p="indemnitesNonImposables" data-type="montant" type="text" inputmode="decimal" placeholder="0"><span class="saisie__unite">DT</span></div><span class="champ__aide">Transport, panier… exonérés</span></div>
+                <div class="champ champ--large seul-salarie lf" id="lf-bloc" role="group" aria-labelledby="lf-titre"></div>
                 <div class="champ seul-salarie"><label for="p-statut">Type de contrat</label><div class="saisie"><select id="p-statut" data-p="statut"><option value="cdi">CDI</option><option value="fonctionnaire">Fonctionnaire titulaire</option><option value="cdd">CDD</option><option value="contractuel">Contractuel</option><option value="autre">Autre</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
                 <div class="champ seul-salarie"><label for="p-employeur">Employeur <span class="champ__facultatif">facultatif</span></label><div class="saisie"><input id="p-employeur" data-p="employeur" type="text" maxlength="60" autocomplete="organization"></div><span class="champ__aide">Repris dans votre dossier banque</span></div>
                 <div class="champ seul-salarie"><label for="p-poste">Poste <span class="champ__facultatif">facultatif</span></label><div class="saisie"><input id="p-poste" data-p="poste" type="text" maxlength="60" autocomplete="organization-title"></div></div>
@@ -598,6 +599,7 @@
                 <li class="l-css"><i></i><span>Contribution de solidarité</span><strong id="leg-css"></strong><em id="leg-css-pct"></em></li>
               </ul>
               <p class="encart" id="supplement" hidden></p>
+              <p class="encart encart--fiche" id="fiche-salaire" hidden></p>
               <p class="note" id="alerte" hidden></p>
               <div class="actions">
                 <button type="button" class="bouton" id="partager"><svg aria-hidden="true"><use href="/orbite/icones.svg#partager"/></svg><span class="bouton__lib" id="partager-lib">Partager</span></button>
@@ -2293,6 +2295,7 @@
   <script src="/espace/js/vue-orbite.js"></script>
   <script src="/espace/js/vue-profil.js"></script>
   <script src="/espace/js/module-salaire.js"></script>
+  <script src="/espace/js/lignes-fiche.js"></script>
   <script src="/espace/js/vue-pension.js"></script>
   <script src="/moteurs/vie/partage.js"></script>
   <script src="/moteurs/vie/rachat.js"></script>

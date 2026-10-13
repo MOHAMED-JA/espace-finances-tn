@@ -677,6 +677,21 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centoctodecies. Autres lignes de ma fiche de paie (13 oct.)
+
+Demande : que le compte affiche le net exact de la fiche de paie de l'utilisateur (données réelles : uniquement dans son compte, **jamais dans le dépôt**). Réponses de l'utilisateur : impôt **aligné sur la fiche** ; chef de famille ; prêt retenu sur la paie **seulement dans ses crédits** (le net affiché est avant ce prêt) ; primes de l'année « plus tard » (à reprendre). Maquette validée le 13 oct. (profil fictif : 3 200 DT brut).
+
+- **Profil** (`orbite-calcul.js`) : `lignesFiche { sociales, gains, nettes }` (8 lignes { libelle, montant mensuel } au plus par groupe, lignes vides retirées) et `impotFiche { actif, irpp, css, brut }`.
+  - **sociales** (retraite complémentaire type CAVIS, assurance groupe) : retirées du revenu imposable et du net, comme sur la fiche ;
+  - **gains** (bonification de crédit…) : ajoutés au net, non imposables, comptés dans le coût employeur ;
+  - **nettes** (syndicat, complément retraite, assurance auto, tickets restaurant) : retirées après l'impôt ;
+  - **impôt aligné** : `calculAligne(entree, impotFiche)` ajoute au net l'écart « impôt d'un mois habituel selon Orbite − (IRPP + CSS de la fiche) », seulement quand le brut mensuel est celui de la fiche (au millime) ; une hausse de salaire, une offre ou un autre brut reprennent le calcul d'Orbite. L'impôt annuel d'Orbite (optimiseur, Mon année) reste celui du barème.
+- **Moteur** (`moteurs/salaire/calcul.js`, `etat.js`) : entrées `retenuesSociales`, `gainsNets`, `retenuesNettes`, `ajustementImpot` (par mois × 12). Hors des liens de partage (pas dans `CHAMPS`). Sans lignes : calcul identique à avant (testé).
+- **Interface** : bloc `#lf-bloc` dans Profil › Votre emploi et votre salaire (`lignes-fiche.js`, styles dans `fiche.css`) ; module Salaire : détail ligne par ligne (`#tableau-detail`), encart `#fiche-salaire` « Comme sur votre fiche de paie », « Retraite et santé » inclut les retenues sociales. La comparaison de deux offres reste à barèmes égaux (sans les lignes). Le contrôle de fiche de paie compare au barème seul (lignes neutralisées).
+- **Calcul vérifié** sur la fiche réelle (en local, rien dans le dépôt) : le net obtenu est exactement celui de la fiche, avant le prêt.
+- Tests : `tests/espace/lignes-fiche.test.js` (profil fictif), e2e « autres lignes de la fiche de paie ». Nouveautés `2026-10-13d`, SW `orbite-2026-10-13f`.
+- **À faire** : lire ces lignes automatiquement avec « Remplir avec ma fiche de paie » ; primes de l'année de l'utilisateur (calendrier des primes).
+
 ## 3 centseptendecies. Quatre nouvelles pages publiques (13 oct.)
 
 Maquette validée le 13 oct. (« Oui, construis les 4 »). But : répondre à des recherches Google sans page dédiée jusqu'ici. Générées par `scripts/pages-publiques.js` (ne jamais modifier le HTML à la main), même gabarit que les 7 autres (calcul en direct, pont vers Orbite, « Comment… », deux tableaux, FAQ + données structurées, 10 liens « voisins »).

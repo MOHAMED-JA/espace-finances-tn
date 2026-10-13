@@ -91,9 +91,17 @@
       tauxAccidentTravailPct: at.vide || !at.valide || Math.abs(at.valeur - P.employeur.accidentTravail.tauxParDefaut * 100) < 1e-9 ? null : Math.min(at.valeur, P.employeur.accidentTravail.tauxMax * 100),
       industrieManufacturiere: $("industrie").checked,
       autresChargesPct: 0,
-      autresChargesMontant: m("autres-dt")
+      autresChargesMontant: m("autres-dt"),
+      /* Autres lignes de la fiche de paie : reprises du profil (elles ne se modifient que dans le profil). */
+      retenuesSociales: somme(fiche.lignes.sociales),
+      gainsNets: somme(fiche.lignes.gains),
+      retenuesNettes: somme(fiche.lignes.nettes)
     };
   }
+  /* Autres lignes de la fiche et impôt aligné, tels qu'enregistrés dans le profil. */
+  var fiche = { lignes: { sociales: [], gains: [], nettes: [] }, impot: null };
+  function somme(l) { return (l || []).reduce(function (t, x) { return t + (x.montant || 0); }, 0); }
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
 
   function appliquerEtat(e) {
     function texte(id, v) { $(id).value = v ? nbsp(fSaisie.format(v)) : ""; }
@@ -150,15 +158,18 @@
     e.montant = r.periode === "annuel" ? r.annuel.salaireBase : r.annuel.salaireBase / r.entree.nombreSalaires;
     return e;
   }
-  function calculerEtat(etat) {
+  /* sansFiche : comparaison d'offres, à barèmes égaux (sans les lignes propres à l'employeur actuel). */
+  function calculerEtat(etat, sansFiche) {
+    if (sansFiche) etat = Object.assign({}, etat, { retenuesSociales: 0, gainsNets: 0, retenuesNettes: 0 });
     var entree = E.versEntree(etat);
     var inverse = null;
     if (etat.sens === "net") {
       inverse = C.calculerDepuisNet(entree, P);
       entree = entreeBrut(etat, inverse.resultat);
     }
-    var av = C.calculerAvecVersements(entree, P);
-    return { r: av.annee, m: av.moisType, v: av.versements, inverse: inverse, entree: entree, etat: etat };
+    /* Impôt aligné sur la fiche : seulement pour le brut de la fiche (même brut mensuel au millime). */
+    var ca = O.calculAligne(entree, sansFiche ? null : fiche.impot), av = ca.av;
+    return { r: av.annee, m: av.moisType, v: av.versements, inverse: inverse, entree: ca.entree, etat: etat, aligne: ca.aligne };
   }
 
   /* ---------- Chiffres qui défilent ---------- */
@@ -234,13 +245,14 @@
     else $("resultat-sous").textContent = "sur " + dt3(brutPer) + " DT brut" + (a.primesImposables + a.primesNonCotisables + a.avantagesNature > 0 ? ", primes et avantages compris" : "") + " · " + r.regime.libelle.toLowerCase() + " · " + n + " salaires par an.";
 
     var b = Math.max(base.brutTotal, 1e-9);
-    var parts = { cnss: base.cotisations / b, irpp: base.irpp / b, css: base.css / b };
+    var soc = base.retenuesSociales || 0;
+    var parts = { cnss: (base.cotisations + soc) / b, irpp: base.irpp / b, css: base.css / b };
     parts.net = Math.max(0, 1 - parts.cnss - parts.irpp - parts.css);
     poserBlocs(["bloc-net", "bloc-cnss", "bloc-irpp", "bloc-css"], [parts.net, parts.cnss, parts.irpp, parts.css], animer);
     $("bloc-cnss-lib").textContent = caisse;
-    $("leg-cnss-lib").textContent = "Retraite et santé (" + caisse + ")";
-    $("leg-net").textContent = dt3((base.brutTotal - base.cotisations - base.irpp - base.css) / div) + " DT";
-    $("leg-cnss").textContent = dt3(base.cotisations / div) + " DT";
+    $("leg-cnss-lib").textContent = "Retraite et santé (" + caisse + (soc > 0 ? " et complémentaires" : "") + ")";
+    $("leg-net").textContent = dt3((base.brutTotal - base.cotisations - soc - base.irpp - base.css) / div) + " DT";
+    $("leg-cnss").textContent = dt3((base.cotisations + soc) / div) + " DT";
     $("leg-irpp").textContent = dt3(base.irpp / div) + " DT";
     $("leg-css").textContent = dt3(base.css / div) + " DT";
     $("leg-net-pct").textContent = pct1(parts.net) + " du brut";
@@ -260,6 +272,17 @@
         "Ces mois-là, l'impôt est plus élevé : <strong>" + dt3(impotSupp) + " DT</strong> par versement (taux marginal " + pct(r.indicateurs.tauxMarginalIrpp) + "), contre " + dt3(impotMois) + " DT un mois habituel. " +
         "Sur l'année, l'impôt total (" + dt3(a.irpp + a.css) + " DT) est calculé sur le revenu annuel cumulé.";
     } else sup.hidden = true;
+
+    /* Autres lignes de la fiche de paie (profil) : ce qu'elles changent au net du mois. */
+    var fp = $("fiche-salaire"), morceaux = [];
+    if (fp) {
+      if (ma.retenuesSociales > 0) morceaux.push("retenues en plus de la " + caisse + " <strong>−" + dt3(ma.retenuesSociales / 12) + " DT</strong> (elles baissent l'impôt)");
+      if (ma.gainsNets > 0) morceaux.push("versements non imposables <strong>+" + dt3(ma.gainsNets / 12) + " DT</strong>");
+      if (ma.retenuesNettes > 0) morceaux.push("retenues sur le net <strong>−" + dt3(ma.retenuesNettes / 12) + " DT</strong>");
+      if (calc.aligne) morceaux.push("impôt aligné sur votre fiche <strong>" + signe(calc.aligne.ecart) + " DT</strong> (Orbite calcule " + dt3(calc.aligne.irppOrbite + calc.aligne.cssOrbite) + " DT d'IRPP et de CSS, votre fiche " + dt3(calc.aligne.irpp + calc.aligne.css) + " DT)");
+      fp.hidden = !(mensuel && morceaux.length);
+      if (!fp.hidden) fp.innerHTML = "Comme sur votre fiche de paie : " + morceaux.join(", ") + ". <a href=\"#profil?section=salaire\">Modifier ces lignes</a>";
+    }
 
     var alertes = [];
     if (r.indicateurs.enfantsIgnores > 0) alertes.push("Seuls les 4 premiers enfants ouvrent droit à la déduction (hors enfants handicapés).");
@@ -421,12 +444,12 @@
     var aBrut = JSON.parse(JSON.stringify(etat));
     aBrut.sens = "brut"; aBrut.periode = "mensuel";
     aBrut.montant = calc.r.annuel.salaireBase / calc.v.nombre;
-    var cA = calculerEtat(aBrut);
+    var cA = calculerEtat(aBrut, true);
     var bm = lireMontant($("b-montant").value);
     var ok = bm.valide && !bm.vide && bm.valeur > 0;
     $("b-montant").setAttribute("aria-invalid", ok ? "false" : "true");
     if (!ok) { remplirOffre("a", cA, cA.v.netMensuel); $("offre-b-net").textContent = "—"; $("offre-b-dl").textContent = ""; $("ecart").textContent = "Saisissez le salaire brut de l'autre offre."; return; }
-    var cB = calculerEtat(etatB(etat));
+    var cB = calculerEtat(etatB(etat), true);
     var maxi = Math.max(cA.v.netMensuel, cB.v.netMensuel, 1);
     remplirOffre("a", cA, maxi);
     remplirOffre("b", cB, maxi);
@@ -461,6 +484,14 @@
       L(l.libelle + " (" + pct(l.taux) + ")", function (x) { return x.cotisationsLignes[i].montant; }, { classe: "moins sous" });
     });
     L("Cotisations " + r.regime.caisse, "cotisations", { classe: "moins" });
+    /* Autres lignes de la fiche : détail ligne par ligne (12 mois par an), puis total. */
+    function lignesFiche(liste, classe) {
+      (liste || []).forEach(function (l) { if (l.montant > 0) lignes.push({ lib: esc(l.libelle || "Ligne de la fiche"), vm: l.montant, va: l.montant * 12, classe: classe }); });
+    }
+    if (a.retenuesSociales > 0) {
+      lignesFiche(fiche.lignes.sociales, "moins sous");
+      L("Retenues en plus de la " + r.regime.caisse + " (déduites de l'impôt)", "retenuesSociales", { classe: "moins" });
+    }
     L("Frais professionnels (10 %" + (r.indicateurs.fraisPlafonnes ? ", plafonnés" : "") + ")", "fraisProfessionnels", { classe: "moins" });
     a.deductionsLignes.forEach(function (l, i) {
       L("Déduction : " + l.libelle + (l.nombre > 1 ? " × " + l.nombre : ""), function (x) { return x.deductionsLignes[i] ? x.deductionsLignes[i].montant : 0; }, { classe: "moins sous" });
@@ -472,8 +503,11 @@
     });
     L("Impôt sur le revenu (IRPP)", "irpp", { classe: "moins" });
     L("Contribution sociale de solidarité (CSS)", "css", { classe: "moins" });
+    if (calc.aligne) L("Écart avec l'impôt retenu sur votre fiche (IRPP " + dt3(calc.aligne.irpp) + " et CSS " + dt3(calc.aligne.css) + " DT par mois)", "ajustementImpot", { classe: calc.aligne.ecart >= 0 ? "" : "moins" });
     L("Avantages en nature (déjà perçus)", "avantagesNature", { classe: "moins", siNonNul: true });
     L("Indemnités non imposables", "indemnitesNonImposables", { siNonNul: true });
+    if (a.gainsNets > 0) { lignesFiche(fiche.lignes.gains, "sous"); L("Versements non imposables de la fiche", "gainsNets"); }
+    if (a.retenuesNettes > 0) { lignesFiche(fiche.lignes.nettes, "moins sous"); L("Retenues sur le net", "retenuesNettes", { classe: "moins" }); }
     L("Net à payer", "netAPayer", { classe: "cle" });
     a.chargesPatronalesLignes.forEach(function (l, i) {
       L("Employeur : " + l.libelle + " (" + pct(l.taux) + ")", function (x) { return x.chargesPatronalesLignes[i].montant; }, { classe: "sous" });
@@ -749,7 +783,9 @@
     },
     /* Point de départ : le profil de l'utilisateur (salaire, famille, primes). */
     depuisProfil: function (profil) {
-      var e = O.etatSalaire(O.normaliser(profil));
+      var pn = O.normaliser(profil);
+      fiche = { lignes: pn.lignesFiche, impot: pn.activite === "retraite" ? null : pn.impotFiche };
+      var e = O.etatSalaire(pn);
       e.tauxAccidentTravailPct = null;
       e.industrieManufacturiere = false;
       appliquerEtat(e);
@@ -788,6 +824,14 @@
     }
     O.majProfil(v, { immediat: true });
     O.toast("Votre profil reprend ces valeurs : votre orbite est à jour.");
+  });
+
+  /* Autres lignes de la fiche : modifiées dans le profil, reprises ici sans toucher au reste de la simulation. */
+  var AO = window.Orbite;
+  if (AO && AO.surProfil) AO.surProfil(function (sy, profil) {
+    var pn = O.normaliser(profil), avant = JSON.stringify(fiche);
+    fiche = { lignes: pn.lignesFiche, impot: pn.activite === "retraite" ? null : pn.impotFiche };
+    if (JSON.stringify(fiche) !== avant && dernier) calculer(false);
   });
 
   majCompteurs();
