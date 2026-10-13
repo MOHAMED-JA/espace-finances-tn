@@ -48,7 +48,8 @@
 :root[data-theme="dark"] .nuance[data-accent="olivier"] { --n: #A4C267; --sur-n: #0E1405; }
 :root[data-theme="dark"] .nuance[data-accent="djerba"] { --n: #F08A5D; --sur-n: #1C0A03; }
 :root[data-theme="dark"] .nuance[data-accent="bougain"] { --n: #F27DB8; --sur-n: #14060D; }
-@media (max-width: 420px) { .nuance small { display: none; } .nuance b { font-size: 11.5px; } .nuance i { width: 30px; height: 30px; } .nuance:has(input:checked) i::after { left: 10px; top: 6px; } }
+/* Téléphone : 3 puis 2 pastilles par ligne, pour que chaque nom tienne dans sa case (texte agrandi compris). */
+@media (max-width: 520px) { .nuancier { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 #choix-taille span { padding: 0 6px; }
 .perso__a { font-style: normal; font-family: var(--affiche); font-weight: 760; margin-right: 6px; line-height: 1; }
 .perso__a--1 { font-size: 13px; } .perso__a--2 { font-size: 16px; } .perso__a--3 { font-size: 19px; }

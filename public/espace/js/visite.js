@@ -1,7 +1,7 @@
 /*
  * Orbite — visite guidée en trois chapitres (maquette validée le 12 oct. 2026, nouveautés d'octobre ajoutées le même jour, puis celles du Lot 2 et du point 5).
  * Elle s'ouvre toujours sur un choix : « L'essentiel » (8 étapes, proposé aux nouveaux venus), « Les nouveautés »
- * (8 étapes, proposé à ceux qui ont déjà vu l'essentiel ; badge tant que cette version n'a pas été vue) et
+ * (9 étapes, proposé à ceux qui ont déjà vu l'essentiel ; badge tant que cette version n'a pas été vue) et
  * « Pour aller plus loin » (10 étapes : les nouveautés précédentes).
  * Démarre juste après le « premier pas » (une fois par compte, user_metadata.orbite_visite) ; on la revoit avec le
  * bouton « ? » de la barre ou depuis Paramètres → Préférences. Une étape peut ouvrir une autre page (« vue ») avant de

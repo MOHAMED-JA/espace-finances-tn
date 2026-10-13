@@ -242,7 +242,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector(".visite__bulle #visite-chapitres:not([hidden])");
     assert(/Par quoi voulez-vous commencer/.test(await page.textContent("#visite-titre")), "écran de choix");
     assert(await page.$eval("#visite-chap-essentiel", (b) => b.classList.contains("visite__chap--conseil") && document.activeElement === b), "nouveau venu : « L'essentiel » conseillé");
-    assert(/8 nouvelles/.test(await page.textContent("#visite-badge")), "badge des nouveautés");
+    assert(/9 nouvelles/.test(await page.textContent("#visite-badge")), "badge des nouveautés : " + await page.textContent("#visite-badge"));
     await page.waitForTimeout(400);
     await page.screenshot({ path: path.join(CAPTURES, "visite-choix.png") });
     await page.click("#visite-chap-essentiel");
