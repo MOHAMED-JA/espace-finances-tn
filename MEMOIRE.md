@@ -1624,7 +1624,7 @@ Branche `lot2`. Tout tourne sur l'appareil ; aucune nouvelle table, aucune migra
 4. `docs/MISE-EN-LIGNE.md` et `docs/SECURITE.md` parlent encore des « outils » : à mettre à jour un jour.
 5. **En attente côté utilisateur (11 oct.)** :
    - passer en privé les dépôts espace-finances-tn, simulateur-credit, simulateur-assurance-vie, simulateur-Assurance-Automobile (pas portail-rh : GitHub Pages) puis vérifier que Cloudflare déploie toujours ;
-   - corriger son crédit immobilier dans le profil (765,003 DT, début février 2023, 191 mois ; le profil affiche encore 875,894 DT à 2,25 %) ;
+   - ~~corriger son crédit immobilier dans le profil~~ : **fait le 13 oct.** (à sa demande, d'après la feuille « tableau d'amortissement 15 ans » de son fichier Excel personnel, non versionné) : mensualité 765,003 DT depuis mars 2026 (taux 2,25 %, règle des 8 %), début février 2023, 191 mois, dernière échéance janvier 2039 ; capital restant et échéances restantes déjà justes ;
    - renseigner « Début de carrière » (et années sans cotisation) dans Mon profil › Votre salaire, pour l'onglet Retraite ;
    - ~~coller dans le SQL Editor les `revoke` des fonctions de rappels~~ : **fait par l'utilisateur le 11 oct.** Vérifié : fonctions serveur exécutables par `service_role` seulement ; fonctions utilisateur refusées à `anon` ; liens par jeton ouverts à `anon` (voulu) ; tables : aucune écriture pour `authenticated`, aucune lecture pour `anon` ; envoi quotidien toujours 200 ;
    - nom de domaine : **écarté (payant)**. Pistes gratuites seulement : renommer le sous-domaine `workers.dev` (gratuit) ; domaine gratuit `eu.org` (validation lente, permettrait aussi d'authentifier l'expéditeur Brevo) ; sinon garder l'existant (emails déjà reçus en boîte de réception) ;
