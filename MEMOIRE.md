@@ -691,6 +691,7 @@ Graphiques unifiés vérifiés en ligne par l'utilisateur (étapes 1 à 3 : dép
 - **Ctrl K** : « Changer la couleur d'accent » (ouvre les Préférences, focus sur la couleur actuelle, ← → pour changer), « Passer en densité compacte / Revenir à la densité confortable », « Agrandir le texte / Agrandir encore / Revenir au texte normal ».
 - **Visite** : étape « Votre apparence » dans « Les nouveautés » (version `2026-10-13a`, 9 étapes, badge « 9 nouvelles »). « Quoi de neuf » `2026-10-13a`. SW `orbite-2026-10-13a`.
 - **Piège corrigé** : dans la palette, `aller("#compte?onglet=…")` suivi de `surVue("compte")` réécrivait l'adresse en `#compte` (onglet perdu) ; l'action accent écoute `orbite:vue` elle-même.
+- **Livré** : PR #121 fusionnée ; vérifié en ligne par l'utilisateur (déploiement, réglages et aperçu, autre appareil, Ctrl K, retour à l'origine). Restent : Lot 3 interface en arabe (au choix de l'utilisateur), LF 2027 dès sa publication au JORT.
 - **Tests** : `tests/espace/apparence.test.js` (normalisation, application seulement dans l'espace, stockage illisible, contrastes lus dans le CSS) ; étape e2e « apparence personnelle » (aperçu, bouton de la barre, compte puis appareil vide, attribut présent dès l'apparition du `<body>`, sombre, accueil inchangé, Ctrl K, flèche dans le nuancier, téléphone sans débordement, retour à l'origine).
 
 ## 3 centunies. Graphiques unifiés (12 oct.)
