@@ -1860,7 +1860,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector("#fiche-salaire:not([hidden])");
     const det = (await page.textContent("#tableau-detail")).replace(/[\u00a0\u202f]/g, " ");
     assert(/Retraite complémentaire/.test(det) && /Assurance auto/.test(det) && /Écart avec l'impôt retenu sur votre fiche/.test(det) && /2 159,649/.test(det), "détail du module Salaire");
-    assert(((await page.textContent("#chiffres")) + (await page.textContent("#decimales"))).replace(/\D/g, "") === "2159649", "grand chiffre = net de la fiche");
+    await page.waitForFunction(() => /2\s?159,649/.test(document.getElementById("montant-lu").textContent.replace(/[\u00a0\u202f]/g, " ")), null, { timeout: 5000 });
     /* Comparaison d'offres : à barèmes égaux, sans les lignes de l'employeur actuel. */
     const offre = await page.evaluate(() => window.OrbiteCalcul.salaire(window.OrbiteCalcul.normaliser(Object.assign({}, window.Orbite.profil(), { lignesFiche: {}, impotFiche: {} }))).netMensuel);
     assert(offre > 2159.649, "sans les lignes, le net est plus élevé");
