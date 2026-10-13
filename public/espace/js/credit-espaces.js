@@ -342,6 +342,18 @@
     var p = profil();
     return p.credits.filter(function (c) { return c.mensualite > 0 && c.moisRestants > 0; });
   }
+  /* Choix de l'utilisateur (crédits cochés, taux, durée, indemnité, frais), gardés quand l'onglet est redessiné :
+     le profil se recalcule souvent (enregistrement, synthèse) et l'onglet revenait aux valeurs par défaut. */
+  var regChoix = { cr: {}, champs: {} };
+  function cleCredit(c, i) { return i + "|" + c.libelle + "|" + c.type; }
+  function signatureCredits(cr) { return JSON.stringify(cr.map(function (c) { return [c.libelle, c.type, c.mensualite, c.moisRestants, c.capitalRestant, c.tauxPct]; })); }
+  function noterChoix() {
+    var r = $("credit-regrouper"), cr = creditsProfil();
+    if (!r) return;
+    r.querySelectorAll("[data-cr]").forEach(function (b) { var c = cr[+b.getAttribute("data-cr")]; if (c) regChoix.cr[cleCredit(c, +b.getAttribute("data-cr"))] = b.checked; });
+    r.querySelectorAll(".ce-panneau [data-c]").forEach(function (el) { regChoix.champs[el.getAttribute("data-c")] = el.value; });
+  }
+  function valeurChamp(c, def) { return Object.prototype.hasOwnProperty.call(regChoix.champs, c) ? regChoix.champs[c] : def; }
   function htmlRegrouper() {
     var cr = creditsProfil();
     if (!cr.length) return '<section class="panneau ce-panneau"><div class="cr-section-tete"><h2>Regrouper mes crédits</h2><p>Un seul crédit à la place de plusieurs.</p></div>' +
@@ -350,13 +362,14 @@
     return '<section class="panneau ce-panneau" aria-labelledby="ce-reg-titre">' +
       '<div class="cr-section-tete"><h2 id="ce-reg-titre">Regrouper mes crédits</h2><p>Un seul crédit à la place de plusieurs : mensualité et coût total, indemnités et frais compris. Vos crédits viennent de votre profil.</p></div>' +
       '<fieldset class="ce-credits"><legend>Crédits à regrouper</legend>' + cr.map(function (c, i) {
-        return '<label class="ce-credit"><input type="checkbox" data-cr="' + i + '"' + (c.type === "immo" ? "" : " checked") + '><span><b>' + esc(c.libelle) + '</b><small>' + dt3(c.mensualite) + ' par mois · ' + c.moisRestants + ' mois restants · ' + pc(c.tauxPct) + '</small></span></label>';
+        var k = cleCredit(c, i), coche = Object.prototype.hasOwnProperty.call(regChoix.cr, k) ? regChoix.cr[k] : c.type !== "immo";
+        return '<label class="ce-credit"><input type="checkbox" data-cr="' + i + '"' + (coche ? " checked" : "") + '><span><b>' + esc(c.libelle) + '</b><small>' + dt3(c.mensualite) + ' par mois · ' + c.moisRestants + ' mois restants · ' + pc(c.tauxPct) + '</small></span></label>';
       }).join("") + (immo ? '<p class="champ__aide">Le crédit immobilier est décoché par défaut : regroupé, il allonge souvent tout le reste.</p>' : "") + '</fieldset>' +
       '<div class="grille-champs grille-champs--4">' +
-        champ({ lib: "Taux du nouveau crédit", c: "taux", valeur: saisie(Math.round(tauxType("conso") * 100) / 100), unite: "%", id: "ce-r-taux" }) +
-        champ({ lib: "Durée du nouveau crédit", c: "ans", valeur: "5", unite: "ans", entier: true, id: "ce-r-ans" }) +
-        champ({ lib: "Indemnité de remboursement anticipé", c: "ira", valeur: saisie(P.IRA_PCT), unite: "%", id: "ce-r-ira", aide: "Fixée par chaque contrat : vérifiez le vôtre." }) +
-        champ({ lib: "Frais du nouveau dossier", c: "fraisDossier", valeur: saisie(150), unite: "DT", id: "ce-r-frais" }) +
+        champ({ lib: "Taux du nouveau crédit", c: "taux", valeur: valeurChamp("taux", saisie(Math.round(tauxType("conso") * 100) / 100)), unite: "%", id: "ce-r-taux" }) +
+        champ({ lib: "Durée du nouveau crédit", c: "ans", valeur: valeurChamp("ans", "5"), unite: "ans", entier: true, id: "ce-r-ans" }) +
+        champ({ lib: "Indemnité de remboursement anticipé", c: "ira", valeur: valeurChamp("ira", saisie(P.IRA_PCT)), unite: "%", id: "ce-r-ira", aide: "Fixée par chaque contrat : vérifiez le vôtre." }) +
+        champ({ lib: "Frais du nouveau dossier", c: "fraisDossier", valeur: valeurChamp("fraisDossier", saisie(150)), unite: "DT", id: "ce-r-frais" }) +
       '</div>' +
       '<div class="ce-resultat ce-resultat--large" id="ce-reg-res" aria-live="polite"></div>' +
     '</section>';
@@ -383,13 +396,18 @@
       perdant: ["alerte", "alerte", "Regrouper ne vaut pas le coup : la mensualité monte et le coût total aussi (" + dt0(res.difference) + " de plus)."] }[res.verdict];
     out.innerHTML = h + encart(t[0], t[1], "<p>" + t[2] + "</p>") + '<div class="ce-actions"><button type="button" class="bouton bouton--petit" id="ce-reg-simuler">' + ico("calculatrice") + 'Simuler le nouveau crédit</button></div>';
   }
+  var signatureRendue = null;
   function rendreRegrouper() {
     var r = $("credit-regrouper");
-    r.innerHTML = htmlRegrouper(); r.setAttribute("data-pret", "1");
+    /* Mêmes crédits qu'à l'affichage précédent : on garde le formulaire tel quel (saisie en cours, focus) et on recalcule. */
+    var sig = signatureCredits(creditsProfil());
+    if (r.getAttribute("data-pret") && sig === signatureRendue && r.querySelector(".ce-panneau")) { calculerRegrouper(); return; }
+    if (r.getAttribute("data-pret")) noterChoix();
+    r.innerHTML = htmlRegrouper(); r.setAttribute("data-pret", "1"); signatureRendue = sig;
     if (!r.getAttribute("data-ecoute")) {
       r.setAttribute("data-ecoute", "1");
       var re = anti(calculerRegrouper, 150);
-      r.addEventListener("input", re); r.addEventListener("change", re);
+      r.addEventListener("input", function () { noterChoix(); re(); }); r.addEventListener("change", function () { noterChoix(); re(); });
       r.addEventListener("click", function (ev) {
         if (!ev.target.closest("#ce-reg-simuler") || !etat.regrouper) return;
         var x = etat.regrouper;

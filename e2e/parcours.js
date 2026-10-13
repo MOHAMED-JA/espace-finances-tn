@@ -1445,16 +1445,31 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     const creditsAvant = await page.evaluate(() => JSON.stringify(window.Orbite.profil().credits));
     await page.evaluate(() => window.Orbite.majProfil({ credits: window.Orbite.profil().credits.concat([
       { libelle: "Crédit auto démo", type: "auto", mensualite: 320, tauxPct: 10, moisRestants: 30 },
-      { libelle: "Crédit conso démo", type: "conso", mensualite: 210, tauxPct: 11, moisRestants: 17, capitalRestant: 3292 }]) }));
+      { libelle: "Crédit conso démo", type: "conso", mensualite: 210, tauxPct: 11, moisRestants: 17, capitalRestant: 3292 },
+      { libelle: "Crédit immo démo", type: "immo", mensualite: 880, tauxPct: 8, moisRestants: 148 }]) }));
     await page.click("#ce-tab-regrouper");
     await page.waitForSelector("#credit-regrouper:not([hidden]) .cr-section-tete");
     if (await page.$("#credit-regrouper [data-cr]")) {
       if (!(await page.isChecked("#credit-regrouper [data-cr]"))) await page.check("#credit-regrouper [data-cr]");
       await page.waitForSelector("#ce-reg-res .cr-stats");
       assert(/Nouvelle mensualité/.test(await page.textContent("#ce-reg-res")) && /Indemnité/.test(await page.textContent("#ce-reg-res")), "regroupement calculé");
+      /* Les choix tiennent quand le profil se recalcule (le crédit immobilier coché se décochait, l'indemnité revenait à 1,5 %). */
+      const immo = '#credit-regrouper label:has-text("Crédit immo démo") input';
+      assert(!(await page.isChecked(immo)), "crédit immobilier décoché par défaut");
+      await page.check(immo);
+      await page.fill("#ce-r-ira", "2");
+      await page.waitForFunction(() => /Indemnité \(2 %\)/.test(document.getElementById("ce-reg-res").textContent));
+      await page.evaluate(() => window.Orbite.majProfil({ enfants: window.Orbite.profil().enfants }, { immediat: true }));
+      await page.evaluate(() => window.Orbite.majProfil({ credits: window.Orbite.profil().credits.concat([{ libelle: "Crédit perso démo", type: "conso", mensualite: 90, tauxPct: 12, moisRestants: 10 }]) }, { immediat: true }));
+      await page.waitForSelector('#credit-regrouper label:has-text("Crédit perso démo")');
+      await page.waitForTimeout(400);
+      assert(await page.isChecked(immo) && (await page.inputValue("#ce-r-ira")) === "2" && /Indemnité \(2 %\)/.test(await page.textContent("#ce-reg-res")) && /Crédit immo démo/.test(await page.textContent("#ce-reg-res table")), "choix gardés après recalcul du profil");
       await page.screenshot({ path: path.join(CAPTURES, "credit-regrouper.png") });
     } else assert(false, "crédits du profil absents du regroupement");
-    await page.evaluate((c) => window.Orbite.majProfil({ credits: JSON.parse(c) }), creditsAvant);
+    /* Retour aux crédits d'avant, enregistré tout de suite (les étapes suivantes rechargent la page). */
+    await page.evaluate((c) => window.Orbite.majProfil({ credits: JSON.parse(c) }, { immediat: true }), creditsAvant);
+    await page.waitForFunction((c) => JSON.stringify(window.Orbite.profil().credits.map((x) => x.libelle)) === JSON.stringify(JSON.parse(c).map((x) => x.libelle)), creditsAvant);
+    await page.waitForTimeout(800);
     await page.keyboard.press("Home");
     await page.click("#ce-tab-simuler");
     await page.waitForFunction(() => location.hash === "#credit");
