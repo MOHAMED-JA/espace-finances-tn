@@ -677,6 +677,22 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centduodecies. Apparence personnelle (13 oct.)
+
+Graphiques unifiés vérifiés en ligne par l'utilisateur (étapes 1 à 3 : déploiement, bulle et clavier, sombre et téléphone). Maquette de l'apparence validée (« Oui, applique »). Branche `apparence`.
+
+- **Trois réglages** dans Paramètres › Préférences, rubrique « Couleur, densité, taille » (`[aria-labelledby='r-perso']`), avec un **aperçu en direct** et « Revenir aux réglages d'origine » (`#apparence-origine`, désactivé quand tout est par défaut) :
+  - **Couleur d'accent** (`#choix-accent`, nuancier de 5 pastilles, radios au clavier) : Encre (défaut), Sidi Bou Saïd, Olivier, Djerba, Bougainvillier. Clair `#0A6CA8` `#4F6B1E` `#B5502A` `#B8327A` (texte blanc) ; sombre `#5DB4E8` `#A4C267` `#F08A5D` `#F27DB8` (texte foncé). Contrastes contrôlés par le test : texte sur l'accent ≥ 5:1 (clair) et ≥ 7:1 (sombre), accent sur le fond ≥ 4,5:1. Pas de rouge (erreurs), le contour de focus reste bleu.
+  - L'accent habille : `.bouton--plein` (dont « Enregistrer » de la barre), interrupteurs cochés, repère du menu hors modules, sélection du texte, curseur des champs. Les couleurs des modules et des graphiques ne changent pas. Règles en `:where(:root[data-accent])` : même spécificité qu'à l'origine, donc les boutons volontairement colorés (`.cosmos`, Mon année, admin, comparer) gardent leur couleur.
+  - **Densité** (`#choix-densite`) : Compacte resserre panneaux, en-têtes, grilles de champs, hauteurs de saisie (38 px), boutons (38 px, petits 36 px), bascules (36 px), liens du menu ; le texte ne change pas (contrôlé en e2e : la page raccourcit d'au moins 5 %, même taille de police).
+  - **Taille du texte** (`#choix-taille`) : Normale, Grande (zoom 1,12 ; 1,07 sur téléphone), Très grande (1,25 ; 1,12 sur téléphone), comme la haute lisibilité (zoom sur `.principal`, `.dialogue`, `.toast`). La haute lisibilité seule vaut déjà « Grande ».
+- **Stockage** : `user_metadata.orbite_accent`, `orbite_densite`, `orbite_taille` (null par défaut ; le compte fait foi au démarrage) et `localStorage["ef-apparence"]` (JSON). `theme-init.js` pose `data-accent`, `data-densite`, `data-taille` sur `<html>` avant l'affichage, **seulement sous `/espace/`** (accueil et pages publiques inchangés). `EFTheme.normaliserApparence` n'accepte que les valeurs connues.
+- **Fichiers** : `public/espace/apparence.css` (après `confort.css`), `public/espace/js/apparence.js` (`window.OrbiteApparence` : `actuelle`, `definir({...})`, `origine`, `NOMS`), balisage dans `index.html`.
+- **Ctrl K** : « Changer la couleur d'accent » (ouvre les Préférences, focus sur la couleur actuelle, ← → pour changer), « Passer en densité compacte / Revenir à la densité confortable », « Agrandir le texte / Agrandir encore / Revenir au texte normal ».
+- **Visite** : étape « Votre apparence » dans « Les nouveautés » (version `2026-10-13a`, 10 étapes). « Quoi de neuf » `2026-10-13a`. SW `orbite-2026-10-13a`.
+- **Piège corrigé** : dans la palette, `aller("#compte?onglet=…")` suivi de `surVue("compte")` réécrivait l'adresse en `#compte` (onglet perdu) ; l'action accent écoute `orbite:vue` elle-même.
+- **Tests** : `tests/espace/apparence.test.js` (normalisation, application seulement dans l'espace, stockage illisible, contrastes lus dans le CSS) ; étape e2e « apparence personnelle » (aperçu, bouton de la barre, compte puis appareil vide, attribut présent dès l'apparition du `<body>`, sombre, accueil inchangé, Ctrl K, flèche dans le nuancier, téléphone sans débordement, retour à l'origine).
+
 ## 3 centunies. Graphiques unifiés (12 oct.)
 
 Maquette validée par l'utilisateur (« Oui, applique partout »). Branche `graphiques`.

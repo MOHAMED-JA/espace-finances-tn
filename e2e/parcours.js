@@ -276,17 +276,17 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForTimeout(400);
     await page.screenshot({ path: path.join(CAPTURES, "visite-nouveautes.png") });
     const vus = [];
-    for (let i = 1; i < 8; i++) {
+    for (let i = 1; i < 9; i++) {
       await page.click("#visite-suiv");
       await page.waitForFunction(() => !document.querySelector(".visite--transit"));
       vus.push((await page.textContent("#visite-titre")) + " @ " + (await page.evaluate(() => location.hash)));
     }
-    assert(vus.some((t) => /calendrier de l'argent @ #mois\?onglet=calendrier/.test(t)) && vus.some((t) => /4 nouveaux onglets @ #credit/.test(t)) && vus.some((t) => /Partager une simulation @ #credit/.test(t)) && vus.some((t) => /Comparer vos simulations @ #simulations/.test(t)) && vus.some((t) => /Haute lisibilité @ #compte\?onglet=preferences/.test(t)), "pages ouvertes : " + vus.join(" | "));
+    assert(vus.some((t) => /calendrier de l'argent @ #mois\?onglet=calendrier/.test(t)) && vus.some((t) => /4 nouveaux onglets @ #credit/.test(t)) && vus.some((t) => /Partager une simulation @ #credit/.test(t)) && vus.some((t) => /Comparer vos simulations @ #simulations/.test(t)) && vus.some((t) => /Votre apparence @ #compte\?onglet=preferences/.test(t)) && vus.some((t) => /Haute lisibilité @ #compte\?onglet=preferences/.test(t)), "pages ouvertes : " + vus.join(" | "));
     await page.screenshot({ path: path.join(CAPTURES, "visite-credit.png") });
     await page.click("#visite-suiv");
     await page.waitForSelector(".visite", { state: "detached" });
     await page.waitForFunction(() => location.hash === "#orbite");
-    await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite_nouveautes === "2026-10-12c");
+    await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite_nouveautes === "2026-10-13a");
     /* « Pour aller plus loin » : les nouveautés précédentes, fiche de paie d'abord. */
     await page.click("#aide-visite");
     await page.waitForSelector(".visite__bulle #visite-chapitres:not([hidden])");
@@ -2716,6 +2716,101 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.screenshot({ path: path.join(CAPTURES, "graphe-credit-telephone.png") });
     await page.setViewportSize({ width: 1280, height: 900 });
     assert(vus.length === 3, "graphiques vus : " + vus.join(", "));
+  });
+
+  await etape("apparence personnelle : accent, densité, taille du texte, aperçu, compte et appareil, sombre, Ctrl K, téléphone", async () => {
+    await page.setViewportSize({ width: 1360, height: 900 });
+    await page.goto(base + "/espace/#compte?onglet=preferences");
+    await page.waitForSelector("#choix-accent", { state: "visible" });
+    assert(!(await page.getAttribute("html", "data-accent")) && await page.isDisabled("#apparence-origine"), "réglages d'origine au départ");
+    const fondDe = (sel) => page.$eval(sel, (e) => getComputedStyle(e).backgroundColor);
+    /* Les boutons ont une transition de couleur : on attend la teinte finale. */
+    const attendreFond = (sel, v) => page.waitForFunction(([s, c]) => getComputedStyle(document.querySelector(s)).backgroundColor === c, [sel, v], { timeout: 5000 }).then(() => true, () => false);
+    const avantBouton = await fondDe("#enregistrer");
+    /* Couleur d'accent : appliquée tout de suite (aperçu, bouton de la barre), retenue sur le compte et l'appareil. */
+    await page.click('#choix-accent label[data-accent="sidi"]');
+    assert((await page.getAttribute("html", "data-accent")) === "sidi", "accent posé");
+    assert(await attendreFond(".apercu-perso .bouton--plein", "rgb(10, 108, 168)"), "aperçu en Sidi Bou Saïd : " + await fondDe(".apercu-perso .bouton--plein"));
+    assert(await attendreFond("#enregistrer", "rgb(10, 108, 168)") && avantBouton !== "rgb(10, 108, 168)", "bouton principal à l'accent : " + avantBouton);
+    await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_accent === "sidi");
+    assert(!(await page.isDisabled("#apparence-origine")), "« Revenir aux réglages d'origine » possible");
+    /* Densité compacte : la page raccourcit, le texte garde sa taille. */
+    const mesure = () => page.evaluate(() => ({ h: document.getElementById("onglet-preferences").getBoundingClientRect().height, f: getComputedStyle(document.querySelector("#onglet-preferences .reglage__texte p")).fontSize }));
+    const confort = await mesure();
+    await page.click('#choix-densite label:has(input[value="compacte"])');
+    await page.waitForFunction(() => document.documentElement.getAttribute("data-densite") === "compacte");
+    const compacte = await mesure();
+    assert(compacte.h < confort.h * 0.95 && compacte.f === confort.f, "compacte : " + JSON.stringify([confort, compacte]));
+    /* Taille du texte. */
+    await page.click('#choix-taille label:has(input[value="grande"])');
+    await page.waitForFunction(() => getComputedStyle(document.querySelector(".principal")).zoom === "1.12");
+    await page.waitForFunction(() => { const m = window.Orbite.utilisateur().user_metadata; return m.orbite_densite === "compacte" && m.orbite_taille === "grande"; });
+    const ls = await page.evaluate(() => JSON.parse(localStorage.getItem("ef-apparence")));
+    assert(ls.accent === "sidi" && ls.densite === "compacte" && ls.taille === "grande", "recopiée sur l'appareil : " + JSON.stringify(ls));
+    await page.screenshot({ path: path.join(CAPTURES, "apparence-reglages.png") });
+    /* Un autre appareil (stockage vide) : le compte fait foi. */
+    await page.evaluate(() => localStorage.removeItem("ef-apparence"));
+    await page.goto(base + "/espace/#credit");
+    await page.reload();
+    await page.waitForFunction(() => { const r = document.documentElement; return r.getAttribute("data-accent") === "sidi" && r.getAttribute("data-densite") === "compacte" && r.getAttribute("data-taille") === "grande"; });
+    await page.waitForSelector("#cr-capital");
+    assert((await page.evaluate(() => localStorage.getItem("ef-apparence"))) !== null, "recopiée à nouveau sur l'appareil");
+    /* Avant l'affichage : l'attribut est déjà là quand le <body> apparaît (avant tout script de l'application). */
+    await page.addInitScript(() => { new MutationObserver((l, o) => { if (document.body) { window.__accentAuCorps = document.documentElement.getAttribute("data-accent"); o.disconnect(); } }).observe(document, { childList: true, subtree: true }); });
+    await page.reload();
+    await page.waitForSelector("#cr-capital");
+    const tot = await page.evaluate(() => window.__accentAuCorps);
+    assert(tot === "sidi", "appliquée par theme-init avant l'affichage : " + tot);
+    await page.waitForTimeout(1200);
+    await page.screenshot({ path: path.join(CAPTURES, "apparence-credit.png") });
+    /* Sombre : la version éclaircie de l'accent. */
+    await page.click("#bascule-theme");
+    await page.waitForFunction(() => document.documentElement.getAttribute("data-theme") === "dark");
+    assert(await attendreFond("#enregistrer", "rgb(93, 180, 232)"), "accent sombre : " + await fondDe("#enregistrer"));
+    await page.waitForTimeout(600);
+    await page.screenshot({ path: path.join(CAPTURES, "apparence-credit-sombre.png") });
+    await page.click("#bascule-theme");
+    await page.waitForFunction(() => document.documentElement.getAttribute("data-theme") === "light");
+    /* Accueil et pages publiques : inchangés (même stockage, mais hors de l'espace). */
+    await page.goto(base + "/");
+    const pub = await page.evaluate(() => [document.documentElement.getAttribute("data-accent"), document.documentElement.getAttribute("data-taille"), !!localStorage.getItem("ef-apparence")]);
+    assert(!pub[0] && !pub[1] && pub[2], "accueil sans apparence personnelle : " + JSON.stringify(pub));
+    await page.goto(base + "/espace/#credit");
+    await page.waitForSelector("#cr-capital");
+    /* Ctrl K : couleur d'accent (ouvre le réglage), densité, taille. */
+    async function palette(q, re) {
+      await page.keyboard.press("Control+k");
+      await page.waitForSelector("#dlg-palette[open]");
+      await page.fill("#palette-q", q);
+      await page.waitForFunction((r) => new RegExp(r).test(document.getElementById("palette-liste").textContent), re);
+      await page.keyboard.press("Enter");
+      await page.waitForFunction(() => !document.getElementById("dlg-palette").open);
+    }
+    await page.evaluate(() => document.activeElement && document.activeElement.blur());
+    await palette("densite", "densité confortable");
+    await page.waitForFunction(() => !document.documentElement.hasAttribute("data-densite"));
+    await palette("agrandir texte", "Agrandir encore le texte");
+    await page.waitForFunction(() => document.documentElement.getAttribute("data-taille") === "tres-grande");
+    await palette("couleur accent", "Changer la couleur d'accent");
+    await page.waitForFunction(() => location.hash === "#compte?onglet=preferences" && document.activeElement && document.activeElement.closest("#choix-accent"));
+    /* Clavier dans le nuancier : flèche → choisit la couleur suivante. */
+    await page.keyboard.press("ArrowRight");
+    await page.waitForFunction(() => document.documentElement.getAttribute("data-accent") === "olivier");
+    /* Téléphone : rien ne déborde, les noms tiennent dans leur case. */
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(400);
+    const tel = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, noms: Array.from(document.querySelectorAll(".nuance")).every((n) => { const b = n.querySelector("b").getBoundingClientRect(), r = n.getBoundingClientRect(); return b.left >= r.left - 0.5 && b.right <= r.right + 0.5; }) }));
+    assert(tel.sw <= 390 && tel.noms, "téléphone : " + JSON.stringify(tel));
+    await page.$eval("[aria-labelledby='r-perso']", (e) => e.scrollIntoView({ block: "start" }));
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: path.join(CAPTURES, "apparence-telephone.png") });
+    await page.setViewportSize({ width: 1360, height: 900 });
+    /* Retour aux réglages d'origine : tout s'efface, compte et appareil compris. */
+    await page.click("#apparence-origine");
+    await page.waitForFunction(() => { const r = document.documentElement; return !r.hasAttribute("data-accent") && !r.hasAttribute("data-densite") && !r.hasAttribute("data-taille"); });
+    await page.waitForFunction(() => { const m = window.Orbite.utilisateur().user_metadata; return !m.orbite_accent && !m.orbite_densite && !m.orbite_taille; });
+    assert((await page.evaluate(() => localStorage.getItem("ef-apparence"))) === null && await page.isDisabled("#apparence-origine"), "appareil remis à zéro");
+    assert(await attendreFond("#enregistrer", avantBouton), "bouton principal revenu à l'encre");
   });
 
   await etape("déconnexion puis suppression définitive du compte", async () => {

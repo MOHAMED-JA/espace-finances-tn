@@ -1,0 +1,103 @@
+/* Orbite — apparence personnelle (maquette validée le 13 oct. 2026) : couleur d'accent, densité, taille du texte.
+   Attributs posés sur <html> par theme-init.js avant l'affichage, seulement dans l'espace : data-accent, data-densite, data-taille.
+   Sans attribut, rien ne change (Encre, Confortable, Normale). Contrastes vérifiés : texte sur l'accent ≥ 5:1 en clair,
+   ≥ 7:1 en sombre ; accent sur le fond ≥ 4,6:1. Le contour de focus reste bleu ; pas de rouge (réservé aux erreurs).
+   « :where() » garde la spécificité des règles d'origine : les panneaux toujours sombres (.cosmos) et les boutons
+   colorés exprès (admin, comparer, Mon année) gardent leurs couleurs. */
+:root { --accent: var(--encre); --sur-accent: var(--inverse); }
+:root[data-accent="sidi"]    { --accent: #0A6CA8; --sur-accent: #FFFFFF; }
+:root[data-accent="olivier"] { --accent: #4F6B1E; --sur-accent: #FFFFFF; }
+:root[data-accent="djerba"]  { --accent: #B5502A; --sur-accent: #FFFFFF; }
+:root[data-accent="bougain"] { --accent: #B8327A; --sur-accent: #FFFFFF; }
+:root[data-theme="dark"][data-accent="sidi"]    { --accent: #5DB4E8; --sur-accent: #06121C; }
+:root[data-theme="dark"][data-accent="olivier"] { --accent: #A4C267; --sur-accent: #0E1405; }
+:root[data-theme="dark"][data-accent="djerba"]  { --accent: #F08A5D; --sur-accent: #1C0A03; }
+:root[data-theme="dark"][data-accent="bougain"] { --accent: #F27DB8; --sur-accent: #14060D; }
+
+:where(:root[data-accent]) .bouton--plein { background: var(--accent); border-color: var(--accent); color: var(--sur-accent); }
+@media (hover: hover) { :where(:root[data-accent]) .bouton--plein:hover:not(:disabled) { border-color: var(--accent); box-shadow: 0 6px 18px -8px color-mix(in srgb, var(--accent) 70%, transparent); } }
+:where(:root[data-accent]) .interrupteur input:checked + .interrupteur__piste { background: var(--accent); }
+:where(:root[data-accent]) .interrupteur input:checked + .interrupteur__piste::after { background: var(--sur-accent); }
+:where(:root[data-accent]) .rail__liens a[aria-current="page"]::before { background: var(--accent); }
+:where(:root[data-accent]) ::selection { background: color-mix(in srgb, var(--accent) 28%, transparent); }
+:where(:root[data-accent]) input, :where(:root[data-accent]) textarea { caret-color: var(--accent); }
+
+/* ---------- Réglage (Paramètres › Préférences) ---------- */
+.perso { display: grid; gap: 8px; min-width: 0; }
+.perso + .perso { padding-top: 14px; border-top: 1px solid var(--filet); }
+.perso__lib { font-size: 14px; font-weight: 650; color: var(--encre); }
+.perso__lib small { display: block; font-size: 13px; font-weight: 450; color: var(--encre-3); margin-top: 2px; }
+.nuancier { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.nuance { position: relative; display: grid; justify-items: center; align-content: start; gap: 6px; min-width: 0; padding: 10px 4px 8px; border-radius: 16px; border: 1.5px solid transparent; cursor: pointer; text-align: center; transition: background-color 160ms ease, border-color 160ms ease; }
+.nuance input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.nuance i { position: relative; width: 34px; height: 34px; border-radius: 50%; background: var(--n); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .1); transition: box-shadow 200ms var(--sortie); }
+.nuance b { font-size: 12.5px; font-weight: 650; line-height: 1.2; overflow-wrap: normal; word-break: normal; hyphens: manual; }
+.nuance small { font-size: 11.5px; color: var(--encre-3); }
+@media (hover: hover) { .nuance:hover { background: var(--surface-2); } }
+.nuance:has(input:checked) { border-color: var(--filet-fort); background: var(--surface-2); }
+.nuance:has(input:checked) i { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--n); }
+.nuance:has(input:checked) i::after { content: ""; position: absolute; left: 12px; top: 8px; width: 8px; height: 14px; border: solid var(--sur-n); border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
+.nuance:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+/* Pastilles du nuancier : chaque couleur dans sa version claire ou sombre selon le thème. */
+.nuance { --n: var(--encre); --sur-n: var(--inverse); }
+.nuance[data-accent="sidi"] { --n: #0A6CA8; --sur-n: #FFFFFF; }
+.nuance[data-accent="olivier"] { --n: #4F6B1E; --sur-n: #FFFFFF; }
+.nuance[data-accent="djerba"] { --n: #B5502A; --sur-n: #FFFFFF; }
+.nuance[data-accent="bougain"] { --n: #B8327A; --sur-n: #FFFFFF; }
+:root[data-theme="dark"] .nuance[data-accent="sidi"] { --n: #5DB4E8; --sur-n: #06121C; }
+:root[data-theme="dark"] .nuance[data-accent="olivier"] { --n: #A4C267; --sur-n: #0E1405; }
+:root[data-theme="dark"] .nuance[data-accent="djerba"] { --n: #F08A5D; --sur-n: #1C0A03; }
+:root[data-theme="dark"] .nuance[data-accent="bougain"] { --n: #F27DB8; --sur-n: #14060D; }
+@media (max-width: 420px) { .nuance small { display: none; } .nuance b { font-size: 11.5px; } .nuance i { width: 30px; height: 30px; } .nuance:has(input:checked) i::after { left: 10px; top: 6px; } }
+#choix-taille span { padding: 0 6px; }
+.perso__a { font-style: normal; font-family: var(--affiche); font-weight: 760; margin-right: 6px; line-height: 1; }
+.perso__a--1 { font-size: 13px; } .perso__a--2 { font-size: 16px; } .perso__a--3 { font-size: 19px; }
+@media (max-width: 420px) { .perso__a { margin-right: 3px; } #choix-taille span { font-size: 13.5px; padding: 0 3px; } }
+
+/* Aperçu en direct : il suit les réglages de la page (accent, densité, taille). */
+.apercu-perso { border-radius: 18px; padding: var(--ap-p, 14px); background: var(--fond); border: 1px solid var(--filet); }
+.apercu-perso__carte { display: grid; gap: var(--ap-g, 12px); background: var(--surface); border-radius: 14px; padding: var(--ap-pc, 16px); box-shadow: var(--ombre-1); }
+.apercu-perso__ligne { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 14px; color: var(--encre-2); }
+.apercu-perso__gros { font-family: var(--affiche); font-size: 28px; font-weight: 760; letter-spacing: -.02em; color: var(--encre); }
+.apercu-perso__champ { display: flex; align-items: center; min-height: var(--ap-hc, 44px); padding: 0 12px; border: 1.5px solid var(--filet-fort); border-radius: var(--r-champ); font-size: 14.5px; font-weight: 600; }
+.apercu-perso__champ mark { color: inherit; background: color-mix(in srgb, var(--accent) 28%, transparent); border-radius: 3px; padding: 0 2px; margin-left: 4px; }
+.apercu-perso__champ i { width: 1.5px; height: 18px; background: var(--accent); margin-left: 2px; }
+.apercu-perso .interrupteur { pointer-events: none; }
+.apercu-perso__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.apercu-perso .bouton { pointer-events: none; min-height: var(--ap-hb, 40px); font-size: 14px; padding: 0 16px; }
+.apercu-perso .bouton--plein { background: var(--accent); border-color: var(--accent); color: var(--sur-accent); }
+.apercu-perso .interrupteur input:checked + .interrupteur__piste { background: var(--accent); }
+.apercu-perso .interrupteur input:checked + .interrupteur__piste::after { background: var(--sur-accent); }
+
+/* ---------- Densité compacte ----------
+   Marges, intervalles et hauteurs de commandes resserrés ; texte inchangé ; zones à toucher d'au moins 36 px. */
+:root[data-densite="compacte"] { --ap-p: 10px; --ap-g: 8px; --ap-pc: 11px; --ap-hc: 36px; --ap-hb: 36px; }
+:root[data-densite="compacte"] .principal .panneau { padding: 16px 18px; }
+:root[data-densite="compacte"] .principal .panneau__tete { margin-bottom: 12px; }
+:root[data-densite="compacte"] .vue__tete { padding: 10px 0 14px; }
+:root[data-densite="compacte"] .vue__sous { margin-top: 4px; }
+:root[data-densite="compacte"] .reglages { gap: 10px; }
+:root[data-densite="compacte"] .reglage { gap: 12px; }
+:root[data-densite="compacte"] .grille-champs { gap: 10px 12px; }
+:root[data-densite="compacte"] .champ { gap: 4px; }
+:root[data-densite="compacte"] .principal .saisie input, :root[data-densite="compacte"] .principal .saisie select { height: 38px; }
+:root[data-densite="compacte"] .principal .saisie > select { height: 40px; }
+:root[data-densite="compacte"] .principal .bouton { min-height: 38px; }
+:root[data-densite="compacte"] .principal .bouton--petit { min-height: 36px; }
+:root[data-densite="compacte"] .principal .bouton--icone { width: 38px; }
+:root[data-densite="compacte"] .principal .bascule span { min-height: 36px; }
+:root[data-densite="compacte"] .rail__liens a { min-height: 36px; }
+
+/* ---------- Taille du texte ----------
+   Même principe que la haute lisibilité (zoom sur le contenu, les tailles étant en px). Plus doux sur téléphone. */
+:root[data-taille="grande"] .principal { zoom: 1.12; }
+:root[data-taille="grande"] .dialogue { zoom: 1.06; }
+:root[data-taille="grande"] .toast { zoom: 1.08; }
+:root[data-taille="tres-grande"] .principal { zoom: 1.25; }
+:root[data-taille="tres-grande"] .dialogue { zoom: 1.12; }
+:root[data-taille="tres-grande"] .toast { zoom: 1.15; }
+@media (max-width: 640px) {
+  :root[data-taille="grande"] .principal { zoom: 1.07; }
+  :root[data-taille="tres-grande"] .principal { zoom: 1.12; }
+  :root[data-taille="grande"] .dialogue, :root[data-taille="tres-grande"] .dialogue { zoom: 1; font-size: 106%; }
+}
