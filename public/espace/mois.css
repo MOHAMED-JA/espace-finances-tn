@@ -112,6 +112,57 @@
 .mo-dates summary small { display: block; font-weight: 500; color: var(--encre-3); font-size: 12.5px; }
 .mo-dates__champs { display: grid; grid-template-columns: repeat(auto-fill, minmax(14em, 1fr)); gap: 12px; margin-top: 16px; }
 
+/* ---------- Importer mon relevé (13 oct. 2026) ---------- */
+.mo-rel { display: grid; gap: 14px; }
+.mo-rel .mo-env-tete { margin-bottom: 0; }
+.mo-rel__depot { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 16px 18px; border: 1.5px dashed var(--filet-fort); border-radius: 18px; background: var(--fond); transition: border-color 160ms ease, background-color 160ms ease; }
+.mo-rel__depot--survol { border-color: var(--credit); background: color-mix(in srgb, var(--credit) 6%, var(--surface)); }
+.mo-rel__depot-ico { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; background: var(--surface); color: var(--credit-t); box-shadow: var(--ombre-1); }
+.mo-rel__depot-ico svg { width: 22px; height: 22px; }
+.mo-rel__depot-txt { display: grid; gap: 2px; min-width: 0; }
+.mo-rel__depot-txt span { font-size: 13px; color: var(--encre-3); }
+.mo-rel__etat { margin: 0; font-size: 13.5px; color: var(--encre-2); }
+.mo-rel__etat[hidden] { display: none; }
+.mo-rel__etat--erreur { color: var(--erreur); }
+.mo-rel__etat--ok { color: var(--salaire-t); font-weight: 650; }
+.mo-rel[aria-busy="true"] .mo-rel__depot { opacity: .6; pointer-events: none; }
+.mo-rel__resultat { display: grid; gap: 12px; }
+.mo-rel__resultat[hidden] { display: none; }
+.mo-rel__titre { margin: 0; font-size: 15.5px; outline: none; }
+.mo-rel__ops { list-style: none; margin: 0; padding: 0; max-height: 420px; overflow-y: auto; overscroll-behavior: contain; border-top: 1px solid var(--filet); }
+.mo-rel__op { display: grid; grid-template-columns: 46px minmax(0, 1fr) 152px 104px; gap: 10px; align-items: center; padding: 8px 2px; border-bottom: 1px solid var(--filet); font-size: 14px; }
+.mo-rel__date { color: var(--encre-3); font-size: 13px; }
+.mo-rel__lib { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.mo-rel__mt { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mo-rel__mt--plus { color: var(--salaire-t); }
+.mo-rel__op--ignore .mo-rel__lib, .mo-rel__op--ignore .mo-rel__mt:not(.mo-rel__mt--plus) { color: var(--encre-3); }
+.mo-rel__choix { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.mo-rel__note { font-size: 11.5px; color: var(--encre-3); white-space: nowrap; }
+/* Étiquette d'enveloppe : une vraie liste déroulante, habillée en pastille colorée. */
+.mo-rel__env, .mo-rel__puce { --c: var(--salaire-t); --f: var(--salaire-doux); appearance: none; font: inherit; font-size: 12.5px; font-weight: 700; color: var(--c); background: var(--f); border: 0; border-radius: 999px; padding: 4px 22px 4px 10px; max-width: 100%; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%); background-position: right 11px center, right 7px center; background-size: 4px 4px; background-repeat: no-repeat; }
+.mo-rel__env:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.mo-rel__env option { color: var(--encre); background: var(--surface); }
+.mo-rel__puce { cursor: default; background-image: none; padding-right: 10px; justify-self: start; }
+.mo-rel__puce--revenu { --c: var(--encre-3); --f: var(--fond); text-decoration: line-through; }
+[data-env="courses"] { --c: var(--epargne-t); --f: var(--epargne-doux); }
+[data-env="transport"], [data-env="loisirs"] { --c: var(--ambre-t); --f: var(--ambre-doux); }
+[data-env="credits"] { --c: var(--credit-t); --f: var(--credit-doux); }
+[data-env="logement"], [data-env="sante"], [data-env="epargne"] { --c: var(--salaire-t); --f: var(--salaire-doux); }
+[data-env="divers"], [data-env="ignore"] { --c: var(--encre-2); --f: var(--fond); }
+.mo-rel__info { margin: 0; padding: 10px 12px; border-radius: var(--r-int); background: var(--fond); font-size: 13px; line-height: 1.5; color: var(--encre-2); }
+.mo-rel__info[hidden] { display: none; }
+.mo-rel__info--alerte { background: var(--erreur-doux); color: var(--encre); }
+.mo-rel__tuiles[hidden] { display: none; }
+.mo-rel__tuiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.mo-rel__tuile { display: grid; gap: 2px; padding: 10px 12px; border-radius: var(--r-int); background: var(--fond); }
+.mo-rel__tuile span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--c, var(--encre-3)); }
+.mo-rel__tuile span { font-size: 12.5px; color: var(--encre-3); }
+.mo-rel__tuile b { font-size: 17px; }
+.mo-rel__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.mo-rel__total { margin-left: auto; font-weight: 700; color: var(--encre-2); font-size: 14px; }
+.mo-rel__actions .bouton[disabled] { opacity: .45; pointer-events: none; }
+
 @media (max-width: 900px) {
   .mo-grille, .mo-grille--cal { grid-template-columns: minmax(0, 1fr); }
 }
@@ -135,6 +186,14 @@
   .mo-cal__case--auj b { width: 20px; height: 20px; }
   .mo-cal__points i { width: 6px; height: 6px; }
   .mo-agenda__liste { max-height: none; }
+  .mo-rel__depot { grid-template-columns: auto minmax(0, 1fr); }
+  .mo-rel__depot .bouton { grid-column: 1 / -1; justify-content: center; }
+  .mo-rel__op { grid-template-columns: 40px minmax(0, 1fr) auto; row-gap: 4px; }
+  .mo-rel__choix, .mo-rel__puce { grid-column: 2; grid-row: 2; }
+  .mo-rel__mt { grid-column: 3; grid-row: 1; }
+  .mo-rel__tuiles { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .mo-rel__total { margin-left: 0; width: 100%; order: -1; }
+  .mo-rel__actions .bouton--plein { flex: 1; justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) {
   .mo-onglets i, .mo-jauge i, .mo-ligne__barre i, .mo-evt { transition: none !important; }

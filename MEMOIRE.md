@@ -678,9 +678,25 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centduovicies. Import du relevé bancaire (13 oct.)
+
+Point 5 du programme d'améliorations (maquette validée). Restent : 7 bilan annuel PDF, puis 8 audit accessibilité et vitesse.
+
+- **Moteur** `public/espace/js/releve-calcul.js` (pur, `ReleveCalcul`, testé : `tests/espace/releve.test.js`, 9 tests, relevés fictifs) :
+  - `montant(s)` (formats tunisiens « 1 234,500 », « 1.234,500 », signes, parenthèses) ; `estMontant` exige des décimales (sinon c'est une référence) ; `date(s, annee)` (jj/mm[/aa[aa]], ISO) ;
+  - `depuisLignes(lignes, maintenant)` (PDF ou photo lus par `FicheLecture`, qui donne maintenant aussi `positions` [{x, fin}] par cellule) : colonnes Débit / Crédit / Solde repérées sur la ligne d'en-tête (répétée à chaque page), date de valeur ignorée, deuxième ligne du libellé rattachée, lignes « Total » ignorées, ligne « Solde au … » = solde de départ ; **le sens vient d'abord de la variation du solde**, puis de la colonne, du signe, des mots (salaire, virement reçu…) ; dates sans année = année la plus fréquente du relevé, ramenée à l'année d'avant si elle tombe plus d'un mois dans le futur ;
+  - `depuisCsv(texte, maintenant)` : séparateur `;`, tabulation ou `,`, guillemets, en-tête (date, libellé, débit, crédit, montant, solde) ;
+  - `categoriser(op, memoire, credits)` : entrée d'argent → « revenu » (ignorée) ; mémoire de l'utilisateur ; mensualité d'un crédit du profil (± 1 DT) → Crédits ; mots tunisiens (STEG, SONEDE, Ooredoo → Logement ; AGIL, Shell, station → Transport ; Carrefour, Monoprix, MG, Aziza → Courses ; pharmacie, clinique → Santé ; restaurant, café, Netflix → Loisirs ; retrait DAB, frais, agios → Divers) ; sinon Divers ;
+  - `cleMarchand(libelle)` : premier mot significatif hors « CB, PRLV, VIR, PAIEMENT… », un mot générique (BOUTIQUE, STATION, PHARMACIE…) laissant la place au nom qui suit ;
+  - `bilan(ops, budget, maintenant)` : totaux par mois et par enveloppe (12 derniers mois seulement) ; les mensualités déjà notées « Payé » dans le mois ne sont pas comptées deux fois (`dejaCompte`) ;
+  - `empreinte(ops)` : FNV-1a des dates, montants et sens (**jamais les libellés**) ; `appliquer(budget, bilan, choix, emp, plan)` ; `periode(ops)`.
+- **Profil** : `budget.memoire` { « CARREFOUR » : « courses » } (300 au plus, choix faits à la main seulement) et `budget.imports` (24 empreintes au plus), normalisés par `BudgetCalcul.normaliser`. Aucun libellé ni opération n'est gardé.
+- **Interface** (`releve-import.js`, section `#mo-releve` sous les enveloppes, styles `mois.css`) : zone de dépôt (glisser ou « Choisir le relevé » ; Excel → message « enregistrez en CSV »), liste des opérations avec étiquette d'enveloppe (une vraie liste déroulante en pastille colorée ; changer une étiquette range aussi le même commerçant ailleurs dans le relevé), entrées barrées « Entrée · ignorée », tuiles par enveloppe, « Ajouter N dépenses au budget » (toast avec Annuler, via `window.OrbiteBudget` exposé par `vue-mois.js`), relevé déjà ajouté refusé ; palette « Importer mon relevé bancaire » (`#mois?onglet=budget&releve=1`).
+- e2e : étape « import du relevé bancaire » (PDF fictif du mois créé dans le navigateur, enveloppes, choix retenu, totaux seuls, doublon refusé, CSV avec mémoire, mois de plus de 12 mois écarté, téléphone). Nouveautés `2026-10-13i`, SW `orbite-2026-10-13k`.
+
 ## 3 centunvicies. Lecture des autres lignes de la fiche et comparateur de banques (13 oct.)
 
-Points 3 et 6 du programme d'améliorations (maquette validée « Oui, construis les 4 »). Restent : 5 import du relevé bancaire, 7 bilan annuel PDF, puis 8 audit accessibilité et vitesse.
+Points 3 et 6 du programme d'améliorations (maquette validée « Oui, construis les 4 »).
 
 - **Lecture automatique des autres lignes** (`fiche-calcul.js`, `vue-fiche.js`, `fiche.css`) :
   - `analyser` reconnaît, avant les cotisations, les lignes hors salaire de base : retenues **sociales** qui baissent l'impôt (`RE_SOCIALE` : CAVIS, retraite complémentaire, assurance groupe, mutuelle…), **gains** (`RE_GAIN_NET` : bonification…), **prêts** retenus sur la paie (`RE_CREDIT`), **retenues sur le net** (`RE_NETTE` : syndicat, UGTT, assurance auto, tickets restaurant, complément de retraite…). Résultat `v.autres` [{libelle, montant, groupe, source, conf, ligne, etat}] ; `groupeAutre(lib)` exporté ;

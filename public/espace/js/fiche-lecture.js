@@ -22,15 +22,17 @@
   function cellulesDe(mots, h) {
     var ms = mots.slice().sort(function (a, b) { return a.x - b.x; }), cellules = [], cel = null, fin = -Infinity;
     ms.forEach(function (m) {
-      if (!cel || m.x - fin > h * 1.2) { cel = { mots: [], conf: 1 }; cellules.push(cel); }
-      cel.mots.push(m.texte.trim());
+      if (!cel || m.x - fin > h * 1.2) { cel = { mots: [], conf: 1, x: m.x, fin: m.x + m.l }; cellules.push(cel); }
+      cel.mots.push(m.texte.trim()); cel.fin = Math.max(cel.fin, m.x + m.l);
       if (typeof m.conf === "number") cel.conf = Math.min(cel.conf, m.conf);
       fin = Math.max(fin, m.x + m.l);
     });
     var cs = cellules.map(function (c) { return c.mots.join(" ").replace(/\s+/g, " "); });
     var confs = cellules.map(function (c) { return c.conf; });
     /* confiances : une par cellule (le montant compte plus que le libellé) ; confiance : la plus faible. */
-    return { texte: cs.join("   "), cellules: cs, confiances: confs, confiance: Math.min.apply(null, confs) };
+    /* positions : début et fin horizontale de chaque cellule (colonnes d'un relevé bancaire). */
+    return { texte: cs.join("   "), cellules: cs, confiances: confs, confiance: Math.min.apply(null, confs),
+      positions: cellules.map(function (c) { return { x: c.x, fin: c.fin }; }) };
   }
   function utile(it) { return it.texte && it.texte.trim() && it.h > 0; }
 

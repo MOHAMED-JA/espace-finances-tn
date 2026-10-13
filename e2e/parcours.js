@@ -3141,6 +3141,70 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.evaluate((a) => window.Orbite.majProfil(JSON.parse(a), { immediat: true }), avant);
   });
 
+  await etape("import du relevé bancaire : PDF lu sur l'appareil, enveloppes proposées, choix retenu, totaux seuls ajoutés, relevé jamais ajouté deux fois, CSV, téléphone", async () => {
+    await page.setViewportSize({ width: 1360, height: 900 });
+    const avant = await page.evaluate(() => JSON.stringify(window.Orbite.profil()));
+    await page.evaluate(() => window.Orbite.majProfil({ credits: [{ type: "immo", libelle: "Crédit immobilier", tauxPct: 3, mensualite: 650, moisRestants: 200 }], budget: { enveloppes: [], mois: {} } }, { immediat: true }));
+    /* Relevé fictif du mois en cours, en PDF (colonnes Débit / Crédit / Solde), créé dans le navigateur. */
+    const m = new Date(), mm = String(m.getMonth() + 1).padStart(2, "0"), an = m.getFullYear(), cm = an + "-" + mm;
+    const veille = new Date(an, m.getMonth(), 0), sv = String(veille.getDate()).padStart(2, "0") + "/" + String(veille.getMonth() + 1).padStart(2, "0") + "/" + veille.getFullYear();
+    const lignes = [["02", "CB CARREFOUR LA MARSA", "84,500", "", "1 415,500"], ["03", "PAIEMENT AGIL STATION ARIANA", "60,000", "", "1 355,500"],
+      ["05", "PRLV ECHEANCE PRET", "650,000", "", "705,500"], ["09", "STEG FACTURE", "58,000", "", "647,500"], ["12", "PHARMACIE CENTRALE", "23,800", "", "623,700"],
+      ["14", "BOUTIQUE ELYSSA", "15,000", "", "608,700"], ["25", "VIR SALAIRE", "", "2 290,000", "2 898,700"]];
+    const html = '<html><body style="font:12px Arial;margin:30px"><h3>Banque fictive — Relevé de compte</h3><table style="width:100%;border-collapse:collapse" cellpadding="6">' +
+      '<tr><th align="left">Date</th><th align="left">Libellé</th><th align="left">Valeur</th><th align="right">Débit</th><th align="right">Crédit</th><th align="right">Solde</th></tr>' +
+      '<tr><td></td><td>SOLDE AU ' + sv + '</td><td></td><td></td><td></td><td align="right">1 500,000</td></tr>' +
+      lignes.map((l) => '<tr><td>' + l[0] + '/' + mm + '</td><td>' + l[1] + '</td><td>' + l[0] + '/' + mm + '</td><td align="right">' + l[2] + '</td><td align="right">' + l[3] + '</td><td align="right">' + l[4] + '</td></tr>').join("") +
+      '</table></body></html>';
+    const p2 = await page.context().newPage();
+    await p2.setContent(html);
+    const pdf = await p2.pdf({ format: "A4" });
+    await p2.close();
+    await page.goto(base + "/espace/#mois?onglet=budget");
+    await page.waitForSelector("#mo-releve", { state: "visible" });
+    await page.setInputFiles("#mo-rel-fichier", { name: "releve.pdf", mimeType: "application/pdf", buffer: pdf });
+    await page.waitForSelector("#mo-rel-resultat:not([hidden]) #mo-rel-ops li:nth-child(7)", { timeout: 30000 });
+    assert(/· 7 opérations lues$/.test(await page.textContent("#mo-rel-titre")), "titre : " + await page.textContent("#mo-rel-titre"));
+    const envs = await page.$$eval("#mo-rel-ops li", (l) => l.map((li) => { const s = li.querySelector("select"); return s ? s.value : li.querySelector(".mo-rel__puce").textContent; }));
+    assert(JSON.stringify(envs) === JSON.stringify(["courses", "transport", "credits", "logement", "sante", "divers", "Entrée · ignorée"]), "enveloppes : " + envs);
+    /* Changer une étiquette : la tuile suit, le choix sera retenu. */
+    await page.selectOption('#mo-rel-ops li[data-i="5"] select', "loisirs");
+    await page.waitForFunction(() => /Loisirs/.test(document.getElementById("mo-rel-tuiles").textContent));
+    assert((await page.textContent("#mo-rel-ajouter")).includes("Ajouter 6 dépenses au budget"), "6 dépenses");
+    await page.screenshot({ path: path.join(CAPTURES, "releve.png") });
+    await page.click("#mo-rel-ajouter");
+    await page.waitForFunction((c) => { const b = window.Orbite.profil().budget; return b.mois[c] && b.mois[c].courses === 84.5; }, cm);
+    const b = await page.evaluate(() => window.Orbite.profil().budget);
+    const tri = (o) => JSON.stringify(Object.keys(o).sort().map((k) => [k, o[k]]));
+    assert(tri(b.mois[cm]) === tri({ credits: 650, logement: 58, courses: 84.5, transport: 60, sante: 23.8, loisirs: 15 }), "totaux : " + JSON.stringify(b.mois[cm]));
+    assert(b.memoire.ELYSSA === "loisirs" && b.imports.length === 1 && b.enveloppes.length === 8, "mémoire, empreinte, plan posé : " + JSON.stringify([b.memoire, b.imports]));
+    assert(!JSON.stringify(b).includes("PHARMACIE"), "aucun libellé gardé hors mémoire");
+    assert(await page.isHidden("#mo-rel-resultat") && /Relevé ajouté/.test(await page.textContent("#mo-rel-etat")), "relevé ajouté");
+    /* Le même relevé une seconde fois : refusé. */
+    await page.setInputFiles("#mo-rel-fichier", { name: "releve.pdf", mimeType: "application/pdf", buffer: pdf });
+    await page.waitForSelector("#mo-rel-resultat:not([hidden])", { timeout: 30000 });
+    assert(await page.isDisabled("#mo-rel-ajouter") && /déjà été ajouté/.test(await page.textContent("#mo-rel-info")), "doublon refusé");
+    await page.click("#mo-rel-annuler");
+    /* CSV : la mémoire range le même commerçant d'elle-même ; un mois de plus de 12 mois est écarté. */
+    const csv = "Date;Libellé;Débit;Crédit\n04/" + mm + "/" + an + ";CB ELYSSA MENZAH;20,000;\n06/" + mm + "/" + an + ";CB MONOPRIX;45,600;\n01/01/2020;CB ANCIEN;9,000;\n";
+    await page.setInputFiles("#mo-rel-fichier", { name: "releve.csv", mimeType: "text/csv", buffer: Buffer.from(csv, "utf8") });
+    await page.waitForSelector("#mo-rel-resultat:not([hidden]) #mo-rel-ops li:nth-child(3)");
+    assert(await page.inputValue('#mo-rel-ops li[data-i="0"] select') === "loisirs" && await page.inputValue('#mo-rel-ops li[data-i="1"] select') === "courses", "mémoire appliquée");
+    assert(/12 derniers mois/.test(await page.textContent("#mo-rel-info")), "ancien mois écarté");
+    await page.click("#mo-rel-ajouter");
+    await page.waitForFunction((c) => { const x = window.Orbite.profil().budget.mois[c]; return x.loisirs === 35 && x.courses === 130.1; }, cm);
+    /* Téléphone. */
+    await page.setInputFiles("#mo-rel-fichier", { name: "releve.pdf", mimeType: "application/pdf", buffer: pdf });
+    await page.waitForSelector("#mo-rel-resultat:not([hidden])", { timeout: 30000 });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(300);
+    assert(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), "import sans débordement sur téléphone");
+    await page.screenshot({ path: path.join(CAPTURES, "releve-telephone.png"), fullPage: true });
+    await page.click("#mo-rel-annuler");
+    await page.setViewportSize({ width: 1360, height: 900 });
+    await page.evaluate((a) => window.Orbite.majProfil(JSON.parse(a), { immediat: true }), avant);
+  });
+
   await etape("apparence personnelle : accent, densité, taille du texte, aperçu, compte et appareil, sombre, Ctrl K, téléphone", async () => {
     await page.setViewportSize({ width: 1360, height: 900 });
     await page.goto(base + "/espace/#compte?onglet=preferences");
