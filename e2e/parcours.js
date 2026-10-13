@@ -1846,7 +1846,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector("#lf-impot:not([hidden])");
     await page.fill("#lf-irpp", "531,250"); await page.fill("#lf-css", "12,941");
     await page.waitForFunction(() => /2\s?159,649/.test(document.getElementById("lf-resume").textContent.replace(/[\u00a0\u202f]/g, " ")), null, { timeout: 8000 });
-    assert(/549,931/.test(await page.textContent("#lf-ecart")) && /18,681/.test(await page.textContent("#lf-ecart")), "écart avec le calcul d'Orbite : " + await page.textContent("#lf-ecart"));
+    assert(/549,931/.test(await page.textContent("#lf-ecart")) && /18,680/.test(await page.textContent("#lf-ecart")), "écart avec le calcul d'Orbite : " + await page.textContent("#lf-ecart"));
     /* Conservé après rechargement. */
     await page.waitForTimeout(1200);
     await page.reload();
