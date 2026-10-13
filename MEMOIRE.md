@@ -677,6 +677,10 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centquindecies. Regrouper mes crédits : choix gardés (13 oct.)
+
+Signalé par l'utilisateur (capture) : dans Crédit › Regrouper mes crédits, le crédit immobilier coché se décochait tout seul et l'indemnité de remboursement anticipé revenait à 1,5 %. Cause : `O.surProfil` (et `orbite:vue`) redessinait tout l'onglet avec les valeurs par défaut à chaque recalcul du profil (enregistrement, synthèse). Correction (`credit-espaces.js`) : choix gardés dans `regChoix` (cases par crédit, taux, durée, indemnité, frais) et réutilisés au rendu ; si les crédits du profil n'ont pas changé (`signatureCredits`), le formulaire n'est pas redessiné, seul le calcul est refait. Test e2e : immobilier coché + indemnité 2 %, puis profil recalculé et un crédit ajouté → tout est gardé (le test échouait sans la correction). SW `orbite-2026-10-13d`.
+
 ## 3 centquattuordecies. Mettre à jour le profil depuis un document (13 oct.)
 
 Question de l'utilisateur : que se passe-t-il quand on dépose le tableau d'amortissement dans « Contrôler le tableau de ma banque » ? Réponse : contrôle au millime, lu sur l'appareil, sans effet sur le profil. Demande ensuite : « ajoute [la mise à jour] pour les crédits et aussi pour le salaire ». Maquette validée (« Oui, applique »). L'interface en arabe est abandonnée (« je ne veux pas l'interface en arabe »). Branche `maj-document`.
