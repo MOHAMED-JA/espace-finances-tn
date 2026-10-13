@@ -75,8 +75,9 @@
       var h = OC.salaireEnVigueur(pH, d.getFullYear(), d.getMonth()) || p, f = familleAu(Math.max(0, t));
       /* Retraité : l'abattement dépend de l'année (loi de finances 2026). */
       var an = p.activite === "retraite" ? d.getFullYear() : 0;
-      var cle = [h.montant, h.sens, h.periode, f.situation, f.chefDeFamille, f.enfants, an].join("|");
-      return cache[cle] || (cache[cle] = OC.salaire(Object.assign({}, p, { montant: h.montant, sens: h.sens, periode: h.periode }, f), an || undefined));
+      var pm = OC.profilAuMois(p, d.getFullYear(), d.getMonth());
+      var cle = [h.montant, h.sens, h.periode, f.situation, f.chefDeFamille, f.enfants, an, OC.signatureFiche(pm)].join("|");
+      return cache[cle] || (cache[cle] = OC.salaire(Object.assign({}, pm, { montant: h.montant, sens: h.sens, periode: h.periode }, f), an || undefined));
     }
 
     /* Crédits : ceux du profil (modèle de Mon orbite), moins ceux remboursés par anticipation, plus les nouveaux. */

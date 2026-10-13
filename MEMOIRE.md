@@ -689,8 +689,15 @@ Demande : que le compte affiche le net exact de la fiche de paie de l'utilisateu
 - **Moteur** (`moteurs/salaire/calcul.js`, `etat.js`) : entrées `retenuesSociales`, `gainsNets`, `retenuesNettes`, `ajustementImpot` (par mois × 12). Hors des liens de partage (pas dans `CHAMPS`). Sans lignes : calcul identique à avant (testé).
 - **Interface** : bloc `#lf-bloc` dans Profil › Votre emploi et votre salaire (`lignes-fiche.js`, styles dans `fiche.css`) ; module Salaire : détail ligne par ligne (`#tableau-detail`), encart `#fiche-salaire` « Comme sur votre fiche de paie », « Retraite et santé » inclut les retenues sociales. La comparaison de deux offres reste à barèmes égaux (sans les lignes). Le contrôle de fiche de paie compare au barème seul (lignes neutralisées).
 - **Calcul vérifié** sur la fiche réelle (en local, rien dans le dépôt) : le net obtenu est exactement celui de la fiche, avant le prêt.
-- Tests : `tests/espace/lignes-fiche.test.js` (profil fictif), e2e « autres lignes de la fiche de paie ». Nouveautés `2026-10-13d`, SW `orbite-2026-10-13f`.
-- **À faire** : lire ces lignes automatiquement avec « Remplir avec ma fiche de paie » ; primes de l'année de l'utilisateur (calendrier des primes).
+- Tests : `tests/espace/lignes-fiche.test.js` (profil fictif), e2e « autres lignes de la fiche de paie ». Nouveautés `2026-10-13e`, SW `orbite-2026-10-13g`.
+- **À faire** : lire ces lignes automatiquement avec « Remplir avec ma fiche de paie ». Primes de l'utilisateur : son calendrier (17 salaires : mars 1, juin 1, septembre 1,5, décembre 1,5) correspond à sa fiche, rien à changer.
+- **Lignes datées** (question de l'utilisateur : un changement vaut-il pour le passé ? Réponse retenue : dater, maquette validée le 13 oct.) :
+  - chaque ligne a `debut` / `fin` (« AAAA-MM », vide = toujours / sans fin) ; 16 lignes au plus par groupe (en cours, terminées, à venir) ;
+  - changer le montant d'une ligne déjà enregistrée ou la retirer ouvre « À partir de quel mois ? » (mois en cours par défaut, deux ans avant ou après ; « C'était une erreur de saisie » corrige sans dater) ; une nouvelle ligne vaut pour tous les mois ;
+  - fonctions pures testées dans `orbite-calcul.js` : `ficheChanger`, `ficheRetirer`, `ficheAnnulerFutur`, `ficheVue`, `lignesAuMois`, `profilAuMois` (champ interne `_moisFiche`), `signatureFiche`, `lignesDatees` ;
+  - calculs mois par mois avec les lignes du mois : paie de l'année (Expert), `salaireAnnee` (impôt de l'année avec les lignes moyennes de l'année), Mon année, Ma progression, Et si…, hausses futures. Le net « d'aujourd'hui » prend les lignes du mois en cours ;
+  - profil : étiquettes « depuis … · avant … DT », « passe à … à partir de … · annuler », « retirée à partir de … · annuler », volet « Lignes terminées ». Classes `lf-puce` (et non `.puce`, déjà utilisée) ;
+  - les lignes datées ne sont pas des « hausses de revenu » (`futursRevenu`, dossier banque) : seulement le salaire et la loi.
 
 ## 3 centseptendecies. Quatre nouvelles pages publiques (13 oct.)
 

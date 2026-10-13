@@ -38,8 +38,9 @@
     var p = sy.profil, m = sy.maintenant || new Date(), Y = m.getFullYear(), cal = OC.calendrierPrimes(p), cache = {}, lignes = [];
     var tot = { salaires: 0, brut: 0, impot: 0, net: 0 };
     for (var k = 0; k < 12; k++) {
-      var h = OC.salaireEnVigueur(p, Y, k) || p, cle = h.montant + "|" + h.sens + "|" + h.periode;
-      var S = cache[cle] || (cache[cle] = OC.salaireDe(p, h)), V = S.versements;
+      /* Salaire et autres lignes de la fiche alors en vigueur (lignes datées). */
+      var pm = OC.profilAuMois(p, Y, k), h = OC.salaireEnVigueur(p, Y, k) || p, cle = h.montant + "|" + h.sens + "|" + h.periode + "|" + OC.signatureFiche(pm);
+      var S = cache[cle] || (cache[cle] = OC.salaireDe(pm, h)), V = S.versements;
       var l = { mois: k, libelle: maj(MOIS[k]), salaires: 1 + cal[k], brut: S.brutMensuel + cal[k] * V.brutSupplementaire,
         impot: S.impotMois + cal[k] * S.impotParVersement, net: S.netMensuel + cal[k] * V.netSupplementaire, primes: cal[k] > 0 };
       tot.salaires += l.salaires; tot.brut += l.brut; tot.impot += l.impot; tot.net += l.net;

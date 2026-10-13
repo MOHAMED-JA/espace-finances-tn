@@ -54,7 +54,7 @@
     /* Étapes datées : une entrée sans date prend la date d'embauche (sinon elle ne sert que de point de départ inconnu). */
     var etapes = hist.map(function (h) {
       var dt = h.annee > 0 && h.mois > 0 ? new Date(h.annee, h.mois - 1, 1) : emb ? new Date(emb.getFullYear(), emb.getMonth(), 1) : null;
-      return dt ? { date: dt, annee: dt.getFullYear(), mois: dt.getMonth() + 1, brut: brutDe(p, h, dt.getFullYear()), net: OC.salaireDe(Object.assign({}, p, { historiqueSalaire: [] }), h, an).netMensuel, h: h } : null;
+      return dt ? { date: dt, annee: dt.getFullYear(), mois: dt.getMonth() + 1, brut: brutDe(p, h, dt.getFullYear()), net: OC.salaireDe(Object.assign(OC.profilAuMois(p, dt.getFullYear(), dt.getMonth()), { historiqueSalaire: [] }), h, an).netMensuel, h: h } : null;
     }).filter(function (e) { return e && e.date <= m; }).sort(function (a, b) { return a.date - b.date; });
     /* Deux étapes au même mois : la dernière l'emporte. */
     etapes = etapes.filter(function (e, i) { return !etapes[i + 1] || etapes[i + 1].date - e.date !== 0; });

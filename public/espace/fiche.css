@@ -186,3 +186,22 @@ select.fiche-val { appearance: none; cursor: pointer; text-align: left; padding-
   .lf__ligne > .saisie:first-child { grid-column: 1 / -1; }
   .lf__gt { flex-wrap: wrap; } .lf__total { margin-left: 20px; }
 }
+
+/* Lignes datées (maquette validée le 13 oct. 2026) : étiquettes, question « à partir de quel mois ? », lignes terminées. */
+.lf__info { display: flex; flex-wrap: wrap; gap: 6px; margin-top: -2px; }
+.lf-puce { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 12.5px; line-height: 1.4; color: var(--encre-2); padding: 3px 10px; border-radius: 999px; background: var(--surface); }
+.lf-puce b { color: var(--encre); font-variant-numeric: tabular-nums; }
+.lf-puce--futur { background: var(--credit-doux); color: var(--credit-t); }
+.lf-puce--futur b { color: inherit; }
+.lf__lien { border: 0; background: none; padding: 0; font: inherit; font-weight: 650; color: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.lf-dt { display: grid; gap: 10px; padding: 12px 14px; border-radius: 14px; background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--credit); animation: fiche-entre 220ms var(--sortie); }
+.lf-dt__q { margin: 0; font-size: 14.5px; font-weight: 650; }
+.lf-dt__q small { display: block; font-weight: 500; font-size: 13px; color: var(--encre-3); margin-top: 2px; }
+.lf-dt__choix { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.lf-dt__mois { display: flex; gap: 6px; }
+.lf-dt__mois .saisie { background: var(--surface-2); min-width: 0; }
+.lf-dt__mois select { height: 40px; }
+.lf__passe { font-size: 13.5px; color: var(--encre-3); }
+.lf__passe summary { cursor: pointer; font-weight: 650; color: var(--encre-2); }
+.lf__passe ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+@media (prefers-reduced-motion: reduce) { .lf-dt { animation: none; } }
