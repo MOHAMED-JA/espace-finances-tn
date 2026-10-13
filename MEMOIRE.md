@@ -677,6 +677,15 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centsedecies. Visibilité dans les moteurs de recherche, sans Search Console (13 oct.)
+
+Question : « quota dépassé » dans Google Search Console. Explication : c'est la limite quotidienne (une dizaine) du bouton « Demander une indexation », pas un bug ; le plan du site déclaré dans robots.txt suffit à Google. Choix de l'utilisateur : IndexNow + Bing, liens et textes à publier, nouvelles pages publiques (maquette d'abord).
+
+- **IndexNow** : clé publique `public/0075fa4068fc766fc078bdd75fc2cfd2.txt` (le fichier contient la clé ; ce n'est pas un secret, c'est le principe d'IndexNow) et `.github/workflows/indexnow.yml` : à chaque fusion sur main touchant `public/`, attend que la nouvelle version soit en ligne (version du SW + fichier de clé, 13 min au plus), puis envoie toutes les adresses du plan du site à `api.indexnow.org` (Bing, Yandex, Seznam, Naver ; Bing alimente DuckDuckGo, Yahoo, Copilot, ChatGPT). Lancement manuel possible (« Run workflow »). Permissions : lecture seule.
+- **Bing Webmaster Tools** : à faire par l'utilisateur (guidé), import depuis Google Search Console ou vérification par fichier.
+- **Simulateur de salaire** (dépôt portail-rh, PR #15) : quatre liens directs vers les pages publiques (capacité, crédit, impôt AV/CEA, retraite) dans la carte « Ce net, et ensuite ? ».
+- Tests : `tests/espace/indexnow.test.js` (clé unique et exacte, workflow en lecture seule, plan du site cohérent avec les pages et robots.txt).
+
 ## 3 centquindecies. Regrouper mes crédits : choix gardés (13 oct.)
 
 Signalé par l'utilisateur (capture) : dans Crédit › Regrouper mes crédits, le crédit immobilier coché se décochait tout seul et l'indemnité de remboursement anticipé revenait à 1,5 %. Cause : `O.surProfil` (et `orbite:vue`) redessinait tout l'onglet avec les valeurs par défaut à chaque recalcul du profil (enregistrement, synthèse). Correction (`credit-espaces.js`) : choix gardés dans `regChoix` (cases par crédit, taux, durée, indemnité, frais) et réutilisés au rendu ; si les crédits du profil n'ont pas changé (`signatureCredits`), le formulaire n'est pas redessiné, seul le calcul est refait. Test e2e : immobilier coché + indemnité 2 %, puis profil recalculé et un crédit ajouté → tout est gardé (le test échouait sans la correction). SW `orbite-2026-10-13d`.
