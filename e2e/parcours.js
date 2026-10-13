@@ -2269,6 +2269,16 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.screenshot({ path: path.join(CAPTURES, "fiche-controle.png") });
     assert(envoyes.length === 0, "rien n'est envoyé pendant la lecture : " + envoyes.join(", "));
     page.off("request", surveiller);
+    /* Avant → après, visible avant de valider ; décocher le salaire retire aussi les primes. */
+    const diff = await page.$$eval("#fiche-maj-corps tr", (t) => t.map((r) => [r.querySelector(".maj-diff__lib").textContent, (r.querySelector(".maj-diff__avant") || {}).textContent || "", r.querySelector(".maj-diff__apres").textContent]));
+    assert(JSON.stringify(diff) === JSON.stringify([["Salaire de base brut", "2 500,000 DT brut", "2 700,000 DT depuis octobre 2026"], ["Primes et avantages", "aucune", "300,000 DT par mois"], ["Caisse", "CNRPS (public)", "CNSS (privé)"], ["Date d'embauche", "non renseignée", "01/09/2014"]]), "avant → après : " + JSON.stringify(diff));
+    await page.uncheck("#fiche-maj-salaire");
+    assert(await page.isDisabled("#fiche-maj-primes") && !(await page.isChecked("#fiche-maj-primes")), "sans le salaire, pas de primes");
+    await page.uncheck("#fiche-maj-caisse");
+    await page.uncheck("#fiche-maj-dateEmbauche");
+    assert(await page.isDisabled("#fiche-maj") && (await page.textContent("#fiche-maj")) === "Rien de coché à reprendre", "tout décoché : rien à reprendre");
+    for (const id of ["salaire", "primes", "caisse", "dateEmbauche"]) await page.check("#fiche-maj-" + id);
+    assert(!(await page.isDisabled("#fiche-maj")), "tout recoché : mise à jour possible");
     await page.click("#fiche-maj");
     await page.waitForSelector("#dlg-fiche", { state: "hidden" });
     let p = await page.evaluate(() => window.Orbite.profil());
@@ -2312,9 +2322,68 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector('#dlg-fiche[data-ecran="controle"]');
     assert(/cohérente/.test(await page.textContent("#fiche-verdict-t")), "saisie conforme : fiche cohérente");
     assert(await page.isDisabled("#fiche-maj") && (await page.textContent("#fiche-maj")) === "Profil déjà à jour", "rien à changer : bouton désactivé");
+    assert((await page.$$eval("#fiche-maj-corps tr", (t) => t.every((r) => r.classList.contains("maj-diff__pareil")))), "rien à changer : lignes « inchangé »");
     await page.keyboard.press("Escape");
     await page.waitForSelector("#dlg-fiche", { state: "hidden" });
     await page.setViewportSize({ width: 1360, height: 900 });
+  });
+
+  await etape("crédit : tableau de la banque contrôlé, puis crédit en cours mis à jour (avant → après, annuler) ou ajouté", async () => {
+    /* Tableau STB fabriqué : 30 000 DT sur 60 mois à 10,75 %, échéances le 5 du mois depuis mai 2024. */
+    const r3 = (v) => Math.round(v * 1000) / 1000, f3 = (v) => v.toFixed(3).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d),)/g, " ");
+    let crd = 30000; const i = 10.75 / 1200, ech = r3(crd * i / (1 - Math.pow(1 + i, -60))), lignes = [];
+    for (let k = 1; k <= 60; k++) { const int = r3(crd * i), am = k === 60 ? crd : r3(ech - int), d = new Date(2024, 3 + k, 5); lignes.push(k + "  05/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + d.getFullYear() + "  " + f3(crd) + "  " + f3(am) + "  " + f3(int) + "  " + f3(r3(am + int))); crd = r3(crd - am); }
+    const txt = "STB · Tableau d'amortissement\n" + lignes.join("\n");
+    const origine = [{ libelle: "Auto", type: "auto", mensualite: 640, moisRestants: 40, capitalRestant: 0, tauxPct: 10, jourPrelevement: 0 }];
+    const creditsAvant = await page.evaluate(() => JSON.parse(JSON.stringify(window.Orbite.profil().credits || [])));
+    await page.evaluate((c) => window.Orbite.majProfil({ credits: c }, { immediat: true }), origine);
+    await page.goto(base + "/espace/#credit");
+    await page.waitForSelector("#cr-outil-audit", { state: "attached" });
+    await page.$eval("#cr-outil-audit", (d) => { d.open = true; d.scrollIntoView({ block: "start" }); });
+    await page.waitForSelector("#cr-audit-txt", { state: "attached" });
+    await page.$eval("#cr-o-audit .cr-coller", (d) => { d.open = true; });
+    await page.fill("#cr-audit-txt", txt);
+    await page.waitForSelector("#cr-o-audit [data-maj-zone]:not([hidden]) [data-maj-credit]", { timeout: 10000 });
+    assert((await page.inputValue("#cr-maj-cible")) === "0", "crédit reconnu d'après la mensualité");
+    const lire = () => page.$$eval("#cr-o-audit .maj-diff tbody tr", (t) => t.map((r) => [r.querySelector(".maj-diff__lib").textContent, r.querySelector(".maj-diff__apres").textContent, r.classList.contains("maj-diff__pareil")]));
+    let d = await lire();
+    const ligne = (lib) => d.find((x) => x[0] === lib) || [];
+    assert(/^648,\d{3} DT$/.test(ligne("Mensualité")[1]) && /^10,75 %/.test(ligne("Taux")[1]) && ligne("Début et durée")[1] === "avril 2024 · 60 mois" && ligne("Jour du prélèvement")[1] === "le 5 du mois" && /^avril 2029 · \d+ échéances$/.test(ligne("Fin du crédit")[1]), "avant → après : " + JSON.stringify(d));
+    await page.$eval("#cr-o-audit [data-maj-zone]", (z) => z.scrollIntoView({ block: "center" }));
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: path.join(CAPTURES, "credit-maj-tableau.png") });
+    /* Tout sauf le jour du prélèvement. */
+    await page.uncheck("#cr-maj-jour");
+    await page.click("#cr-o-audit [data-maj-credit]");
+    await page.waitForFunction(() => { const c = window.Orbite.profil().credits[0]; return c && c.tauxPct === 10.75 && c.dureeMois === 60; });
+    const c1 = await page.evaluate(() => window.Orbite.profil().credits[0]);
+    assert(c1.libelle === "Auto" && Math.abs(c1.mensualite - 648.6) < 1 && c1.moisDebut === 4 && c1.anneeDebut === 2024 && c1.jourPrelevement === 0 && c1.capitalRestant > 0, "crédit mis à jour : " + JSON.stringify(c1));
+    d = await lire();
+    assert(d.filter((x) => !x[2]).map((x) => x[0]).join() === "Jour du prélèvement", "seul le jour reste à reprendre : " + JSON.stringify(d));
+    /* Annuler : le crédit revient comme avant. */
+    await page.click(".toast button:has-text('Annuler')");
+    await page.waitForFunction(() => { const c = window.Orbite.profil().credits; return c.length === 1 && c[0].mensualite === 640 && c[0].tauxPct === 10; });
+    /* Nouveau crédit. */
+    await page.selectOption("#cr-maj-cible", "-1");
+    await page.waitForSelector("#cr-maj-type");
+    assert((await page.inputValue("#cr-maj-nom")) === "Crédit STB", "nom proposé d'après la banque");
+    await page.selectOption("#cr-maj-type", "conso");
+    await page.click("#cr-o-audit [data-maj-credit]");
+    await page.waitForFunction(() => window.Orbite.profil().credits.length === 2);
+    const c2 = await page.evaluate(() => window.Orbite.profil().credits[1]);
+    assert(c2.libelle === "Crédit STB" && c2.type === "conso" && c2.jourPrelevement === 5 && c2.tauxPct === 10.75, "crédit ajouté : " + JSON.stringify(c2));
+    await page.click(".toast button:has-text('Annuler')");
+    await page.waitForFunction(() => window.Orbite.profil().credits.length === 1);
+    /* Téléphone : l'encadré tient dans l'écran. */
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.$eval("#cr-o-audit [data-maj-zone]", (z) => z.scrollIntoView({ block: "start" }));
+    await page.waitForTimeout(300);
+    await page.waitForTimeout(500);
+    const deb = await page.evaluate(() => { if (document.documentElement.scrollWidth <= innerWidth + 1) return null; const coupe = (e) => { for (let p = e.parentElement; p; p = p.parentElement) { const o = getComputedStyle(p).overflowX; if (o !== "visible") return true; } return false; }; return [document.documentElement.scrollWidth, Array.from(document.getElementById("barre").children).filter((e) => e.offsetParent).map((e) => (e.id || e.className.split(" ")[0]) + ":" + Math.round(e.getBoundingClientRect().width)).join(" "), Array.from(document.getElementById("barre-actions").children).filter((e) => e.offsetParent).map((e) => e.id + ":" + Math.round(e.getBoundingClientRect().width)).join(" ")].concat(Array.from(document.querySelectorAll("body *")).filter((e) => e.getBoundingClientRect().right > innerWidth + 1 && !coupe(e)).slice(0, 6).map((e) => e.tagName + "#" + e.id + "." + String(e.className).split(" ")[0] + " " + Math.round(e.getBoundingClientRect().right))); });
+    assert(!deb, "téléphone sans débordement : " + JSON.stringify(deb));
+    await page.screenshot({ path: path.join(CAPTURES, "credit-maj-telephone.png") });
+    await page.setViewportSize({ width: 1360, height: 900 });
+    await page.evaluate((c) => window.Orbite.majProfil({ credits: c }, { immediat: true }), creditsAvant);
   });
 
   await etape("crédit : alerte au-dessus de la capacité, retour à la capacité, montant qui suit la capacité selon le type", async () => {

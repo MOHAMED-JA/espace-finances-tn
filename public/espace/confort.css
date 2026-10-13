@@ -245,4 +245,10 @@ dialog.dialogue--partage { width: min(460px, calc(100vw - 24px)); }
 @media (max-width: 430px) {
   .pastille-acces { width: 36px; padding: 0; justify-content: center; }
   .pastille-acces span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  /* Dans un module (Crédit, Salaire, Épargne), jusqu'à trois boutons d'action s'ajoutent : boutons de 36 px, écarts
+     resserrés, et le « ? » de la visite passe dans Ctrl K (« Revoir la visite guidée »). Sinon la barre débordait de 20 px. */
+  .barre:has(.barre__actions:not([hidden])) { gap: 6px; }
+  .barre:has(.barre__actions:not([hidden])) .barre__actions { gap: 6px; }
+  .barre:has(.barre__actions:not([hidden])) .barre__actions .bouton { width: 36px; }
+  .barre:has(.barre__actions:not([hidden])) #aide-visite { display: none; }
 }

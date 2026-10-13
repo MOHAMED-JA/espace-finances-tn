@@ -78,3 +78,59 @@ test("montants bancaires : virgule perdue à la lecture", () => {
   assert.equal(A.montantBanque("1 641,841"), 1641.841);
   assert.equal(A.montantBanque("1641841"), 1641.841);
 });
+
+/* Tableau fabriqué à la main : taux qui change à l'échéance « a » (nouvelle mensualité, même date de fin). */
+function tableauTaux(C, n, phases, debut) {
+  const r3 = (v) => Math.round(v * 1000) / 1000, L = [];
+  let crd = C, t = phases[0][1], ech = 0;
+  for (let k = 1; k <= n; k++) {
+    const ph = phases.filter((p) => k >= p[0]).pop();
+    if (k === 1 || ph[0] === k) { t = ph[1]; const i = t / 1200; ech = r3(crd * i / (1 - Math.pow(1 + i, -(n - k + 1)))); }
+    const int = r3(crd * t / 1200), am = k === n ? crd : r3(ech - int), d = new Date(debut[0], debut[1] - 1 + k, 5);
+    L.push(k + "  " + String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + d.getFullYear() + "  " + f3(crd) + "  " + f3(am) + "  " + f3(int) + "  " + f3(r3(am + int)));
+    crd = r3(crd - am);
+  }
+  return "STB · Tableau d'amortissement\n" + L.join("\n");
+}
+
+test("crédit du profil d'après le tableau : mensualité, capital restant, taux, dates, jour du prélèvement", () => {
+  const au = A.auditerTableau(A.analyserTableau(tableauTaux(30000, 60, [[1, 10.75]], [2024, 4])), new Date(2026, 9, 13));
+  const v = A.creditDepuisAudit(au, new Date(2026, 9, 13));
+  /* Échéances le 5 du mois, de mai 2024 à avril 2029 ; 29 payées au 13 octobre 2026 (mai 2024 → septembre 2026, plus octobre déjà passé). */
+  assert.equal(v.banque, "STB");
+  assert.equal(v.tauxPct, 10.75);
+  assert.equal(v.jourPrelevement, 5);
+  assert.deepEqual([v.moisDebut, v.anneeDebut, v.dureeMois], [4, 2024, 60]);
+  assert.equal(v.moisRestants, 30);
+  const L = au.lignes, oct = L.findIndex((l) => l.date.getFullYear() === 2026 && l.date.getMonth() === 9);
+  assert.equal(v.capitalRestant, Math.round(L[oct].crdAp * 1000) / 1000, "capital après l'échéance d'octobre 2026");
+  assert.equal(v.mensualite, L[oct + 1].ech, "mensualité de l'échéance suivante");
+  assert.equal(v.tauxType, null, "taux unique : type non deviné");
+  assert.equal(v.finTexte, "avril 2029");
+  assert.equal(v.termine, false);
+  /* Le même calcul que le profil pour les échéances restantes. */
+  const OC = require("../../public/espace/js/orbite-calcul.js");
+  assert.equal(OC.echeancier({ moisDebut: v.moisDebut, anneeDebut: v.anneeDebut, dureeMois: v.dureeMois }, new Date(2026, 9, 13)).restantes, v.moisRestants);
+});
+
+test("crédit du profil : taux variable (TMM qui bouge), crédit reconnu par sa mensualité, tableau non détaillé ignoré", () => {
+  const au = A.auditerTableau(A.analyserTableau(tableauTaux(80000, 120, [[1, 9], [25, 10.25]], [2023, 1])), new Date(2026, 9, 13));
+  const v = A.creditDepuisAudit(au, new Date(2026, 9, 13));
+  assert.equal(v.tauxType, "variable");
+  assert.equal(v.tauxPct, 10.25);
+  const credits = [{ libelle: "Immobilier", mensualite: 1500 }, { libelle: "Auto", mensualite: Math.round(v.mensualite * 1.05) }, { libelle: "Conso", mensualite: 210 }];
+  assert.equal(A.creditCorrespondant(credits, v), 1);
+  assert.equal(A.creditCorrespondant([{ mensualite: v.mensualite * 1.3 }], v), -1, "au-delà de 10 % : nouveau crédit");
+  assert.equal(A.creditDepuisAudit({ nonDetaille: true, lignes: au.lignes }), null);
+  assert.equal(A.creditDepuisAudit(null), null);
+});
+
+test("crédit du profil : réduction de moitié du taux (règle des 8 %) reprise avec sa date, taux fixe", () => {
+  const au = A.auditerTableau(A.analyserTableau(tableauTaux(200000, 240, [[1, 8], [61, 4]], [2018, 0])), new Date(2026, 9, 13));
+  assert.equal(au.reductions.length, 1, JSON.stringify(au.phases.map((p) => p.taux)));
+  const v = A.creditDepuisAudit(au, new Date(2026, 9, 13));
+  assert.equal(v.tauxType, "fixe");
+  assert.equal(v.tauxPct, 4);
+  const d = au.reductions[0].date;
+  assert.deepEqual([v.reductionMois, v.reductionAnnee], [d.getMonth() + 1, d.getFullYear()]);
+});

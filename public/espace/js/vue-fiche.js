@@ -331,7 +331,40 @@
     $("fiche-hypotheses").textContent = "Calcul d'Orbite pour un mois habituel : " + (p.secteur === "public" ? "secteur public (CNRPS)" : "secteur privé (CNSS)") + ", " +
       (p.chefDeFamille ? "chef de famille" : "personne seule") + ", " + (enf ? enf + " enfant" + (enf > 1 ? "s" : "") + " à charge" : "sans enfant à charge") +
       " (votre profil), barèmes " + k.baremes + ".";
-    /* Bouton de mise à jour : seulement si quelque chose change vraiment. */
+    afficherApercu(r, profil);
+    majBouton(r, profil);
+  }
+  /* Avant → après (maquette validée le 13 oct. 2026) : ce qui changera dans le profil, une case par ligne, visible avant de valider. */
+  function afficherApercu(r, profil) {
+    var L = FC.apercu ? FC.apercu(r.v, profil, new Date()) : [], corps = $("fiche-maj-corps"), retraite = profil.activite === "retraite";
+    corps.textContent = "";
+    $("fiche-maj-zone").hidden = !L.length;
+    var m = r.v.mois && r.v.mois.mois ? FC.MOIS[r.v.mois.mois - 1] + " " + r.v.mois.annee : "";
+    $("fiche-maj-sous").textContent = (m ? "Fiche de " + m + ". " : "") + (retraite ? "Profil de retraité : le salaire et les primes ne sont pas repris." : "Décochez ce que vous ne voulez pas reprendre.");
+    L.forEach(function (l) {
+      var tr = cree("tr", l.egal ? "maj-diff__pareil" : null), id = "fiche-maj-" + l.cle;
+      var td0 = cree("td"), cb = cree("input"); cb.type = "checkbox"; cb.id = id; cb.dataset.choixMaj = l.cle;
+      var bloque = l.egal || (retraite && (l.cle === "salaire" || l.cle === "primes"));
+      cb.disabled = bloque; cb.checked = !bloque && r.choix[l.cle] === true;
+      td0.appendChild(cb); tr.appendChild(td0);
+      var td1 = cree("td"), lab = cree("label", "maj-diff__lib", l.lib); lab.htmlFor = id; td1.appendChild(lab);
+      if (!l.egal) td1.appendChild(cree("span", "maj-diff__avant", l.avant));
+      tr.appendChild(td1);
+      var td2 = cree("td", null, l.egal ? "" : "→"); td2.setAttribute("aria-hidden", "true"); tr.appendChild(td2);
+      var td3 = cree("td", "maj-diff__apres chiffre", l.apres);
+      if (l.egal || l.note) td3.appendChild(cree("small", null, l.egal ? " · inchangé" : " " + l.note));
+      tr.appendChild(td3);
+      corps.appendChild(tr);
+    });
+    lierPrimes();
+  }
+  /* Les primes ne sont reprises qu'avec le salaire (même règle que FC.appliquer). */
+  function lierPrimes() {
+    var s = $("fiche-maj-salaire"), p = $("fiche-maj-primes");
+    if (s && p && !s.disabled && !p.closest(".maj-diff__pareil")) { p.disabled = !s.checked; if (!s.checked) p.checked = false; }
+  }
+  /* Bouton de mise à jour : seulement si quelque chose change vraiment. */
+  function majBouton(r, profil) {
     var ap = FC.appliquer(r.v, r.choix, profil, new Date()), change = Object.keys(ap.partiel).some(function (cle) { return JSON.stringify(ap.partiel[cle]) !== JSON.stringify(profil[cle]); });
     etat.k.ap = ap;
     var b = $("fiche-maj");
@@ -368,6 +401,14 @@
   $("fiche-corriger").addEventListener("click", function () { montrer("verifier"); });
   $("fiche-controler").addEventListener("click", controler);
   $("fiche-maj").addEventListener("click", mettreAJour);
+  $("fiche-maj-corps").addEventListener("change", function (e) {
+    var cle = e.target.dataset && e.target.dataset.choixMaj; if (!cle || !etat.k) return;
+    var r = etat.k.r;
+    r.choix[cle] = e.target.checked ? true : (cle === "primes" ? false : undefined);
+    if (cle === "salaire") { lierPrimes(); var p = $("fiche-maj-primes"); if (p && !p.closest(".maj-diff__pareil")) r.choix.primes = p.checked ? true : false; }
+    Object.keys(r.choix).forEach(function (k) { if (r.choix[k] === undefined) delete r.choix[k]; });
+    majBouton(r, O.profil() || {});
+  });
   $("fiche-fermer-sans").addEventListener("click", function () { dlg.close(); });
   $("fiche-fermer").addEventListener("click", function () { dlg.close(); });
   dlg.addEventListener("close", function () { etat.jeton++; liberer(); $("fiche-feuille").classList.remove("lit"); });
