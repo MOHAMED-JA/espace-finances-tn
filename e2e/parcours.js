@@ -111,9 +111,10 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await tel.close();
   });
 
-  await etape("pages publiques : liens depuis l'accueil, mini-calculs exacts et en direct, états, téléphone sans débordement", async () => {
+  await etape("pages publiques : liens depuis l'accueil, mini-calculs exacts et en direct (onze pages), états, téléphone sans débordement", async () => {
     await page.goto(base + "/");
-    for (const slug of ["salaire-net-tunisie", "simulateur-credit-tunisie", "capacite-credit-tunisie", "simulateur-assurance-vie-tunisie", "calcul-cea-tunisie", "impot-assurance-vie-cea", "retraite-cnss-cnrps"]) assert(await page.$(`.pied a[href="/${slug}"]`), "lien vers /" + slug + " dans le pied de l'accueil");
+    for (const slug of ["salaire-net-tunisie", "simulateur-credit-tunisie", "capacite-credit-tunisie", "simulateur-assurance-vie-tunisie", "calcul-cea-tunisie", "impot-assurance-vie-cea", "retraite-cnss-cnrps",
+      "regle-8-pourcent-credit-tunisie", "remboursement-anticipe-credit-tunisie", "regroupement-credits-tunisie", "cout-employeur-tunisie"]) assert(await page.$(`.pied a[href="/${slug}"]`), "lien vers /" + slug + " dans le pied de l'accueil");
     const ent = (p) => p.evaluate(() => document.querySelector(".grand").textContent);
     /* Salaire : 2 500 DT → net de l'accueil ; chef de famille + 2 enfants fait monter le net ; pont recalculé. */
     await page.goto(base + "/salaire-net-tunisie");
@@ -168,9 +169,43 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector("[data-si-etat=au_dela]:not([hidden])");
     const cea = await page.evaluate(() => { const c = PagesCalcul.cea({ montant: 2500, depot: 20000 }, new Date()); return Math.round(c.economie); });
     assert(Number((await page.textContent(".grand")).replace(/\D/g, "")) === cea, "économie CEA plafonnée = moteur");
+    /* Règle des 8 % : exemple futur, crédit plus ancien → « depuis », 7 ans ou moins → explication ; chiffres = moteur. */
+    await page.goto(base + "/regle-8-pourcent-credit-tunisie");
+    await page.waitForFunction(() => window.PagesCalcul);
+    const r8 = await page.evaluate(() => { const a = PagesCalcul.affichage("regle8", PagesCalcul.R8_DEF, new Date()); return a.apres_mens; });
+    assert((await page.textContent("[data-v=apres_mens]")) === r8, "mensualité après réduction = moteur");
+    await page.fill("#debut", "01/2022");
+    await page.waitForFunction(() => /depuis/.test(document.querySelector("[data-v=quand_lib]").textContent));
+    await page.fill("#duree", "84");
+    await page.waitForSelector(".calc__alerte:not([hidden])");
+    assert(await page.isHidden(".resultat"), "pas de résultat pour un crédit de 7 ans");
+    /* Remboursement anticipé : durée plus courte au moins aussi avantageuse ; somme qui couvre tout → soldé. */
+    await page.goto(base + "/remboursement-anticipe-credit-tunisie");
+    await page.waitForFunction(() => window.PagesCalcul);
+    assert((await page.textContent("[data-v=courte]")).replace(/\s/g, " ") === "−68 mois", "68 mois gagnés");
+    await page.fill("#somme", "200000");
+    await page.waitForSelector("[data-si-etat=solde]:not([hidden])");
+    assert(await page.isHidden(".choix2"), "deux choix masqués quand le crédit est soldé");
+    /* Regroupement : un troisième crédit s'ajoute, une ligne décochée est retirée, tout décoché → message. */
+    await page.goto(base + "/regroupement-credits-tunisie");
+    await page.waitForFunction(() => window.PagesCalcul);
+    await page.fill("#m3", "150"); await page.fill("#t3", "12"); await page.fill("#r3", "20");
+    await page.waitForFunction(() => /3 crédits/.test(document.querySelector("[data-v=avant_lib]").textContent));
+    const rg = await page.evaluate(() => { const a = PagesCalcul.affichage("regroupement", { credits: [{ mensualite: 320, taux: 10, mois: 30 }, { mensualite: 210, taux: 11, mois: 17 }, { mensualite: 150, taux: 12, mois: 20 }], taux: 10.5, duree: 36, ira: 1.5, frais: 150 }, new Date()); return a.mens_ent + a.mens_dec; });
+    await page.waitForFunction((t) => document.querySelector(".grand").textContent === t, rg);
+    for (const i of [1, 2, 3]) await page.uncheck("input[name=inclus" + i + "]");
+    await page.waitForSelector(".calc__alerte:not([hidden])");
+    /* Coût employeur : 2 000 DT brut → 2 411,400 DT ; secteur public → CNRPS. */
+    await page.goto(base + "/cout-employeur-tunisie");
+    await page.waitForFunction(() => window.PagesCalcul);
+    assert((await page.textContent(".grand")).replace(/\s/g, "") === "2411,400DT", "coût employeur 2 000 DT brut");
+    await page.check("input[name=secteur][value=public]", { force: true });
+    await page.waitForFunction(() => /CNRPS/.test(document.querySelector("[data-v=caisse_lib]").textContent));
+    assert(await page.$('.pages-nav a[href="/salaire-net-tunisie"][aria-current="true"]'), "menu : Salaire net en cours");
     const tel = await navigateur.newPage({ viewport: { width: 390, height: 844 }, colorScheme: "dark" });
     suivre(tel);
-    for (const slug of ["salaire-net-tunisie", "simulateur-credit-tunisie", "capacite-credit-tunisie", "simulateur-assurance-vie-tunisie", "calcul-cea-tunisie", "impot-assurance-vie-cea", "retraite-cnss-cnrps"]) {
+    for (const slug of ["salaire-net-tunisie", "simulateur-credit-tunisie", "capacite-credit-tunisie", "simulateur-assurance-vie-tunisie", "calcul-cea-tunisie", "impot-assurance-vie-cea", "retraite-cnss-cnrps",
+      "regle-8-pourcent-credit-tunisie", "remboursement-anticipe-credit-tunisie", "regroupement-credits-tunisie", "cout-employeur-tunisie"]) {
       await tel.goto(base + "/" + slug);
       await tel.waitForFunction(() => window.PagesCalcul);
       assert(!(await tel.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), slug + " sans débordement sur téléphone");

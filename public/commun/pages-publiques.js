@@ -1,5 +1,5 @@
 /* Orbite — pages publiques : mini-calcul en direct (salaire net, capacité de crédit, impôt, retraite, simulateur de crédit,
-   assurance vie, CEA).
+   assurance vie, CEA, règle des 8 %, remboursement anticipé, regroupement de crédits, coût employeur).
    Les textes viennent de PagesCalcul.affichage, la même fonction qui a écrit le HTML : avant et après le script, mêmes formats.
    Aucune donnée n'est envoyée ni enregistrée. CSP stricte : styles posés par CSSOM (style.setProperty), jamais en attribut. */
 (function () {
@@ -21,8 +21,40 @@
   function coche(nom) { var c = form.querySelector("input[name='" + nom + "']:checked"); return c ? c.value : null; }
   function enfants() { var o = form.querySelector("output[name='enfants']"); return o ? Number(o.value || o.textContent) || 0 : 0; }
 
+  /* Pages de crédit en cours : champs [nom, accepte zéro]. Un champ invalide est signalé et le calcul attend. */
+  var CHAMPS = {
+    regle8: [["mensualite"], ["taux"], ["duree"]],
+    anticipe: [["montant"], ["taux"], ["duree"], ["payees", true], ["somme", true]],
+    regroupement: [["taux", true], ["duree"], ["ira", true], ["frais", true]]
+  };
+  function marquer(el, bon) { el.setAttribute("aria-invalid", bon ? "false" : "true"); return bon; }
+  function entreeCredit() {
+    var ok = true, e = {};
+    CHAMPS[page].forEach(function (c) { var el = champ(c[0]), n = lire(el.value, c[1]); if (!marquer(el, n != null)) ok = false; e[c[0]] = n; });
+    if (page === "regle8") {
+      /* « MM/AAAA » (ou « M-AAAA », « AAAA-MM »). */
+      var d = champ("debut"), t = d.value.trim(), x = /^(\d{1,2})\s*[\/.-]\s*(\d{4})$/.exec(t), y = /^(\d{4})\s*[\/.-]\s*(\d{1,2})$/.exec(t);
+      var mo = x ? +x[1] : y ? +y[2] : 0, an = x ? +x[2] : y ? +y[1] : 0;
+      if (!marquer(d, mo >= 1 && mo <= 12 && an >= 1980 && an <= 2100)) ok = false;
+      e.mois = mo; e.annee = an;
+    }
+    if (page === "regroupement") {
+      /* Ligne vide ou décochée : ignorée. */
+      e.credits = [1, 2, 3].map(function (i) {
+        var c = { inclus: !!champ("inclus" + i).checked };
+        [["m", "mensualite"], ["t", "taux"], ["r", "mois"]].forEach(function (k) {
+          var el = champ(k[0] + i), n = lire(el.value, true);
+          if (!marquer(el, n != null)) ok = false; c[k[1]] = n || 0;
+        });
+        return c;
+      });
+    }
+    return ok ? e : null;
+  }
+
   /* Saisie → entrée du calcul ; null si un champ obligatoire est invalide. */
   function entree() {
+    if (CHAMPS[page]) return entreeCredit();
     var mt = champ("montant"), montant = lire(mt.value), ok = montant != null;
     mt.setAttribute("aria-invalid", ok ? "false" : "true");
     var e = { montant: montant, secteur: coche("secteur") || "prive", chef: !!(champ("chef") && champ("chef").checked), enfants: enfants() };
@@ -62,6 +94,8 @@
     doc.querySelectorAll("[data-jauge]").forEach(function (el) { el.style.setProperty("--p", ((aff.jauge || 0) * 100).toFixed(1) + "%"); el.style.setProperty("opacity", aff.jauge > 0 ? "1" : "0"); });
     doc.querySelectorAll("[data-si-etat]").forEach(function (el) { el.hidden = !!aff.etat && el.getAttribute("data-si-etat") !== aff.etat; });
     doc.querySelectorAll("[data-si-tard]").forEach(function (el) { el.hidden = !aff.tard; });
+    doc.querySelectorAll("[data-si-v]").forEach(function (el) { el.hidden = !aff[el.getAttribute("data-si-v")]; });
+    doc.querySelectorAll("[data-si-pas]").forEach(function (el) { el.hidden = aff.etat === el.getAttribute("data-si-pas"); });
   }
   function calculer() {
     var e = entree();
@@ -119,7 +153,8 @@
   form.addEventListener("submit", function (ev) { ev.preventDefault(); calculer(); });
   form.querySelectorAll("input[inputmode='decimal']").forEach(function (el) {
     el.addEventListener("blur", function () {
-      var v = lire(el.value, ["encours", "versement", "rendement", "marge", "depot"].indexOf(el.name) !== -1);
+      if (!el.value.trim()) return;
+      var v = lire(el.value, ["encours", "versement", "rendement", "marge", "depot", "somme", "ira", "frais", "taux", "m1", "t1", "m2", "t2", "m3", "t3"].indexOf(el.name) !== -1);
       if (v != null) el.value = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 3 }).format(v).replace(/[  ]/g, " ");
     });
   });

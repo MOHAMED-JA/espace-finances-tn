@@ -1,4 +1,5 @@
 /* Orbite — pages publiques (salaire net, capacité de crédit, impôt, retraite). Maquette validée le 11 oct. 2026.
+   Règle des 8 %, remboursement anticipé, regroupement de crédits, coût employeur : maquette validée le 13 oct. 2026.
    S'appuie sur orbite.css (jetons, champs, bascules, interrupteurs, compteurs) et signature.css. */
 
 .conteneur { width: min(1200px, 100% - 32px); margin-inline: auto; }
@@ -24,6 +25,8 @@ body { background: var(--fond); }
 .page--retraite { --sel: var(--salaire); --sel-t: var(--salaire-t); --sel-doux: var(--salaire-doux); }
 .page--pret { --sel: var(--credit); --sel-t: var(--credit-t); --sel-doux: var(--credit-doux); }
 .page--vie, .page--cea { --sel: var(--epargne); --sel-t: var(--epargne-t); --sel-doux: var(--epargne-doux); }
+.page--regle8, .page--anticipe, .page--regroupement { --sel: var(--credit); --sel-t: var(--credit-t); --sel-doux: var(--credit-doux); }
+.page--employeur { --sel: var(--salaire); --sel-t: var(--salaire-t); --sel-doux: var(--salaire-doux); }
 
 .pp { display: grid; gap: 56px; padding-block: 28px 64px; }
 .ariane { font-size: 13.5px; color: var(--encre-3); }
@@ -78,6 +81,56 @@ body { background: var(--fond); }
 .jauge i { display: block; height: 100%; width: var(--p, 0%); border-radius: 999px; background: var(--sel); transition: width 460ms var(--sortie); }
 .calc__note { font-size: 13px; color: var(--encre-3); }
 .calc__alerte { padding: 12px 14px; border-radius: var(--r-int); background: var(--alerte-doux); color: var(--encre); font-size: 14.5px; }
+
+/* Crédit en cours : avant → après, phrase de verdict, frise des réductions (règle des 8 %), deux choix (remboursement anticipé). */
+.avap { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 10px; align-items: center; }
+.avap > div { display: grid; gap: 2px; padding: 12px 14px; border-radius: var(--r-int); background: var(--surface-2); min-width: 0; }
+.avap > div:last-child { background: var(--sel-doux); box-shadow: inset 0 0 0 1.5px var(--sel); }
+.avap > div > span { font-size: 13px; font-weight: 600; color: var(--encre-3); }
+.avap b { font-family: var(--affiche); font-size: 22px; font-weight: 760; letter-spacing: -.01em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.avap > i { font-style: normal; font-size: 20px; color: var(--encre-3); }
+.verdict { padding: 11px 14px; border-radius: var(--r-int); background: var(--surface-2); font-size: 14.5px; color: var(--encre-2); }
+.verdict b { color: var(--encre); font-variant-numeric: tabular-nums; }
+.frise { list-style: none; margin: 2px 0 0; padding: 0; display: grid; }
+.frise li { position: relative; display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 9px 0; font-size: 15px; font-weight: 600; color: var(--encre); }
+.frise li::before { content: ""; width: 12px; height: 12px; border-radius: 50%; justify-self: center; background: var(--surface); box-shadow: inset 0 0 0 2.5px var(--sel); z-index: 1; }
+.frise li:first-child::before { background: var(--sel); box-shadow: 0 0 0 5px var(--sel-doux); }
+.frise li:not(:last-child)::after { content: ""; position: absolute; left: 8px; top: 30px; bottom: -10px; width: 2px; background: var(--filet); }
+.frise li:has(+ li[hidden])::after { display: none; }
+.frise small { display: block; font-size: 13px; font-weight: 500; color: var(--encre-3); }
+.frise b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.choix2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.choix2 > div { display: grid; gap: 4px; align-content: start; padding: 14px; border-radius: var(--r-int); background: var(--surface-2); }
+.choix2 > .choix2__mieux { background: var(--sel-doux); box-shadow: inset 0 0 0 1.5px var(--sel); }
+.choix2 > div > span { font-size: 13px; font-weight: 650; color: var(--encre-3); }
+.choix2 b { font-family: var(--affiche); font-size: 24px; font-weight: 760; letter-spacing: -.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.choix2 small { font-size: 13.5px; color: var(--encre-2); }
+.choix2 strong { color: var(--encre); white-space: nowrap; }
+
+/* Regroupement : une carte par crédit en cours, trois petits champs. */
+.creds { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.cred { display: grid; gap: 8px; padding: 12px; border-radius: var(--r-int); background: var(--surface-2); }
+.cred__tete { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 650; cursor: pointer; }
+.cred__tete input { width: 18px; height: 18px; margin: 0; accent-color: var(--sel); }
+.cred__tete small { margin-left: auto; font-size: 13px; font-weight: 500; color: var(--encre-3); white-space: nowrap; }
+.cred__tete small b { color: var(--encre); font-variant-numeric: tabular-nums; }
+.cred__champs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.cred .champ label { font-size: 12.5px; }
+.cred .saisie { background: var(--surface); }
+.cred .saisie input { height: 42px; padding-inline: 12px; min-width: 0; }
+.cred:has(.cred__tete input:not(:checked)) .cred__champs { opacity: .45; }
+
+/* Coût employeur : sur 100 DT dépensés. */
+.cent { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; text-align: center; }
+.cent > div { display: grid; gap: 2px; padding: 10px 6px; border-radius: var(--r-int); background: var(--surface-2); }
+.cent b { font-family: var(--affiche); font-size: 21px; font-weight: 760; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cent > div > span { font-size: 12.5px; color: var(--encre-3); }
+td small { font-size: 12.5px; color: var(--encre-3); white-space: nowrap; }
+@media (max-width: 480px) {
+  .avap { gap: 6px; } .avap > div { padding: 10px; } .avap b { font-size: 18px; }
+  .choix2 { grid-template-columns: 1fr; }
+  .cent b { font-size: 18px; }
+}
 
 /* Pont vers Orbite (panneau cosmos) */
 .pont { position: relative; overflow: hidden; border-radius: var(--r-scene); padding: clamp(22px, 3.2vw, 36px); display: grid; gap: 22px; background: var(--cosmos); color: var(--cosmos-encre); }
@@ -135,8 +188,9 @@ body { background: var(--fond); }
 .faq details p { padding-bottom: 16px; color: var(--encre-2); max-width: 72ch; }
 
 .voisins { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; list-style: none; margin: 0; padding: 0; }
-/* Six autres pages : deux rangées de trois sur grand écran, jamais une carte seule. */
-@media (min-width: 900px) { .voisins { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+/* Dix autres pages : deux colonnes, puis deux rangées de cinq sur grand écran, jamais une carte seule. */
+@media (min-width: 640px) { .voisins { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .voisins { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 .voisins a { display: grid; gap: 4px; padding: 16px 18px; border-radius: var(--r-int); background: var(--surface); border: 1px solid var(--filet); text-decoration: none; color: inherit; transition: border-color 150ms ease, transform 140ms var(--sortie); }
 .voisins a:hover { border-color: var(--filet-fort); }
 .voisins a:active { transform: scale(var(--appui)); }

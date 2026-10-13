@@ -677,12 +677,25 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centseptendecies. Quatre nouvelles pages publiques (13 oct.)
+
+Maquette validée le 13 oct. (« Oui, construis les 4 »). But : répondre à des recherches Google sans page dédiée jusqu'ici. Générées par `scripts/pages-publiques.js` (ne jamais modifier le HTML à la main), même gabarit que les 7 autres (calcul en direct, pont vers Orbite, « Comment… », deux tableaux, FAQ + données structurées, 10 liens « voisins »).
+
+- **Règle des 8 %** `/regle-8-pourcent-credit-tunisie` : mensualité, taux fixe, durée (mois), première échéance « MM/AAAA » → `OrbiteCalcul.reductionsTaux` (le moteur du module Crédit). Exemple : 150 000 DT à 9 % sur 240 mois, première échéance 01/2024 → réduction possible en février 2027 (9 → 4,5 %, 1 349,589 → 988,466 DT), puis février 2030, septembre 2036. Crédit plus ancien → « Réduction possible depuis » (à demander tout de suite) ; 84 mois ou moins → explication. Attention : l'exemple 01/2022 de la maquette était déjà « possible depuis février 2025 », d'où le passage à 01/2024.
+- **Remboursement anticipé** `/remboursement-anticipe-credit-tunisie` : montant, taux, durée, mensualités payées, somme versée → reste dû, durée plus courte (même mensualité, dernière échéance plus petite) ou mensualité plus basse (même date de fin), intérêts évités, hors indemnité. Exemple : 100 000 DT à 10 % sur 240 mois, 20 000 DT après 60 mois → −68 mois et 46 344 DT évités, ou 750,101 DT/mois et 18 686 DT. Somme ≥ reste dû → « soldé ».
+- **Regroupement** `/regroupement-credits-tunisie` : jusqu'à 3 crédits (case à cocher, DT par mois, taux, mois restants ; ligne vide ou décochée ignorée) + nouveau taux, durée, indemnité, frais → `CreditProjets.regrouper` (moteur de l'onglet Regrouper). Exemple : 320 + 210 DT/mois → 392,668 DT/mois, +966 DT au total. Les pages chargent désormais `/moteurs/credit/projets.js`.
+- **Coût employeur** `/cout-employeur-tunisie` : brut + secteur → `CalculSalaire.repartitionCoutEmployeur`. 2 000 DT brut privé → 2 411,400 DT, net 1 534,101 DT ; sur 100 DT : 63,6 salarié, 22,6 CNSS, 13,8 État.
+- `public/commun/pages-calcul.js` : `regle8`, `anticipe`, `regroupement`, `employeur`, `dureeTxt`, `taux`, exemples `R8_DEF`, `RA_DEF`, `RG_DEF`. `public/commun/pages-publiques.js` : champs des pages « crédit en cours » (`CHAMPS`), `data-si-v` (masqué si la valeur est vide), `data-si-pas` (masqué pour un état), champ vide non reformaté au départ du champ.
+- Menu : Crédit « en cours » sur règle des 8 %, anticipé, regroupement ; Salaire net sur coût employeur. Voisins : 2 colonnes, puis 2 rangées de 5 dès 1 100 px.
+- Plan du site (14 adresses), `_headers` (CSP stricte des 4 pages), liens dans le pied de l'accueil, SW `orbite-2026-10-13e`. IndexNow signalera les 4 pages tout seul à la fusion.
+- Tests : `tests/espace/pages-nouvelles.test.js` (chiffres = moteurs, cas limites), `pages-publiques-html.test.js` (11 pages), e2e (étape des pages publiques).
+
 ## 3 centsedecies. Visibilité dans les moteurs de recherche, sans Search Console (13 oct.)
 
 Question : « quota dépassé » dans Google Search Console. Explication : c'est la limite quotidienne (une dizaine) du bouton « Demander une indexation », pas un bug ; le plan du site déclaré dans robots.txt suffit à Google. Choix de l'utilisateur : IndexNow + Bing, liens et textes à publier, nouvelles pages publiques (maquette d'abord).
 
 - **IndexNow** : clé publique `public/0075fa4068fc766fc078bdd75fc2cfd2.txt` (le fichier contient la clé ; ce n'est pas un secret, c'est le principe d'IndexNow) et `.github/workflows/indexnow.yml` : à chaque fusion sur main touchant `public/`, attend que la nouvelle version soit en ligne (version du SW + fichier de clé, 13 min au plus), puis envoie toutes les adresses du plan du site à `api.indexnow.org` (Bing, Yandex, Seznam, Naver ; Bing alimente DuckDuckGo, Yahoo, Copilot, ChatGPT). Lancement manuel possible (« Run workflow »). Permissions : lecture seule.
-- **Bing Webmaster Tools** : à faire par l'utilisateur (guidé), import depuis Google Search Console ou vérification par fichier.
+- **Bing Webmaster Tools** : déjà réglé par l'utilisateur (import depuis Google Search Console, plus tôt dans la conversation). **Ne plus le reproposer.**
 - **Simulateur de salaire** (dépôt portail-rh, PR #15) : quatre liens directs vers les pages publiques (capacité, crédit, impôt AV/CEA, retraite) dans la carte « Ce net, et ensuite ? ».
 - Tests : `tests/espace/indexnow.test.js` (clé unique et exacte, workflow en lecture seule, plan du site cohérent avec les pages et robots.txt).
 

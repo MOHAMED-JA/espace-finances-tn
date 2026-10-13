@@ -1,6 +1,6 @@
 /*
- * Orbite — pages publiques (salaire net, capacité de crédit, impôt, retraite, simulateur de crédit, assurance vie, CEA) :
- * chiffres des mini-calculs (module pur, testé).
+ * Orbite — pages publiques (salaire net, capacité de crédit, impôt, retraite, simulateur de crédit, assurance vie, CEA,
+ * règle des 8 %, remboursement anticipé, regroupement de crédits, coût employeur) : chiffres des mini-calculs (module pur, testé).
  * Tout passe par les moteurs d'Orbite (OrbiteCalcul, OrbiteIntelligence, Retraite) : rien n'est écrit en dur. Les exemples
  * sont définis par rapport à la date du jour (âge, carrière) pour ne pas vieillir. Calcul sur l'appareil, rien n'est envoyé.
  */
@@ -8,9 +8,11 @@
   if (typeof module === "object" && module.exports) {
     module.exports = fabrique(require("../espace/js/orbite-calcul.js"), require("../espace/js/orbite-intelligence.js"),
       require("../espace/js/retraite-calcul.js"), require("../moteurs/salaire/parametres.js"),
-      require("../moteurs/vie/moteur-fiscal.js"), require("../moteurs/vie/projection.js"));
-  } else racine.PagesCalcul = fabrique(racine.OrbiteCalcul, racine.OrbiteIntelligence, racine.Retraite, racine.PARAMETRES_PAIE, racine.MoteurFiscal, racine.Projection);
-})(typeof self !== "undefined" ? self : this, function (OC, OI, RT, P, MF, PR) {
+      require("../moteurs/vie/moteur-fiscal.js"), require("../moteurs/vie/projection.js"),
+      require("../moteurs/salaire/calcul.js"), require("../moteurs/credit/projets.js"));
+  } else racine.PagesCalcul = fabrique(racine.OrbiteCalcul, racine.OrbiteIntelligence, racine.Retraite, racine.PARAMETRES_PAIE, racine.MoteurFiscal, racine.Projection,
+    racine.CalculSalaire, racine.CreditProjets);
+})(typeof self !== "undefined" ? self : this, function (OC, OI, RT, P, MF, PR, CS, CPJ) {
   "use strict";
   var MAX = 1e6;
   var TYPES = { immo: "Logement", immo25: "Logement sur 25 ans", auto: "Voiture", conso: "Consommation" };
@@ -135,6 +137,60 @@
       utile: Math.max(0, sim.ceaUtile || 0), plafond: c.plafond, blocage: c.dureeBlocageAns, disponible: m.getFullYear() + 1 + c.dureeBlocageAns };
   }
 
+
+  /* Règle des 8 % (loi n° 2024-41) : moteur d'Orbite (OrbiteCalcul.reductionsTaux), crédit à taux fixe.
+     Exemple : 150 000 DT à 9 % sur 20 ans, première échéance en janvier 2024. */
+  var R8_DEF = { mensualite: 1349.589, taux: 9, duree: 240, mois: 1, annee: 2024 };
+  function regle8(e, m0) {
+    var m = m0 || new Date(), x = e || {};
+    var c = { mensualite: borne(x.mensualite, R8_DEF.mensualite, 0, 1e6), tauxPct: borne(x.taux, R8_DEF.taux, 0, 40), dureeMois: Math.round(borne(x.duree, R8_DEF.duree, 1, 480)),
+      moisDebut: Math.round(borne(x.mois, R8_DEF.mois, 1, 12)), anneeDebut: Math.round(borne(x.annee, R8_DEF.annee, 1980, 2100)), tauxType: "fixe" };
+    var r = OC.reductionsTaux(c, m);
+    return { credit: c, applicable: r.applicable, motif: r.motif, reductions: r.reductions || [], possibleDepuis: r.possibleDepuis };
+  }
+
+  /* Remboursement anticipé partiel : intérêts évités selon le choix (durée plus courte ou mensualité plus basse),
+     hors indemnité de la banque. Exemple : 100 000 DT à 10 % sur 20 ans, 20 000 DT versés après 60 mensualités. */
+  var RA_DEF = { montant: 100000, taux: 10, duree: 240, payees: 60, somme: 20000 };
+  function anticipe(e) {
+    var x = e || {}, K = borne(x.montant, RA_DEF.montant, 0, 1e8), t = borne(x.taux, RA_DEF.taux, 0, 40), n = Math.round(borne(x.duree, RA_DEF.duree, 1, 480));
+    var p = Math.round(borne(x.payees, RA_DEF.payees, 0, n)), S = borne(x.somme, RA_DEF.somme, 0, 1e8), r = t / 1200;
+    var M = OC.mensualitePourCapital(K, t, n), reste = n - p;
+    var crd = reste <= 0 ? 0 : Math.max(0, r > 0 ? K * Math.pow(1 + r, p) - M * (Math.pow(1 + r, p) - 1) / r : K - M * p);
+    var interetsAvant = Math.max(0, M * reste - crd), verse = Math.min(S, crd), crd2 = Math.max(0, crd - verse);
+    /* Durée plus courte : même mensualité, la dernière plus petite. */
+    var mois = 0, k = crd2, paye = 0;
+    while (k > 0.0005 && mois < reste) { var i = k * r, du = Math.min(M, k + i); paye += du; k = k + i - du; mois++; }
+    var M2 = reste > 0 && crd2 > 0.0005 ? OC.mensualitePourCapital(crd2, t, reste) : 0;
+    return { montant: K, taux: t, duree: n, payees: p, somme: S, verse: verse, mensualite: M, restantDu: crd, moisRestants: reste, interetsAvant: interetsAvant,
+      solde: reste > 0 && crd2 <= 0.0005,
+      courte: { mois: mois, gagnes: reste - mois, economie: Math.max(0, interetsAvant - Math.max(0, paye - crd2)) },
+      basse: { mensualite: M2, baisse: M - M2, economie: Math.max(0, interetsAvant - Math.max(0, M2 * reste - crd2)) } };
+  }
+
+  /* Regroupement de crédits : moteur d'Orbite (CreditProjets.regrouper), indemnités et frais de dossier compris.
+     Exemple : voiture 320 DT/mois à 10 % (30 mois restants) + consommation 210 DT/mois à 11 % (17 mois), regroupés à 10,5 % sur 36 mois. */
+  var RG_DEF = { credits: [{ mensualite: 320, taux: 10, mois: 30 }, { mensualite: 210, taux: 11, mois: 17 }, { mensualite: 0, taux: 0, mois: 0 }], taux: 10.5, duree: 36, ira: CPJ.IRA_PCT, frais: 150 };
+  function regroupement(e) {
+    var x = e || {}, cr = x.credits || RG_DEF.credits;
+    var credits = cr.slice(0, 3).map(function (c, i) {
+      return { libelle: "Crédit " + (i + 1), mensualite: borne(c.mensualite, 0, 0, 1e6), tauxPct: borne(c.taux, 0, 0, 40), moisRestants: Math.round(borne(c.mois, 0, 0, 480)), inclus: c.inclus !== false };
+    });
+    var r = CPJ.regrouper({ credits: credits, tauxPct: borne(x.taux, RG_DEF.taux, 0, 40), mois: Math.round(borne(x.duree, RG_DEF.duree, 1, 300)),
+      iraPct: borne(x.ira, RG_DEF.ira, 0, 10), fraisDossier: borne(x.frais, RG_DEF.frais, 0, 1e5) });
+    return { credits: credits.map(function (c) { return Object.assign({}, c, { restantDu: c.inclus && c.mensualite > 0 && c.moisRestants > 0 ? CPJ.restantDu(c) : 0 }); }), resultat: r };
+  }
+
+  /* Coût employeur : brut → net, charges patronales et partage de chaque dinar (salarié, caisse, État), moteur de paie. */
+  function employeur(e, m0) {
+    var m = m0 || new Date(), r = synthese({ montant: e && e.montant != null ? e.montant : 2000, secteur: e && e.secteur }, m), s = r.sy.salaire, a = s.resultat.annuel;
+    var rep = CS.repartitionCoutEmployeur(s.resultat), regime = P.regimes[r.p.secteur];
+    return { brut: s.brutMensuel, net: s.netMensuel, cout: rep.total / 12, charges: a.chargesPatronales / 12, coutAn: rep.total, caisse: regime.caisse,
+      tauxCharges: s.brutMensuel > 0 ? a.chargesPatronales / 12 / s.brutMensuel : 0,
+      lignes: a.chargesPatronalesLignes.map(function (l) { return { code: l.code, libelle: l.libelle, taux: l.taux, montant: l.montant / 12 }; }),
+      parts: { salarie: rep.salarie.part, caisse: rep.caisse.part, etat: rep.etat.part } };
+  }
+
   /* ---------- Affichage : mêmes textes pour le HTML généré (moteurs de recherche, sans JavaScript) et dans le navigateur ---------- */
   function nombre(v, dec) {
     var s = new Intl.NumberFormat("fr-FR", { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(v);
@@ -145,6 +201,13 @@
   /* Grand chiffre : partie entière et « ,310 DT » séparés (le second est plus petit). */
   function grand(o, cle, v) { var t = nombre(v, 3), i = t.lastIndexOf(","); o[cle + "_ent"] = t.slice(0, i); o[cle + "_dec"] = t.slice(i) + " DT"; }
   function ans(mois) { return nombre(mois / 12, 0) + " ans"; }
+  /* « 5 ans et 8 mois », « 8 mois », « 2 ans ». */
+  function dureeTxt(mois) {
+    var a = Math.floor(mois / 12), r = mois % 12, ta = a ? a + (a > 1 ? " ans" : " an") : "", tm = r ? r + " mois" : "";
+    return ta && tm ? ta + " et " + tm : ta || tm || "0 mois";
+  }
+  /* Taux : « 9 % », « 4,5 % », « 1,125 % ». */
+  function taux(v) { var c = Math.round(v * 1000), d = c % 1000 === 0 ? 0 : c % 100 === 0 ? 1 : c % 10 === 0 ? 2 : 3; return nombre(v, d) + " %"; }
 
   /* Satellites du pont : les trois sujets autres que celui de la page. */
   function satellites(page, e, m) {
@@ -227,6 +290,54 @@
       o.tard = r.tard ? nombre(r.tard.taux, r.tard.taux % 1 ? 1 : 0) + " % · " + dt(r.tard.net) : "";
       o.tard_lib = r.tard ? "En partant à " + r.tard.age + " ans" : "";
       Object.assign(o, satellites(page, { montant: x.montant, secteur: x.secteur, chef: x.chef }, m));
+    } else if (page === "regle8") {
+      var g = regle8(x, m), r1 = g.reductions[0];
+      o.etat = r1 ? "ok" : "non";
+      var quand = g.possibleDepuis ? g.possibleDepuis.date : r1 ? r1.date : "", sp = quand.lastIndexOf(" ");
+      o.quand_lib = g.possibleDepuis ? "Réduction possible depuis" : "Réduction possible dès";
+      o.quand_ent = r1 ? quand.slice(0, sp) : "—"; o.quand_dec = r1 ? quand.slice(sp) : "";
+      o.avant_taux = r1 ? taux(r1.tauxAvant) : "—"; o.avant_mens = r1 ? dt(r1.mensualiteAvant) + "/mois" : "";
+      o.apres_lib = r1 ? (g.possibleDepuis ? "Dès votre demande" : "Dès " + r1.date) : "";
+      o.apres_taux = r1 ? taux(r1.tauxPct) : "—"; o.apres_mens = r1 ? dt(r1.mensualite) + "/mois" : "";
+      o.gain = r1 ? "−" + dt(r1.mensualiteAvant - r1.mensualite) + " par mois" : "";
+      o.gain_txt = r1 ? (g.possibleDepuis ? ", à demander à votre banque par écrit dès maintenant." : ", à demander à votre banque par écrit.") : "";
+      for (var j = 0; j < 3; j++) {
+        var rj = g.reductions[j];
+        o["r" + (j + 1)] = rj ? rj.date.charAt(0).toUpperCase() + rj.date.slice(1) : "";
+        o["r" + (j + 1) + "_txt"] = rj ? (j ? "Encore divisé par deux : " : "Le taux passe de " + taux(rj.tauxAvant) + " à ") + taux(rj.tauxPct) : "";
+        o["r" + (j + 1) + "_mens"] = rj ? dt(rj.mensualite) : "";
+      }
+      o.raison = r1 ? "" : g.motif === "duree" ? "La règle des 8 % concerne les crédits à taux fixe de plus de 7 ans (84 mensualités)." :
+        g.motif === "fini" ? "D'après ces dates, ce crédit est déjà entièrement remboursé." : g.motif === "donnees" ? "Indiquez la mensualité et le taux du crédit." :
+        "Avec ces valeurs, les intérêts restent sous le seuil de 8 % jusqu'à la fin du crédit : pas de réduction de taux.";
+    } else if (page === "anticipe") {
+      var ra = anticipe(x), mx = Math.max(ra.courte.economie, ra.basse.economie);
+      o.etat = ra.moisRestants <= 0 || ra.verse <= 0 ? "non" : ra.solde ? "solde" : "ok";
+      o.eco_ent = nombre(mx, 0); o.eco_dec = " DT";
+      o.mens_lib = "Mensualité : " + dt(ra.mensualite); o.crd_lib = "Reste dû : " + dt(ra.restantDu);
+      o.courte = "−" + ra.courte.gagnes + " mois"; o.courte_txt = "Même mensualité, fin " + dureeTxt(ra.courte.gagnes) + " plus tôt."; o.courte_eco = "≈ " + dt(ra.courte.economie, 0);
+      o.basse = dt(ra.basse.mensualite); o.basse_txt = "−" + dt(ra.basse.baisse) + " par mois, même date de fin."; o.basse_eco = "≈ " + dt(ra.basse.economie, 0);
+      o.solde_txt = ra.solde ? "Cette somme couvre tout le reste dû (" + dt(ra.restantDu) + ") : le crédit est soldé." : "";
+      o.raison = ra.moisRestants <= 0 ? "D'après ces valeurs, le crédit est déjà remboursé." : ra.verse <= 0 ? "Indiquez la somme que vous voulez verser en plus." : "";
+    } else if (page === "regroupement") {
+      var rg = regroupement(x), rr = rg.resultat;
+      rg.credits.forEach(function (c, n) { o["crd" + (n + 1)] = c.restantDu > 0 ? dt(c.restantDu, 0) : "—"; });
+      o.etat = rr ? "ok" : "non";
+      grand(o, "mens", rr ? rr.mensualiteApres : 0);
+      o.avant = rr ? dt(rr.mensualiteAvant, rr.mensualiteAvant % 1 ? 3 : 0) : "—";
+      o.avant_lib = rr ? rr.lignes.length + (rr.lignes.length > 1 ? " crédits" : " crédit") : "";
+      o.apres = rr ? dt(rr.mensualiteApres) : "—"; o.capital = rr ? "1 crédit · " + dt(rr.capital, 0) : "";
+      o.verdict_fort = !rr ? "" : rr.gainMensuel > 0 ? "−" + dt(rr.gainMensuel) + " par mois" : "+" + dt(-rr.gainMensuel) + " par mois";
+      o.verdict_suite = !rr ? "" : rr.difference > 0 ? (rr.gainMensuel > 0 ? ", mais " : " et ") + "+" + dt(rr.difference, 0) + " de coût total sur la durée." :
+        (rr.gainMensuel > 0 ? " et " : ", mais ") + dt(-rr.difference, 0) + " de moins au total.";
+      o.raison = rr ? "" : "Indiquez au moins un crédit en cours (mensualité, taux et mois restants).";
+    } else if (page === "employeur") {
+      var ce = employeur(x, m);
+      grand(o, "cout", ce.cout);
+      o.part_sal = nombre(ce.parts.salarie * 100, 1) + " DT"; o.part_caisse = nombre(ce.parts.caisse * 100, 1) + " DT"; o.part_etat = nombre(ce.parts.etat * 100, 1) + " DT";
+      o.caisse_lib = "pour la " + ce.caisse;
+      o.net = dt(ce.net); o.charges = dt(ce.charges); o.charges_lib = "Charges patronales (" + pct(ce.tauxCharges, 2) + " du brut)"; o.an = dt(ce.coutAn);
+      o.parts = { salarie: ce.parts.salarie, caisse: ce.parts.caisse, etat: ce.parts.etat };
     }
     return o;
   }
@@ -243,6 +354,7 @@
   }
 
   return { DEFAUT: DEFAUT, TABLE_BRUTS: TABLE_BRUTS, CREDIT_DEF: CREDIT_DEF, profil: profil, salaire: salaire, credit: credit, impot: impot, retraite: retraite, pont: pont, tableauNet: tableauNet, bareme: bareme,
-    simulCredit: simulCredit, assuranceVie: assuranceVie, cea: cea,
+    simulCredit: simulCredit, assuranceVie: assuranceVie, cea: cea, regle8: regle8, anticipe: anticipe, regroupement: regroupement, employeur: employeur,
+    R8_DEF: R8_DEF, RA_DEF: RA_DEF, RG_DEF: RG_DEF, dureeTxt: dureeTxt, taux: taux,
     affichage: affichage, nombre: nombre, dt: dt, pct: pct, annee: P.annee };
 });
