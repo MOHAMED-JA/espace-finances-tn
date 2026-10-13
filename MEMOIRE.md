@@ -24,6 +24,7 @@ Exigences :
 Règles permanentes de l'utilisateur :
 - toujours donner les liens de l'application dans chaque réponse ;
 - **à la fin de chaque réponse, lister les tâches en instance** (ce que je peux faire, ce qui dépend de l'utilisateur, ce qui attend un événement extérieur) ; s'il n'y en a aucune, écrire « Il n'y a pas de tâches en instance. » (demandé le 13 oct.) ;
+- **réponses adaptées au TDAH** (compétence « i-have-adhd », demandée le 13 oct., valable pour toute la conversation jusqu'à « stop adhd mode » ou « normal mode ») : la première ligne est l'action à faire ; étapes numérotées et courtes ; l'état d'avancement redit à chaque réponse (« étape 2 sur 4 faite ») ; durées concrètes (« 10 minutes ») ; listes de 5 éléments au plus ; ce qui marche maintenant montré concrètement ; pas d'introduction, de récapitulatif ni de formule de politesse finale ; une seule action de moins de 2 minutes à la fin ; un sujet secondaire proposé à part, jamais glissé dans la réponse ;
 - fusionner soi-même (PR puis merge) ;
 - carte blanche sur les dépôts ;
 - sécurité élevée : dépôt privé, CSP stricte, RLS.
