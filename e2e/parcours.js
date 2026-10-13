@@ -1932,7 +1932,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   });
 
   await etape("historique du salaire : hausse datée, hausse prévue, retrait annulé, depuis le module Salaire", async () => {
-    await page.goto(base + "/espace/#profil");
+    await page.goto(base + "/espace/#profil?partie=salaire");
     await page.waitForSelector("#hs-maj", { state: "visible" });
     const p0 = await page.evaluate(() => { const p = window.Orbite.profil(); return { montant: p.montant, sens: p.sens, n: p.historiqueSalaire.length }; });
     assert(p0.n === 0 && (await page.isHidden("#hs-liste")), "historique vide au départ");
