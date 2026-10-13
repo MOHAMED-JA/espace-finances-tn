@@ -52,6 +52,19 @@
     return meilleur;
   }
 
+  /* Économie d'impôt d'une somme versée en plus cette année (assurance vie et / ou CEA, meilleur partage,
+     dans la limite des plafonds) : utilisée par « Rembourser ou épargner ? ». */
+  function economieVersement(sy, D) {
+    var P = MF.simuler(entreeFiscale(sy, 0, 0)).produits, revenu = (sy.salaireAnnee || sy.salaire).revenuFiscal;
+    var plafAv = Math.min(isFinite(P.av.plafond) ? P.av.plafond : revenu, revenu);
+    var plafCea = Math.min(isFinite(P.cea.plafond) ? P.cea.plafond : revenu, revenu);
+    var ex = versementsAnnuels(sy.profil), avant = economie(sy, ex.av, ex.cea);
+    if (!(D > 0)) return { eco: 0, av: 0, cea: 0, dureeAv: P.av.dureeMinimaleAns || 8, dureeCea: P.cea.dureeBlocageAns || 5 };
+    var m = meilleurPartage(sy, ex, D, plafAv, plafCea);
+    return { eco: Math.max(0, m.eco - avant), av: m.av, cea: m.cea, horsPlafond: Math.max(0, D - m.av - m.cea),
+      dureeAv: P.av.dureeMinimaleAns || 8, dureeCea: P.cea.dureeBlocageAns || 5 };
+  }
+
   function optimiseurFiscal(sy, options) {
     var o = options || {}, p = sy.profil, m = o.maintenant || sy.maintenant || new Date();
     var base = MF.simuler(entreeFiscale(sy, 0, 0));
@@ -404,5 +417,5 @@
     return L.join("\n").slice(0, 9000);
   }
 
-  return { resumeAssistant: resumeAssistant, foyer: foyer, scoreSante: scoreSante, optimiseurFiscal: optimiseurFiscal, simulateurVie: simulateurVie, appliquerEvenements: appliquer, TYPES_EVT: TYPES_EVT };
+  return { resumeAssistant: resumeAssistant, foyer: foyer, scoreSante: scoreSante, optimiseurFiscal: optimiseurFiscal, economieVersement: economieVersement, simulateurVie: simulateurVie, appliquerEvenements: appliquer, TYPES_EVT: TYPES_EVT };
 });

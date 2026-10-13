@@ -31,6 +31,7 @@
   <link rel="stylesheet" href="/espace/confort.css">
   <link rel="stylesheet" href="/espace/apparence.css">
   <link rel="stylesheet" href="/espace/sous-rubriques.css">
+  <link rel="stylesheet" href="/espace/decider.css">
   <link rel="stylesheet" href="/orbite/signature.css">
   <script src="/commun/config.js"></script>
   <script src="/commun/garde.js"></script>
@@ -268,6 +269,29 @@
             <div class="panneau sante__objectifs" id="sante-objectifs-bloc">
               <h3>Pour gagner des points</h3>
               <ol class="sante__objectifs-liste" id="sante-objectifs"></ol>
+            </div>
+          </section>
+
+          <!-- Patrimoine net -->
+          <section class="bloc-orbite pn" id="patrimoine" aria-labelledby="titre-patrimoine">
+            <div class="bloc-orbite__tete"><div><h2 id="titre-patrimoine">Votre patrimoine net</h2>
+              <p>Ce que vous possédez moins ce que vous devez, et comment il grandit chaque mois.</p></div></div>
+            <div class="panneau pn__carte">
+              <div class="pn__tete"><strong class="chiffre" id="pn-net">—</strong><span class="pn__hausse" id="pn-hausse" hidden></span></div>
+              <div class="pn__prop" id="pn-prop" aria-hidden="true"><i class="pn__prop-a"></i><i class="pn__prop-p"></i></div>
+              <div class="pn__leg"><span class="pn__leg-a" id="pn-leg-a"></span><span class="pn__leg-p" id="pn-leg-p"></span></div>
+              <div class="pn__bilan">
+                <div><h3>Ce que vous possédez</h3><ul id="pn-actifs" role="list"></ul></div>
+                <div><h3>Ce que vous devez</h3><ul id="pn-passifs" role="list"></ul></div>
+              </div>
+              <div class="pn__biens">
+                <div class="champ"><label for="pn-logement">Valeur estimée de votre logement</label><div class="saisie"><input id="pn-logement" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><span class="saisie__unite">DT</span></div><p class="champ__aide">Prix auquel il se vendrait aujourd'hui. Laissez vide si vous êtes locataire.</p></div>
+                <div class="champ"><label for="pn-autres">Autres biens (voiture, terrain…)</label><div class="saisie"><input id="pn-autres" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><span class="saisie__unite">DT</span></div></div>
+                <div class="champ"><label for="pn-hausse-log">Le logement prend chaque année</label><div class="saisie"><input id="pn-hausse-log" type="text" inputmode="decimal" autocomplete="off"><span class="saisie__unite">%</span></div></div>
+              </div>
+              <div class="pn__graphe" id="pn-graphe"></div>
+              <ul class="pn__jalons" id="pn-jalons" role="list"></ul>
+              <p class="pn__note" id="pn-note"></p>
             </div>
           </section>
 
@@ -771,6 +795,7 @@
             <button type="button" role="tab" id="vie-tab-vie" aria-controls="vie-panneau-vie" aria-selected="true" data-onglet="vie">Simulateur de vie</button>
             <button type="button" role="tab" id="vie-tab-fiscal" aria-controls="vie-panneau-fiscal" aria-selected="false" tabindex="-1" data-onglet="fiscal">Optimiseur fiscal</button>
             <button type="button" role="tab" id="vie-tab-scenarios" aria-controls="vie-panneau-scenarios" aria-selected="false" tabindex="-1" data-onglet="scenarios">Et si…</button>
+            <button type="button" role="tab" id="vie-tab-decider" aria-controls="vie-panneau-decider" aria-selected="false" tabindex="-1" data-onglet="decider">Décider</button>
           </div>
 
           <div class="vie-panneau" id="vie-panneau-vie" role="tabpanel" aria-labelledby="vie-tab-vie">
@@ -833,6 +858,30 @@
                 <li>Calcul indicatif selon le barème en vigueur : faites-le confirmer par votre conseiller.</li>
               </ul>
               <a class="lien-action" id="fi-simuler" href="#epargne">Simuler ce versement dans Épargne vie &amp; CEA<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
+            </section>
+          </div>
+
+          <div class="vie-panneau" id="vie-panneau-decider" role="tabpanel" aria-labelledby="vie-tab-decider" hidden>
+            <section class="panneau dc" aria-labelledby="dc-titre">
+              <h2 id="dc-titre">Que faire de cette somme ?</h2>
+              <p class="panneau__sous">Rembourser un crédit, placer en assurance vie ou en CEA, ou garder en réserve : Orbite compare les trois avec vos vrais chiffres (crédits, impôt, réserve).</p>
+              <div class="dc-somme">
+                <div class="champ"><label for="dc-somme">Somme à placer</label><div class="saisie saisie--grande"><input id="dc-somme" type="text" inputmode="decimal" autocomplete="off"><span class="saisie__unite">DT</span></div></div>
+                <div class="dc-horizon"><p class="champ__lib" id="dc-horizon-lib">Comparer sur</p>
+                  <div class="bascule" role="radiogroup" aria-labelledby="dc-horizon-lib"><label><input type="radio" name="dc-horizon" value="5" checked><span>5 ans</span></label><label><input type="radio" name="dc-horizon" value="10"><span>10 ans</span></label><i class="bascule__pastille" aria-hidden="true"></i></div></div>
+              </div>
+              <div class="dc-puces" id="dc-puces"></div>
+              <ol class="dc-choix" id="dc-choix" role="list"></ol>
+              <div class="dc-barres" id="dc-barres"></div>
+              <div class="dc-conseil" id="dc-conseil" aria-live="polite"></div>
+              <details class="dc-hyp" id="dc-hyp">
+                <summary>Hypothèses : rendement de l'assurance vie <span id="dc-hyp-av">6</span> %, du compte d'épargne <span id="dc-hyp-ep">5</span> %</summary>
+                <div class="dc-hyp__champs">
+                  <div class="champ"><label for="dc-rend-av">Assurance vie / CEA (net de frais, par an)</label><div class="saisie"><input id="dc-rend-av" type="text" inputmode="decimal" autocomplete="off"><span class="saisie__unite">%</span></div></div>
+                  <div class="champ"><label for="dc-rend-ep">Compte d'épargne (par an)</label><div class="saisie"><input id="dc-rend-ep" type="text" inputmode="decimal" autocomplete="off"><span class="saisie__unite">%</span></div></div>
+                </div>
+              </details>
+              <p class="dc-note">Calcul indicatif. Le remboursement anticipé est compté sans indemnité : demandez son montant à votre banque. L'économie d'impôt vient du barème en vigueur, sur votre revenu de l'année.</p>
             </section>
           </div>
 
@@ -2331,7 +2380,10 @@
   <script src="/espace/js/parametres.js"></script>
   <script src="/espace/js/admin.js"></script>
   <script src="/espace/js/partage-demande.js"></script>
+  <script src="/espace/js/decider-calcul.js"></script>
   <script src="/espace/js/vue-vie.js"></script>
+  <script src="/espace/js/vue-decider.js"></script>
+  <script src="/espace/js/vue-patrimoine.js"></script>
   <script src="/espace/js/scenarios-calcul.js"></script>
   <script src="/espace/js/expert-calcul.js"></script>
   <script src="/espace/js/vue-scenarios.js"></script>

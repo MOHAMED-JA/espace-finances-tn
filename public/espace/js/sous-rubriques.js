@@ -18,6 +18,7 @@
   var CONFIG = {
     orbite: { parties: [
       { cle: "apercu", lib: "Vue d'ensemble", cibles: ["#orbite-contenu", ".budget", "#foyer", "#orbite-expert"] },
+      { cle: "patrimoine", lib: "Patrimoine", cibles: ["#patrimoine"] },
       { cle: "sante", lib: "Santé financière", cibles: ["#sante"] },
       { cle: "conseils", lib: "Conseils", cibles: ["[aria-labelledby='titre-conseils']"] },
       { cle: "capacite", lib: "Capacité d'emprunt", cibles: ["[aria-labelledby='titre-capacite']"] },

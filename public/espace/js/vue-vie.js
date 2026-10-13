@@ -1,5 +1,6 @@
 /*
- * Orbite — « Vie & impôts » (route #vie, onglet par #vie?onglet=vie|fiscal|scenarios ; « Et si… » : vue-scenarios.js).
+ * Orbite — « Vie & impôts » (route #vie, onglet par #vie?onglet=vie|fiscal|scenarios|decider ; « Et si… » : vue-scenarios.js ;
+ * « Décider » : vue-decider.js).
  * Simulateur de vie : événements ajoutés à une copie du profil, comparaison avant / après (OrbiteIntelligence).
  * Optimiseur fiscal : meilleure répartition assurance vie / CEA, montant utile avant le 31 décembre.
  * Rien n'est modifié dans le profil sans action explicite (« C'est fait : mettre mon profil à jour »), annulable.
@@ -27,9 +28,10 @@
     });
     if (focus) $("vie-tab-" + cle).focus();
     if (cle === "fiscal") rendreFiscal(); else if (cle === "vie") calculer();
+    else if (cle === "decider") doc.dispatchEvent(new CustomEvent("orbite:decider"));
     else doc.dispatchEvent(new CustomEvent("orbite:etsi"));
   }
-  var ONGLETS = ["vie", "fiscal", "scenarios"];
+  var ONGLETS = ["vie", "fiscal", "scenarios", "decider"];
   var tabs = doc.querySelector(".vie-onglets");
   tabs.addEventListener("click", function (e) {
     var b = e.target.closest("[data-onglet]"); if (!b) return;

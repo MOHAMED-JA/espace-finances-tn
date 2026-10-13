@@ -678,6 +678,25 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centvicies. « Rembourser ou épargner ? » et « Patrimoine net » (13 oct.)
+
+Programme d'améliorations choisi par l'utilisateur le 13 oct. : 1 Rembourser ou épargner, 2 Patrimoine net (faits ici, maquette validée « Oui, construis les deux »), puis 3 lecture automatique des autres lignes de la fiche de paie, 5 import du relevé bancaire, 6 comparateur de banques, 7 bilan annuel PDF, 8 audit accessibilité et vitesse (**à faire, maquette d'abord pour chacun**). La double authentification (4) n'a pas été retenue.
+
+- **Moteur** `public/espace/js/decider-calcul.js` (pur, `DeciderCalcul`, testé : `tests/espace/decider.test.js`, 8 tests) :
+  - `comparer(sy, { somme, horizon: 5 | 10 })` : trois choix et leur valeur à l'horizon.
+    - **rembourser** le crédit au taux le plus haut (à taux égal, le plus long) : même mensualité, durée plus courte ; intérêts évités, mois gagnés, nouvelle date de fin (la première échéance restante est celle du mois en cours) ; valeur = reste dû en moins + mensualités libérées placées au taux d'épargne ; sans indemnité (signalé) ;
+    - **placer** en assurance vie / CEA : économie d'impôt de l'année par `OrbiteIntelligence.economieVersement(sy, D)` (nouveau : meilleur partage AV/CEA dans les plafonds, même moteur que l'optimiseur fiscal), placée au taux d'épargne, + rendement AV ;
+    - **réserve** : mois de dépenses avant / après (même règle que le score de santé : dépenses déclarées < 30 % du net → 50 % du net), points de santé gagnés ;
+    - **conseil** : compléter d'abord une réserve de 3 mois de dépenses (arrondie à 10 DT), puis le choix le plus rentable hors réserve.
+  - `prochainesPrimes(sy, n)` : mois et montant net estimé (salaires en plus × net mensuel, arrondi à 10 DT).
+  - `patrimoine(sy)` : logement + autres biens + épargne disponible + capital des contrats (saisi ou estimé) − reste dû des crédits (saisi, sinon déduit de la mensualité, du taux et des échéances restantes, marqué « estimé ») ; projection mois par mois (logement +x %/an, contrats au rendement AV avec leurs versements, crédits amortis), 10 à 25 ans (fin du dernier crédit + 3 ans) ; hausse par mois (sur 12 mois) ; jalons : fin de chaque crédit (marge libérée ; « logement entièrement à vous » pour l'immobilier), patrimoine doublé.
+- **Profil** (`normaliser`) : `patrimoine { logement, autres, hausseLogement (2 %, −10…15) }`, `decider { rendementAv (6 %), rendementEpargne (5 %) }`.
+- **Interface** :
+  - Vie & impôts › nouvel onglet **Décider** (`#vie?onglet=decider`, `&somme=` préremplit) : `vue-decider.js` ; pastilles des deux prochaines primes et de l'épargne disponible, « Autre montant », bascule 5 / 10 ans, trois cartes (« Le plus rentable »), barres « ce que vaut la somme » mises à jour sur place (la largeur glisse), conseil sur fond sombre avec barre de partage, hypothèses dépliables (gardées dans le profil) ;
+  - Mon orbite › nouvelle sous-rubrique **Patrimoine** (section `#patrimoine`, 2ᵉ partie) : `vue-patrimoine.js` ; chiffre, hausse par mois, barre possédé/dû, deux listes, champs logement / autres biens / hausse annuelle, courbe (moteur commun des graphiques : net en aire, dettes en tirets, fins de crédit en verticales sauf trop près du bord), jalons, hypothèses ;
+  - styles `decider.css` ; conseil « Une prime arrive en … » dans Mon orbite (mois en cours ou suivant) → Décider avec la somme ; palette : « Rembourser ou épargner ? », « Mon patrimoine net ».
+- e2e : étape « rembourser ou épargner ? (Décider) et patrimoine net ». Nouveautés `2026-10-13g`, SW `orbite-2026-10-13i`.
+
 ## 3 centnovodecies. Sous-rubriques : une partie de page à la fois (13 oct.)
 
 Demande : « beaucoup de scrolling » ; la barre latérale doit montrer des sous-rubriques pour chaque rubrique longue ; pas de découpage pour les pages courtes ; belles animations ; terminer et fusionner sans attendre (pas de maquette demandée cette fois).
