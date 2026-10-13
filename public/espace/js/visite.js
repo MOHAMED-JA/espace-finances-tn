@@ -177,14 +177,41 @@
   }
 
   function animerEntree() {
-    etat.bulle.classList.remove("visite__bulle--entre");
+    etat.bulle.classList.remove("visite__bulle--entre", "visite__bulle--texte");
     void etat.bulle.offsetWidth;
     etat.bulle.classList.add("visite__bulle--entre");
+  }
+  /* D'une étape à l'autre, la bulle reste là et glisse ; seul son texte se renouvelle en fondu. */
+  function animerTexte() {
+    etat.bulle.classList.remove("visite__bulle--entre", "visite__bulle--texte");
+    void etat.bulle.offsetWidth;
+    etat.bulle.classList.add("visite__bulle--texte");
+  }
+  /* Changement de page : le halo se referme sur place (voile uniforme), la bulle s'efface vite. */
+  function fermerHalo() {
+    var h = etat.halo, r = h.getBoundingClientRect();
+    h.style.transform = "translate(" + (r.left + r.width / 2) + "px," + (r.top + r.height / 2) + "px)"; h.style.width = "0px"; h.style.height = "0px";
+  }
+  /* Attend que la page de l'étape soit affichée et que sa rubrique ne bouge plus (2 images identiques), 900 ms au plus. */
+  function quandPrete(etape, n, fn) {
+    var debut = Date.now(), avant = null, vu = false, vue = etape.vue.replace(/^#/, "").split("?")[0];
+    var surVue = function (e) { if (e.detail && e.detail.vue === vue) vu = true; };
+    doc.addEventListener("orbite:vue", surVue);
+    (function tour() {
+      if (!etat || etat.i !== n) { doc.removeEventListener("orbite:vue", surVue); return; }
+      var ecoule = Date.now() - debut, c = vu ? cibleDe(etape) : null, k = null;
+      if (c) { var r = c.getBoundingClientRect(); k = Math.round(r.left) + "," + Math.round(r.top) + "," + Math.round(r.width) + "," + Math.round(r.height); }
+      /* 140 ms minimum : le temps que la bulle finisse de s'effacer. */
+      if ((ecoule >= 140 && k !== null && k === avant) || ecoule > 900) { doc.removeEventListener("orbite:vue", surVue); fn(); return; }
+      avant = k;
+      requestAnimationFrame(tour);
+    })();
   }
 
   /* Écran de choix : le chapitre conseillé est mis en avant et reçoit le focus. */
   function montrerChoix() {
     etat.i = -1;
+    etat.enEtape = false;
     var conseil = !dejaVue() ? "essentiel" : (nouveautesVues() ? "essentiel" : "nouveautes");
     $("visite-compteur").textContent = "Visite guidée";
     $("visite-titre").textContent = "Par quoi voulez-vous commencer ?";
@@ -243,23 +270,34 @@
     $("visite-suiv").textContent = n === total - 1 ? "Terminer" : "Suivant";
     $("visite-passer").hidden = n === total - 1;
     [].forEach.call(etat.bulle.querySelectorAll(".visite__points i"), function (p, k) { p.classList.toggle("actif", k === n); });
-    animerEntree();
-    var montrer = function () {
+    var dejaUneEtape = etat.enEtape;
+    etat.enEtape = true;
+    var montrer = function (apresPage) {
       if (!etat || etat.i !== n) return;
-      etat.racine.classList.remove("visite--transit");
       var cible = cibleDe(etape);
       if (cible) {
         var r = cible.getBoundingClientRect();
         if (r.top < 70 || r.bottom > window.innerHeight - 90) cible.scrollIntoView({ block: "center", behavior: "auto" });
       }
-      placer();
+      if (apresPage) {
+        /* Bulle posée directement à sa nouvelle place (sans traverser l'écran), puis fondu d'entrée ; le halo glisse et s'ouvre sur la rubrique. */
+        etat.racine.classList.add("visite--pose");
+        placer();
+        void etat.bulle.offsetWidth;
+        etat.racine.classList.remove("visite--transit", "visite--pose");
+        animerEntree();
+      } else {
+        if (dejaUneEtape) animerTexte(); else animerEntree();
+        placer();
+      }
       suivre(n);
     };
     if (etape.vue && location.hash !== etape.vue) {
       etat.racine.classList.add("visite--transit");
+      fermerHalo();
       location.hash = etape.vue;
-      setTimeout(montrer, 420);
-    } else montrer();
+      quandPrete(etape, n, function () { montrer(true); });
+    } else montrer(false);
     $("visite-suiv").focus({ preventScroll: true });
   }
 

@@ -789,12 +789,18 @@ body.attente .onglets-bas a, body.attente .rail__liens a { pointer-events: none;
 .visite__chap-txt small { font-size: 13px; color: var(--encre-3); }
 .visite__badge { padding: 1px 8px; border-radius: 999px; background: var(--epargne); color: #fff; font-size: 11px; font-weight: 700; line-height: 1.6; }
 .visite__badge--vu { background: var(--surface-3); color: var(--encre-3); }
-/* Changement de page entre deux étapes : la bulle s'efface le temps que la page s'affiche. */
-.visite--transit .visite__bulle { opacity: 0; }
+/* Changement de page entre deux étapes : la bulle s'efface vite (140 ms) et le halo se referme, le voile reste
+   identique (pas de fondu de page pendant la visite) ; sur la nouvelle page, la bulle est posée à sa place puis apparaît. */
 .visite__bulle, .visite__halo { transition-property: transform, width, height, opacity; }
+.visite--transit .visite__bulle { opacity: 0; transition: opacity 140ms ease; pointer-events: none; }
+.visite--transit .visite__halo { transition-duration: 180ms; }
+.visite--pose .visite__bulle { transition: none; }
+/* Même page : la bulle glisse, son texte se renouvelle. */
+.visite__bulle--texte .visite__compteur, .visite__bulle--texte .visite__titre, .visite__bulle--texte .visite__texte { animation: visite-texte 220ms var(--sortie); }
+@keyframes visite-texte { from { opacity: 0; transform: translateY(3px); } }
 @media (prefers-reduced-motion: reduce) {
   .visite__halo, .visite__bulle, .visite__points i { transition: none; }
-  .visite__bulle--entre { animation: none; }
+  .visite__bulle--entre, .visite__bulle--texte .visite__compteur, .visite__bulle--texte .visite__titre, .visite__bulle--texte .visite__texte { animation: none; }
 }
 :root[data-mouvement="reduit"] .visite__halo, :root[data-mouvement="reduit"] .visite__bulle { transition: none; }
 

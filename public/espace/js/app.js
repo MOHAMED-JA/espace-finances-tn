@@ -600,7 +600,8 @@
     var changer = function () {
       doc.querySelectorAll("section.vue").forEach(function (s) { s.hidden = s.getAttribute("data-vue") !== r.vue; });
       doc.body.setAttribute("data-vue-active", r.vue);
-      if (r.vue !== vueAffichee) {
+      /* Pendant la visite guidée, la page change sous le voile sans animation d'entrée (la bulle porte le mouvement). */
+      if (r.vue !== vueAffichee && !doc.body.classList.contains("visite-ouverte")) {
         var entree = doc.querySelector('section.vue[data-vue="' + r.vue + '"]');
         if (entree) { entree.classList.add("vue--entree"); setTimeout(function () { entree.classList.remove("vue--entree"); }, 900); }
       }
@@ -631,7 +632,8 @@
       if (r.vue !== vueAffichee) E.compterUsage("vue", r.vue);
       vueAffichee = r.vue;
     };
-    if (vueAffichee && vueAffichee !== r.vue && doc.startViewTransition && !mouvementReduit.matches) {
+    /* Fondu de page, sauf pendant la visite guidée : il emporterait aussi son voile sombre (clignement clair). */
+    if (vueAffichee && vueAffichee !== r.vue && doc.startViewTransition && !mouvementReduit.matches && !doc.body.classList.contains("visite-ouverte")) {
       doc.documentElement.setAttribute("data-transition", VUES.indexOf(r.vue) >= VUES.indexOf(vueAffichee) ? "avant" : "arriere");
       doc.startViewTransition(changer);
     } else changer();

@@ -677,6 +677,21 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centtredecies. Fluidité : visite guidée et Voyage dans le temps (13 oct.)
+
+Deux vidéos de l'utilisateur (« la transition entre les étapes n'est pas fluide ») analysées image par image. Corrections validées (« Oui, corrige tout »). Branche `fluidite`.
+
+- **Voyage dans le temps (Crédit)** :
+  - défaut : la partie foncée de la piste restait à 50 % (`.curseur` lit `--p`, jamais posé pour `#cr-temps-curseur`). `majTemps()` pose maintenant `--p` = échéance / total et `--c: var(--credit)` ;
+  - lecture recalée sur `requestAnimationFrame` : tout le crédit en 4 s, proportionnel au reste quand on part du milieu ; en mouvement réduit, 12 pas espacés de 400 ms ; `lecture` est un objet `{ arreter }` ;
+  - pendant la lecture, la section prend `.cr-temps--lecture` : la barre dégradée suit sans sa transition de 120 ms (plus de retard).
+- **Visite guidée** :
+  - le voile clair qui clignotait au changement de page venait du fondu de page (`document.startViewTransition`) qui emportait aussi le voile de la visite. `app.js` ne fait plus ce fondu, ni l'animation d'entrée `.vue--entree`, tant que `body.visite-ouverte` ;
+  - plus d'attente fixe de 420 ms : `quandPrete()` attend `orbite:vue` de la bonne page puis une rubrique immobile sur 2 images (140 ms au moins, le temps que la bulle s'efface ; 900 ms au plus) ;
+  - même page : la bulle reste et glisse, seul le texte se renouvelle (`.visite__bulle--texte`, 220 ms). Changement de page : le halo se referme sur place (`fermerHalo`), la bulle s'efface en 140 ms, puis elle est posée à sa nouvelle place sans traverser l'écran (`.visite--pose`) et apparaît, pendant que le halo glisse jusqu'à la rubrique.
+- SW `orbite-2026-10-13b`.
+- **Tests e2e** : piste juste à 30/60 puis à chaque échantillon pendant la lecture, durée de la fin de lecture (1,2 à 3,6 s), arrêt propre ; pendant la visite, aucun fondu de page ni entrée animée, passage d'une page à l'autre < 1,1 s.
+
 ## 3 centduodecies. Apparence personnelle (13 oct.)
 
 Graphiques unifiés vérifiés en ligne par l'utilisateur (étapes 1 à 3 : déploiement, bulle et clavier, sombre et téléphone). Maquette de l'apparence validée (« Oui, applique »). Branche `apparence`.

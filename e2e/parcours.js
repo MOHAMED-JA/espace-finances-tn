@@ -275,12 +275,20 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.getElementById("mo-ajout").getBoundingClientRect(); return location.hash === "#mois?onglet=budget" && !document.querySelector(".visite--transit") && Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
     await page.waitForTimeout(400);
     await page.screenshot({ path: path.join(CAPTURES, "visite-nouveautes.png") });
-    const vus = [];
+    /* Pendant la visite : aucun fondu de page (il éclaircissait le voile) ni animation d'entrée des cartes. */
+    await page.evaluate(() => { window.__fondus = 0; window.__entrees = 0; if (document.startViewTransition) { const o = document.startViewTransition.bind(document); document.startViewTransition = (f) => { window.__fondus++; return o(f); }; } new MutationObserver((l) => l.forEach((m) => { if (m.target.classList && m.target.classList.contains("vue--entree")) window.__entrees++; })).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["class"] }); });
+    const vus = [], passages = [];
     for (let i = 1; i < 9; i++) {
+      const avant = await page.evaluate(() => location.hash), t = Date.now();
       await page.click("#visite-suiv");
       await page.waitForFunction(() => !document.querySelector(".visite--transit"));
-      vus.push((await page.textContent("#visite-titre")) + " @ " + (await page.evaluate(() => location.hash)));
+      const apres = await page.evaluate(() => location.hash);
+      if (apres !== avant) passages.push(Date.now() - t);
+      vus.push((await page.textContent("#visite-titre")) + " @ " + apres);
     }
+    const fe = await page.evaluate(() => [window.__fondus, window.__entrees]);
+    assert(fe[0] === 0 && fe[1] === 0, "ni fondu de page ni entrée animée pendant la visite : " + JSON.stringify(fe));
+    assert(passages.length >= 3 && Math.max(...passages) < 1100, "passage d'une page à l'autre (ms) : " + JSON.stringify(passages));
     assert(vus.some((t) => /calendrier de l'argent @ #mois\?onglet=calendrier/.test(t)) && vus.some((t) => /4 nouveaux onglets @ #credit/.test(t)) && vus.some((t) => /Partager une simulation @ #credit/.test(t)) && vus.some((t) => /Comparer vos simulations @ #simulations/.test(t)) && vus.some((t) => /Votre apparence @ #compte\?onglet=preferences/.test(t)) && vus.some((t) => /Haute lisibilité @ #compte\?onglet=preferences/.test(t)), "pages ouvertes : " + vus.join(" | "));
     await page.screenshot({ path: path.join(CAPTURES, "visite-credit.png") });
     await page.click("#visite-suiv");
@@ -1680,8 +1688,26 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => /Échéance 30 sur 60/.test(document.getElementById("cr-temps-date").textContent));
     const st = await page.textContent("#cr-temps-stats");
     assert(/Capital remboursé/.test(st) && /30 échéances restantes/.test(st), "voyage dans le temps : " + st);
+    /* La piste se remplit jusqu'au rond (elle restait bloquée à moitié). */
+    const pisteJuste = () => page.evaluate(() => { const c = document.getElementById("cr-temps-curseur"); return [c.value, c.max, c.style.getPropertyValue("--p")]; });
+    let pj = await pisteJuste();
+    assert(pj[2] === "50.00%", "piste à 30 sur 60 : " + JSON.stringify(pj));
+    /* Lecture continue : la piste suit le rond à chaque image, la fin (30 → 60) dure environ 2 s. */
+    const t0 = Date.now();
     await page.click("#cr-temps-lire");
+    const vus = [];
+    for (let i = 0; i < 4; i++) {
+      await page.waitForTimeout(300);
+      pj = await pisteJuste();
+      vus.push(pj);
+      assert(Math.abs(parseFloat(pj[2]) - pj[0] / pj[1] * 100) < 0.01, "piste qui suit la lecture : " + JSON.stringify(pj));
+    }
+    assert(new Set(vus.map((v) => v[0])).size >= 3, "le rond avance pendant la lecture : " + JSON.stringify(vus));
     await page.waitForFunction(() => /Crédit soldé/.test(document.getElementById("cr-temps-stats").textContent), null, { timeout: 15000 });
+    const duree = Date.now() - t0;
+    pj = await pisteJuste();
+    assert(pj[2] === "100.00%" && duree > 1200 && duree < 3600, "fin de lecture : " + JSON.stringify(pj) + " en " + duree + " ms");
+    assert(!(await page.$(".cr-temps--lecture")) && (await page.getAttribute("#cr-temps-lire", "aria-pressed")) === "false", "lecture arrêtée à la fin");
     for (const [id, ext] of [["#cr-pdf", "pdf"], ["#cr-xlsx", "xlsx"]]) {
       const [dl] = await Promise.all([page.waitForEvent("download"), page.click(id)]);
       assert(dl.suggestedFilename() === "echeancier-credit-30000dt-60mois." + ext, "nom : " + dl.suggestedFilename());

@@ -758,17 +758,42 @@
     $("cr-temps-date").textContent = k === 0 ? "Avant la 1re échéance" : "Échéance " + k + " sur " + n + (l && l.date ? " · " + moisAn(l.date) : "");
     cur.setAttribute("aria-valuetext", $("cr-temps-date").textContent + ", " + Math.round(part * 100) + " % du capital remboursé");
     $("cr-temps-rempli").style.setProperty("--p", (part * 100).toFixed(2) + "%");
+    /* La piste du curseur se remplit jusqu'au rond (le remplissage par défaut des curseurs est fixe). */
+    cur.style.setProperty("--p", (n ? k / n * 100 : 0).toFixed(2) + "%");
+    cur.style.setProperty("--c", "var(--credit)");
     $("cr-temps-stats").innerHTML = stat("Capital remboursé", dt(arr(cumP)), Math.round(part * 100) + " % du capital") + stat("Intérêts payés", dt(arr(cumI)), r.totI > 0 ? Math.round(cumI / r.totI * 100) + " % des intérêts" : "") +
       (r.totAss > 0 ? stat("Assurance payée", dt(arr(cumA))) : "") + stat("Capital restant dû", dt(reste), k < n ? pluriel(n - k, "échéance restante", "échéances restantes") : "Crédit soldé", "cr-stat--fort");
   }
-  function arreterLecture() { if (!lecture) return; clearInterval(lecture); lecture = null; var b = $("cr-temps-lire"); b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Lancer la lecture"); b.innerHTML = ico("lecture"); }
+  /* Lecture calée sur l'affichage (requestAnimationFrame) : tout le crédit en 4 s, sans à-coups ; en mouvement réduit,
+     quelques pas espacés. */
+  function arreterLecture() {
+    if (!lecture) return;
+    lecture.arreter(); lecture = null;
+    var b = $("cr-temps-lire"); b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Lancer la lecture"); b.innerHTML = ico("lecture");
+    var sec = b.closest(".cr-temps"); if (sec) sec.classList.remove("cr-temps--lecture");
+  }
   function basculerLecture() {
     if (lecture) { arreterLecture(); return; }
     var cur = $("cr-temps-curseur"), n = +cur.max; if (!n) return;
-    if (+cur.value >= n) cur.value = "0";
+    if (+cur.value >= n) { cur.value = "0"; majTemps(); }
     var b = $("cr-temps-lire"); b.setAttribute("aria-pressed", "true"); b.setAttribute("aria-label", "Mettre en pause"); b.innerHTML = ico("pause");
-    var pas = Math.max(1, Math.round(n / 120));
-    lecture = setInterval(function () { cur.value = String(Math.min(n, +cur.value + pas)); majTemps(); if (+cur.value >= n) arreterLecture(); }, mouvementReduit.matches ? 120 : 33);
+    var sec = b.closest(".cr-temps"); if (sec) sec.classList.add("cr-temps--lecture");
+    var depart = +cur.value, duree = 4000 * (n - depart) / n;
+    function poser(k) { if (k !== +cur.value) { cur.value = String(k); majTemps(); } if (k >= n) arreterLecture(); }
+    if (mouvementReduit.matches) {
+      var pas = Math.max(1, Math.round(n / 12)), id = setInterval(function () { poser(Math.min(n, +cur.value + pas)); }, 400);
+      lecture = { arreter: function () { clearInterval(id); } };
+      return;
+    }
+    var t0 = null, raf = 0, actif = true;
+    var tour = function (t) {
+      if (!actif) return;
+      if (t0 === null) t0 = t;
+      poser(Math.min(n, depart + Math.round((t - t0) / duree * (n - depart))));
+      if (actif && lecture) raf = requestAnimationFrame(tour);
+    };
+    lecture = { arreter: function () { actif = false; cancelAnimationFrame(raf); } };
+    raf = requestAnimationFrame(tour);
   }
 
   function rendreLourd() {
