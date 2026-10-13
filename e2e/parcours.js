@@ -2912,6 +2912,8 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     const verifier = async (vue, sel, nom) => {
       await page.goto(base + "/espace/#" + vue);
       await page.waitForSelector(sel + " .og-svg", { timeout: 15000 });
+      /* Partie affichée : le graphique se redessine à sa largeur réelle, on attend la fin avant de le focaliser. */
+      await page.waitForTimeout(400);
       await page.focus(sel + " .og-svg");
       await page.waitForFunction((s) => { const b = document.querySelector(s + " .og-bulle"); return b && !b.hidden && b.textContent.length > 4; }, sel);
       await page.keyboard.press("ArrowLeft");
