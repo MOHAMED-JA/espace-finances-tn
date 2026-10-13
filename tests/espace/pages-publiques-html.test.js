@@ -12,7 +12,7 @@ const lire = (f) => fs.readFileSync(path.join(PUB, f), 'utf8');
 const pages = G.generer();
 
 test('chaque page publiée correspond au générateur (sinon : node scripts/pages-publiques.js)', () => {
-  assert.equal(Object.keys(pages).length, 7);
+  assert.equal(Object.keys(pages).length, 11);
   for (const [f, html] of Object.entries(pages)) assert.ok(lire(f) === html, 'public/' + f + ' à régénérer');
 });
 

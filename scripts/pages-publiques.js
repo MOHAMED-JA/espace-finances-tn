@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /*
  * Orbite — génère les pages publiques (salaire net, capacité de crédit, impôt, retraite, simulateur de crédit,
- * simulateur d'assurance vie, calcul du CEA) dans public/.
+ * simulateur d'assurance vie, calcul du CEA, règle des 8 %, remboursement anticipé, regroupement de crédits, coût employeur)
+ * dans public/.
  * Tous les chiffres viennent des moteurs (public/commun/pages-calcul.js) : le HTML contient donc des valeurs justes même
  * sans JavaScript (ce que lisent les moteurs de recherche), puis le navigateur les recalcule à chaque saisie.
  *
@@ -18,6 +19,7 @@ const P = require("../public/moteurs/salaire/parametres.js");
 const RT = require("../public/espace/js/retraite-calcul.js");
 const B = require("../public/moteurs/vie/baremes.js");
 const OC = require("../public/espace/js/orbite-calcul.js");
+const CPJ_IRA = require("../public/moteurs/credit/projets.js").IRA_PCT;
 
 /* Date des chiffres écrits dans le HTML (âges d'exemple, jours restants, année de départ). */
 const DATE_PAGES = new Date(2026, 9, 12);
@@ -36,12 +38,17 @@ const PAGES = [
   { cle: "vie", slug: "simulateur-assurance-vie-tunisie", voisin: "Simulateur d'assurance vie", voisinTxt: "Capital estimé et impôt économisé" },
   { cle: "cea", slug: "calcul-cea-tunisie", voisin: "Calcul du CEA", voisinTxt: "L'impôt que fait gagner un CEA" },
   { cle: "impot", slug: "impot-assurance-vie-cea", voisin: "Impôt, assurance vie et CEA", voisinTxt: "L'impôt que vous pouvez économiser" },
-  { cle: "retraite", slug: "retraite-cnss-cnrps", voisin: "Retraite CNSS ou CNRPS", voisinTxt: "À quel âge, pour quelle pension" }
+  { cle: "retraite", slug: "retraite-cnss-cnrps", voisin: "Retraite CNSS ou CNRPS", voisinTxt: "À quel âge, pour quelle pension" },
+  { cle: "regle8", slug: "regle-8-pourcent-credit-tunisie", voisin: "Règle des 8 %", voisinTxt: "Quand votre taux est divisé par deux" },
+  { cle: "anticipe", slug: "remboursement-anticipe-credit-tunisie", voisin: "Remboursement anticipé", voisinTxt: "Durée plus courte ou mensualité plus basse" },
+  { cle: "regroupement", slug: "regroupement-credits-tunisie", voisin: "Regroupement de crédits", voisinTxt: "Moins par mois, mais à quel prix" },
+  { cle: "employeur", slug: "cout-employeur-tunisie", voisin: "Coût employeur", voisinTxt: "Du brut au coût total d'un salarié" }
 ];
-/* Menu : 5 entrées ; une entrée est « en cours » sur ses pages (la capacité relève du crédit, l'impôt de l'assurance vie). */
+/* Menu : 5 entrées ; une entrée est « en cours » sur ses pages (capacité, règle des 8 %, remboursement anticipé et regroupement
+   relèvent du crédit, le coût employeur du salaire, l'impôt de l'assurance vie). */
 const NAV = [
-  { slug: "salaire-net-tunisie", nav: "Salaire net", pages: ["salaire"] },
-  { slug: "simulateur-credit-tunisie", nav: "Crédit", pages: ["pret", "credit"] },
+  { slug: "salaire-net-tunisie", nav: "Salaire net", pages: ["salaire", "employeur"] },
+  { slug: "simulateur-credit-tunisie", nav: "Crédit", pages: ["pret", "credit", "regle8", "anticipe", "regroupement"] },
   { slug: "simulateur-assurance-vie-tunisie", nav: "Assurance vie", pages: ["vie", "impot"] },
   { slug: "calcul-cea-tunisie", nav: "CEA", pages: ["cea"] },
   { slug: "retraite-cnss-cnrps", nav: "Retraite", pages: ["retraite"] }
@@ -203,6 +210,7 @@ ${PAGES.filter((p) => p.cle !== pg.cle).map((p) => `        <li><a href="/${p.sl
   <script src="/espace/js/orbite-calcul.js"></script>
   <script src="/espace/js/orbite-intelligence.js"></script>
   <script src="/espace/js/retraite-calcul.js"></script>
+  <script src="/moteurs/credit/projets.js"></script>
   <script src="/commun/pages-calcul.js"></script>
   <script src="/commun/partage-lien.js"></script>
   <script src="/commun/pages-publiques.js"></script>
@@ -850,7 +858,378 @@ ${faq(d)}`;
   return tete(pg, d) + heros(pg, d, calc) + corps + fin(pg);
 }
 
-const GEN = { salaire: pageSalaire, credit: pageCredit, impot: pageImpot, retraite: pageRetraite, pret: pagePret, vie: pageVie, cea: pageCea };
+
+/* Champ simple (nom = clé lue par /commun/pages-publiques.js). */
+function champ(id, lib, val, unite, o) {
+  const x = o || {};
+  return `<div class="champ"><label for="${id}">${lib}</label><div class="saisie${x.grande ? " saisie--grande" : ""}"><input id="${id}" name="${id}" type="text" inputmode="${x.mode || "decimal"}" autocomplete="off"${x.max ? ` maxlength="${x.max}"` : ""}${x.indice ? ` placeholder="${x.indice}"` : ""} value="${val}">${unite ? `<span class="saisie__unite">${unite}</span>` : ""}</div>${x.aide ? `<span class="champ__aide">${x.aide}</span>` : ""}</div>`;
+}
+/* Élément masqué tant que la valeur calculée est vide (data-si-v). */
+const siV = (aff, cle) => ` data-si-v="${cle}"${aff[cle] ? "" : " hidden"}`;
+const siEtat = (aff, etat) => ` data-si-etat="${etat}"${aff.etat === etat ? "" : " hidden"}`;
+const moisTxt = (k) => String(k).padStart(2, "0");
+
+/* ---------- Page règle des 8 % ---------- */
+function pageRegle8(pg) {
+  const D = C.R8_DEF, ex = C.regle8({}, m), aff = C.affichage("regle8", {}, m), r1 = ex.reductions[0], r2 = ex.reductions[1];
+  const capEx = 150000, R = OC.REGLE_8;
+  const d = {
+    titre: `Règle des 8 % Tunisie : taux de crédit divisé par deux — Orbite`,
+    description: `Loi n° 2024-41 : un crédit à taux fixe de plus de 7 ans voit son taux divisé par deux quand les intérêts dépassent 8 %. Calculez le mois exact et votre nouvelle mensualité. Gratuit.`,
+    sujet: "Règle des 8 % des crédits à taux fixe en Tunisie (loi n° 2024-41)", ariane: "Règle des 8 %",
+    surtitre: "Loi n° 2024-41 · crédits à taux fixe",
+    h1: `Votre taux de crédit peut-il être <em>divisé par deux</em>&nbsp;?`,
+    chapo: "Pour un crédit à taux fixe de plus de 7 ans, la loi permet de diviser le taux par deux dès que les intérêts payés dépassent un seuil. Indiquez votre crédit : Orbite vous donne le mois exact et la nouvelle mensualité.",
+    sourcesCourt: "Loi n° 2024-41 du 2 août 2024",
+    faq: [
+      ["Qu'est-ce que la règle des 8 %&nbsp;?", `Une règle de la loi n° 2024-41 du 2 août 2024 pour les crédits à taux fixe de plus de 7 ans accordés aux particuliers. Avant chaque échéance, à partir de la ${R.fenetre + 1}ᵉ, on compare les intérêts payés sur les ${R.fenetre} derniers mois au capital restant dû : s'ils dépassent ${N(R.seuil * 100, 0)} %, le taux du crédit est divisé par deux.`],
+      ["Quels crédits sont concernés&nbsp;?", `Les crédits à taux fixe d'une durée de plus de ${R.dureeMin} mois (7 ans), le plus souvent les crédits logement. Les crédits à taux variable (TMM + marge) et les crédits de 7 ans ou moins ne sont pas concernés.`],
+      ["La réduction peut-elle se répéter&nbsp;?", `Oui. Après une réduction, la règle est vérifiée de nouveau ${R.fenetre} échéances plus tard, sans limite de nombre. Dans l'exemple, le taux passe de ${C.taux(r1.tauxAvant)} à ${C.taux(r1.tauxPct)} en ${r1.date}, puis à ${C.taux(r2.tauxPct)} en ${r2.date}.`],
+      ["Comment obtenir la réduction&nbsp;?", "Demandez-la par écrit à votre banque en citant la loi n° 2024-41, avec la date calculée. Gardez une copie de votre demande et vérifiez la nouvelle mensualité sur le tableau d'amortissement que la banque vous remet."],
+      ["Le calcul est-il celui de ma banque&nbsp;?", `C'est une estimation reconstituée à partir de votre mensualité, de votre taux et de la date de la première échéance, à taux et mensualité constants. Exemple : ${N(capEx, 0)} DT à ${C.taux(D.taux)} sur ${D.duree / 12} ans, première échéance en janvier ${D.annee} : réduction possible en ${r1.date}, mensualité de ${DT(r1.mensualiteAvant)} à ${DT(r1.mensualite)}.`]
+    ]
+  };
+  const calc = `        <form class="calc" id="calc" novalidate aria-label="Calculer la règle des 8 %">
+${tete_calc("Modifiez les valeurs, tout se recalcule")}
+          <div class="calc__duo">
+            ${champ("mensualite", "Mensualité actuelle", N(D.mensualite, 3), "DT")}
+            ${champ("taux", "Taux fixe", N(D.taux, 0), "%", { max: 6 })}
+          </div>
+          <div class="calc__duo">
+            ${champ("duree", "Durée totale", String(D.duree), "mois", { mode: "numeric", max: 3, aide: "20 ans = 240 mois" })}
+            ${champ("debut", "Première échéance", moisTxt(D.mois) + "/" + D.annee, "", { mode: "text", max: 7, indice: "MM/AAAA", aide: "Mois et année" })}
+          </div>
+          <div class="resultat"${siEtat(aff, "ok")}>
+            <span class="resultat__lib" data-v="quand_lib">${esc(aff.quand_lib)}</span>
+            <span class="grand" aria-live="polite"><span data-v="quand_ent">${esc(aff.quand_ent)}</span><small data-v="quand_dec">${esc(aff.quand_dec)}</small></span>
+            <div class="avap"><div><span>Aujourd'hui</span><b>${v(aff, "avant_taux")}</b><span>${v(aff, "avant_mens")}</span></div><i aria-hidden="true">→</i><div><span>${v(aff, "apres_lib")}</span><b>${v(aff, "apres_taux")}</b><span>${v(aff, "apres_mens")}</span></div></div>
+            <p class="verdict"><b>${v(aff, "gain")}</b>${v(aff, "gain_txt")}</p>
+            <ol class="frise">
+${[1, 2, 3].map((j) => `              <li${siV(aff, "r" + j)}><span>${v(aff, "r" + j)}<small>${v(aff, "r" + j + "_txt")}</small></span><b>${v(aff, "r" + j + "_mens")}</b></li>`).join("\n")}
+            </ol>
+          </div>
+          <p class="calc__alerte"${siEtat(aff, "non")} data-v="raison">${esc(aff.raison)}</p>
+          <p class="calc__note">Estimation à partir de votre mensualité et de votre taux, à taux fixe. La banque applique la réduction sur demande. Rien n'est envoyé.</p>
+        </form>`;
+  const taux = [7, 8, 9, 10, 11, 12], durees = [10, 15, 20, 25];
+  const baisse = (t, a) => { const n = a * 12, M = OC.mensualitePourCapital(100000, t, n); const r = OC.reductionsTaux({ mensualite: M, tauxPct: t, dureeMois: n, moisDebut: 1, anneeDebut: A + 1, tauxType: "fixe" }, m).reductions[0]; return r ? N(M - r.mensualite, 0) : "—"; };
+  const corps = `${pontFonctions(`Votre crédit suivi <b>mois après mois</b> dans Orbite`, [
+    ["credit", "Rappel au bon moment", "Orbite vous prévient le mois où la réduction devient possible, avec la lettre à remettre à la banque."],
+    ["salaire", "Tableau de la banque contrôlé", "Importez le tableau d'amortissement : Orbite vérifie chaque échéance au millime et repère une réduction oubliée."],
+    ["impot", "Capacité d'emprunt mise à jour", "La mensualité plus basse libère de la capacité d'emprunt : Orbite la recalcule avec votre salaire."]])}
+
+      <section class="explique" aria-labelledby="titre-explique">
+        <div class="explique__tete">
+          <h2 class="titre-section" id="titre-explique">Comment fonctionne la règle des 8 %&nbsp;?</h2>
+          <p>Trois étapes. Exemple : ${N(capEx, 0)} DT à ${C.taux(D.taux)} sur ${D.duree / 12} ans, première échéance en janvier ${D.annee}.</p>
+        </div>
+        <ol class="etapes">
+          <li><div><h3>Un crédit concerné</h3><p>Taux fixe, durée de plus de 7 ans (${R.dureeMin} mensualités), crédit accordé à un particulier.</p></div></li>
+          <li><div><h3>Le contrôle avant chaque échéance</h3><p>À partir de la ${R.fenetre + 1}ᵉ échéance : intérêts des ${R.fenetre} derniers mois comparés au capital restant dû. Au-delà de ${N(R.seuil * 100, 0)} %, la règle s'applique, ici en <b>${r1.date}</b>.</p></div></li>
+          <li><div><h3>Le taux divisé par deux</h3><p>${C.taux(r1.tauxAvant)} devient ${C.taux(r1.tauxPct)}, même date de fin : la mensualité passe de ${DT(r1.mensualiteAvant)} à <b>${DT(r1.mensualite)}</b>. Le contrôle reprend ${R.fenetre} échéances plus tard.</p></div></li>
+        </ol>
+      </section>
+
+      <div class="tableaux">
+        <section class="tableau-bloc" aria-labelledby="titre-t1">
+          <h2 class="titre-section" id="titre-t1">Baisse de la mensualité à la première réduction</h2>
+          <p>Pour 100&nbsp;000 DT empruntés à taux fixe, en dinars par mois.</p>
+          <div class="defile"><table>
+            <thead><tr><th scope="col">Taux fixe</th>${durees.map((a) => `<th scope="col">${a} ans</th>`).join("")}</tr></thead>
+            <tbody>
+${taux.map((t) => `              <tr${t === D.taux ? ' class="vu"' : ""}><td>${N(t, 0)} %</td>${durees.map((a) => `<td>${baisse(t, a)}</td>`).join("")}</tr>`).join("\n")}
+            </tbody>
+          </table></div>
+          <p class="sources">Loi n° 2024-41 du 2 août 2024. Réduction calculée à taux et mensualité constants depuis le début du crédit.</p>
+        </section>
+        <section class="tableau-bloc" aria-labelledby="titre-t2">
+          <h2 class="titre-section" id="titre-t2">Les réductions de l'exemple</h2>
+          <p>${N(capEx, 0)} DT à ${C.taux(D.taux)} sur ${D.duree / 12} ans, première échéance en janvier ${D.annee}.</p>
+          <div class="defile"><table>
+            <thead><tr><th scope="col">Date</th><th scope="col">Nouveau taux</th><th scope="col">Mensualité</th></tr></thead>
+            <tbody>
+              <tr><td>Avant</td><td>${C.taux(D.taux)}</td><td>${N(r1.mensualiteAvant, 3)}</td></tr>
+${ex.reductions.map((r) => `              <tr><td>${r.date}</td><td>${C.taux(r.tauxPct)}</td><td class="fort">${N(r.mensualite, 3)}</td></tr>`).join("\n")}
+            </tbody>
+          </table></div>
+        </section>
+      </div>
+${faq(d)}`;
+  return tete(pg, d) + heros(pg, d, calc) + corps + fin(pg);
+}
+
+/* ---------- Page remboursement anticipé ---------- */
+function pageAnticipe(pg) {
+  const D = C.RA_DEF, ex = C.anticipe({}), aff = C.affichage("anticipe", {}, m);
+  const d = {
+    titre: `Remboursement anticipé crédit Tunisie : simulation — Orbite`,
+    description: `Remboursement anticipé partiel d'un crédit en Tunisie : comparez durée plus courte et mensualité plus basse, intérêts évités au millime, reste dû et nouvelle mensualité. Gratuit, sans compte.`,
+    sujet: "Remboursement anticipé d'un crédit en Tunisie", ariane: "Remboursement anticipé",
+    surtitre: "Crédit en cours · Tunisie",
+    h1: `Rembourser une partie de votre crédit&nbsp;: <em>combien gagnez-vous</em>&nbsp;?`,
+    chapo: "Une prime, une épargne ? Comparez les deux choix que propose la banque : finir plus tôt, ou payer moins chaque mois. Les intérêts évités sont calculés au millime.",
+    sourcesCourt: "Indemnité de la banque à ajouter",
+    faq: [
+      ["Durée plus courte ou mensualité plus basse&nbsp;?", `Garder la même mensualité et finir plus tôt fait presque toujours économiser le plus d'intérêts. Dans l'exemple, ${N(D.somme, 0)} DT versés font gagner ${ex.courte.gagnes} mois et ${DT(ex.courte.economie, 0)} d'intérêts, contre ${DT(ex.basse.economie, 0)} en baissant la mensualité. Baisser la mensualité redonne de l'air au budget et de la capacité d'emprunt.`],
+      ["La banque peut-elle refuser&nbsp;?", "Le remboursement anticipé, total ou partiel, est un droit de l'emprunteur. Le contrat peut prévoir une indemnité et un préavis : vérifiez-les avant de verser la somme."],
+      ["Combien coûte l'indemnité&nbsp;?", `Elle est fixée par le contrat, souvent autour de ${N(1.5, 1)} % de la somme remboursée par avance. Pour ${N(D.somme, 0)} DT, une indemnité de 1,5 % coûte ${DT(D.somme * 0.015, 0)} : à comparer aux intérêts évités.`],
+      ["Vaut-il mieux rembourser tôt ou tard&nbsp;?", "Tôt. Au début du crédit, chaque mensualité contient surtout des intérêts : une somme versée tôt évite davantage d'intérêts. Le tableau ci-dessus le montre pour 10 000 DT versés à différents moments."],
+      ["Le calcul tient-il compte de l'assurance&nbsp;?", `Non : il porte sur le capital et les intérêts, à taux fixe. Exemple : ${N(D.montant, 0)} DT à ${N(D.taux, 0)} % sur ${D.duree / 12} ans (${DT(ex.mensualite)} par mois), ${N(D.somme, 0)} DT versés après ${D.payees} mensualités, quand il reste ${DT(ex.restantDu)} à rembourser.`]
+    ]
+  };
+  const calc = `        <form class="calc" id="calc" novalidate aria-label="Simuler un remboursement anticipé">
+${tete_calc("Modifiez les valeurs, tout se recalcule")}
+          <div class="calc__duo">
+            ${champ("montant", "Montant emprunté", N(D.montant, 0), "DT")}
+            ${champ("taux", "Taux", N(D.taux, 0), "%", { max: 6 })}
+          </div>
+          <div class="calc__duo">
+            ${champ("duree", "Durée", String(D.duree), "mois", { mode: "numeric", max: 3, aide: `<span data-v="mens_lib">${esc(aff.mens_lib)}</span>` })}
+            ${champ("payees", "Déjà remboursés", String(D.payees), "mois", { mode: "numeric", max: 3, aide: `<span data-v="crd_lib">${esc(aff.crd_lib)}</span>` })}
+          </div>
+          ${champ("somme", "Somme versée en plus", N(D.somme, 0), "DT", { grande: true })}
+          <div class="resultat"${aff.etat === "non" ? " hidden" : ""} data-si-pas="non">
+            <span class="resultat__lib">Intérêts évités, au mieux</span>
+            <span class="grand" aria-live="polite"><span data-v="eco_ent">${esc(aff.eco_ent)}</span><small data-v="eco_dec">${esc(aff.eco_dec)}</small></span>
+            <p class="verdict"${siEtat(aff, "solde")} data-v="solde_txt">${esc(aff.solde_txt)}</p>
+            <div class="choix2"${siEtat(aff, "ok")}>
+              <div class="choix2__mieux"><span>Durée plus courte</span><b>${v(aff, "courte")}</b><small>${v(aff, "courte_txt")} <strong>${v(aff, "courte_eco")}</strong> d'intérêts évités.</small></div>
+              <div><span>Mensualité plus basse</span><b>${v(aff, "basse")}</b><small>${v(aff, "basse_txt")} <strong>${v(aff, "basse_eco")}</strong> d'intérêts évités.</small></div>
+            </div>
+          </div>
+          <p class="calc__alerte"${siEtat(aff, "non")} data-v="raison">${esc(aff.raison)}</p>
+          <p class="calc__note">Hors indemnité de remboursement anticipé prévue au contrat (souvent autour de 1,5 % de la somme versée). Rien n'est envoyé.</p>
+        </form>`;
+  const moments = [12, 36, 60, 120];
+  const corps = `${pontFonctions(`Une prime à placer&nbsp;? <b>Comparez avant de choisir</b>`, [
+    ["credit", "Crédit ou épargne", "Orbite compare le remboursement anticipé à l'assurance vie et au CEA, impôt économisé compris."],
+    ["salaire", "Remboursements datés", "Programmez plusieurs remboursements dans l'année : Orbite recalcule l'échéancier à chaque date."],
+    ["impot", "Capacité retrouvée", "Une mensualité plus basse libère de la capacité d'emprunt : Orbite la recalcule avec votre salaire."]])}
+
+      <section class="explique" aria-labelledby="titre-explique">
+        <div class="explique__tete">
+          <h2 class="titre-section" id="titre-explique">Comment se calcule un remboursement anticipé&nbsp;?</h2>
+          <p>Trois étapes. Exemple : ${N(D.montant, 0)} DT à ${N(D.taux, 0)} % sur ${D.duree / 12} ans, ${N(D.somme, 0)} DT versés après ${D.payees} mensualités.</p>
+        </div>
+        <ol class="etapes">
+          <li><div><h3>Le reste dû</h3><p>Après ${D.payees} mensualités de ${DT(ex.mensualite)}, il reste <b>${DT(ex.restantDu)}</b> de capital à rembourser.</p></div></li>
+          <li><div><h3>La somme versée</h3><p>Elle s'enlève du reste dû : ${DT(ex.restantDu - ex.verse)}. Les intérêts futurs se calculent désormais sur ce capital plus petit.</p></div></li>
+          <li><div><h3>Votre choix</h3><p>Même mensualité : fin ${C.dureeTxt(ex.courte.gagnes)} plus tôt, <b>${DT(ex.courte.economie, 0)}</b> d'intérêts évités. Même date de fin : mensualité de ${DT(ex.basse.mensualite)}, ${DT(ex.basse.economie, 0)} évités.</p></div></li>
+        </ol>
+      </section>
+
+      <div class="tableaux">
+        <section class="tableau-bloc" aria-labelledby="titre-t1">
+          <h2 class="titre-section" id="titre-t1">10&nbsp;000 DT versés : tôt ou tard&nbsp;?</h2>
+          <p>Crédit de ${N(D.montant, 0)} DT à ${N(D.taux, 0)} % sur ${D.duree / 12} ans, intérêts évités en dinars.</p>
+          <div class="defile"><table>
+            <thead><tr><th scope="col">Versés après</th><th scope="col">Durée plus courte</th><th scope="col">Mensualité plus basse</th></tr></thead>
+            <tbody>
+${moments.map((p) => { const a = C.anticipe({ montant: D.montant, taux: D.taux, duree: D.duree, payees: p, somme: 10000 }); return `              <tr><td>${C.dureeTxt(p)}</td><td class="fort">${N(a.courte.economie, 0)} <small>(−${a.courte.gagnes} mois)</small></td><td>${N(a.basse.economie, 0)} <small>(−${N(a.basse.baisse, 0)} DT/mois)</small></td></tr>`; }).join("\n")}
+            </tbody>
+          </table></div>
+          <p class="sources">Hors indemnité de remboursement anticipé et hors assurance.</p>
+        </section>
+        <section class="tableau-bloc" aria-labelledby="titre-t2">
+          <h2 class="titre-section" id="titre-t2">Selon la somme versée</h2>
+          <p>Même crédit, versement après ${D.payees} mensualités.</p>
+          <div class="defile"><table>
+            <thead><tr><th scope="col">Somme versée</th><th scope="col">Mois gagnés</th><th scope="col">Nouvelle mensualité</th></tr></thead>
+            <tbody>
+${[5000, 10000, 20000, 40000].map((S) => { const a = C.anticipe({ montant: D.montant, taux: D.taux, duree: D.duree, payees: D.payees, somme: S }); return `              <tr${S === D.somme ? ' class="vu"' : ""}><td>${N(S, 0)} DT</td><td class="fort">${a.courte.gagnes}</td><td>${N(a.basse.mensualite, 3)}</td></tr>`; }).join("\n")}
+            </tbody>
+          </table></div>
+        </section>
+      </div>
+${faq(d)}`;
+  return tete(pg, d) + heros(pg, d, calc) + corps + fin(pg);
+}
+
+/* ---------- Page regroupement de crédits ---------- */
+function pageRegroupement(pg) {
+  const D = C.RG_DEF, ex = C.regroupement({}), rr = ex.resultat, aff = C.affichage("regroupement", {}, m);
+  const noms = ["Crédit 1", "Crédit 2", "Crédit 3 (facultatif)"];
+  const d = {
+    titre: `Regroupement de crédits Tunisie : simulation et vrai coût — Orbite`,
+    description: `Regroupement de crédits en Tunisie : capital repris, nouvelle mensualité et surcoût réel sur la durée, indemnités de remboursement anticipé et frais de dossier compris. Gratuit, sans compte.`,
+    sujet: "Regroupement de crédits en Tunisie", ariane: "Regroupement de crédits",
+    surtitre: "Plusieurs crédits en cours",
+    h1: `Regrouper vos crédits&nbsp;: <em>moins par mois</em>, mais à quel prix&nbsp;?`,
+    chapo: "Réunir plusieurs crédits en un seul baisse la mensualité, mais allonge souvent la durée. Orbite calcule le capital à reprendre, la nouvelle mensualité et le surcoût réel, indemnités et frais compris.",
+    sourcesCourt: "Indemnités et frais compris",
+    faq: [
+      ["Qu'est-ce qu'un regroupement de crédits&nbsp;?", "La banque rembourse par avance vos crédits en cours et vous prête la somme en un seul crédit, avec une seule mensualité. On parle aussi de rachat de crédits."],
+      ["Pourquoi le coût total augmente-t-il souvent&nbsp;?", `Parce que la durée s'allonge et que l'on rembourse aussi les indemnités et les frais. Dans l'exemple, la mensualité passe de ${DT(rr.mensualiteAvant, 0)} à ${DT(rr.mensualiteApres)}, mais le total remboursé augmente de ${DT(rr.difference, 0)}.`],
+      ["Quels frais faut-il compter&nbsp;?", `L'indemnité de remboursement anticipé de chaque crédit (souvent ${N(CPJ_IRA, 1)} % du reste dû) et les frais de dossier du nouveau crédit. Orbite les ajoute au capital repris : ici ${DT(rr.capital, 0)} pour ${DT(rr.restantDu, 0)} de restes dus.`],
+      ["Quand le regroupement est-il intéressant&nbsp;?", "Quand votre endettement dépasse ce que votre budget supporte, ou quand le nouveau taux est nettement plus bas que celui des crédits repris. Si la durée s'allonge beaucoup, le coût total augmente : comparez toujours les deux chiffres."],
+      ["Le calcul est-il celui de ma banque&nbsp;?", "C'est une estimation à taux fixe : reste dû reconstitué à partir de la mensualité, du taux et des mois restants, hors assurance. Demandez à votre banque le reste dû exact de chaque crédit pour affiner."]
+    ]
+  };
+  const ligne = (c, i) => `            <li class="cred">
+              <label class="cred__tete"><input type="checkbox" name="inclus${i + 1}"${c.inclus ? " checked" : ""}><span>${noms[i]}</span><small>reste dû <b data-v="crd${i + 1}">${esc(aff["crd" + (i + 1)])}</b></small></label>
+              <div class="cred__champs">
+                ${champ("m" + (i + 1), "DT par mois", c.mensualite ? N(c.mensualite, 0) : "", "")}
+                ${champ("t" + (i + 1), "Taux (%)", c.taux ? N(c.taux, 0) : "", "", { max: 6 })}
+                ${champ("r" + (i + 1), "Mois restants", c.mois ? String(c.mois) : "", "", { mode: "numeric", max: 3 })}
+              </div>
+            </li>`;
+  const calc = `        <form class="calc" id="calc" novalidate aria-label="Simuler un regroupement de crédits">
+${tete_calc("Vos crédits en cours, puis le nouveau crédit")}
+          <ul class="creds" role="list">
+${D.credits.map((c, i) => ligne(Object.assign({ inclus: true }, c), i)).join("\n")}
+          </ul>
+          <div class="calc__duo">
+            ${champ("taux", "Nouveau taux", N(D.taux, 1), "%", { max: 6 })}
+            ${champ("duree", "Nouvelle durée", String(D.duree), "mois", { mode: "numeric", max: 3 })}
+          </div>
+          <div class="calc__duo">
+            ${champ("ira", "Indemnité", N(D.ira, 1), "%", { max: 5 })}
+            ${champ("frais", "Frais de dossier", N(D.frais, 0), "DT")}
+          </div>
+          <div class="resultat"${siEtat(aff, "ok")}>
+            <span class="resultat__lib">Nouvelle mensualité</span>
+            ${grand(aff, "mens")}
+            <div class="avap"><div><span>Aujourd'hui</span><b>${v(aff, "avant")}</b><span>${v(aff, "avant_lib")}</span></div><i aria-hidden="true">→</i><div><span>Regroupé</span><b>${v(aff, "apres")}</b><span>${v(aff, "capital")}</span></div></div>
+            <p class="verdict"><b>${v(aff, "verdict_fort")}</b>${v(aff, "verdict_suite")}</p>
+          </div>
+          <p class="calc__alerte"${siEtat(aff, "non")} data-v="raison">${esc(aff.raison)}</p>
+          <p class="calc__note">Indemnité de remboursement anticipé, sur le reste dû de chaque crédit. Capital repris = restes dus + indemnités + frais de dossier. Hors assurance. Rien n'est envoyé.</p>
+        </form>`;
+  const durees = [24, 36, 48, 60, 84];
+  const corps = `${pontFonctions(`Avant de signer, <b>voyez tout votre budget</b>`, [
+    ["credit", "Endettement avant et après", "Orbite compare votre taux d'endettement avant et après le regroupement, avec votre propre salaire."],
+    ["salaire", "Offres comparées", "Deux banques, deux offres : Orbite compare mensualité, coût total et frais, ligne par ligne."],
+    ["impot", "Dossier banque", "Un PDF propre à remettre à votre conseiller : revenus, crédits, endettement avant et après, créé sur votre appareil."]])}
+
+      <section class="explique" aria-labelledby="titre-explique">
+        <div class="explique__tete">
+          <h2 class="titre-section" id="titre-explique">Comment se calcule un regroupement&nbsp;?</h2>
+          <p>Trois étapes, avec l'exemple ci-dessus.</p>
+        </div>
+        <ol class="etapes">
+          <li><div><h3>Le capital à reprendre</h3><p>Restes dus (${DT(rr.restantDu, 0)}) + indemnités (${DT(rr.indemnites, 0)}) + frais de dossier (${DT(rr.fraisDossier, 0)}) : <b>${DT(rr.capital, 0)}</b>.</p></div></li>
+          <li><div><h3>La nouvelle mensualité</h3><p>Ce capital à ${C.taux(rr.tauxPct)} sur ${rr.mois} mois : <b>${DT(rr.mensualiteApres)}</b> au lieu de ${DT(rr.mensualiteAvant, 0)}.</p></div></li>
+          <li><div><h3>Le vrai coût</h3><p>Total des nouvelles mensualités moins ce qu'il restait à payer : <b>${rr.difference > 0 ? "+" : ""}${DT(rr.difference, 0)}</b>. Plus la durée est longue, plus il monte.</p></div></li>
+        </ol>
+      </section>
+
+      <div class="tableaux">
+        <section class="tableau-bloc" aria-labelledby="titre-t1">
+          <h2 class="titre-section" id="titre-t1">Selon la durée du nouveau crédit</h2>
+          <p>Exemple ci-dessus (${DT(rr.mensualiteAvant, 0)} par mois aujourd'hui), au taux de ${C.taux(rr.tauxPct)}.</p>
+          <div class="defile"><table>
+            <thead><tr><th scope="col">Durée</th><th scope="col">Mensualité</th><th scope="col">Par mois</th><th scope="col">Coût total</th></tr></thead>
+            <tbody>
+${durees.map((n) => { const r = C.regroupement({ duree: n }).resultat; return `              <tr${n === D.duree ? ' class="vu"' : ""}><td>${n} mois</td><td class="fort">${N(r.mensualiteApres, 3)}</td><td>${r.gainMensuel > 0 ? "−" : "+"}${N(Math.abs(r.gainMensuel), 0)}</td><td>${r.difference > 0 ? "+" : "−"}${N(Math.abs(r.difference), 0)}</td></tr>`; }).join("\n")}
+            </tbody>
+          </table></div>
+          <p class="sources">Indemnité de ${N(D.ira, 1)} % et ${N(D.frais, 0)} DT de frais de dossier compris.</p>
+        </section>
+        <section class="tableau-bloc" aria-labelledby="titre-t2">
+          <h2 class="titre-section" id="titre-t2">Les crédits repris</h2>
+          <p>Reste dû reconstitué à partir de la mensualité, du taux et des mois restants.</p>
+          <div class="defile"><table>
+            <thead><tr><th scope="col">Crédit</th><th scope="col">Mensualité</th><th scope="col">Reste dû</th><th scope="col">Indemnité</th></tr></thead>
+            <tbody>
+${rr.lignes.map((l) => `              <tr><td>${esc(l.libelle)} · ${C.taux(l.tauxPct)} · ${l.moisRestants} mois</td><td>${N(l.mensualite, 0)}</td><td class="fort">${N(l.restantDu, 0)}</td><td>${N(l.indemnite, 0)}</td></tr>`).join("\n")}
+            </tbody>
+          </table></div>
+        </section>
+      </div>
+${faq(d)}`;
+  return tete(pg, d) + heros(pg, d, calc) + corps + fin(pg);
+}
+
+/* ---------- Page coût employeur ---------- */
+function pageEmployeur(pg) {
+  const ex = C.employeur({ montant: 2000 }, m), pub = C.employeur({ montant: 2000, secteur: "public" }, m), aff = C.affichage("employeur", { montant: 2000 }, m);
+  const ligneTaux = (l) => `              <tr><td>${esc(l.libelle)}</td><td>${PCT(l.taux, 2)}</td><td>${N(l.montant, 3)}</td></tr>`;
+  const d = {
+    titre: `Coût employeur Tunisie ${P.annee} : du brut au coût total — Orbite`,
+    description: `Calculez le coût employeur d'un salarié en Tunisie (barèmes ${P.annee}) : cotisations patronales CNSS ou CNRPS, accident du travail, TFP, FOPROLOS, net du salarié et part de l'État. Gratuit.`,
+    sujet: "Coût employeur d'un salarié en Tunisie", ariane: "Coût employeur",
+    surtitre: `Barèmes ${P.annee} · privé CNSS et public CNRPS`,
+    h1: `Combien coûte un salarié <em>à son employeur</em>&nbsp;?`,
+    chapo: "Du salaire brut au coût total : cotisations patronales, accident du travail, TFP et FOPROLOS, et ce qu'il reste au salarié une fois l'impôt payé.",
+    sourcesCourt: `Barèmes ${P.annee}`,
+    faq: [
+      ["Comment calculer le coût employeur en Tunisie&nbsp;?", `Coût employeur = salaire brut + charges patronales. Dans le secteur privé, les charges patronales représentent ${PCT(ex.tauxCharges, 2)} du brut : CNSS, accident du travail (taux moyen), TFP et FOPROLOS. Pour ${N(ex.brut, 0)} DT brut par mois, l'employeur paie ${DT(ex.cout)}.`],
+      ["Quelle part revient vraiment au salarié&nbsp;?", `Sur 100 DT dépensés par l'employeur pour ${N(ex.brut, 0)} DT brut, ${N(ex.parts.salarie * 100, 1)} DT reviennent au salarié (net), ${N(ex.parts.caisse * 100, 1)} DT à la CNSS (parts salariale et patronale) et ${N(ex.parts.etat * 100, 1)} DT à l'État (impôt, contribution de solidarité, TFP, FOPROLOS).`],
+      ["Le taux d'accident du travail est-il le même pour tous&nbsp;?", "Non, il dépend de l'activité de l'entreprise. Orbite retient le taux de base ; une activité plus risquée paie un taux plus élevé, fixé par la CNSS."],
+      ["Et dans le secteur public&nbsp;?", `L'employeur public cotise à la CNRPS (retraite et maladie) et au FOPROLOS, sans TFP ni accident du travail. Pour ${N(pub.brut, 0)} DT brut, le coût est de ${DT(pub.cout)} par mois.`],
+      ["Le 13ᵉ mois et les primes changent-ils le coût&nbsp;?", "Oui : les charges patronales s'appliquent à chaque salaire versé, primes comprises. Le coût sur l'année se calcule donc sur tous les versements. Dans Orbite, la fiche salaire tient compte de 12 à 18 salaires par an."]
+    ]
+  };
+  const calc = `        <form class="calc" id="calc" novalidate aria-label="Calculer le coût employeur">
+${tete_calc("Modifiez le brut, tout se recalcule")}
+${champMontant("montant", "Salaire brut par mois", "2&nbsp;000")}
+          <div class="calc__options">
+${basculeSecteur}
+          </div>
+          <div class="resultat">
+            <span class="resultat__lib">Coût employeur par mois</span>
+            ${grand(aff, "cout")}
+            <div class="barres" aria-hidden="true"><i class="b-net" data-part="salarie"></i><i class="b-cot" data-part="caisse"></i><i class="b-irpp" data-part="etat"></i></div>
+            <div class="cent" role="list" aria-label="Sur 100 DT dépensés par l'employeur">
+              <div role="listitem"><b>${v(aff, "part_sal")}</b><span>pour le salarié</span></div>
+              <div role="listitem"><b>${v(aff, "part_caisse")}</b><span data-v="caisse_lib">${esc(aff.caisse_lib)}</span></div>
+              <div role="listitem"><b>${v(aff, "part_etat")}</b><span>pour l'État</span></div>
+            </div>
+            <ul class="lignes" role="list">
+              <li><i class="b-net" aria-hidden="true"></i><span>Net versé au salarié</span><b>${v(aff, "net")}</b></li>
+              <li><i aria-hidden="true"></i>${v(aff, "charges_lib")}<b>${v(aff, "charges")}</b></li>
+              <li><i aria-hidden="true"></i><span>Coût sur 12 mois</span><b>${v(aff, "an")}</b></li>
+            </ul>
+          </div>
+          <p class="calc__note">Répartition de 100 DT dépensés par l'employeur. Taux d'accident du travail de base, célibataire, 12 salaires. Rien n'est envoyé.</p>
+        </form>`;
+  const corps = `${pontFonctions(`Côté salarié, <b>voyez ce que devient chaque dinar</b>`, [
+    ["salaire", "Fiche de paie lue", "Importez votre fiche de paie : Orbite contrôle les cotisations et l'impôt, ligne par ligne."],
+    ["credit", "Négocier une hausse", "Orbite traduit une hausse de brut en net réel et en coût pour l'employeur, pour négocier avec les bons chiffres."],
+    ["impot", "Impôt de l'année", "Assurance vie et CEA : l'impôt que vous pouvez encore économiser avant le 31 décembre."]])}
+
+      <section class="explique" aria-labelledby="titre-explique">
+        <div class="explique__tete">
+          <h2 class="titre-section" id="titre-explique">Du brut au coût employeur&nbsp;?</h2>
+          <p>Trois étapes. Exemple : ${N(ex.brut, 0)} DT brut par mois, secteur privé.</p>
+        </div>
+        <ol class="etapes">
+          <li><div><h3>Les charges patronales</h3><p>CNSS, accident du travail, TFP et FOPROLOS : ${PCT(ex.tauxCharges, 2)} du brut, soit <b>${DT(ex.charges)}</b> par mois.</p></div></li>
+          <li><div><h3>Le coût employeur</h3><p>Brut + charges patronales : <b>${DT(ex.cout)}</b> par mois, ${DT(ex.coutAn)} sur 12 mois.</p></div></li>
+          <li><div><h3>Ce que reçoit le salarié</h3><p>Après ses cotisations, l'impôt sur le revenu et la contribution de solidarité : <b>${DT(ex.net)}</b> net, soit ${N(ex.parts.salarie * 100, 1)} % du coût employeur.</p></div></li>
+        </ol>
+      </section>
+
+      <div class="tableaux">
+        <section class="tableau-bloc" aria-labelledby="titre-t1">
+          <h2 class="titre-section" id="titre-t1">Coût employeur selon le brut</h2>
+          <p>Par mois, secteur privé, célibataire, 12 salaires par an.</p>
+          <div class="defile"><table>
+            <thead><tr><th scope="col">Brut</th><th scope="col">Net</th><th scope="col">Charges patronales</th><th scope="col">Coût employeur</th></tr></thead>
+            <tbody>
+${C.TABLE_BRUTS.map((b) => { const e = C.employeur({ montant: b }, m); return `              <tr${b === 2000 ? ' class="vu"' : ""}><td>${N(b, 0)} DT</td><td>${N(e.net, 3)}</td><td>${N(e.charges, 3)}</td><td class="fort">${N(e.cout, 3)}</td></tr>`; }).join("\n")}
+            </tbody>
+          </table></div>
+        </section>
+        <section class="tableau-bloc" aria-labelledby="titre-t2">
+          <h2 class="titre-section" id="titre-t2">Charges patronales ${P.annee}</h2>
+          <p>Pour ${N(ex.brut, 0)} DT brut par mois, en dinars.</p>
+          <div class="defile"><table>
+            <thead><tr><th scope="col">Charge</th><th scope="col">Taux</th><th scope="col">Montant</th></tr></thead>
+            <tbody>
+${ex.lignes.map(ligneTaux).join("\n")}
+${pub.lignes.map(ligneTaux).join("\n")}
+            </tbody>
+          </table></div>
+          <p class="sources">Taux d'accident du travail de base (il varie selon l'activité). Secteur public : CNRPS et FOPROLOS seulement.</p>
+        </section>
+      </div>
+${faq(d)}`;
+  return tete(pg, d) + heros(pg, d, calc) + corps + fin(pg);
+}
+
+const GEN = { salaire: pageSalaire, credit: pageCredit, impot: pageImpot, retraite: pageRetraite, pret: pagePret, vie: pageVie, cea: pageCea,
+  regle8: pageRegle8, anticipe: pageAnticipe, regroupement: pageRegroupement, employeur: pageEmployeur };
 function generer() { const out = {}; PAGES.forEach((p) => { out[p.slug + ".html"] = GEN[p.cle](p); }); return out; }
 
 module.exports = { generer, PAGES, DATE_PAGES, SITE };
