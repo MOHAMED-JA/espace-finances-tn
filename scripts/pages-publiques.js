@@ -470,7 +470,7 @@ ${noteCalc}
           <li><div><h3>Assurance vie</h3><p>Primes déductibles du revenu imposable, jusqu'à ${N(av.plafond, 0)} DT par an ; contrat d'au moins ${av.dureeMinimaleAns} ans.</p></div></li>
           <li><div><h3>Compte épargne en actions (CEA)</h3><p>Dépôts déductibles jusqu'à ${N(cea.plafond, 0)} DT par an ; sommes bloquées ${cea.dureeBlocageAns} ans.</p></div></li>
           <li><div><h3>L'impôt minimum</h3><p>L'impôt ne descend pas sous ${PCT(av.impotMinimumTaux)} (assurance vie) ou ${PCT(cea.impotMinimumTaux)} (CEA) de l'impôt initial : ici, au plus <b>${DT(i.gain)}</b> d'économie.</p></div></li>
-          <li><div><h3>Le bon partage</h3><p>Orbite répartit les versements pour atteindre ce plafond au moindre coût : <b>${DT(i.av, 0)}</b> en assurance vie et <b>${DT(i.cea, 0)}</b> en CEA.</p></div></li>
+          <li><div><h3>Le bon partage</h3><p>${i.cea > 0 ? `Orbite répartit les versements pour atteindre ce plafond au moindre coût : <b>${DT(i.av, 0)}</b> en assurance vie et <b>${DT(i.cea, 0)}</b> en CEA.` : `Orbite cherche le plus petit versement qui atteint ce plafond : ici, <b>${DT(i.av, 0)}</b> en assurance vie suffisent. Le CEA ne ferait pas mieux (son plancher est plus haut, ${PCT(cea.impotMinimumTaux)}) ; il reste un choix si vous préférez la bourse.`}</p></div></li>
         </ol>
       </section>
 

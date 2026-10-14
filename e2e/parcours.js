@@ -2253,6 +2253,55 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     }
   });
 
+  await etape("optimiseur fiscal : mon plan de versement (abordable, pourcentage assurance vie / CEA, calendrier, rappels)", async () => {
+    const avant = await page.evaluate(() => { const p = window.Orbite.profil(); return { epargneDisponible: p.epargneDisponible, planVersement: p.planVersement, rappelsPerso: p.rappelsPerso }; });
+    await page.evaluate(() => window.Orbite.majProfil({ epargneDisponible: 30000, planVersement: { partMarge: 0.5, partPrimes: 0.5, reserve: null, partAv: null } }, { immediat: true }));
+    await page.goto(base + "/espace/#vie?onglet=fiscal");
+    await page.waitForSelector("#vie-panneau-fiscal:not([hidden])");
+    const statut = await page.evaluate(() => window.OrbiteIntelligence.optimiseurFiscal(window.Orbite.synthese()).statut);
+    if (statut !== "a_optimiser") { assert(await page.isHidden("#fi-plan"), "plan masqué sans impôt à réduire"); await page.evaluate((a) => window.Orbite.majProfil(a, { immediat: true }), avant); return; }
+    await page.waitForSelector("#fi-plan:not([hidden]) #fi-plan-cal li");
+    const plan = () => page.evaluate(() => { const r = window.OrbiteIntelligence.planVersement(window.Orbite.synthese()); return { D: r.versement, av: r.av, cea: r.cea, abordable: r.abordable, perte: r.perte, n: r.calendrier.length, util: r.epargne.utilisable }; });
+    const dt = (v) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Math.round(v)).replace(/\s/g, " ");
+    const nb = (t) => t.replace(/\s/g, " ");
+    let r = await plan();
+    assert(nb(await page.textContent("#fi-plan-abordable")) === dt(r.abordable) + " DT", "abordable affiché = moteur : " + await page.textContent("#fi-plan-abordable"));
+    assert(nb(await page.textContent("#fi-plan-total")) === dt(r.D) + " DT", "versement du plan");
+    assert(r.cea === 0 && await page.getAttribute('#fi-plan-puces [data-part="conseil"]', "aria-checked") === "true", "conseillé : tout en assurance vie à économie égale");
+    assert((await page.$$("#fi-plan-cal li")).length === r.n, "calendrier complet");
+    await page.click('#fi-plan-puces [data-part="50"]');
+    await page.waitForFunction(() => window.Orbite.profil().planVersement.partAv === 0.5);
+    r = await plan();
+    assert(Math.abs(r.av - r.cea) <= 1 && nb(await page.textContent("#fi-plan-av-mt")) === dt(r.av) + " DT", "50 / 50 : " + r.av + " / " + r.cea);
+    await (await page.$("#fi-plan")).screenshot({ path: path.join(CAPTURES, "plan-versement.png") });
+    const vp = page.viewportSize();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(200);
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "téléphone : pas de défilement horizontal");
+    await (await page.$("#fi-plan")).screenshot({ path: path.join(CAPTURES, "plan-versement-telephone.png") });
+    await page.setViewportSize(vp);
+    await page.$eval("#fi-plan-av", (c) => { c.value = "0"; c.dispatchEvent(new Event("input", { bubbles: true })); c.dispatchEvent(new Event("change", { bubbles: true })); });
+    await page.waitForFunction(() => window.Orbite.profil().planVersement.partAv === 0);
+    r = await plan();
+    assert(r.av === 0 && (await page.isVisible("#fi-plan-alerte")) === (r.perte > 1), "100 % CEA : alerte de perte si le plancher du CEA est dépassé (" + Math.round(r.perte) + " DT)");
+    assert(await page.getAttribute('#fi-plan-puces [data-part="perso"]', "aria-checked") === "true", "curseur hors préréglage : Personnalisé");
+    await page.click('#fi-plan-puces [data-part="conseil"]');
+    await page.waitForFunction(() => window.Orbite.profil().planVersement.partAv === null);
+    await page.fill("#fi-plan-reserve", "40000");
+    await page.press("#fi-plan-reserve", "Tab");
+    await page.waitForFunction(() => window.Orbite.profil().planVersement.reserve === 40000);
+    assert((await plan()).util === 0 && nb(await page.textContent("#fi-plan-ep-mt")) === "0 DT", "réserve au-dessus de l'épargne : rien n'y est pris");
+    await page.fill("#fi-plan-reserve", "");
+    await page.press("#fi-plan-reserve", "Tab");
+    await page.waitForFunction(() => window.Orbite.profil().planVersement.reserve === null);
+    await page.click("#fi-plan-rappel");
+    await page.waitForFunction(() => window.Orbite.profil().rappelsPerso.some((x) => /^plan\d{6}$/.test(x.id)));
+    const rp = await page.evaluate(() => window.Orbite.profil().rappelsPerso.filter((x) => /^plan/.test(x.id)));
+    assert(rp.every((x) => x.url === "/espace/#vie?onglet=fiscal" && /verser/.test(x.titre)), "rappels du plan : " + JSON.stringify(rp[0]));
+    assert(/#epargne\?av=\d+&cea=\d+$/.test(await page.getAttribute("#fi-plan-simuler", "href")), "lien de simulation");
+    await page.evaluate((a) => window.Orbite.majProfil(a, { immediat: true }), avant);
+  });
+
   await etape("Ma progression : pouvoir d'achat, courbe, projection, objectifs, « J'ai épargné » annulable, défis, rappel", async () => {
     await page.evaluate(() => window.Orbite.majProfil({ dateEmbauche: "2019-03-01", montant: 3400, sens: "brut", periode: "mensuel", epargneDisponible: 5000, historiqueSalaire: [
       { montant: 2400, sens: "brut", periode: "mensuel", mois: 0, annee: 0 }, { montant: 2650, sens: "brut", periode: "mensuel", mois: 3, annee: 2021 },

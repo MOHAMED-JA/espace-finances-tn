@@ -832,6 +832,70 @@
               <dl class="fiscal__kpi" id="fi-kpi"></dl>
               <p class="encart" id="fi-etat"></p>
             </section>
+            <section class="panneau fiscal plan" id="fi-plan" aria-labelledby="fi-plan-titre" hidden>
+              <h2 id="fi-plan-titre">Mon plan de versement <span id="fi-plan-annee"></span></h2>
+              <p class="panneau__sous">Combien verser, où le placer, et ce que cela vous rend, selon votre situation réelle.</p>
+              <div class="plan__objectif">
+                <p class="plan__haut"><b class="chiffre" id="fi-plan-total"></b><span id="fi-plan-sur"></span></p>
+                <div class="plan__piste" aria-hidden="true"><i class="plan__piste-av" id="fi-plan-p-av"></i><i class="plan__piste-cea" id="fi-plan-p-cea"></i></div>
+                <ul class="plan__legende" id="fi-plan-legende" role="list"></ul>
+              </div>
+              <div class="plan__grille">
+                <div class="plan__carte">
+                  <h3>1 · Ce que je peux verser d'ici le 31 décembre</h3>
+                  <div class="plan__src">
+                    <div class="plan__src-l"><label for="fi-plan-marge">Marge du mois</label><strong class="chiffre" id="fi-plan-marge-mt"></strong></div>
+                    <p class="plan__aide" id="fi-plan-marge-txt"></p>
+                    <input type="range" class="curseur plan__curseur" id="fi-plan-marge" min="0" max="100" step="5" aria-describedby="fi-plan-marge-txt">
+                  </div>
+                  <div class="plan__src" id="fi-plan-primes-bloc">
+                    <div class="plan__src-l"><label for="fi-plan-primes">Primes à venir</label><strong class="chiffre" id="fi-plan-primes-mt"></strong></div>
+                    <p class="plan__aide" id="fi-plan-primes-txt"></p>
+                    <input type="range" class="curseur plan__curseur" id="fi-plan-primes" min="0" max="100" step="5" aria-describedby="fi-plan-primes-txt">
+                  </div>
+                  <div class="plan__src">
+                    <div class="plan__src-l"><span>Épargne disponible</span><strong class="chiffre" id="fi-plan-ep-mt"></strong></div>
+                    <p class="plan__aide" id="fi-plan-ep-txt"></p>
+                    <div class="champ plan__reserve"><label for="fi-plan-reserve">Réserve que je garde</label><div class="saisie"><input id="fi-plan-reserve" type="text" inputmode="decimal" autocomplete="off" aria-describedby="fi-plan-garde"><span class="saisie__unite">DT</span></div></div>
+                  </div>
+                  <p class="plan__total"><span>Abordable sans vous mettre en danger</span><b class="chiffre" id="fi-plan-abordable"></b></p>
+                  <p class="plan__garde" id="fi-plan-garde"></p>
+                </div>
+                <div class="plan__carte">
+                  <h3 id="fi-plan-rep-titre">2 · Ma répartition assurance vie / CEA</h3>
+                  <div class="plan__puces" role="radiogroup" aria-labelledby="fi-plan-rep-titre" id="fi-plan-puces">
+                    <button type="button" class="plan__puce" role="radio" data-part="conseil">Conseillé <small id="fi-plan-conseil-pct"></small></button>
+                    <button type="button" class="plan__puce" role="radio" data-part="70">70 / 30</button>
+                    <button type="button" class="plan__puce" role="radio" data-part="50">50 / 50</button>
+                    <button type="button" class="plan__puce" role="radio" data-part="perso">Personnalisé</button>
+                  </div>
+                  <div class="plan__dosage">
+                    <label for="fi-plan-av" class="plan__dosage-lib"><span>Assurance vie <b class="chiffre" id="fi-plan-av-pct"></b></span><span>CEA <b class="chiffre" id="fi-plan-cea-pct"></b></span></label>
+                    <input type="range" class="curseur plan__curseur plan__curseur--dosage" id="fi-plan-av" min="0" max="100" step="5">
+                  </div>
+                  <div class="plan__prod">
+                    <div class="plan__prod-av"><span>Assurance vie</span><strong class="chiffre" id="fi-plan-av-mt"></strong><small id="fi-plan-av-txt"></small></div>
+                    <div class="plan__prod-cea"><span>CEA</span><strong class="chiffre" id="fi-plan-cea-mt"></strong><small id="fi-plan-cea-txt"></small></div>
+                  </div>
+                  <dl class="plan__res" aria-live="polite">
+                    <div class="plan__res-fort"><dt>Impôt en moins</dt><dd class="chiffre" id="fi-plan-gain"></dd></div>
+                    <div><dt>Coût réel</dt><dd class="chiffre" id="fi-plan-cout"></dd></div>
+                    <div><dt>Rendu par l'État</dt><dd class="chiffre" id="fi-plan-taux"></dd></div>
+                  </dl>
+                  <p class="plan__info" id="fi-plan-paie"></p>
+                  <p class="plan__alerte" id="fi-plan-alerte" hidden></p>
+                </div>
+              </div>
+              <div class="plan__carte">
+                <h3>3 · Quand verser</h3>
+                <ol class="plan__cal" id="fi-plan-cal"></ol>
+                <p class="plan__vide" id="fi-plan-vide" hidden>Rien à verser pour l'instant : augmentez une part ci-dessus, ou baissez la réserve.</p>
+                <div class="plan__actions">
+                  <button type="button" class="bouton" id="fi-plan-rappel">Me le rappeler chaque mois</button>
+                  <a class="lien-action" id="fi-plan-simuler" href="#epargne">Simuler ce plan dans Épargne vie &amp; CEA<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
+                </div>
+              </div>
+            </section>
             <section class="panneau fiscal" id="fi-optimum-bloc" aria-labelledby="fi-t-opt">
               <h2 id="fi-t-opt">La meilleure répartition</h2>
               <p class="panneau__sous" id="fi-opt-sous"></p>
@@ -847,19 +911,14 @@
                   </div>
                 </details>
                 <p class="fiscal__paie-opt" id="fi-paie-opt"></p>
-                <button type="button" class="bouton bouton--petit" id="fi-paie-utiliser" hidden>Utiliser ce montant</button>
               </div>
               <div class="fiscal__repart" id="fi-repart"></div>
-              <div class="fiscal__budget">
-                <div class="champ"><label for="fi-budget">Ce que je peux verser d'ici le 31 décembre</label><div class="saisie"><input id="fi-budget" type="text" inputmode="decimal" autocomplete="off"><span class="saisie__unite">DT</span></div></div>
-                <p class="fiscal__budget-res" id="fi-budget-res" aria-live="polite"></p>
-              </div>
               <ul class="fiscal__notes" role="list">
                 <li><strong>Avant le 31 décembre</strong> : seuls les versements encaissés dans l'année réduisent l'impôt de cette année. Versez de préférence avant le 15 décembre pour laisser le temps à l'assureur ou à la banque.</li>
                 <li><strong>Assurance vie</strong> : <span id="fi-duree-av">8</span> ans minimum pour garder l'avantage. <strong>CEA</strong> : épargne bloquée <span id="fi-duree-cea">5</span> ans, placée en bourse (le capital peut baisser).</li>
                 <li>Calcul indicatif selon le barème en vigueur : faites-le confirmer par votre conseiller.</li>
               </ul>
-              <a class="lien-action" id="fi-simuler" href="#epargne">Simuler ce versement dans Épargne vie &amp; CEA<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
+              <a class="lien-action" id="fi-simuler" href="#epargne">Simuler le versement maximal dans Épargne vie &amp; CEA<svg aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg></a>
             </section>
           </div>
 

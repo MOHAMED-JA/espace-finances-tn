@@ -679,6 +679,37 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centquinvicies. Mon plan de versement (14 oct.)
+
+Question de l'utilisateur : « l'application me donne-t-elle le montant exact d'assurance vie pour le 45 %, le montant du CEA, la proportion entre les deux selon des pourcentages paramétrables, et le montant que je peux utiliser selon ma situation ? ». Réponse : le montant exact oui (complément de l'optimiseur), le reste non ; maquette « Mon plan de versement » validée (« Plan complet »).
+
+- **Rappel de la règle** : les versements se déduisent en totalité du revenu imposable ; le « 45 % » est un **plancher** (l'impôt ne descend pas sous 45 % de l'impôt de départ avec l'assurance vie, 60 % avec le CEA seul), donc au plus 55 % d'impôt en moins.
+- **Correction du partage** (`orbite-intelligence.js`, `meilleurPartage`) : le parcours allait de « tout CEA » vers « tout assurance vie » et gardait donc le CEA à économie égale, contrairement au commentaire. Il part maintenant de « tout assurance vie ». Effet : le complément conseillé est en assurance vie tant que le plafond n'est pas atteint (le CEA ne fait jamais mieux, son plancher est plus haut). Page publique `impot-assurance-vie-cea.html` régénérée, phrase « Le bon partage » adaptée quand le CEA vaut 0.
+- **Moteur** `OI.planVersement(sy, reglages, { optimiseur, maintenant })` :
+  - **marge du mois** = net mensuel habituel (sans les primes, comptées à part) + autres revenus − crédits − loyer et charges − contrats en cours − dépenses de vie. Les dépenses de vie viennent du budget du mois (courses, transport, santé, loisirs, divers, et le logement au-delà du profil). Sans budget, elles sont estimées à la moitié du reste. Part versée réglable (0 à 100 %, 50 % par défaut) × mois restants ;
+  - **primes à venir** (calendrier des primes, celles déjà versées écartées), au net d'un salaire de prime = (net annuel − 12 × net mensuel) ÷ salaires de prime ; part réglable (50 % par défaut) ;
+  - **épargne disponible** au-delà d'une réserve. Réserve conseillée = 3 mois de dépenses arrondis à la centaine ; réglable, vide = conseillée ;
+  - **versement** = min(abordable, complément qui atteint l'économie maximale) ; le surplus est signalé ;
+  - **répartition** : conseillée (meilleure économie, assurance vie d'abord) ou part d'assurance vie choisie. Calcul de la perte par rapport au conseillé, et du dépôt CEA au-delà duquel l'impôt ne baisse plus (`ceaUtile`) ;
+  - **calendrier** : épargne aujourd'hui, puis chaque jour de paie (`jourPaie`, 28 par défaut) avec marge et prime. Les dates les plus proches d'abord, jusqu'au montant utile. Chaque date suit la répartition ;
+  - **retour** : gain, coût réel, taux, paie / déclaration.
+- **Profil** : `planVersement { partMarge, partPrimes, reserve|null, partAv|null }` (normalisé, bornes 0-1).
+- **Interface** (Vie & impôts › Impôt, section `#fi-plan`, entre « Votre impôt » et « La meilleure répartition », visible seulement s'il reste une économie) :
+  - curseurs natifs (`.curseur`), recalcul en direct à l'`input`, enregistrement au `change` ;
+  - puces radio Conseillé / 70-30 / 50-50 / Personnalisé ;
+  - barre de dosage violette (assurance vie) et verte (CEA) ;
+  - alerte orange si la répartition fait perdre de l'économie ;
+  - calendrier ; bouton « Me le rappeler chaque mois » : rappels `rappelsPerso` d'identifiant `planAAAAMM`, remplacés à chaque clic, annulables ;
+  - lien « Simuler ce plan » (`#epargne?av=&cea=`) ;
+  - lien direct `#vie?onglet=fiscal&plan=1` et entrée Ctrl K « Mon plan de versement ».
+- **Retraits et écarts** :
+  - l'ancien champ « Ce que je peux verser » (`#fi-budget`) et le bouton « Utiliser ce montant » sont retirés : le plan les remplace ;
+  - le bouton de la maquette « Ajouter à mon budget du mois » n'a pas été fait : il aurait changé l'enveloppe épargne pour tous les mois, après décembre aussi. Il est remplacé par les rappels.
+- **Tests** :
+  - `tests/espace/plan-versement.test.js` (7) ; 600 tests unitaires au total ;
+  - étape e2e « mon plan de versement », avec captures `plan-versement.png` et `-telephone.png`.
+- Nouveautés « 2026-10-14a », SW `orbite-2026-10-14a`.
+
 ## 3 centquatervicies. Vidéo de présentation sur l'accueil (14 oct.)
 
 Demandée par l'utilisateur à partir de sa vidéo de 60 s (« images approuvées ») et de 7 visuels 3D (zip). Choix validés : bande vidéo **sous le haut de page** (emplacement B, l'encadré « Essayez avec votre salaire » reste en place), 30 s muettes en boucle + 1 min au clic, 3 scènes de vraies captures + « Mon orbite » + carte de fin, **sa musique** mieux mixée.
