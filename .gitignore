@@ -9,3 +9,5 @@ playwright-report/
 promo/*/apercu/
 promo/*/*.wav
 *.mp4
+# Sauf la vidéo de l'accueil, servie par le site
+!public/medias/*.mp4
