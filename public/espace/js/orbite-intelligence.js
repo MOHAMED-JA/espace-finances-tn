@@ -42,11 +42,14 @@
   /* Meilleure répartition d'un montant supplémentaire D entre assurance vie et CEA (montants déjà versés en plancher). */
   function meilleurPartage(sy, ex, D, plafAv, plafCea) {
     var meilleur = { av: Math.min(D, Math.max(0, plafAv - ex.av)), cea: 0, eco: -1 };
-    var pas = Math.max(10, D / 60);
-    for (var x = 0; x <= D + 1e-9; x += pas) {
+    var pas = Math.max(10, D / 60), n = Math.ceil(D / pas - 1e-9);
+    /* Parcours de « tout en assurance vie » vers « tout en CEA » : à économie égale, la première trouvée (la plus forte
+       part d'assurance vie) est gardée — pas de blocage en bourse, capital garanti selon le contrat. (Corrigé le 14 oct. 2026 :
+       le parcours inverse gardait le CEA à économie égale.) */
+    for (var i = 0; i <= n; i++) {
+      var x = Math.max(0, D - i * pas);
       var av = Math.min(x, Math.max(0, plafAv - ex.av)), cea = Math.min(D - x, Math.max(0, plafCea - ex.cea));
       var e = economie(sy, ex.av + av, ex.cea + cea);
-      /* À économie égale, on préfère l'assurance vie (pas de blocage en bourse, capital garanti selon le contrat). */
       if (e > meilleur.eco + 0.5) meilleur = { av: av, cea: cea, eco: e };
     }
     return meilleur;
@@ -139,6 +142,121 @@
     }
     res.dateConseillee = new Date(m.getFullYear(), 11, 15);
     return res;
+  }
+
+  /* ===================================================================
+     Mon plan de versement (14 oct. 2026) : ce que la situation permet de verser d'ici le 31 décembre
+     (marge du mois, primes à venir, épargne au-delà d'une réserve), réparti entre assurance vie et CEA
+     selon un pourcentage choisi, l'économie d'impôt qui en découle et le calendrier des versements.
+     =================================================================== */
+  var PLAN_DEFAUT = { partMarge: 0.5, partPrimes: 0.5, reserve: null, partAv: null };
+  var ENVELOPPES_VIE = ["courses", "transport", "sante", "loisirs", "divers"];
+  function dizaineInf(v) { return Math.max(0, Math.floor(v / 10 + 1e-9) * 10); }
+  function jourDe(an, mois, jour) { return new Date(an, mois, Math.min(jour, new Date(an, mois + 1, 0).getDate()), 12, 0, 0); }
+
+  function planVersement(sy, reglages, options) {
+    var o = options || {}, p = sy.profil, s = sy.salaire, m = o.maintenant || sy.maintenant || new Date();
+    var r = Object.assign({}, PLAN_DEFAUT, p.planVersement || {}, reglages || {});
+    r.partMarge = borne(Number(r.partMarge) || 0, 0, 1); r.partPrimes = borne(Number(r.partPrimes) || 0, 0, 1);
+    if (r.partAv !== null && r.partAv !== undefined) r.partAv = borne(Number(r.partAv) || 0, 0, 1); else r.partAv = null;
+    var opt = o.optimiseur || optimiseurFiscal(sy, { maintenant: m });
+    var P = MF.simuler(entreeFiscale(sy, 0, 0)).produits, revenu = (sy.salaireAnnee || sy.salaire).revenuFiscal;
+    var plafAv = Math.min(isFinite(P.av.plafond) ? P.av.plafond : revenu, revenu);
+    var plafCea = Math.min(isFinite(P.cea.plafond) ? P.cea.plafond : revenu, revenu);
+    var ex = versementsAnnuels(p), an = m.getFullYear(), mois = m.getMonth();
+    var aujourdhui = new Date(an, mois, m.getDate(), 12, 0, 0);
+
+    /* 1. Marge du mois : salaire mensuel habituel (sans les primes, comptées à part) moins crédits, logement, contrats
+       en cours et dépenses de vie (budget du mois s'il existe, sinon la moitié de ce qui reste, par prudence). */
+    var contratsMois = p.contrats.reduce(function (t, c) { return t + (OC.contratCommence(c, m) ? c.versementMensuel : 0); }, 0);
+    var logement = p.loyer + p.chargesFixes;
+    var base = Math.max(0, s.netMensuel + p.autresRevenus - sy.chargesCredits - logement - contratsMois);
+    var env = p.budget && p.budget.enveloppes && p.budget.enveloppes.length ? p.budget.enveloppes : null, vie, source;
+    if (env) {
+      vie = env.reduce(function (t, e) { return t + (ENVELOPPES_VIE.indexOf(e.cle) !== -1 ? e.prevu : 0); }, 0);
+      var envLog = env.filter(function (e) { return e.cle === "logement"; })[0];
+      if (envLog) vie += Math.max(0, envLog.prevu - logement);
+      source = "budget";
+    } else { vie = base * 0.5; source = "estimation"; }
+    var libre = Math.max(0, base - vie), mensuel = dizaineInf(libre * r.partMarge);
+    var jp = p.jourPaie > 0 ? p.jourPaie : 28, entrees = [];
+    for (var k = mois; k < 12; k++) {
+      var d = jourDe(an, k, jp); if (d < aujourdhui) d = aujourdhui;
+      if (mensuel > 0) entrees.push({ date: d, montant: mensuel, source: "marge" });
+    }
+    var nMois = 12 - mois;
+
+    /* 2. Primes à venir cette année (calendrier des primes), au net d'un salaire de prime ; celles déjà versées sont écartées. */
+    var cal = OC.calendrierPrimes(p), extra = cal.reduce(function (t, v) { return t + v; }, 0);
+    var netPrime = extra > 0 ? Math.max(0, (s.netAnnuel - 12 * s.netMensuel) / extra) : 0;
+    var primes = [];
+    for (var j = mois; j < 12; j++) {
+      if (!(cal[j] > 0) || !(netPrime > 0)) continue;
+      var dp = jourDe(an, j, jp); if (dp < aujourdhui) continue;
+      var net = cal[j] * netPrime, part = dizaineInf(net * r.partPrimes);
+      primes.push({ mois: j, date: dp, salaires: cal[j], net: net, montant: part });
+      if (part > 0) entrees.push({ date: dp, montant: part, source: "prime" });
+    }
+
+    /* 3. Épargne disponible au-delà d'une réserve (3 mois de dépenses par défaut). */
+    var depenses = sy.chargesCredits + logement + contratsMois + vie;
+    var reserveConseillee = Math.round(3 * depenses / 100) * 100;
+    var reserve = r.reserve === null || r.reserve === undefined ? reserveConseillee : Math.max(0, r.reserve);
+    var utilisable = dizaineInf(p.epargneDisponible - reserve);
+    if (utilisable > 0) entrees.push({ date: aujourdhui, montant: utilisable, source: "epargne" });
+
+    var totalMarge = mensuel * nMois, totalPrimes = primes.reduce(function (t, x) { return t + x.montant; }, 0);
+    var abordable = totalMarge + totalPrimes + utilisable;
+    /* Au-delà du complément qui atteint l'économie maximale, un versement de plus ne baisse plus l'impôt cette année. */
+    var besoin = opt.statut === "a_optimiser" ? opt.complement.total : 0;
+    var D = Math.min(abordable, besoin), surplus = Math.max(0, abordable - besoin);
+
+    /* 4. Répartition : conseillée (meilleure économie, assurance vie d'abord) ou pourcentage choisi. */
+    var best = D > 0 ? meilleurPartage(sy, ex, D, plafAv, plafCea) : { av: 0, cea: 0, eco: opt.economieActuelle };
+    var avC = Math.round(best.av), conseil = { av: avC, cea: D - avC, partAv: D > 0 ? avC / D : 1 };
+    var av, cea;
+    if (r.partAv === null) { av = conseil.av; cea = conseil.cea; }
+    else {
+      av = Math.min(Math.round(D * r.partAv), Math.max(0, plafAv - ex.av)); cea = Math.min(D - av, Math.max(0, plafCea - ex.cea));
+      av = D - cea > av ? Math.min(D - cea, Math.max(0, plafAv - ex.av)) : av;
+    }
+    var ecoPlan = economie(sy, ex.av + av, ex.cea + cea), gain = Math.max(0, ecoPlan - opt.economieActuelle);
+    var gainConseil = D > 0 ? Math.max(0, economie(sy, ex.av + conseil.av, ex.cea + conseil.cea) - opt.economieActuelle) : 0;
+    var perte = Math.max(0, gainConseil - gain), ceaUtile = null;
+    if (perte > 1 && cea > 0) {
+      /* Dépôt CEA au-delà duquel l'impôt ne baisse plus (plancher du CEA), l'assurance vie choisie restant la même. */
+      var bas = 0, haut = cea;
+      for (var n = 0; n < 30 && haut - bas > 1; n++) { var mi = (bas + haut) / 2; if (economie(sy, ex.av + av, ex.cea + mi) >= ecoPlan - 0.5) haut = mi; else bas = mi; }
+      ceaUtile = dizaineInf(haut + 9.999);
+    }
+
+    /* 5. Calendrier : les versements les plus proches d'abord, jusqu'au montant utile ; chaque versement suit la répartition. */
+    entrees.sort(function (a, b) { return a.date - b.date || (a.source === "epargne" ? -1 : 1); });
+    var reste = D, ratio = D > 0 ? av / D : 1, calendrier = [], avCumul = 0;
+    entrees.forEach(function (e) {
+      if (reste <= 0.5) return;
+      var mt = Math.min(e.montant, reste); reste -= mt;
+      var prec = calendrier[calendrier.length - 1];
+      if (prec && prec.date.getTime() === e.date.getTime()) { prec.montant += mt; prec.sources.push(e.source); }
+      else calendrier.push({ date: e.date, montant: mt, sources: [e.source] });
+    });
+    calendrier.forEach(function (c, i) {
+      var a = i === calendrier.length - 1 ? av - avCumul : Math.min(c.montant, Math.round(c.montant * ratio));
+      a = Math.max(0, Math.min(c.montant, a)); avCumul += a;
+      c.av = a; c.cea = c.montant - a;
+    });
+
+    var paie = opt.paie ? { surPaie: Math.min(gain, opt.paie.impotRestant), declaration: Math.max(0, gain - opt.paie.impotRestant) } : null;
+    return {
+      annee: an, statut: opt.statut, reglages: { partMarge: r.partMarge, partPrimes: r.partPrimes, reserve: r.reserve === null || r.reserve === undefined ? null : reserve, partAv: r.partAv },
+      marge: { base: base, vie: vie, source: source, libre: libre, part: r.partMarge, mensuel: mensuel, mois: nMois, total: totalMarge },
+      primes: { liste: primes, total: totalPrimes, part: r.partPrimes, netParSalaire: netPrime },
+      epargne: { disponible: p.epargneDisponible, reserve: reserve, reserveConseillee: reserveConseillee, utilisable: utilisable },
+      abordable: abordable, besoin: besoin, versement: D, surplus: surplus, economieMax: opt.gainPossible || 0,
+      av: av, cea: cea, partAv: D > 0 ? av / D : (r.partAv === null ? conseil.partAv : r.partAv), conseille: conseil,
+      gain: gain, coutReel: Math.max(0, D - gain), taux: D > 0 ? gain / D : 0, perte: perte, ceaUtile: ceaUtile,
+      paie: paie, calendrier: calendrier, dureeAv: P.av.dureeMinimaleAns || 8, dureeCea: P.cea.dureeBlocageAns || 5, plancherCea: P.cea.impotMinimumTaux
+    };
   }
 
   /* ===================================================================
@@ -417,5 +535,5 @@
     return L.join("\n").slice(0, 9000);
   }
 
-  return { resumeAssistant: resumeAssistant, foyer: foyer, scoreSante: scoreSante, optimiseurFiscal: optimiseurFiscal, economieVersement: economieVersement, simulateurVie: simulateurVie, appliquerEvenements: appliquer, TYPES_EVT: TYPES_EVT };
+  return { resumeAssistant: resumeAssistant, foyer: foyer, scoreSante: scoreSante, optimiseurFiscal: optimiseurFiscal, economieVersement: economieVersement, planVersement: planVersement, simulateurVie: simulateurVie, appliquerEvenements: appliquer, TYPES_EVT: TYPES_EVT };
 });

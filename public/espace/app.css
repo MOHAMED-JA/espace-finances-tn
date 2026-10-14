@@ -642,6 +642,85 @@ body.attente .onglets-bas a, body.attente .rail__liens a { pointer-events: none;
 .fiscal__paie-opt strong { color: var(--encre); }
 .fiscal__notes { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--encre-2); font-size: 13.5px; }
 
+/* Mon plan de versement (14 oct. 2026) */
+.plan { display: grid; gap: 18px; }
+.plan h3 { font-family: var(--affiche); font-size: 17.5px; letter-spacing: -.01em; margin: 0; }
+.plan__objectif { display: grid; gap: 10px; }
+.plan__haut { margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 6px 14px; flex-wrap: wrap; }
+.plan__haut b { font-family: var(--affiche); font-size: 30px; letter-spacing: -.02em; }
+.plan__haut span { color: var(--encre-3); font-size: 14px; }
+.plan__piste { display: flex; height: 14px; border-radius: 8px; background: var(--surface-2); overflow: hidden; }
+.plan__piste i { width: var(--l, 0%); transition: width 260ms var(--sortie); }
+.plan__piste-av { background: var(--epargne); }
+.plan__piste-cea { background: var(--salaire); }
+.plan__legende { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--encre-2); }
+.plan__legende li { display: inline-flex; align-items: center; gap: 6px; }
+.plan__legende i { width: 10px; height: 10px; border-radius: 3px; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--filet); }
+.plan__legende-av i { background: var(--epargne); box-shadow: none; }
+.plan__legende-cea i { background: var(--salaire); box-shadow: none; }
+.plan__grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 16px; align-items: start; }
+.plan__carte { display: grid; gap: 12px; align-content: start; padding: 18px; border-radius: var(--r-int); border: 1px solid var(--filet); min-width: 0; }
+.plan__src { display: grid; gap: 6px; padding: 14px; border-radius: var(--r-int); background: var(--surface-2); }
+.plan__src[hidden] { display: none; }
+.plan__src-l { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.plan__src-l label, .plan__src-l span { font-weight: 700; font-size: 15px; }
+.plan__src-l strong { font-family: var(--affiche); font-size: 19px; white-space: nowrap; }
+.plan__aide { margin: 0; color: var(--encre-3); font-size: 13px; line-height: 1.45; }
+.plan__curseur:disabled { opacity: .45; cursor: not-allowed; }
+.plan__reserve { max-width: 260px; }
+.plan__reserve .saisie { background: var(--surface); }
+.plan__total { margin: 0; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 14px 16px; border-radius: var(--r-int); background: var(--encre); color: var(--surface); }
+.plan__total span { font-size: 14px; opacity: .85; }
+.plan__total b { font-family: var(--affiche); font-size: 24px; white-space: nowrap; }
+.plan__garde { margin: 0; font-size: 13px; line-height: 1.45; color: var(--encre-2); padding-left: 12px; border-left: 3px solid var(--filet-fort); }
+.plan__puces { display: flex; flex-wrap: wrap; gap: 8px; }
+.plan__puce { border: 1px solid var(--filet); background: var(--surface); color: var(--encre-2); border-radius: 999px; padding: 8px 13px; font: inherit; font-size: 13.5px; font-weight: 650; cursor: pointer; transition: transform 160ms var(--sortie), background-color 160ms ease; }
+.plan__puce:active { transform: scale(.97); }
+.plan__puce small { font-size: 12px; font-weight: 600; opacity: .75; margin-left: 3px; }
+.plan__puce--on { background: var(--encre); border-color: var(--encre); color: var(--surface); }
+.plan__dosage { display: grid; gap: 2px; }
+.plan__dosage-lib { display: flex; justify-content: space-between; gap: 10px; font-size: 13.5px; color: var(--encre-2); }
+.plan__dosage-lib span:first-child b { color: var(--epargne-t); }
+.plan__dosage-lib span:last-child b { color: var(--salaire-t); }
+.plan__curseur--dosage { --c: var(--epargne); height: 32px; }
+.plan__curseur--dosage::-webkit-slider-runnable-track { height: 12px; background: linear-gradient(var(--epargne), var(--epargne)) 0 / var(--p) 100% no-repeat, var(--salaire); }
+.plan__curseur--dosage::-moz-range-track { height: 12px; background: var(--salaire); }
+.plan__curseur--dosage::-moz-range-progress { height: 12px; background: var(--epargne); }
+.plan__curseur--dosage::-webkit-slider-thumb { margin-top: -6px; border-color: var(--encre); }
+.plan__prod { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.plan__prod > div { display: grid; gap: 3px; padding: 14px; border-radius: var(--r-int); background: var(--surface-2); min-width: 0; }
+.plan__prod span { font-size: 13px; font-weight: 600; color: var(--encre-3); }
+.plan__prod strong { font-family: var(--affiche); font-size: 21px; }
+.plan__prod small { font-size: 12.5px; line-height: 1.35; color: var(--encre-3); }
+.plan__prod-av { box-shadow: inset 4px 0 0 var(--epargne); }
+.plan__prod-cea { box-shadow: inset 4px 0 0 var(--salaire); }
+.plan__res { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.plan__res > div { padding: 12px 14px; border-radius: var(--r-int); border: 1px solid var(--filet); min-width: 0; }
+.plan__res dt { font-size: 12.5px; font-weight: 600; color: var(--encre-3); }
+.plan__res dd { margin: 2px 0 0; font-family: var(--affiche); font-size: 20px; font-weight: 760; }
+.plan__res-fort { background: var(--salaire-doux); border-color: transparent !important; }
+.plan__res-fort dd { color: var(--salaire-t); }
+.plan__info { margin: 0; padding: 12px 14px; border-radius: var(--r-int); background: var(--surface-2); font-size: 13.5px; line-height: 1.45; color: var(--encre-2); }
+.plan__alerte { margin: 0; padding: 12px 14px; border-radius: var(--r-int); background: color-mix(in srgb, #F79009 14%, var(--surface)); font-size: 13.5px; line-height: 1.45; }
+.plan__alerte b { display: block; margin-bottom: 2px; }
+.plan__info[hidden], .plan__alerte[hidden], .plan__vide[hidden] { display: none; }
+.plan__cal { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); gap: 10px; }
+.plan__cal li { display: grid; gap: 3px; padding: 12px; border-radius: var(--r-int); background: var(--surface-2); }
+.plan__cal time { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--encre-3); }
+.plan__cal strong { font-family: var(--affiche); font-size: 19px; }
+.plan__cal small { font-size: 12.5px; color: var(--encre-2); }
+.plan__cal .plan__cal-src { color: var(--encre-3); }
+.plan__cal .plan__cal-fin { background: var(--encre); color: var(--surface); }
+.plan__cal .plan__cal-fin time, .plan__cal .plan__cal-fin small { color: inherit; opacity: .8; }
+.plan__vide { margin: 0; font-size: 14px; color: var(--encre-3); }
+.plan__actions { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+@media (max-width: 560px) {
+  .plan__res { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .plan__res-fort { grid-column: 1 / -1; }
+  .plan__haut b { font-size: 25px; }
+  .plan__carte { padding: 14px; }
+}
+
 /* ---------- Foyer (mode couple) ---------- */
 .foyer .bloc-orbite__tete { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 16px; }
 .foyer__kpi { margin: 0 0 16px; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }

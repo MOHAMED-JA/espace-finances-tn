@@ -378,6 +378,14 @@
       }, 6),
       /* « Rembourser ou épargner ? » : rendements supposés (assurance vie / CEA, compte d'épargne), en % par an. */
       decider: { rendementAv: nombre(p.decider && p.decider.rendementAv, 6, 0, 15), rendementEpargne: nombre(p.decider && p.decider.rendementEpargne, 5, 0, 15) },
+      /* « Mon plan de versement » (14 oct. 2026) : part de la marge et des primes versée, réserve gardée (vide = conseillée),
+         part de l'assurance vie (vide = répartition conseillée). */
+      planVersement: (function (x) {
+        x = x || {};
+        return { partMarge: nombre(x.partMarge, 0.5, 0, 1), partPrimes: nombre(x.partPrimes, 0.5, 0, 1),
+          reserve: x.reserve === null || x.reserve === undefined || x.reserve === "" ? null : nombre(x.reserve, 0, 0, 1e9),
+          partAv: x.partAv === null || x.partAv === undefined || x.partAv === "" ? null : nombre(x.partAv, 1, 0, 1) };
+      })(p.planVersement),
       autresRevenus: nombre(p.autresRevenus, 0, 0, 1e7),
       quotiteNet: nombre(p.quotiteNet, QUOTITE, 0.1, 0.8),
       quotiteBrut: nombre(p.quotiteBrut, QUOTITE, 0.1, 0.8),

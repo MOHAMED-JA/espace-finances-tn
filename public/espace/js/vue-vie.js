@@ -186,7 +186,6 @@
   /* ===================================================================
      Optimiseur fiscal
      =================================================================== */
-  var budgetSaisi = null;
   function rendreFiscal() {
     var sy = O.synthese(); if (!sy || !OI) return;
     var opt = OI.optimiseurFiscal(sy);
@@ -206,6 +205,7 @@
       : opt.statut === "optimise" ? "Vos versements prévus profitent déjà de presque tout l'avantage fiscal possible cette année. Bravo !"
       : "Vous pouvez encore économiser " + F.dt0(opt.gainPossible) + " DT d'impôt cette année.";
     bloc.hidden = opt.statut !== "a_optimiser";
+    rendrePlan(sy, opt);
     if (opt.statut !== "a_optimiser") return;
     $("fi-opt-sous").textContent = "Pour atteindre l'économie maximale, ajoutez " + F.dt0(opt.complement.total) + " DT de versements d'ici le 31 décembre" +
       (opt.moisRestants > 1 ? " (environ " + F.dt0(opt.parMoisRestant) + " DT par mois sur " + opt.moisRestants + " mois)" : "") + ".";
@@ -219,13 +219,7 @@
       d.appendChild(j);
       rep.appendChild(d);
     });
-    var champ = $("fi-budget");
-    if (budgetSaisi == null && doc.activeElement !== champ) {
-      var budgetMois = sy.epargne && sy.epargne.plafondBudget > 0 ? sy.epargne.plafondBudget : 0;
-      var defaut = Math.min(opt.complement.total, Math.max(100, Math.round(budgetMois * Math.max(1, opt.moisRestants) / 10) * 10));
-      champ.value = F.saisie(defaut);
-    }
-    resultatBudget(sy, opt);
+    $("fi-simuler").href = "#epargne?av=" + Math.round(opt.complement.av) + "&cea=" + Math.round(opt.complement.cea);
   }
   /* Paie d'ici le 31 décembre ou déclaration annuelle : l'employeur ne peut rendre que l'impôt qui reste à retenir. */
   function rendrePaie(opt) {
@@ -257,39 +251,164 @@
       doc.querySelectorAll('input[name="fi-av-paie"]').forEach(function (r) { r.checked = r.value === v; });
       if (d.contrats && $("fi-paie-detail").open) O.placerPastilles($("fi-paie-employeur"));
     }
-    var op = opt.optimalPaie, txt = $("fi-paie-opt"), bt = $("fi-paie-utiliser");
+    var op = opt.optimalPaie, txt = $("fi-paie-opt");
     txt.textContent = "";
-    bt.hidden = !op;
     if (op) {
       txt.appendChild(doc.createTextNode("Pour que tout l'avantage revienne sur vos paies de cette année, versez "));
       txt.appendChild(cree("strong", null, F.dt0(op.total) + " DT"));
       txt.appendChild(doc.createTextNode(" (" + [op.av ? F.dt0(op.av) + " DT en assurance vie" : "", op.cea ? F.dt0(op.cea) + " DT en CEA" : ""].filter(Boolean).join(" et ") + ") : environ "));
       txt.appendChild(cree("strong", null, F.dt0(op.gain) + " DT d'impôt en moins"));
       txt.appendChild(doc.createTextNode(" d'ici décembre. Au-delà, l'économie supplémentaire passe par la déclaration annuelle."));
-      bt.onclick = function () { $("fi-budget").value = F.saisie(op.total); budgetSaisi = $("fi-budget").value; var sy = O.synthese(); if (sy) resultatBudget(sy, OI.optimiseurFiscal(sy)); };
     } else txt.textContent = "Tout l'avantage fiscal restant peut revenir sur vos paies d'ici le 31 décembre.";
   }
-  function resultatBudget(sy, opt) {
-    var b = lire($("fi-budget").value), res = $("fi-budget-res"), lien = $("fi-simuler");
-    /* Champ vide : le lien simule le versement « optimal paie » (sinon le complément maximal), en versement ponctuel. */
-    if (!(b > 0)) {
-      var d0 = opt.optimalPaie || (opt.statut === "a_optimiser" ? opt.complement : null);
-      res.textContent = d0 ? "Indiquez un montant, ou simulez directement " + (opt.optimalPaie ? "le versement optimal paie" : "le complément conseillé") + " (" + F.dt0(d0.total) + " DT)." : "Indiquez un montant.";
-      lien.href = d0 ? "#epargne?av=" + Math.round(d0.av) + "&cea=" + Math.round(d0.cea) : "#epargne";
-      return;
-    }
-    var o = b >= opt.complement.total ? { av: opt.complement.av, cea: opt.complement.cea, gain: opt.gainPossible, economie: opt.economieMax } : OI.optimiseurFiscal(sy, { budgetAnnuel: b }).avecBudget;
-    if (!o) { res.textContent = ""; return; }
-    res.textContent = "Avec " + F.dt0(b) + " DT : " + (o.av ? F.dt0(o.av) + " DT en assurance vie" : "") + (o.av && o.cea ? " et " : "") + (o.cea ? F.dt0(o.cea) + " DT en CEA" : "") +
-      " → " + F.dt0(o.gain) + " DT d'impôt en moins (" + Math.round(o.gain / b * 100) + " % de ce que vous versez)" +
-      (opt.paie ? (function () { var pp = Math.min(o.gain, opt.paie.impotRestant), dd = Math.max(0, o.gain - pp);
-        return " : " + F.dt0(pp) + " DT sur vos paies d'ici décembre" + (dd > 0.5 ? " et " + F.dt0(dd) + " DT via la déclaration annuelle." : "."); })() : ".");
-    /* Versement ponctuel de l'année, avec la répartition assurance vie / CEA calculée ci-dessus. */
-    lien.href = "#epargne?av=" + Math.round(o.av || 0) + "&cea=" + Math.round(o.cea || 0);
+  /* ===================================================================
+     Mon plan de versement (14 oct. 2026) : ce que la situation permet de verser d'ici le 31 décembre,
+     réparti entre assurance vie et CEA selon un pourcentage choisi, et le calendrier des versements.
+     Les curseurs recalculent en direct ; le réglage est gardé dans le profil quand on le lâche.
+     =================================================================== */
+  var MOIS_PLAN = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+  var planEssai = null, dernierPlan = null, dernierFiscal = null;
+  function reglagesPlan() { return Object.assign({}, O.profil().planVersement || {}, planEssai || {}); }
+  function dateCourte(d) {
+    var a = new Date();
+    return d.getFullYear() === a.getFullYear() && d.getMonth() === a.getMonth() && d.getDate() === a.getDate() ? "Aujourd'hui" : d.getDate() + " " + MOIS_PLAN[d.getMonth()];
   }
-  $("fi-budget").addEventListener("input", function () {
-    budgetSaisi = this.value; compter("fiscal");
-    var sy = O.synthese(); if (sy) resultatBudget(sy, OI.optimiseurFiscal(sy));
+  function pctEntier(v) { return Math.round(v * 100) + " %"; }
+  function curseur(id, v) { var c = $(id); if (doc.activeElement !== c) c.value = String(Math.round(v * 100)); c.style.setProperty("--p", c.value + "%"); }
+  function rendrePlan(sy, opt) {
+    var sec = $("fi-plan");
+    sec.hidden = opt.statut !== "a_optimiser";
+    dernierFiscal = { sy: sy, opt: opt };
+    if (sec.hidden) { dernierPlan = null; return; }
+    var r = OI.planVersement(sy, reglagesPlan(), { optimiseur: opt, maintenant: sy.maintenant });
+    dernierPlan = r;
+    $("fi-plan-annee").textContent = String(r.annee);
+    $("fi-plan-total").textContent = F.dt0(r.versement) + " DT";
+    $("fi-plan-sur").textContent = "sur " + F.dt0(r.besoin) + " DT qui donneraient l'économie maximale (" + F.dt0(r.economieMax) + " DT d'impôt en moins)";
+    var base = Math.max(1, r.besoin);
+    $("fi-plan-p-av").style.setProperty("--l", Math.min(100, r.av / base * 100) + "%");
+    $("fi-plan-p-cea").style.setProperty("--l", Math.min(100, r.cea / base * 100) + "%");
+    var leg = $("fi-plan-legende"); leg.textContent = "";
+    [["av", "Assurance vie " + F.dt0(r.av) + " DT"], ["cea", "CEA " + F.dt0(r.cea) + " DT"], ["reste", "Reste possible " + F.dt0(Math.max(0, r.besoin - r.versement)) + " DT"]].forEach(function (x) {
+      var li = cree("li", "plan__legende-" + x[0]); li.appendChild(cree("i", null)); li.appendChild(doc.createTextNode(x[1])); leg.appendChild(li);
+    });
+
+    /* 1. Sources */
+    var mg = r.marge;
+    $("fi-plan-marge-mt").textContent = F.dt0(mg.total) + " DT";
+    $("fi-plan-marge-txt").textContent = mg.libre < 10
+      ? (mg.source === "budget" ? "Votre budget du mois répartit déjà tout votre salaire : il ne reste rien chaque mois. Les primes et l'épargne restent possibles."
+        : "Après crédits, logement et contrats, il ne reste rien chaque mois.")
+      : "Il vous reste " + F.dt0(mg.libre) + " DT par mois après crédits, logement, contrats et dépenses de vie (" +
+        (mg.source === "budget" ? "selon votre budget du mois" : "estimées à la moitié du reste, faute de budget du mois") + "). J'en verse " + pctEntier(mg.part) +
+        " : " + F.dt0(mg.mensuel) + " DT × " + mg.mois + " mois.";
+    $("fi-plan-marge").disabled = mg.libre < 10;
+    curseur("fi-plan-marge", mg.part);
+    var pr = r.primes, blocP = $("fi-plan-primes-bloc");
+    blocP.hidden = !pr.liste.length;
+    if (pr.liste.length) {
+      var netP = pr.liste.reduce(function (t, x) { return t + x.net; }, 0);
+      $("fi-plan-primes-mt").textContent = F.dt0(pr.total) + " DT";
+      $("fi-plan-primes-txt").textContent = (pr.liste.length > 1 ? "Primes de " + pr.liste.map(function (x) { return MOIS_PLAN[x.mois]; }).join(" et ") : "Prime de " + MOIS_PLAN[pr.liste[0].mois]) +
+        " : environ " + F.dt0(netP) + " DT net, versés le " + pr.liste.map(function (x) { return dateCourte(x.date); }).join(" et le ") + ". J'en place " + pctEntier(pr.part) + ".";
+      curseur("fi-plan-primes", pr.part);
+    }
+    var ep = r.epargne;
+    $("fi-plan-ep-mt").textContent = F.dt0(ep.utilisable) + " DT";
+    $("fi-plan-ep-txt").textContent = ep.disponible > 0 ? F.dt0(ep.disponible) + " DT sur vos comptes, moins la réserve que vous gardez." : "Aucune épargne disponible déclarée dans votre profil.";
+    var res = $("fi-plan-reserve");
+    res.placeholder = F.saisie(ep.reserveConseillee);
+    if (doc.activeElement !== res) res.value = r.reglages.reserve === null ? "" : F.saisie(ep.reserve);
+    $("fi-plan-abordable").textContent = F.dt0(r.abordable) + " DT";
+    $("fi-plan-garde").textContent = "Réserve conseillée : 3 mois de dépenses (" + F.dt0(ep.reserveConseillee) + " DT), gardée si le champ est vide." +
+      (r.surplus > 0.5 ? " Au-delà de " + F.dt0(r.besoin) + " DT, un versement de plus ne baisse plus l'impôt cette année : " + F.dt0(r.surplus) + " DT restent libres." : "");
+
+    /* 2. Répartition */
+    var choix = r.reglages.partAv === null ? "conseil" : Math.abs(r.reglages.partAv - 0.7) < 0.001 ? "70" : Math.abs(r.reglages.partAv - 0.5) < 0.001 ? "50" : "perso";
+    $("fi-plan-conseil-pct").textContent = Math.round(r.conseille.partAv * 100) + " / " + (100 - Math.round(r.conseille.partAv * 100));
+    doc.querySelectorAll("#fi-plan-puces [data-part]").forEach(function (b) {
+      var on = b.getAttribute("data-part") === choix; b.classList.toggle("plan__puce--on", on); b.setAttribute("aria-checked", on ? "true" : "false"); b.tabIndex = on ? 0 : -1;
+    });
+    curseur("fi-plan-av", r.partAv);
+    $("fi-plan-av-pct").textContent = pctEntier(r.partAv); $("fi-plan-cea-pct").textContent = pctEntier(1 - r.partAv);
+    $("fi-plan-av-mt").textContent = F.dt0(r.av) + " DT"; $("fi-plan-cea-mt").textContent = F.dt0(r.cea) + " DT";
+    $("fi-plan-av-txt").textContent = r.dureeAv + " ans au moins pour garder l'avantage · capital selon le contrat";
+    $("fi-plan-cea-txt").textContent = "Bloqué " + r.dureeCea + " ans · placé en bourse, le capital peut baisser";
+    $("fi-plan-gain").textContent = F.dt0(r.gain) + " DT"; $("fi-plan-cout").textContent = F.dt0(r.coutReel) + " DT"; $("fi-plan-taux").textContent = pctEntier(r.taux);
+    var pa = $("fi-plan-paie");
+    pa.hidden = !r.paie || !(r.gain > 0.5);
+    if (!pa.hidden) pa.textContent = r.paie.declaration > 0.5
+      ? F.dt0(r.paie.surPaie) + " DT reviennent sur vos paies d'ici décembre et " + F.dt0(r.paie.declaration) + " DT via la déclaration annuelle, l'an prochain."
+      : "Tout l'avantage revient sur vos paies d'ici décembre : rien à attendre de la déclaration annuelle.";
+    var al = $("fi-plan-alerte");
+    al.hidden = !(r.perte > 1);
+    if (!al.hidden) {
+      al.textContent = "";
+      al.appendChild(cree("b", null, "Cette répartition fait perdre " + F.dt0(r.perte) + " DT d'économie"));
+      al.appendChild(doc.createTextNode((r.ceaUtile ? "Au-delà de " + F.dt0(r.ceaUtile) + " DT en CEA, l'impôt ne baisse plus (il ne descend pas sous " + pctEntier(r.plancherCea) + " de l'impôt de départ). " : "") +
+        "Passez le reste en assurance vie, ou choisissez « Conseillé »."));
+    }
+
+    /* 3. Calendrier */
+    var ol = $("fi-plan-cal"); ol.textContent = "";
+    var LIB = { epargne: "Épargne disponible", marge: "Marge du mois", prime: "Part de la prime" };
+    r.calendrier.forEach(function (c) {
+      var li = cree("li", c.date.getMonth() === 11 && c.date.getDate() >= 20 ? "plan__cal-fin" : null);
+      var t = cree("time", null, dateCourte(c.date)); t.setAttribute("datetime", c.date.getFullYear() + "-" + String(c.date.getMonth() + 1).padStart(2, "0") + "-" + String(c.date.getDate()).padStart(2, "0"));
+      li.appendChild(t); li.appendChild(cree("strong", "chiffre", F.dt0(c.montant) + " DT"));
+      li.appendChild(cree("small", null, [c.av > 0.5 ? "Assurance vie " + F.dt0(c.av) : "", c.cea > 0.5 ? "CEA " + F.dt0(c.cea) : ""].filter(Boolean).join(" · ")));
+      li.appendChild(cree("small", "plan__cal-src", c.sources.map(function (x) { return LIB[x]; }).join(" + ") + (li.className ? " · avant le 31" : "")));
+      ol.appendChild(li);
+    });
+    $("fi-plan-vide").hidden = r.calendrier.length > 0;
+    $("fi-plan-rappel").disabled = !r.calendrier.length;
+    $("fi-plan-simuler").href = "#epargne?av=" + Math.round(r.av) + "&cea=" + Math.round(r.cea);
+  }
+  function replanifier() { if (dernierFiscal) rendrePlan(dernierFiscal.sy, dernierFiscal.opt); }
+  function essai(partiel) { planEssai = Object.assign({}, planEssai || {}, partiel); compter("plan"); replanifier(); }
+  function garderPlan() {
+    if (!planEssai) return;
+    var r = Object.assign({}, O.profil().planVersement || {}, planEssai); planEssai = null;
+    O.majProfil({ planVersement: r });
+  }
+  [["fi-plan-marge", "partMarge"], ["fi-plan-primes", "partPrimes"], ["fi-plan-av", "partAv"]].forEach(function (x) {
+    var c = $(x[0]);
+    c.addEventListener("input", function () { var o = {}; o[x[1]] = Number(c.value) / 100; essai(o); });
+    c.addEventListener("change", garderPlan);
+  });
+  $("fi-plan-reserve").addEventListener("input", function () { var v = lire(this.value); essai({ reserve: this.value.trim() === "" ? null : (v >= 0 ? v : null) }); });
+  $("fi-plan-reserve").addEventListener("change", garderPlan);
+  $("fi-plan-puces").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-part]"); if (!b) return;
+    var k = b.getAttribute("data-part");
+    if (k === "perso") { $("fi-plan-av").focus(); return; }
+    essai({ partAv: k === "conseil" ? null : Number(k) / 100 }); garderPlan();
+  });
+  $("fi-plan-puces").addEventListener("keydown", function (e) {
+    if (["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].indexOf(e.key) === -1) return;
+    var l = Array.prototype.slice.call(this.querySelectorAll("[data-part]")), i = l.indexOf(doc.activeElement); if (i < 0) return;
+    e.preventDefault(); var n = l[(i + (e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : l.length - 1)) % l.length]; n.focus(); n.click();
+  });
+  $("fi-plan-rappel").addEventListener("click", function () {
+    var r = dernierPlan; if (!r || !r.calendrier.length) return;
+    var p = O.profil(), avant = p.rappelsPerso.slice(), parMois = {}, cles = [];
+    r.calendrier.forEach(function (c) {
+      var k = c.date.getFullYear() + "-" + c.date.getMonth();
+      if (!parMois[k]) { parMois[k] = { an: c.date.getFullYear(), mois: c.date.getMonth(), montant: 0, av: 0, cea: 0 }; cles.push(k); }
+      parMois[k].montant += c.montant; parMois[k].av += c.av; parMois[k].cea += c.cea;
+    });
+    var nouveaux = cles.map(function (k) {
+      var x = parMois[k];
+      return { id: "plan" + x.an + String(x.mois + 1).padStart(2, "0"), titre: "Mon plan d'épargne : verser " + F.dt0(x.montant) + " DT en " + MOIS_PLAN[x.mois],
+        corps: "Prévu dans votre plan : " + [x.av > 0.5 ? F.dt0(x.av) + " DT en assurance vie" : "", x.cea > 0.5 ? F.dt0(x.cea) + " DT en CEA" : ""].filter(Boolean).join(" et ") +
+          ". Chaque versement fait avant le 31 décembre réduit votre impôt " + r.annee + ".",
+        url: "/espace/#vie?onglet=fiscal", mois: x.mois + 1, annee: x.an };
+    });
+    var autres = avant.filter(function (x) { return !/^plan\d{6}$/.test(x.id); });
+    O.majProfil({ rappelsPerso: autres.slice(0, Math.max(0, 20 - nouveaux.length)).concat(nouveaux) }, { immediat: true });
+    compter("plan-rappel");
+    O.toast(nouveaux.length + (nouveaux.length > 1 ? " rappels ajoutés" : " rappel ajouté") + " : le 1er de chaque mois concerné, dans Orbite (et par e-mail si vos rappels e-mail sont activés).",
+      { action: { libelle: "Annuler", fn: function () { O.majProfil({ rappelsPerso: avant }, { immediat: true }); O.toast("Rappels retirés."); } } });
   });
 
   $("fi-paie-detail").addEventListener("toggle", function () { if (this.open) O.placerPastilles($("fi-paie-employeur")); });
@@ -304,6 +423,8 @@
   doc.addEventListener("orbite:vue", function (e) {
     if (e.detail.vue !== "vie") return;
     ouvrirOnglet(e.detail.params.get("onglet") || ONGLETS.filter(function (c) { return !$("vie-panneau-" + c).hidden; })[0] || "vie");
+    /* #vie?onglet=fiscal&plan=1 : directement sur « Mon plan de versement ». */
+    if (e.detail.params.get("plan") && !$("fi-plan").hidden) setTimeout(function () { $("fi-plan").scrollIntoView({ block: "start" }); }, 60);
   });
   O.surProfil(function () {
     if ($("vue-vie").hidden) return;
