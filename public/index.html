@@ -59,6 +59,18 @@
         "sameAs": ["https://www.linkedin.com/in/mohamed-aziz-jaouadi-%D9%85%D8%AD%D9%85%D8%AF-%D8%B9%D8%B2%D9%8A%D8%B2-%D8%A7%D9%84%D8%AC%D9%88%D8%A7%D8%AF%D9%8A-%C2%AEpsm-i-%C2%AEpspo-l-%C2%AEistqb-851009115/"]
       },
       {
+        "@type": "VideoObject",
+        "@id": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/#video",
+        "name": "Orbite en une minute",
+        "description": "Votre salaire au centre, tout le reste en orbite : fiche de paie lue, simulations de crédit et d'épargne, budget et relevé bancaire, comparaison des banques, bilan de l'année.",
+        "thumbnailUrl": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/medias/orbite-affiche.jpg",
+        "uploadDate": "2026-10-14",
+        "duration": "PT1M",
+        "contentUrl": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/medias/orbite-60s.mp4",
+        "inLanguage": "fr",
+        "author": { "@id": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/#auteur" }
+      },
+      {
         "@type": "WebSite",
         "@id": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/#site",
         "name": "Orbite",
@@ -175,6 +187,30 @@
             <p class="apercu__note"><span id="lib-caisse">CNSS</span> · 12 salaires · 40 % d'endettement sur 20 ans à 10 %.</p>
           </form>
         </div>
+      </div>
+
+      <!-- Présentation vidéo (accueil-film.js) : 30 s muettes en boucle, son et pause à la demande, 1 min en grand. -->
+      <div class="conteneur heros__film">
+        <figure class="film" id="film">
+          <video class="film__video" id="film-video" muted loop playsinline preload="none" poster="/medias/orbite-affiche.jpg" width="1920" height="1080" aria-label="Orbite en 30 secondes : fiche de paie, simulations, budget, relevé bancaire, crédit, banques, bilan.">
+            <source src="/medias/orbite-30s.webm" type="video/webm">
+            <source src="/medias/orbite-30s.mp4" type="video/mp4">
+          </video>
+          <figcaption class="cache">Présentation d'Orbite en images, sans voix.</figcaption>
+          <div class="film__barre">
+            <div class="film__gauche">
+              <button type="button" class="film__btn film__btn--rond" id="film-son" aria-pressed="false" aria-label="Activer le son">
+                <svg class="film__ico-coupe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg>
+                <svg class="film__ico-son" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+              </button>
+              <button type="button" class="film__btn film__btn--rond" id="film-pause" aria-pressed="false" aria-label="Mettre la vidéo en pause">
+                <svg class="film__ico-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                <svg class="film__ico-lire" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+              </button>
+            </div>
+            <button type="button" class="film__btn" id="film-complet"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>Voir la vidéo · 1 min</button>
+          </div>
+        </figure>
       </div>
     </section>
 
@@ -332,6 +368,14 @@
     </div>
   </footer>
 
+  <dialog class="film-dialogue" id="film-dlg" aria-label="Orbite en une minute">
+    <button type="button" class="film-dialogue__fermer" id="film-fermer" aria-label="Fermer la vidéo"><svg aria-hidden="true"><use href="/orbite/icones.svg#fermer"/></svg></button>
+    <video class="film-dialogue__video" id="film-video-complete" controls playsinline preload="none" poster="/medias/orbite-60s-affiche.jpg" width="1920" height="1080">
+      <source src="/medias/orbite-60s.webm" type="video/webm">
+      <source src="/medias/orbite-60s.mp4" type="video/mp4">
+    </video>
+  </dialog>
+
   <script src="/moteurs/salaire/parametres.js"></script>
   <script src="/moteurs/salaire/calcul.js"></script>
   <script src="/moteurs/salaire/etat.js"></script>
@@ -348,5 +392,6 @@
   <script src="/commun/planete.js"></script>
   <script src="/commun/accueil.js"></script>
   <script src="/commun/accueil-recit.js"></script>
+  <script src="/commun/accueil-film.js"></script>
 </body>
 </html>

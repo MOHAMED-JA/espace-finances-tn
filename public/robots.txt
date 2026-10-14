@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /$
 Allow: /orbite/
+Allow: /medias/
 Allow: /confidentialite.html
 Allow: /cgv.html
 Disallow: /espace/

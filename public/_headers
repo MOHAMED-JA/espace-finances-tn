@@ -99,6 +99,9 @@
   Cache-Control: public, max-age=31536000, immutable
 /orbite/polices/*
   Cache-Control: public, max-age=31536000, immutable
+# Vidéo de l'accueil : une semaine (renommer le fichier pour une nouvelle version)
+/medias/*
+  Cache-Control: public, max-age=604800
 
 # --- Outils de lecture de la fiche de paie (dossiers versionnés : contenu immuable) ---
 # Aucune CSP ici : le moteur de lecture compile son WebAssembly dans son propre worker.
