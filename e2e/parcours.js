@@ -118,6 +118,45 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await tel.close();
   });
 
+  await etape("accueil : vidéo de présentation (30 s muette en boucle, son, pause, 1 min en grand, moins d'animations, téléphone)", async () => {
+    await page.setViewportSize({ width: 1360, height: 900 });
+    await page.goto(base + "/");
+    for (const f of ["orbite-30s.webm", "orbite-30s.mp4", "orbite-60s.webm", "orbite-60s.mp4", "orbite-affiche.jpg", "orbite-60s-affiche.jpg"]) {
+      const r = await page.request.get(base + "/medias/" + f);
+      assert(r.status() === 200 && (await r.body()).length > 50000, "fichier " + f);
+    }
+    await page.$eval("#film", (e) => e.scrollIntoView({ block: "center" }));
+    await page.waitForFunction(() => { const v = document.getElementById("film-video"); return !v.paused && v.currentTime > 0.3; }, null, { timeout: 15000 });
+    assert(await page.$eval("#film-video", (v) => v.muted && /\.webm$/.test(v.currentSrc)), "muette, WebM");
+    assert(await page.getAttribute("#film-son", "aria-pressed") === "false", "son coupé au départ");
+    await page.click("#film-son");
+    assert(await page.$eval("#film-video", (v) => !v.muted) && await page.getAttribute("#film-son", "aria-label") === "Couper le son", "son activé");
+    await page.click("#film-pause");
+    assert(await page.$eval("#film-video", (v) => v.paused) && await page.getAttribute("#film-pause", "aria-label") === "Lire la vidéo", "pause");
+    await page.screenshot({ path: path.join(CAPTURES, "accueil-video.png") });
+    /* La vidéo d'une minute en grand, puis fermée : l'accueil reste en pause (choix de l'utilisateur). */
+    await page.click("#film-complet");
+    await page.waitForSelector("#film-dlg[open]");
+    await page.waitForFunction(() => { const v = document.getElementById("film-video-complete"); return !v.paused && v.currentTime > 0.3 && v.duration > 55; }, null, { timeout: 15000 });
+    await page.keyboard.press("Escape");
+    await page.waitForFunction(() => !document.getElementById("film-dlg").open && document.getElementById("film-video-complete").paused);
+    assert(await page.$eval("#film-video", (v) => v.paused), "toujours en pause après la fermeture");
+    await page.click("#film-pause");
+    await page.waitForFunction(() => !document.getElementById("film-video").paused);
+    /* Moins d'animations : rien ne démarre seul, l'affiche reste. */
+    const ctx2 = await page.context().browser().newContext({ viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
+    const p2 = await ctx2.newPage();
+    await p2.goto(base + "/");
+    await p2.$eval("#film", (e) => e.scrollIntoView({ block: "center" }));
+    await p2.waitForTimeout(1500);
+    assert(await p2.$eval("#film-video", (v) => v.paused) && await p2.getAttribute("#film-pause", "aria-pressed") === "true", "pas de lecture automatique");
+    assert(!(await p2.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), "téléphone sans débordement");
+    const b = await p2.$eval(".film__barre", (e) => { const r = e.getBoundingClientRect(), f = document.getElementById("film").getBoundingClientRect(); return r.right <= f.right + 1 && r.left >= f.left - 1; });
+    assert(b, "boutons dans le cadre sur téléphone");
+    await p2.screenshot({ path: path.join(CAPTURES, "accueil-video-telephone.png") });
+    await ctx2.close();
+  });
+
   await etape("pages publiques : liens depuis l'accueil, mini-calculs exacts et en direct (onze pages), états, téléphone sans débordement", async () => {
     await page.goto(base + "/");
     for (const slug of ["salaire-net-tunisie", "simulateur-credit-tunisie", "capacite-credit-tunisie", "simulateur-assurance-vie-tunisie", "calcul-cea-tunisie", "impot-assurance-vie-cea", "retraite-cnss-cnrps",

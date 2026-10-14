@@ -679,6 +679,16 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centquatervicies. Vidéo de présentation sur l'accueil (14 oct.)
+
+Demandée par l'utilisateur à partir de sa vidéo de 60 s (« images approuvées ») et de 7 visuels 3D (zip). Choix validés : bande vidéo **sous le haut de page** (emplacement B, l'encadré « Essayez avec votre salaire » reste en place), 30 s muettes en boucle + 1 min au clic, 3 scènes de vraies captures + « Mon orbite » + carte de fin, **sa musique** mieux mixée.
+
+- **Fichiers** (`public/medias/`, cache 1 semaine dans `_headers`, autorisés dans `robots.txt`, non interceptés par le service worker) : `orbite-30s.webm|mp4` (accueil), `orbite-60s.webm|mp4` (fenêtre), `orbite-affiche.jpg`, `orbite-60s-affiche.jpg`. WebM VP9 + Opus d'abord, MP4 H.264 + AAC ensuite (le Chromium des tests ne lit pas le H.264). 30 images/s, son à -16 LUFS. Pour changer une vidéo : **changer son nom** (cache d'une semaine).
+- **Montage** (outils dans le bloc-notes de la session, `scratchpad/video/`, non versionnés) : moteur canvas image par image (`moteur.html` + `rendu.js` → ffmpeg) ; chaque scène avance lentement (zoom + déplacement adoucis), reflet lumineux sur le titre au début, particules, vignette, transitions « zoom à travers » de 0,6 s avec flou et léger flash, **calées sur les temps de la musique** (un temps par seconde, mesures de 4 s à 0,43 s ; pause musicale 43-47 s). 60 s = 14 scènes (Ouverture, Mon orbite, Fiche de paie, Simulations, Budget, Import du relevé, Crédit, Comparer les banques, Et si…, Ma progression, Bilan PDF, Accompagnement sur la pause, Projetez votre avenir sur la reprise, carte de fin « Créer mon orbite → » sans mention de prix) ; 30 s = 10 scènes de 3 s, fondu au noir pour la boucle.
+- **Nouvelles scènes** : captures réelles d'Orbite en mode sombre (profil fictif) dans une carte de verre inclinée avec halo néon, planète de l'image d'ouverture, titres Mona Sans (« Vos banques. Qui vous prête le plus ? », « Votre relevé. Rangé en un geste. », « Votre bilan. Une page pour votre banque. ») ; « Mon orbite » et les autres quarts de l'image 04 agrandis ; mentions « Concept 01/02/03 — … » effacées des images 01 à 03.
+- **Page** (`index.html`, `commun/accueil.css`, `commun/accueil-film.js`) : `<video muted loop playsinline preload="none" poster>` ; lecture seulement quand la bande est visible (35 %) et l'onglet affiché ; jamais d'elle-même si « moins d'animations » ou économie de données ; boutons son (`#film-son`), pause (`#film-pause`, WCAG 2.2.2) et « Voir la vidéo · 1 min » (`#film-complet`) qui ouvre `#film-dlg` (lecture avec le son, Échap ou clic hors de la vidéo pour fermer) ; données structurées `VideoObject`.
+- e2e : étape « accueil : vidéo de présentation ». À vérifier par l'utilisateur sur iPhone (Safari lit le MP4 ; le serveur doit accepter les requêtes partielles).
+
 ## 3 centtervicies. Bilan annuel en PDF (13 oct.)
 
 Point 7 du programme d'améliorations (maquette validée). Reste : 8 audit accessibilité et vitesse.
