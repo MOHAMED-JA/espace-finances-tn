@@ -40,7 +40,7 @@
     suivre(); etat();
   });
   complet.addEventListener("click", function () {
-    if (!dlg || !dlg.showModal) { window.location.href = "/medias/orbite-60s.mp4"; return; }
+    if (!dlg || !dlg.showModal) { window.location.href = "/medias/orbite-v3-60s.mp4"; return; }
     v.pause();
     /* L'affiche de la version longue n'est chargée qu'à l'ouverture (82 Ko économisés à l'arrivée). */
     if (!v2.poster && v2.dataset.poster) v2.poster = v2.dataset.poster;

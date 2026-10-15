@@ -679,6 +679,48 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centoctovicies. Vidéo d'accueil V3 « le meilleur des deux » (15 oct.)
+
+L'utilisateur a fourni une nouvelle vidéo de 60 s (violet et rose) et 8 images (`Orbite-toutes-les-images.zip`). Étude faite :
+- **Défauts mesurés** :
+  - début très sombre (luminosité 10 à 20 sur 255 pendant 5 s, image presque noire à 4,5 s) ;
+  - 8 images répétées 2 à 3 fois chacune, « Tout se relie » 4 fois ;
+  - textes minuscules dans les écrans découpés ;
+  - aucune vraie capture ;
+  - palette et logo différents d'Orbite ;
+  - images 1672 px agrandies ;
+  - crête à −0,7 dBFS ; 21 Mo.
+- **Points forts gardés** : scènes humaines (mariage, naissance, mutation), ambiance verre et néon, messages courts, sa musique.
+
+Choix validés (extrait de 13 s approuvé) : **V3 hybride** et **musique de sa nouvelle vidéo**.
+
+- **Fichiers** (`public/medias/`, nouveaux noms à cause du cache d'une semaine ; les anciens `orbite-30s|60s|affiche` sont supprimés) :
+  - `orbite-v3-30s.webm|mp4` (boucle de l'accueil, 1280 px) et `orbite-v3-60s.webm|mp4` (fenêtre, 1920 px) ;
+  - `orbite-v3-affiche.webp|jpg` et `orbite-v3-60s-affiche.jpg` ;
+  - son à −16 LUFS, crête à −1,5 dBTP au plus.
+- **Montage** (bloc-notes de la session, `scratchpad/v3/`, non versionné) :
+  - `grade.py` étalonne ses images vers la palette d'Orbite :
+    - rose et magenta → violet, bleu et cyan néon → vert d'eau, seulement sur les couleurs saturées (visages et ciels intacts) ;
+    - ombres relevées, agrandissement Lanczos et netteté.
+  - `moteur-film.html#30|60` + `rendu-film.js` : rendu image par image dans Chromium, puis ffmpeg ; `mix.sh` mixe le son en deux passes (loudnorm).
+- **Rythme** :
+  - la musique est à 128 temps par minute, une mesure dure 1,875 s ;
+  - la boucle de 30 s fait exactement 16 mesures ; chaque coupe tombe sur une mesure ;
+  - la musique part de 1,44 s pour que l'entrée du rythme tombe à 3,75 s ;
+  - dans la version de 60 s, l'entrée du rythme tombe à 5,19 s.
+- **Scènes** :
+  - images pleines (les siennes étalonnées, plus les scènes V2 vertes : fiche de paie, banques, relevé, bilan, budget, crédit, progression, Et si…, Projetez) ;
+  - 2 scènes construites avec de vraies captures en mode sombre (profil fictif « Sami Exemple », mention « Exemple avec un profil fictif ») :
+    - « Votre réserve. Prête pour l'imprévu. » : compteur 430 DT par mois, « complète en décembre 2026 » ;
+    - « Votre plan de versement. Combien verser. Où placer. » : compteur 4 325 DT d'impôt en moins.
+  - Animations :
+    - titres en Bricolage 104 px, mot par mot ;
+    - carte de verre inclinée qui se redresse, étiquettes qui apparaissent sur les temps ;
+    - poussée lente avec l'origine en haut à gauche (les titres gravés ne sont jamais coupés) ;
+    - transitions « zoom à travers » de 0,5 s avec flou et éclat, reflet sur les titres, particules vertes et violettes.
+  - Carte de fin : logo, « Orbite », « Comprendre. Simuler. Voir plus loin. », « Créer mon orbite → » (sans prix), adresse du site dans la version de 60 s.
+- Page : même lecteur (`accueil-film.js`), seuls les noms de fichiers, la description `VideoObject` (date du 15 oct.) et l'`aria-label` changent. e2e mis à jour.
+
 ## 3 centseptvicies. Ma réserve de sécurité (15 oct.)
 
 Chantier choisi par l'utilisateur après le programme d'améliorations (son épargne de précaution est à 0). Maquette validée : « Ma progression + tuile ».
@@ -803,6 +845,7 @@ Question de l'utilisateur : « l'application me donne-t-elle le montant exact d'
 
 Demandée par l'utilisateur à partir de sa vidéo de 60 s (« images approuvées ») et de 7 visuels 3D (zip). Choix validés : bande vidéo **sous le haut de page** (emplacement B, l'encadré « Essayez avec votre salaire » reste en place), 30 s muettes en boucle + 1 min au clic, 3 scènes de vraies captures + « Mon orbite » + carte de fin, **sa musique** mieux mixée.
 
+- **Remplacée le 15 oct. par la V3** (voir 3 centoctovicies) ; ce qui suit décrit la première version.
 - **Fichiers** (`public/medias/`, cache 1 semaine dans `_headers`, autorisés dans `robots.txt`, non interceptés par le service worker) : `orbite-30s.webm|mp4` (accueil), `orbite-60s.webm|mp4` (fenêtre), `orbite-affiche.jpg`, `orbite-60s-affiche.jpg`. WebM VP9 + Opus d'abord, MP4 H.264 + AAC ensuite (le Chromium des tests ne lit pas le H.264). 30 images/s, son à -16 LUFS. Pour changer une vidéo : **changer son nom** (cache d'une semaine).
 - **Montage** (outils dans le bloc-notes de la session, `scratchpad/video/`, non versionnés) : moteur canvas image par image (`moteur.html` + `rendu.js` → ffmpeg) ; chaque scène avance lentement (zoom + déplacement adoucis), reflet lumineux sur le titre au début, particules, vignette, transitions « zoom à travers » de 0,6 s avec flou et léger flash, **calées sur les temps de la musique** (un temps par seconde, mesures de 4 s à 0,43 s ; pause musicale 43-47 s). 60 s = 14 scènes (Ouverture, Mon orbite, Fiche de paie, Simulations, Budget, Import du relevé, Crédit, Comparer les banques, Et si…, Ma progression, Bilan PDF, Accompagnement sur la pause, Projetez votre avenir sur la reprise, carte de fin « Créer mon orbite → » sans mention de prix) ; 30 s = 10 scènes de 3 s, fondu au noir pour la boucle.
 - **Nouvelles scènes** : captures réelles d'Orbite en mode sombre (profil fictif) dans une carte de verre inclinée avec halo néon, planète de l'image d'ouverture, titres Mona Sans (« Vos banques. Qui vous prête le plus ? », « Votre relevé. Rangé en un geste. », « Votre bilan. Une page pour votre banque. ») ; « Mon orbite » et les autres quarts de l'image 04 agrandis ; mentions « Concept 01/02/03 — … » effacées des images 01 à 03.
