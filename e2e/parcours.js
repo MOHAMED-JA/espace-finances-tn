@@ -818,13 +818,27 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await pm.tap("#bulle-assistant");
     await pm.waitForSelector("#vue-assistant:not([hidden])");
     assert(!(await pm.isVisible("#bulle-assistant")), "bouton masqué dans l'Assistant");
-    await pm.tap('.onglets-bas a[data-vue="profil"]');
-    await pm.waitForSelector("#vue-profil:not([hidden])");
-    await pm.tap('#vue-profil .sous-nav a[href="#vie"]');
+    /* Menu complet : toutes les rubriques et leurs sous-rubriques, comme la barre latérale du grand écran. */
+    assert(await pm.isVisible("#menu-ouvrir") && !(await pm.isVisible(".rail")), "téléphone : ☰ dans la barre, pas de barre latérale");
+    await pm.tap("#onglet-menu");
+    await pm.waitForSelector("#dlg-menu[open] .menu-complet__ru");
+    const menu = await pm.evaluate(() => Object.fromEntries([...document.querySelectorAll(".menu-complet__ru")].map((r) => [r.querySelector(".menu-complet__nom").textContent, r.querySelectorAll(".menu-complet__puce").length])));
+    assert(Object.keys(menu).length >= 12 && menu["Mon profil"] === 5 && menu["Crédit"] === 8 && menu["Vie & impôts"] === 4 && menu["Paramètres"] === 6 && menu["Mon orbite"] >= 4, "rubriques et sous-rubriques du menu : " + JSON.stringify(menu));
+    assert(await pm.getAttribute("#onglet-menu", "aria-expanded") === "true", "onglet « Menu » ouvert");
+    await pm.screenshot({ path: path.join(CAPTURES, "menu-complet-telephone.png") });
+    await pm.tap('.menu-complet__puce[href="#vie?onglet=decider"]');
     await pm.waitForSelector("#vue-vie:not([hidden])");
-    assert(await pm.$eval('.onglets-bas a[data-vue="profil"]', (a) => a.getAttribute("aria-current") === "page"), "« Moi » reste actif dans Vie & impôts");
+    await pm.waitForSelector("#dlg-menu:not([open])", { state: "attached" });
+    assert(await pm.evaluate(() => location.hash === "#vie?onglet=decider" && document.getElementById("vie-tab-decider").getAttribute("aria-selected") === "true"), "sous-rubrique ouverte depuis le menu : " + await pm.evaluate(() => location.hash));
+    assert(await pm.$eval("#onglet-menu", (b) => b.hasAttribute("data-actif") && b.getAttribute("aria-expanded") === "false"), "« Menu » reste allumé dans Vie & impôts");
+    await pm.tap("#menu-ouvrir");
+    await pm.waitForSelector("#dlg-menu[open]");
+    assert(await pm.$eval('.menu-complet__ru--ici .menu-complet__nom', (n) => n.textContent === "Vie & impôts") && await pm.$eval('.menu-complet__ru--ici .menu-complet__puce[aria-current="true"]', (a) => a.textContent === "Décider"), "rubrique et sous-rubrique en cours marquées");
+    await pm.keyboard.press("Escape");
+    await pm.waitForSelector("#dlg-menu:not([open])", { state: "attached" });
     for (const vue of ["orbite", "salaire", "epargne", "credit", "profil"]) {
-      await pm.tap('.onglets-bas a[data-vue="' + vue + '"]');
+      if (vue === "profil") { await pm.tap("#onglet-menu"); await pm.waitForSelector("#dlg-menu[open]"); await pm.tap('.menu-complet__lien[href="#profil"]'); }
+      else await pm.tap('.onglets-bas a[data-vue="' + vue + '"]');
       await pm.waitForSelector("#vue-" + vue + ":not([hidden])");
       await pm.waitForTimeout(300);
       const largeur = await pm.evaluate(() => document.documentElement.scrollWidth);
@@ -1350,6 +1364,8 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     const lsl = await page.evaluate(() => [localStorage.getItem("ef-lisible"), Object.keys(localStorage).join(",")]);
     assert(lsl[0] === "oui", "recopiée sur l'appareil : " + JSON.stringify(lsl));
     await page.screenshot({ path: path.join(CAPTURES, "lisibilite-credit.png") });
+    await page.setViewportSize({ width: 820, height: 900 });
+    assert(await page.isVisible(".rail") && !(await page.isVisible(".onglets-bas")) && !(await page.isVisible("#menu-ouvrir")), "tablette (820 px) : barre latérale du grand écran, ni onglets du bas ni ☰");
     for (const l of [1440, 1366, 1280, 1024, 800]) {
       await page.setViewportSize({ width: l, height: 700 });
       const deborde = await page.evaluate(() => { const b = document.getElementById("barre"); return b.scrollWidth > b.clientWidth + 1 || Array.from(b.querySelectorAll("button:not([hidden]), a:not([hidden])")).some((x) => x.offsetParent && x.getBoundingClientRect().right > window.innerWidth); });
@@ -1695,7 +1711,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector("#mo-budget:not([hidden]) .mo-ligne");
     const deborde = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     assert(!deborde, "pas de défilement horizontal sur téléphone");
-    assert(await page.getAttribute('.onglets-bas a[data-vue="profil"]', "aria-current") === "page", "onglet « Moi » actif");
+    assert(await page.$eval("#onglet-menu", (b) => b.hasAttribute("data-actif")), "onglet « Menu » allumé dans Mon mois");
     await page.screenshot({ path: path.join(CAPTURES, "mois-budget-mobile.png"), fullPage: true });
     await page.click("#mo-tab-calendrier");
     await page.waitForSelector("#mo-calendrier:not([hidden]) .mo-evt");

@@ -40,7 +40,7 @@
 .module--salaire .sr-nav__lien[aria-current="true"] { color: var(--salaire-t); }
 .module--epargne .sr-nav__lien[aria-current="true"] { color: var(--epargne-t); }
 .module--credit .sr-nav__lien[aria-current="true"] { color: var(--credit-t); }
-@media (min-width: 1024px) { .sr-nav { display: none !important; } }
+@media (min-width: 768px) { .sr-nav { display: none !important; } }
 
 /* ---------- Entrée d'une partie ---------- */
 .sr-entree { animation: sr-entree 420ms var(--sortie) both; animation-delay: calc(var(--sr-i, 0) * 60ms); }

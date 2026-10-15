@@ -679,6 +679,39 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centunotricies. Menu complet sur téléphone et barre latérale dès 768 px (15 oct.)
+
+Capture de l'utilisateur sur téléphone (page en « version pour ordinateur », environ 900 px, sous le seuil de 1 024 px) : textes petits, barre du bas, rubriques cachées sous « Moi ». Demande : voir toutes les rubriques et sous-rubriques comme sur le PC. Choix validé : **« Les deux »**, maquette validée.
+
+- **Barre latérale dès 768 px** (au lieu de 1 024 px), dans `app.css`, `palette.css`, `sous-rubriques.css` et `signature.css` :
+  - les 11 règles de navigation ont changé de seuil (barre latérale, barre du haut, onglets du bas, `.sous-nav`, bulle de l'Assistant, pastilles, signature) ;
+  - de 768 à 1 023 px, la barre latérale fait 248 px (rembourrage réduit dans `menu.css`), 264 px au-delà ;
+  - pour l'utilisateur : tablette, téléphone en paysage ou en « version ordinateur » ont l'affichage du PC.
+  - de 768 à 1 023 px, la barre du haut est plus étroite : boutons des modules en icônes et pas de « Ctrl K » (le seuil de `palette.css` reste à 1 024 px) ; mesuré : en haute lisibilité, elle débordait à 800 px.
+- **Menu complet** sur un écran de moins de 768 px :
+  - **Ouverture** :
+    - bouton ☰ `#menu-ouvrir` dans la barre du haut ;
+    - l'onglet du bas « Moi » est remplacé par le bouton « Menu » `#onglet-menu` ;
+    - `data-vues` reprend la liste de « Moi » + assistant et admin ;
+    - `data-actif` le garde allumé dans ces rubriques.
+  - **Panneau** `<dialog id="dlg-menu">`, construit par `menu-complet.js` et stylé dans `menu.css` :
+    - panneau qui monte du bas, poignée, recherche (ouvre Ctrl K) ;
+    - reconstruit à chaque ouverture **depuis le DOM de la barre latérale** (groupes, icônes, badges, Administration seulement si visible) ;
+    - sous-rubriques prises dans `SousRubriques.items(v)`, exporté à cette occasion ;
+    - la rubrique affichée est marquée « Vous êtes ici » et sa partie active est remplie ;
+    - un lien suivi ferme le panneau ; un appui sur le voile ou Échap aussi.
+  - `window.OrbiteMenu = { ouvrir, fermer }`.
+  - **Sous-rubriques d'une page non affichée** : `sous-rubriques.js`, `cacheParAppli`, s'arrête maintenant à `section.vue`. Sinon les parties d'une page masquée étaient toutes « indisponibles ».
+- Icône `menu` ajoutée à `icones.svg`. Repères mis à jour :
+  - `puceVolante` → `#onglet-menu` ;
+  - visite guidée « Mon profil » → `#onglet-menu`.
+- **e2e** :
+  - téléphone : ☰ visible, pas de barre latérale ;
+  - menu : au moins 12 rubriques ; Mon profil 5, Crédit 8, Vie & impôts 4, Paramètres 6 sous-rubriques ;
+  - « Décider » ouvre `#vie?onglet=decider` et ferme le panneau ; « Menu » reste allumé ; rubrique et partie en cours marquées ; Échap ferme ;
+  - tablette (820 px) : barre latérale, ni onglets du bas ni ☰.
+- Nouveautés `2026-10-15c`, SW `orbite-2026-10-15d`.
+
 ## 3 centtricies. Vidéo LinkedIn « 3 simulateurs + Orbite » (15 oct.)
 
 Demande : une vidéo 3D de 60 s qui récapitule les 4 applications, Orbite en dernier comme la plus avancée, avec une musique douce (« défi et timing »), et un texte LinkedIn. Choix validés : **16:9 + carré 1:1**, **60 s**, **musique composée**, **Orbite environ 40 % à la fin** ; extrait de 14 s et storyboard validés.

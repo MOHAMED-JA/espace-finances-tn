@@ -315,7 +315,7 @@
         simulationOuverte[vue] = { id: s.id, nom: s.nom };
         $("enregistrer-lib").textContent = "Enregistré";
         E.toast("« " + s.nom + " » enregistrée dans vos simulations.");
-        puceVolante($("enregistrer"), doc.querySelector('.rail a[data-vue="simulations"]') || doc.querySelector('.onglets-bas a[data-vue="profil"]'), "+1", mod.couleur);
+        puceVolante($("enregistrer"), doc.querySelector('.rail a[data-vue="simulations"]') || doc.getElementById("onglet-menu"), "+1", mod.couleur);
         window.OrbiteSimulations && window.OrbiteSimulations.recharger();
         if (versP && $("enr-profil").checked) setTimeout(ajouterAuProfil, 250);
       }).catch(function (err) { E.toast(M.messageErreur(err), { erreur: true }); });
@@ -462,7 +462,7 @@
       var avant = { credits: profil.credits.slice(), projets: profil.projets.slice(), contrats: profil.contrats.slice() };
       majProfil(plan.partiel, { immediat: true });
       E.toast(plan.texte, { action: { libelle: "Annuler", fn: function () { majProfil(avant, { immediat: true }); E.toast("Ajout annulé : votre profil est revenu comme avant."); } } });
-      puceVolante($("ajouter-profil").hidden ? $("enregistrer") : $("ajouter-profil"), doc.querySelector('.rail a[data-vue="profil"]') || doc.querySelector('.onglets-bas a[data-vue="profil"]'), "+1", MODULES[vue].couleur);
+      puceVolante($("ajouter-profil").hidden ? $("enregistrer") : $("ajouter-profil"), doc.querySelector('.rail a[data-vue="profil"]') || doc.getElementById("onglet-menu"), "+1", MODULES[vue].couleur);
       vibrer(10);
     });
   }

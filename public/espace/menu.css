@@ -1,0 +1,60 @@
+/* Orbite — menu complet sur téléphone (menu-complet.js) et barre latérale dès 768 px. */
+
+/* ---------- Barre latérale sur tablette (768 à 1023 px) : un peu plus étroite ---------- */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .rail { padding: 18px 10px 14px; }
+  .rail__liens a { gap: 10px; padding: 0 10px; font-size: 14.5px; }
+  .rail__liens a[aria-current="page"]::before { left: -10px; }
+  /* Barre du haut plus étroite (la barre latérale prend 248 px) : boutons en icônes, comme sur téléphone. */
+  .barre { gap: 8px; padding-left: 20px; padding-right: 20px; }
+  .barre__actions .bouton__lib { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .barre__actions .bouton { width: 40px; padding: 0; }
+}
+
+/* ---------- Boutons d'ouverture ---------- */
+@media (min-width: 768px) { .barre__menu { display: none; } }
+.onglets-bas__menu { display: grid; justify-items: center; gap: 2px; padding: 6px 0; border: 0; border-radius: 12px; background: none; color: var(--encre-3); font: inherit; font-size: 11.5px; font-weight: 650; cursor: pointer; transition: color 160ms ease; -webkit-tap-highlight-color: transparent; }
+.onglets-bas__menu svg { width: 24px; height: 24px; transition: transform 220ms var(--ressort); }
+.onglets-bas__menu[data-actif], .onglets-bas__menu[aria-expanded="true"] { color: var(--encre); }
+.onglets-bas__menu[data-actif] svg { transform: translateY(-2px); }
+.onglets-bas__menu:focus-visible { outline: 2px solid var(--encre); outline-offset: -2px; }
+body.attente .onglets-bas__menu { pointer-events: none; }
+
+/* ---------- Panneau ---------- */
+dialog.menu-complet { width: 100vw; max-width: 640px; height: calc(100dvh - 32px); max-height: none; margin: auto auto 0; border-radius: 26px 26px 0 0; padding: 0 0 env(safe-area-inset-bottom); overflow: hidden; }
+dialog.menu-complet[open] { display: flex; flex-direction: column; animation: menu-monte 280ms var(--sortie); }
+@keyframes menu-monte { from { opacity: .4; transform: translateY(48px); } }
+@media (min-width: 768px) { dialog.menu-complet { height: min(86vh, 820px); margin: auto; border-radius: var(--r-panneau); padding-bottom: 0; } }
+@media (prefers-reduced-motion: reduce) { dialog.menu-complet[open] { animation: none; } }
+
+.menu-complet__tete { position: relative; display: flex; align-items: center; gap: 10px; padding: 18px 16px 10px; }
+.menu-complet__tete h2 { flex: 1; font-size: 24px; }
+.menu-complet__poignee { position: absolute; left: 50%; top: 7px; width: 44px; height: 5px; margin-left: -22px; border-radius: 3px; background: var(--filet-fort); }
+@media (min-width: 768px) { .menu-complet__poignee { display: none; } }
+
+.menu-complet__recherche { display: flex; align-items: center; gap: 10px; margin: 0 16px 6px; min-height: 46px; padding: 0 14px; border: 1px solid var(--filet); border-radius: 14px; background: var(--surface-2); color: var(--encre-3); font: inherit; font-size: 15px; text-align: left; cursor: pointer; }
+.menu-complet__recherche svg { width: 18px; height: 18px; flex: none; }
+.menu-complet__recherche span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 767px) { .menu-complet__recherche kbd { display: none; } }
+.menu-complet__recherche kbd { font: 600 11.5px var(--mono, ui-monospace, monospace); padding: 2px 7px; border-radius: 6px; background: var(--surface); border: 1px solid var(--filet); color: var(--encre-3); }
+
+.menu-complet__liste { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 0 16px 24px; }
+.menu-complet__groupe { margin: 16px 4px 6px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--encre-3); }
+.menu-complet__ru { margin-bottom: 8px; border: 1px solid var(--filet); border-radius: 16px; background: var(--surface); }
+.menu-complet__ru--ici { border-color: var(--salaire); background: linear-gradient(180deg, color-mix(in srgb, var(--salaire) 10%, var(--surface)), var(--surface) 70%); }
+.menu-complet__lien { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 12px; border-radius: 15px; color: var(--encre); text-decoration: none; font-weight: 650; font-size: 16px; }
+.menu-complet__lien:focus-visible, .menu-complet__puce:focus-visible { outline: 2px solid var(--encre); outline-offset: 2px; }
+.menu-complet__ico { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 10px; background: var(--surface-2); color: var(--encre-2); }
+.menu-complet__ico svg { width: 19px; height: 19px; }
+.menu-complet__ru[data-module="salaire"] .menu-complet__ico { color: var(--salaire-t); }
+.menu-complet__ru[data-module="epargne"] .menu-complet__ico { color: var(--epargne-t); }
+.menu-complet__ru[data-module="credit"] .menu-complet__ico { color: var(--credit-t); }
+.menu-complet__ru--ici .menu-complet__ico { background: var(--salaire); color: #04140C; }
+.menu-complet__nom { flex: 1; min-width: 0; }
+.menu-complet__ici { font-size: 12px; font-weight: 700; color: var(--salaire-t); white-space: nowrap; }
+.menu-complet__badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--alerte-doux); color: var(--alerte); white-space: nowrap; }
+.menu-complet__sous { list-style: none; margin: 0; padding: 0 12px 12px 58px; display: flex; flex-wrap: wrap; gap: 6px; }
+.menu-complet__puce { display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px; border-radius: 999px; background: var(--surface-2); color: var(--encre-2); text-decoration: none; font-size: 14px; font-weight: 600; transition: background-color 160ms ease, color 160ms ease; }
+.menu-complet__puce:hover { color: var(--encre); }
+.menu-complet__puce[aria-current="true"] { background: var(--encre); color: var(--surface); }
+@media (max-width: 360px) { .menu-complet__sous { padding-left: 12px; } }

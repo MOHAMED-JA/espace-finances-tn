@@ -67,7 +67,8 @@
     return out;
   }
   /* Masqué par l'application elle-même (hidden), pas par une sous-rubrique. */
-  function cacheParAppli(e) { for (var x = e; x && x !== doc.body; x = x.parentElement) if (x.hidden) return true; return false; }
+  /* (On s'arrête à la page : une page non affichée garde ses parties disponibles, pour le menu complet.) */
+  function cacheParAppli(e) { for (var x = e; x && x !== doc.body && !(x.matches && x.matches("section.vue")); x = x.parentElement) if (x.hidden) return true; return false; }
   function disponible(v, p) {
     if (p.espace && !(p.cibles && p.cibles.length)) return true;
     return elements(v, p).some(function (e) { return !cacheParAppli(e); });
@@ -286,5 +287,5 @@
   window.addEventListener("resize", hauteurBarre);
 
   construire(); hauteurBarre();
-  window.SousRubriques = { CONFIG: CONFIG, reveler: reveler, appliquer: appliquer, active: function (v) { return actives[v] || null; }, partieDe: partieDe };
+  window.SousRubriques = { CONFIG: CONFIG, reveler: reveler, appliquer: appliquer, active: function (v) { return actives[v] || null; }, partieDe: partieDe, items: function (v) { return CONFIG[v] && vueEl(v) ? items(v) : []; } };
 })();
