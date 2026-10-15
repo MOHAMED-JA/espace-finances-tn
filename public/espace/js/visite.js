@@ -1,8 +1,8 @@
 /*
- * Orbite — visite guidée en trois chapitres (maquette validée le 12 oct. 2026, nouveautés d'octobre ajoutées le même jour, puis celles du Lot 2 et du point 5).
+ * Orbite — visite guidée en trois chapitres (maquette validée le 12 oct. 2026, chapitres revus le 15 oct.).
  * Elle s'ouvre toujours sur un choix : « L'essentiel » (8 étapes, proposé aux nouveaux venus), « Les nouveautés »
- * (9 étapes, proposé à ceux qui ont déjà vu l'essentiel ; badge tant que cette version n'a pas été vue) et
- * « Pour aller plus loin » (10 étapes : les nouveautés précédentes).
+ * (8 étapes : fonctions du 13 au 15 oct., proposé à ceux qui ont déjà vu l'essentiel ; badge tant que cette version
+ * n'a pas été vue) et « Pour aller plus loin » (12 étapes : les nouveautés précédentes et le reste).
  * Démarre juste après le « premier pas » (une fois par compte, user_metadata.orbite_visite) ; on la revoit avec le
  * bouton « ? » de la barre ou depuis Paramètres → Préférences. Une étape peut ouvrir une autre page (« vue ») avant de
  * désigner sa rubrique ; à la fin, on revient là où la visite a commencé. Une bulle désigne chaque rubrique ; sans
@@ -11,7 +11,7 @@
 (function () {
   "use strict";
   var O = window.Orbite, E = window.Espace, doc = document, $ = O.$;
-  var VERSION_NOUVEAUTES = "2026-10-13a";
+  var VERSION_NOUVEAUTES = "2026-10-15a";
 
   /* cibles : sélecteurs essayés dans l'ordre ; le premier visible est désigné. vue : page à ouvrir d'abord. */
   var CHAPITRES = {
@@ -29,37 +29,33 @@
       ]
     },
     nouveautes: {
-      nom: "Les nouveautés", resume: "Mon mois, projet immobilier, offres, TMM, partager, comparer · 2 minutes",
+      nom: "Les nouveautés", resume: "Réserve, plan de versement, Décider, patrimoine, banques, relevé, bilan · 2 minutes",
       etapes: [
-        { vue: "#mois?onglet=budget", cibles: ["#mo-ajout"], titre: "Mon mois : le budget", texte: "Des enveloppes proposées à partir de votre profil, le reste à vivre et ce que vous pouvez dépenser par jour jusqu'à la paie. Notez une dépense en une phrase : « 45 dinars d'essence »." },
-        { vue: "#mois?onglet=calendrier", cibles: ["#mo-cal-grille"], titre: "Le calendrier de l'argent", texte: "Paie, prélèvements des crédits, versements d'épargne, dernière échéance et 31 décembre sur une seule vue. « Ajouter à mon agenda » les envoie dans le calendrier du téléphone." },
-        { vue: "#credit", cibles: ["#credit-espaces"], titre: "Crédit : 4 nouveaux onglets", texte: "Mon projet immobilier (frais d'achat, crédit, quand acheter), Comparer mes offres (classées par coût total), Regrouper mes crédits, et le TMM du mois avec son effet sur vos mensualités." },
-        { vue: "#credit", cibles: ["[data-guidee='credit']"], titre: "Simulation guidée", texte: "Quelques questions simples, une à la fois, puis le résultat : dans Crédit, Salaire et Épargne. Le module est rempli pour vous, tout reste modifiable." },
-        { vue: "#credit", cibles: ["#partager-sim", "#vue-credit .partager-mobile"], titre: "Partager une simulation", texte: "Un lien, un QR code, WhatsApp ou un e-mail : la personne ouvre la page publique d'Orbite déjà remplie, sans compte. Seuls les montants voyagent, jamais votre nom ni votre profil." },
-        { vue: "#simulations", cibles: ["#comparer-mode"], titre: "Comparer vos simulations", texte: "Cochez 2 ou 3 simulations du même module : elles s'affichent côte à côte, et la meilleure mensualité, le coût le plus bas ou l'économie la plus haute sont marqués." },
-        { vue: "#credit", cibles: [".barre__histo", "#palette-ouvrir"], titre: "Annuler, rétablir", texte: "Une erreur de saisie ? ↶ ou Ctrl Z revient en arrière, ↷ ou Ctrl Y rétablit, dans Crédit, Salaire et Épargne. Sur téléphone : Ctrl K (la loupe), « Annuler »." },
-        { vue: "#compte?onglet=preferences", cibles: ["[aria-labelledby='r-perso']"], titre: "Votre apparence", texte: "Une couleur d'accent (Encre, Sidi Bou Saïd, Olivier, Djerba, Bougainvillier), une densité compacte pour voir plus de chiffres, un texte plus grand : vous voyez l'effet en direct, et c'est retenu sur tous vos appareils." },
-        { vue: "#compte?onglet=preferences", cibles: ["[aria-labelledby='r-lisible']"], titre: "Haute lisibilité", texte: "Texte plus grand, gris plus foncés, liens soulignés : un réglage retenu sur votre compte, sur tous vos appareils. Le chapitre « Pour aller plus loin » montre les autres fonctions.", fin: true }
+        { vue: "#progression?onglet=objectifs", cibles: ["#pg-reserve .reserve__jauge", "#pg-reserve", "#pg-tab-objectifs"], titre: "Ma réserve de sécurité", texte: "L'argent des imprévus : 1, 3 ou 6 mois de dépenses, ou le montant de votre choix. Orbite dit combien mettre de côté chaque mois et sur vos primes, et quand la réserve sera complète. Elle s'affiche aussi sur Mon orbite." },
+        { vue: "#vie?onglet=fiscal", cibles: ["#fi-plan .plan__objectif", "#fi-plan", "#vie-tab-fiscal"], titre: "Mon plan de versement", texte: "Combien verser d'ici le 31 décembre sans vous mettre en danger, et comment partager entre assurance vie et CEA (conseillé, 70/30, 50/50 ou à votre goût) : impôt en moins, coût réel et dates de versement selon vos jours de paie." },
+        { vue: "#vie?onglet=decider", cibles: ["#vie-tab-decider"], titre: "Rembourser ou épargner ?", texte: "Une prime ou une somme à placer ? Orbite compare rembourser votre crédit le plus cher, placer en assurance vie ou CEA, et renforcer votre réserve, sur 5 ou 10 ans, puis désigne le plus rentable." },
+        { vue: "#orbite?partie=patrimoine", cibles: ["#patrimoine"], titre: "Mon patrimoine net", texte: "Ce que vous possédez moins ce que vous devez : logement, épargne, contrats et crédits. La courbe montre comment il grandit, et ce que libère chaque fin de crédit." },
+        { vue: "#credit?espace=banques", cibles: ["#ce-tab-banques", "#credit-banques"], titre: "Comparer les banques", texte: "Chaque banque prête selon sa règle : sur le net ou le brut, 40 % ou une autre quotité. Entrez la règle de vos banques : Orbite montre ce que chacune vous prêterait." },
+        { vue: "#mois?onglet=budget", cibles: ["#mo-releve"], titre: "Importer mon relevé", texte: "Déposez le relevé de votre banque (PDF, photo ou CSV) : chaque dépense est rangée dans son enveloppe (STEG, AGIL, Carrefour…), puis ajoutée au budget en un clic. Lu sur votre appareil : rien n'est envoyé, aucun libellé n'est gardé." },
+        { vue: "#progression?onglet=carriere", cibles: ["#btn-bilan"], titre: "Mon bilan en PDF", texte: "Votre année sur une page : revenus, impôt, crédits, épargne, patrimoine et score de santé. Vous choisissez les parties ; vos coordonnées n'y figurent que si vous les cochez." },
+        { vue: "#profil?section=salaire", cibles: ["#fiche-entree-profil"], titre: "Votre fiche, ligne par ligne", texte: "La lecture de la fiche de paie trouve aussi les autres lignes : retraite complémentaire, assurance groupe, syndicat, prêt retenu sur la paie… Votre net dans Orbite devient celui de votre fiche. Le chapitre « Pour aller plus loin » montre le reste.", fin: true }
       ]
     },
     plus: {
-      nom: "Pour aller plus loin", resume: "Fiche de paie, progression, retraite, Ctrl K, négociation… · 3 minutes",
+      nom: "Pour aller plus loin", resume: "Mon mois, onglets du Crédit, partage, progression, négociation, Ctrl K… · 3 minutes",
       etapes: [
-        { vue: "#profil?section=salaire", cibles: ["#fiche-entree-profil"], titre: "Lire ma fiche de paie", texte: "Photo ou PDF : Orbite lit votre fiche sur votre appareil (rien n'est envoyé), montre chaque montant trouvé, la compare à son propre calcul et met votre profil à jour en un clic." },
+        { vue: "#mois?onglet=budget", cibles: ["#mo-ajout"], titre: "Mon mois : le budget", texte: "Des enveloppes proposées à partir de votre profil, le reste à vivre et ce que vous pouvez dépenser par jour jusqu'à la paie. Notez une dépense en une phrase : « 45 dinars d'essence »." },
+        { vue: "#mois?onglet=calendrier", cibles: ["#mo-cal-grille"], titre: "Le calendrier de l'argent", texte: "Paie, prélèvements des crédits, versements d'épargne, dernière échéance et 31 décembre sur une seule vue. « Ajouter à mon agenda » les envoie dans le calendrier du téléphone." },
+        { vue: "#credit", cibles: ["#credit-espaces"], titre: "Les onglets du Crédit", texte: "Mon projet immobilier (frais d'achat, crédit, quand acheter), Comparer mes offres (classées par coût total), Regrouper mes crédits, et le TMM du mois avec son effet sur vos mensualités." },
+        { vue: "#credit", cibles: ["[data-guidee='credit']"], titre: "Simulation guidée", texte: "Quelques questions simples, une à la fois, puis le résultat : dans Crédit, Salaire et Épargne. Le module est rempli pour vous, tout reste modifiable." },
+        { vue: "#credit", cibles: ["#partager-sim", "#vue-credit .partager-mobile"], titre: "Partager et comparer", texte: "Un lien, un QR code, WhatsApp ou un e-mail ouvre la page publique déjà remplie, sans votre nom ni votre profil. Dans Mes simulations, cochez-en 2 ou 3 pour les voir côte à côte." },
         { vue: "#profil?section=salaire", cibles: ["#hs-bloc"], titre: "Historique du salaire", texte: "Chaque hausse avec sa date : l'impôt de l'année se calcule mois par mois, et une hausse annoncée s'applique toute seule à son mois." },
-        { vue: "#progression?onglet=carriere", cibles: ["#pg-carriere .pg-bilan", "#pg-tab-carriere"], titre: "Ma progression", texte: "Votre salaire face à l'inflation depuis votre embauche : le pouvoir d'achat gagné ou perdu, et le brut qu'il faudrait pour le garder." },
-        { vue: "#progression?onglet=objectifs", cibles: ["#pg-tab-objectifs"], titre: "Objectifs", texte: "Un projet, une épargne de précaution, un crédit à solder plus tôt : Orbite dit si vous êtes en avance ou en retard. « J'ai épargné » en un geste, annulable." },
-        { vue: "#progression?onglet=retraite", cibles: ["#pg-tab-retraite"], titre: "Retraite", texte: "Âge de départ et pension nette estimée selon les règles de la CNSS ou de la CNRPS, et l'épargne à prévoir pour garder votre niveau de vie." },
-        { vue: "#progression?onglet=carriere", cibles: ["#btn-annee"], titre: "Mon année en orbite", texte: "Votre bilan de l'année en quelques cartes : salaire reçu, impôt, pouvoir d'achat, crédits, épargne. L'image à partager ne montre aucun montant." },
+        { vue: "#progression?onglet=carriere", cibles: ["#pg-carriere .pg-bilan", "#pg-tab-carriere"], titre: "Ma progression", texte: "Votre salaire face à l'inflation depuis votre embauche, vos objectifs, votre retraite (CNSS ou CNRPS) et « Mon année en orbite », à partager sans aucun montant." },
         { vue: "#vie?onglet=scenarios", cibles: ["#vie-tab-scenarios"], titre: "Et si… ?", texte: "Testez une décision avant de la prendre (crédit, hausse, naissance…) : jusqu'à 3 avenirs comparés sur 10 ans, puis appliquez-la à votre profil ou non." },
-        { vue: "#vie?onglet=fiscal", cibles: ["#vie-tab-fiscal"], titre: "Vie & impôts", texte: "Le simulateur de vie et l'optimiseur fiscal : combien verser, et avant quelle date, pour payer moins d'impôt cette année." },
-        { vue: "#orbite", cibles: ["#palette-ouvrir"], titre: "Ctrl K : tout trouver", texte: "Ctrl K (⌘ K sur Mac), « / » ou la loupe : tapez quelques lettres (« kridi », « retraite », « dossier »…) pour sauter à une page, une section ou une action. Une phrase entière part à l'Assistant." },
-        { vue: "#orbite", cibles: ["#apps-ouvrir"], titre: "Mes applications", texte: "Toutes les parties d'Orbite et les simulateurs (crédit, assurance vie, assurance auto, salaire) au même endroit. Un simulateur s'ouvre dans Orbite : « ← Orbite » vous ramène où vous étiez." },
         { vue: "#salaire", cibles: ["#nego-ouvrir"], titre: "Préparer ma négociation", texte: "Dites ce que vous voulez toucher : Orbite trouve le brut à demander, vos trois paliers, des arguments chiffrés et une note PDF. L'onglet « Offre reçue » juge une offre d'emploi." },
-        { vue: "#credit", cibles: ["#cr-outil-audit"], titre: "Envoyer un document depuis le téléphone", texte: "Orbite installée apparaît dans « Partager » : envoyez-lui une fiche de paie, le tableau de votre banque ou une offre de crédit. Orbite reconnaît le document et ouvre le bon outil, sans rien envoyer." },
         { vue: "#credit", cibles: ["#dossier-ouvrir"], titre: "Dossier banque", texte: "Un PDF propre à remettre à votre conseiller : revenus, charges, capacité et crédit demandé, préparés à partir de votre profil." },
-        { vue: "#compte?onglet=preferences", cibles: ["[aria-labelledby='r-expert']"], titre: "Mode Expert", texte: "La paie mois par mois, Mon orbite mois par mois, et vos tableaux en CSV ou en classeur Excel. À activer ici quand vous voulez tout le détail." },
-        { vue: "#compte?onglet=preferences", cibles: ["[aria-labelledby='r-rappels']"], titre: "Rappels", texte: "Fin d'un crédit, réduction de taux, date limite pour l'impôt : Orbite vous prévient sur cet appareil, ou par e-mail (réglage dans Mon profil), sans aucun montant. Et d'autres nouveautés arrivent régulièrement.", fin: true }
+        { vue: "#orbite", cibles: ["#palette-ouvrir"], titre: "Ctrl K : tout trouver", texte: "Ctrl K (⌘ K sur Mac), « / » ou la loupe : tapez « kridi », « réserve », « relevé »… pour sauter à une page ou une action. Ctrl Z et Ctrl Y annulent et rétablissent une saisie." },
+        { vue: "#compte?onglet=preferences", cibles: ["[aria-labelledby='r-perso']"], titre: "Vos réglages", texte: "Couleur d'accent, densité, haute lisibilité, mode Expert (paie mois par mois, export Excel) et rappels sans montant : tout se règle ici et vous suit sur vos appareils. Et d'autres nouveautés arrivent régulièrement.", fin: true }
       ]
     }
   };
@@ -295,6 +291,8 @@
         if (dejaUneEtape) animerTexte(); else animerEntree();
         placer();
       }
+      /* La page ouverte ne doit pas garder le focus hors de la bulle (Échap et flèches y sont écoutés). */
+      if (!etat.bulle.contains(doc.activeElement)) $("visite-suiv").focus({ preventScroll: true });
       suivre(n);
     };
     if (etape.vue && location.hash !== etape.vue) {
@@ -357,5 +355,5 @@
     if (e.target.closest("#aide-visite, #param-visite")) { e.preventDefault(); lancer(); }
   });
 
-  window.OrbiteVisite = { lancer: lancer, terminer: terminer, chapitres: { essentiel: CHAPITRES.essentiel.etapes.length, nouveautes: CHAPITRES.nouveautes.etapes.length } };
+  window.OrbiteVisite = { lancer: lancer, terminer: terminer, chapitres: { essentiel: CHAPITRES.essentiel.etapes.length, nouveautes: CHAPITRES.nouveautes.etapes.length, plus: CHAPITRES.plus.etapes.length } };
 })();
