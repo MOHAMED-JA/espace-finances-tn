@@ -632,7 +632,8 @@
       if (focus) {
         window.scrollTo(0, 0);
         var h1 = doc.querySelector('section.vue[data-vue="' + r.vue + '"] h1');
-        if (h1) { h1.tabIndex = -1; h1.focus({ preventScroll: true }); }
+        /* Pendant la visite guidée, le focus reste dans sa bulle (fenêtre modale : Échap, flèches). */
+        if (h1 && !doc.body.classList.contains("visite-ouverte")) { h1.tabIndex = -1; h1.focus({ preventScroll: true }); }
       }
       if (r.vue !== vueAffichee) E.compterUsage("vue", r.vue);
       vueAffichee = r.vue;

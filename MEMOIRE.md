@@ -679,6 +679,30 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centnovovicies. Visite guidée à jour (15 oct.)
+
+Question de l'utilisateur : « la visite guidée est-elle à jour ? ». Non : rien depuis le 13 oct. (PR #131). Choix validé : « Nouveautés d'octobre » (maquette des textes validée).
+
+- `visite.js` (`VERSION_NOUVEAUTES = "2026-10-15a"` : le badge « 8 nouvelles » revient pour tous les comptes) :
+  - **Les nouveautés (8)** :
+    - Ma réserve de sécurité (`.reserve__jauge`) ;
+    - Mon plan de versement (`.plan__objectif`) ;
+    - Rembourser ou épargner ? (onglet Décider) ;
+    - Mon patrimoine net (`#orbite?partie=patrimoine`) ;
+    - Comparer les banques (`#credit?espace=banques`) ;
+    - Importer mon relevé (`#mo-releve`) ;
+    - Mon bilan en PDF (`#btn-bilan`) ;
+    - Votre fiche, ligne par ligne (`#fiche-entree-profil`).
+  - **Pour aller plus loin (12)** : Mon mois, calendrier, onglets du Crédit, simulation guidée, partager et comparer, historique du salaire, Ma progression (inflation, objectifs, retraite, Mon année), Et si…, négociation, dossier banque, Ctrl K (avec Ctrl Z / Ctrl Y), Vos réglages (apparence, lisibilité, Expert, rappels).
+  - Retirées de la visite (les fonctions restent, et dans Ctrl K) : Comparer vos simulations, Annuler/rétablir, Apparence, Haute lisibilité, Mode Expert, Rappels, Mes applications, Envoyer un document, Objectifs, Retraite, Mon année, Vie & impôts.
+  - Le texte « épargne de précaution » a disparu : la réserve a sa propre étape.
+- **Défaut d'accessibilité corrigé** : quand une étape ouvrait une autre page, `app.js` donnait le focus au titre de la page, hors de la bulle modale, et Échap ne fermait plus la visite. Corrections :
+  - pendant la visite (`body.visite-ouverte`), le titre ne prend plus le focus ;
+  - la visite remet le focus sur « Suivant » s'il sort de la bulle.
+- `OrbiteVisite.chapitres` expose aussi `plus`.
+- e2e « visite guidée » adapté : 8 nouveautés, les pages ouvertes, la version `2026-10-15a`, 12 étapes, le focus dans la bulle. SW `orbite-2026-10-15c`.
+- Règle : à chaque nouvelle fonction, ajouter son étape à « Les nouveautés » et changer `VERSION_NOUVEAUTES`.
+
 ## 3 centoctovicies. Vidéo d'accueil V3 « le meilleur des deux » (15 oct.)
 
 L'utilisateur a fourni une nouvelle vidéo de 60 s (violet et rose) et 8 images (`Orbite-toutes-les-images.zip`). Étude faite :

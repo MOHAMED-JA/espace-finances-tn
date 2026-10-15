@@ -331,7 +331,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector(".visite__bulle #visite-chapitres:not([hidden])");
     assert(/Par quoi voulez-vous commencer/.test(await page.textContent("#visite-titre")), "écran de choix");
     assert(await page.$eval("#visite-chap-essentiel", (b) => b.classList.contains("visite__chap--conseil") && document.activeElement === b), "nouveau venu : « L'essentiel » conseillé");
-    assert(/9 nouvelles/.test(await page.textContent("#visite-badge")), "badge des nouveautés : " + await page.textContent("#visite-badge"));
+    assert(/8 nouvelles/.test(await page.textContent("#visite-badge")), "badge des nouveautés : " + await page.textContent("#visite-badge"));
     await page.waitForTimeout(400);
     await page.screenshot({ path: path.join(CAPTURES, "visite-choix.png") });
     await page.click("#visite-chap-essentiel");
@@ -360,14 +360,14 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(await page.$eval("#visite-chap-nouveautes", (b) => b.classList.contains("visite__chap--conseil")), "déjà venu : « Les nouveautés » conseillées");
     assert(await page.isVisible("#visite-chap-plus"), "chapitre « Pour aller plus loin »");
     await page.click("#visite-chap-nouveautes");
-    assert(/Mon mois : le budget/.test(await page.textContent("#visite-titre")), "première nouveauté : Mon mois");
-    await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.getElementById("mo-ajout").getBoundingClientRect(); return location.hash === "#mois?onglet=budget" && !document.querySelector(".visite--transit") && Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
+    assert(/Ma réserve de sécurité/.test(await page.textContent("#visite-titre")), "première nouveauté : la réserve de sécurité");
+    await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.querySelector("#pg-reserve .reserve__jauge").getBoundingClientRect(); return location.hash === "#progression?onglet=objectifs" && !document.querySelector(".visite--transit") && Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
     await page.waitForTimeout(400);
     await page.screenshot({ path: path.join(CAPTURES, "visite-nouveautes.png") });
     /* Pendant la visite : aucun fondu de page (il éclaircissait le voile) ni animation d'entrée des cartes. */
     await page.evaluate(() => { window.__fondus = 0; window.__entrees = 0; if (document.startViewTransition) { const o = document.startViewTransition.bind(document); document.startViewTransition = (f) => { window.__fondus++; return o(f); }; } new MutationObserver((l) => l.forEach((m) => { if (m.target.classList && m.target.classList.contains("vue--entree")) window.__entrees++; })).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["class"] }); });
     const vus = [], passages = [];
-    for (let i = 1; i < 9; i++) {
+    for (let i = 1; i < 8; i++) {
       const avant = await page.evaluate(() => location.hash), t = Date.now();
       await page.click("#visite-suiv");
       await page.waitForFunction(() => !document.querySelector(".visite--transit"));
@@ -378,27 +378,31 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     const fe = await page.evaluate(() => [window.__fondus, window.__entrees]);
     assert(fe[0] === 0 && fe[1] === 0, "ni fondu de page ni entrée animée pendant la visite : " + JSON.stringify(fe));
     assert(passages.length >= 3 && Math.max(...passages) < 1100, "passage d'une page à l'autre (ms) : " + JSON.stringify(passages));
-    assert(vus.some((t) => /calendrier de l'argent @ #mois\?onglet=calendrier/.test(t)) && vus.some((t) => /4 nouveaux onglets @ #credit/.test(t)) && vus.some((t) => /Partager une simulation @ #credit/.test(t)) && vus.some((t) => /Comparer vos simulations @ #simulations/.test(t)) && vus.some((t) => /Votre apparence @ #compte\?onglet=preferences/.test(t)) && vus.some((t) => /Haute lisibilité @ #compte\?onglet=preferences/.test(t)), "pages ouvertes : " + vus.join(" | "));
+    const attendus = [/plan de versement @ #vie\?onglet=fiscal/, /Rembourser ou épargner \? @ #vie\?onglet=decider/, /patrimoine net @ #orbite\?partie=patrimoine/, /Comparer les banques @ #credit\?espace=banques/, /Importer mon relevé @ #mois\?onglet=budget/, /bilan en PDF @ #progression/, /ligne par ligne @ #profil\?section=salaire/];
+    assert(attendus.every((r) => vus.some((t) => r.test(t))), "pages ouvertes : " + vus.join(" | "));
     await page.screenshot({ path: path.join(CAPTURES, "visite-credit.png") });
     await page.click("#visite-suiv");
     await page.waitForSelector(".visite", { state: "detached" });
     await page.waitForFunction(() => location.hash === "#orbite").catch(async (e) => { throw new Error("adresse finale : " + await page.evaluate(() => location.hash)); });
-    await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite_nouveautes === "2026-10-13a");
-    /* « Pour aller plus loin » : les nouveautés précédentes, fiche de paie d'abord. */
+    await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite_nouveautes === "2026-10-15a");
+    /* « Pour aller plus loin » : les nouveautés précédentes, Mon mois d'abord. */
     await page.click("#aide-visite");
     await page.waitForSelector(".visite__bulle #visite-chapitres:not([hidden])");
     assert(/déjà vues/.test(await page.textContent("#visite-badge")), "nouveautés marquées comme vues");
     await page.click("#visite-chap-plus");
-    assert(/Lire ma fiche de paie/.test(await page.textContent("#visite-titre")), "première étape : la fiche de paie");
-    await page.waitForFunction(() => location.hash === "#profil?section=salaire" && !document.querySelector(".visite--transit"));
-    await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.getElementById("fiche-entree-profil").getBoundingClientRect(); return Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
+    assert(/Mon mois : le budget/.test(await page.textContent("#visite-titre")), "première étape : Mon mois");
+    await page.waitForFunction(() => location.hash === "#mois?onglet=budget" && !document.querySelector(".visite--transit"));
+    await page.waitForFunction(() => { const h = document.querySelector(".visite__halo").getBoundingClientRect(), c = document.getElementById("mo-ajout").getBoundingClientRect(); return Math.abs(h.left - (c.left - 6)) < 2 && Math.abs(h.top - (c.top - 6)) < 2; }, null, { timeout: 5000 });
     const vus2 = [];
-    for (let i = 1; i < 15; i++) {
+    for (let i = 1; i < 12; i++) {
       await page.click("#visite-suiv");
       await page.waitForFunction(() => !document.querySelector(".visite--transit"));
       vus2.push((await page.textContent("#visite-titre")) + " @ " + (await page.evaluate(() => location.hash)));
     }
-    assert(vus2.some((t) => /Retraite @ #progression\?onglet=retraite/.test(t)) && vus2.some((t) => /Et si… \? @ #vie\?onglet=scenarios/.test(t)) && vus2.some((t) => /Rappels @ #compte\?onglet=preferences/.test(t)) && vus2.some((t) => /négociation @ #salaire/.test(t)) && vus2.some((t) => /Ctrl K/.test(t)), "pages ouvertes : " + vus2.join(" | "));
+    const attendus2 = [/calendrier de l'argent @ #mois\?onglet=calendrier/, /onglets du Crédit @ #credit/, /Partager et comparer @ #credit/, /Ma progression @ #progression\?onglet=carriere/, /Et si… \? @ #vie\?onglet=scenarios/, /négociation @ #salaire/, /Ctrl K/, /Vos réglages @ #compte\?onglet=preferences/];
+    assert(attendus2.every((r) => vus2.some((t) => r.test(t))), "pages ouvertes : " + vus2.join(" | "));
+    assert(/Terminer/.test(await page.textContent("#visite-suiv")), "dernière étape de « Pour aller plus loin »");
+    assert(await page.evaluate(() => document.querySelector(".visite__bulle").contains(document.activeElement)), "après un changement de page, le focus reste dans la bulle");
     await page.keyboard.press("Escape");
     await page.waitForSelector(".visite", { state: "detached" });
   });
