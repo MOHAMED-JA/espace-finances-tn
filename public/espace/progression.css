@@ -228,3 +228,48 @@
 .pr-sources a { color: var(--credit-t); }
 @media (prefers-reduced-motion: reduce) { .pr-barre i { transition: none; } }
 .pr-grand__val small { margin-left: 4px; }
+
+/* Ma réserve de sécurité (15 oct. 2026) */
+.reserve { display: grid; gap: 16px; margin-bottom: 16px; }
+.reserve[hidden] { display: none; }
+.reserve h3 { font-family: var(--affiche); font-size: 17.5px; letter-spacing: -.01em; margin: 0; }
+.reserve__tete { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px 16px; flex-wrap: wrap; }
+.reserve__tete h2 { margin: 0; }
+.reserve__etat { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; background: color-mix(in srgb, #F79009 14%, var(--surface)); color: var(--encre); white-space: nowrap; }
+.reserve__etat[data-etat="complete"] { background: var(--salaire-doux); color: var(--salaire-t); }
+.reserve__chiffres { margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 6px 14px; flex-wrap: wrap; }
+.reserve__chiffres b { font-family: var(--affiche); font-size: 32px; letter-spacing: -.02em; }
+.reserve__chiffres span { color: var(--encre-3); font-size: 14px; }
+.reserve__jauge { position: relative; height: 16px; border-radius: 9px; background: var(--surface-2); margin: 26px 0 30px; }
+.reserve__plein { position: absolute; inset: 0 auto 0 0; width: var(--x, 0%); border-radius: 9px; background: linear-gradient(90deg, var(--salaire), var(--salaire-lum)); transition: width 260ms var(--sortie); }
+.reserve__trait { position: absolute; top: -6px; bottom: -6px; left: var(--x, 50%); width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--encre); }
+.reserve__vous { position: absolute; bottom: 22px; left: clamp(40px, var(--x, 0%), calc(100% - 40px)); transform: translateX(-50%); font-style: normal; font-size: 12px; font-weight: 700; white-space: nowrap; background: var(--surface); padding: 2px 8px; border-radius: 999px; box-shadow: var(--ombre-1); }
+.reserve__reperes { list-style: none; margin: 0; padding: 0; }
+.reserve__reperes li { position: absolute; top: 24px; left: var(--x, 0%); transform: translateX(-50%); font-size: 12px; font-weight: 700; color: var(--encre-3); white-space: nowrap; }
+.reserve__reperes li:last-child { transform: translateX(-100%); }
+.reserve__reperes .reserve__repere--on { color: var(--encre); }
+.reserve__objectif { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
+.reserve__objectif-lib { font-size: 13.5px; color: var(--encre-2); }
+.reserve__libre { max-width: 220px; }
+.reserve__libre .saisie, .reserve__ajout .saisie { background: var(--surface); }
+.reserve__note { margin: 0; font-size: 13px; line-height: 1.45; color: var(--encre-3); }
+.reserve__grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; align-items: start; }
+.reserve__bloc { display: grid; gap: 12px; align-content: start; padding: 16px; border: 1px solid var(--filet); border-radius: var(--r-int); min-width: 0; }
+.reserve__partage { display: flex; height: 10px; border-radius: 6px; overflow: hidden; background: var(--surface); }
+.reserve__partage i { width: var(--l, 0%); transition: width 200ms var(--sortie); }
+.reserve__partage-r { background: var(--salaire); }
+.reserve__partage-a { background: var(--epargne); }
+.reserve__ajout { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.reserve__ajout .champ { flex: 1 1 160px; max-width: 240px; }
+.reserve__rappel { justify-self: start; }
+.reserve__graphe { min-height: 200px; }
+.reserve__ordre-titre { margin-top: 4px !important; }
+.reserve__ordre { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 10px; counter-reset: etape; }
+.reserve__etape { counter-increment: etape; }
+.reserve__etape-lien { position: relative; display: grid; gap: 2px; height: 100%; padding: 14px 14px 14px 52px; border-radius: var(--r-int); background: var(--surface-2); color: var(--encre-2); font-size: 13.5px; line-height: 1.4; text-decoration: none; box-sizing: border-box; }
+.reserve__etape-lien::before { content: counter(etape); position: absolute; left: 14px; top: 14px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 800; background: var(--encre); color: var(--surface); }
+.reserve__etape-lien b { color: var(--encre); font-size: 14.5px; }
+a.reserve__etape-lien:hover b { text-decoration: underline; }
+.reserve__etape--ici .reserve__etape-lien { box-shadow: inset 0 0 0 2px var(--salaire); background: var(--salaire-doux); }
+.reserve__etape--fait .reserve__etape-lien::before { content: "\2713"; background: var(--salaire-t); }
+@media (max-width: 560px) { .reserve__chiffres b { font-size: 27px; } .reserve__bloc { padding: 14px; } }

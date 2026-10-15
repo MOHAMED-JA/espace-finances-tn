@@ -150,9 +150,82 @@
      selon un pourcentage choisi, l'économie d'impôt qui en découle et le calendrier des versements.
      =================================================================== */
   var PLAN_DEFAUT = { partMarge: 0.5, partPrimes: 0.5, reserve: null, partAv: null };
-  var ENVELOPPES_VIE = ["courses", "transport", "sante", "loisirs", "divers"];
   function dizaineInf(v) { return Math.max(0, Math.floor(v / 10 + 1e-9) * 10); }
   function jourDe(an, mois, jour) { return new Date(an, mois, Math.min(jour, new Date(an, mois + 1, 0).getDate()), 12, 0, 0); }
+
+  /* Revenus à venir, mois après mois (15 oct. 2026) : marge libre de chaque jour de paie (OC.depensesMois) et primes
+     nettes, du mois en cours à nMois plus tard. Le mois en cours compte toujours (dès aujourd'hui si la paie est passée) ;
+     une prime déjà versée est écartée. Salaire de prime net = (net annuel − 12 × net mensuel) ÷ salaires de prime. */
+  function revenusAVenir(sy, m, nMois) {
+    var p = sy.profil, s = sy.salaire, dm = OC.depensesMois(sy, m);
+    var cal = OC.calendrierPrimes(p), extra = cal.reduce(function (t, v) { return t + v; }, 0);
+    var netPrime = extra > 0 ? Math.max(0, (s.netAnnuel - 12 * s.netMensuel) / extra) : 0;
+    var jp = p.jourPaie > 0 ? p.jourPaie : 28, auj = new Date(m.getFullYear(), m.getMonth(), m.getDate(), 12, 0, 0), liste = [];
+    for (var k = 0; k < nMois; k++) {
+      var an = m.getFullYear() + Math.floor((m.getMonth() + k) / 12), mi = (m.getMonth() + k) % 12;
+      var d = jourDe(an, mi, jp), passe = d < auj;
+      if (passe) d = auj;
+      liste.push({ date: d, type: "marge", montant: dm.libre, mois: mi, an: an });
+      if (cal[mi] > 0 && netPrime > 0 && !passe) liste.push({ date: d, type: "prime", montant: cal[mi] * netPrime, salaires: cal[mi], mois: mi, an: an });
+    }
+    return { liste: liste, netPrime: netPrime, depenses: dm };
+  }
+  var RESERVE_DEFAUT = { mois: 3, montant: null, partMarge: 0.5, partPrimes: 0.5 };
+  function reglagesReserve(p, reglages) {
+    var r = Object.assign({}, RESERVE_DEFAUT, p.reserve || {}, reglages || {});
+    r.partMarge = borne(Number(r.partMarge) || 0, 0, 1); r.partPrimes = borne(Number(r.partPrimes) || 0, 0, 1);
+    r.mois = [0, 1, 3, 6].indexOf(Number(r.mois)) !== -1 ? Number(r.mois) : 3;
+    return r;
+  }
+  /* Part de chaque revenu à venir mise dans la réserve, jusqu'à ce qu'elle soit complète. */
+  function partReserve(p, r, liste, cible) {
+    var manque = Math.max(0, cible - Math.max(0, p.epargneDisponible));
+    return liste.map(function (e) {
+      if (!(manque > 0)) return 0;
+      var t = Math.min(manque, dizaineInf(e.montant * (e.type === "prime" ? r.partPrimes : r.partMarge)));
+      manque -= t; return t;
+    });
+  }
+
+  /* ===================================================================
+     Ma réserve de sécurité (15 oct. 2026) : objectif en mois de dépenses, où j'en suis, comment l'atteindre
+     (part de la marge du mois et des primes, partagée avec le plan de versement), mois après mois, et l'ordre conseillé.
+     =================================================================== */
+  function reserve(sy, reglages, options) {
+    var o = options || {}, p = sy.profil, m = o.maintenant || sy.maintenant || new Date();
+    var r = reglagesReserve(p, reglages);
+    var rv = revenusAVenir(sy, m, 72), dm = rv.depenses;
+    var cible = OC.cibleReserve(sy, r), actuel = Math.max(0, p.epargneDisponible), manque = Math.max(0, cible - actuel);
+    var parts = partReserve(p, r, rv.liste, cible), cumul = actuel, auj = new Date(m.getFullYear(), m.getMonth(), m.getDate(), 12, 0, 0);
+    var points = [{ date: auj, cumul: actuel, prime: false }], dateAtteinte = manque <= 0 ? auj : null;
+    rv.liste.forEach(function (e, i) {
+      if (!(parts[i] > 0)) return;
+      cumul += parts[i];
+      var der = points[points.length - 1];
+      if (der.date.getFullYear() === e.date.getFullYear() && der.date.getMonth() === e.date.getMonth() && points.length > 1) { der.cumul = cumul; der.prime = der.prime || e.type === "prime"; }
+      else points.push({ date: e.date, cumul: cumul, prime: e.type === "prime" });
+      if (!dateAtteinte && cumul >= cible - 0.5) dateAtteinte = e.date;
+    });
+    var prochainePrime = rv.liste.filter(function (e) { return e.type === "prime"; })[0] || null;
+    var plan = p.planVersement || {}, partPlan = borne(Number(plan.partPrimes === undefined ? 0.5 : plan.partPrimes) || 0, 0, 1);
+    var reperes = [1, 3, 6].map(function (n) { return { mois: n, montant: Math.round(n * dm.total / 100) * 100 }; });
+    /* L'ordre conseillé : la réserve, puis l'impôt de l'année (plan de versement), puis le crédit le plus cher. */
+    var ordre = [{ cle: "reserve", fait: manque <= 0, montant: cible }];
+    var pv = null;
+    try { pv = planVersement(sy, {}, { maintenant: m }); } catch (e) { pv = null; }
+    if (pv && pv.statut === "a_optimiser") ordre.push({ cle: "impot", fait: false, gain: pv.gain, versement: pv.versement, annee: pv.annee });
+    var cher = p.credits.filter(function (c) { return c.mensualite > 0 && c.moisRestants !== 0; }).sort(function (a, b) { return b.tauxPct - a.tauxPct; })[0];
+    if (cher) ordre.push({ cle: "credit", fait: false, libelle: cher.libelle || "Crédit", tauxPct: cher.tauxPct });
+    return {
+      reglages: r, depenses: dm, cible: cible, actuel: actuel, manque: manque, complete: manque <= 0,
+      moisCouverts: dm.total > 0 ? actuel / dm.total : 0, pct: cible > 0 ? Math.min(1, actuel / cible) : 1,
+      statut: manque <= 0 ? "complete" : actuel > 0 ? "en_cours" : "a_commencer",
+      reperes: reperes, mensuel: dizaineInf(dm.libre * r.partMarge),
+      prochainePrime: prochainePrime ? { date: prochainePrime.date, mois: prochainePrime.mois, an: prochainePrime.an, net: prochainePrime.montant,
+        partReserve: manque > 0 ? r.partPrimes : 0, partPlan: Math.min(partPlan, 1 - (manque > 0 ? r.partPrimes : 0)) } : null,
+      points: points, dateAtteinte: dateAtteinte, ordre: ordre
+    };
+  }
 
   function planVersement(sy, reglages, options) {
     var o = options || {}, p = sy.profil, s = sy.salaire, m = o.maintenant || sy.maintenant || new Date();
@@ -166,46 +239,27 @@
     var ex = versementsAnnuels(p), an = m.getFullYear(), mois = m.getMonth();
     var aujourdhui = new Date(an, mois, m.getDate(), 12, 0, 0);
 
-    /* 1. Marge du mois : salaire mensuel habituel (sans les primes, comptées à part) moins crédits, logement, contrats
-       en cours et dépenses de vie (budget du mois s'il existe, sinon la moitié de ce qui reste, par prudence). */
-    var contratsMois = p.contrats.reduce(function (t, c) { return t + (OC.contratCommence(c, m) ? c.versementMensuel : 0); }, 0);
-    var logement = p.loyer + p.chargesFixes;
-    var base = Math.max(0, s.netMensuel + p.autresRevenus - sy.chargesCredits - logement - contratsMois);
-    var env = p.budget && p.budget.enveloppes && p.budget.enveloppes.length ? p.budget.enveloppes : null, vie, source;
-    if (env) {
-      vie = env.reduce(function (t, e) { return t + (ENVELOPPES_VIE.indexOf(e.cle) !== -1 ? e.prevu : 0); }, 0);
-      var envLog = env.filter(function (e) { return e.cle === "logement"; })[0];
-      if (envLog) vie += Math.max(0, envLog.prevu - logement);
-      source = "budget";
-    } else { vie = base * 0.5; source = "estimation"; }
-    var libre = Math.max(0, base - vie), mensuel = dizaineInf(libre * r.partMarge);
-    var jp = p.jourPaie > 0 ? p.jourPaie : 28, entrees = [];
-    for (var k = mois; k < 12; k++) {
-      var d = jourDe(an, k, jp); if (d < aujourdhui) d = aujourdhui;
-      if (mensuel > 0) entrees.push({ date: d, montant: mensuel, source: "marge" });
-    }
-    var nMois = 12 - mois;
+    /* 1-2. Marge du mois et primes à venir cette année (OC.depensesMois, revenusAVenir). Tant que la réserve de sécurité
+       n'est pas complète, elle prend d'abord sa part de chaque revenu ; le plan prend la sienne dans ce qui reste. */
+    var rv = revenusAVenir(sy, m, 12 - mois), dm = rv.depenses;
+    var cibleR = OC.cibleReserve(sy), rr = reglagesReserve(p), parts = partReserve(p, rr, rv.liste, cibleR);
+    var entrees = [], primes = [], mensuel = 0, totalMarge = 0, reserveMarge = 0, nMois = 12 - mois;
+    rv.liste.forEach(function (e, i) {
+      if (e.an !== an) return;
+      var pris = parts[i], part = e.type === "prime" ? r.partPrimes : r.partMarge;
+      var mt = Math.min(dizaineInf(e.montant * part), dizaineInf(e.montant - pris));
+      if (e.type === "marge") { mensuel = Math.max(mensuel, mt); totalMarge += mt; reserveMarge += pris; }
+      else primes.push({ mois: e.mois, date: e.date, salaires: e.salaires, net: e.montant, montant: mt, reserve: pris });
+      if (mt > 0) entrees.push({ date: e.date, montant: mt, source: e.type });
+    });
 
-    /* 2. Primes à venir cette année (calendrier des primes), au net d'un salaire de prime ; celles déjà versées sont écartées. */
-    var cal = OC.calendrierPrimes(p), extra = cal.reduce(function (t, v) { return t + v; }, 0);
-    var netPrime = extra > 0 ? Math.max(0, (s.netAnnuel - 12 * s.netMensuel) / extra) : 0;
-    var primes = [];
-    for (var j = mois; j < 12; j++) {
-      if (!(cal[j] > 0) || !(netPrime > 0)) continue;
-      var dp = jourDe(an, j, jp); if (dp < aujourdhui) continue;
-      var net = cal[j] * netPrime, part = dizaineInf(net * r.partPrimes);
-      primes.push({ mois: j, date: dp, salaires: cal[j], net: net, montant: part });
-      if (part > 0) entrees.push({ date: dp, montant: part, source: "prime" });
-    }
-
-    /* 3. Épargne disponible au-delà d'une réserve (3 mois de dépenses par défaut). */
-    var depenses = sy.chargesCredits + logement + contratsMois + vie;
-    var reserveConseillee = Math.round(3 * depenses / 100) * 100;
+    /* 3. Épargne disponible au-delà de la réserve de sécurité (Ma progression ; réglable ici). */
+    var reserveConseillee = cibleR;
     var reserve = r.reserve === null || r.reserve === undefined ? reserveConseillee : Math.max(0, r.reserve);
     var utilisable = dizaineInf(p.epargneDisponible - reserve);
     if (utilisable > 0) entrees.push({ date: aujourdhui, montant: utilisable, source: "epargne" });
 
-    var totalMarge = mensuel * nMois, totalPrimes = primes.reduce(function (t, x) { return t + x.montant; }, 0);
+    var totalPrimes = primes.reduce(function (t, x) { return t + x.montant; }, 0);
     var abordable = totalMarge + totalPrimes + utilisable;
     /* Au-delà du complément qui atteint l'économie maximale, un versement de plus ne baisse plus l'impôt cette année. */
     var besoin = opt.statut === "a_optimiser" ? opt.complement.total : 0;
@@ -249,9 +303,9 @@
     var paie = opt.paie ? { surPaie: Math.min(gain, opt.paie.impotRestant), declaration: Math.max(0, gain - opt.paie.impotRestant) } : null;
     return {
       annee: an, statut: opt.statut, reglages: { partMarge: r.partMarge, partPrimes: r.partPrimes, reserve: r.reserve === null || r.reserve === undefined ? null : reserve, partAv: r.partAv },
-      marge: { base: base, vie: vie, source: source, libre: libre, part: r.partMarge, mensuel: mensuel, mois: nMois, total: totalMarge },
-      primes: { liste: primes, total: totalPrimes, part: r.partPrimes, netParSalaire: netPrime },
-      epargne: { disponible: p.epargneDisponible, reserve: reserve, reserveConseillee: reserveConseillee, utilisable: utilisable },
+      marge: { base: dm.base, vie: dm.vie, source: dm.source, libre: dm.libre, part: r.partMarge, mensuel: mensuel, mois: nMois, total: totalMarge, reserve: reserveMarge },
+      primes: { liste: primes, total: totalPrimes, part: r.partPrimes, netParSalaire: rv.netPrime },
+      epargne: { disponible: p.epargneDisponible, reserve: reserve, reserveConseillee: reserveConseillee, utilisable: utilisable, reserveComplete: p.epargneDisponible >= cibleR },
       abordable: abordable, besoin: besoin, versement: D, surplus: surplus, economieMax: opt.gainPossible || 0,
       av: av, cea: cea, partAv: D > 0 ? av / D : (r.partAv === null ? conseil.partAv : r.partAv), conseille: conseil,
       gain: gain, coutReel: Math.max(0, D - gain), taux: D > 0 ? gain / D : 0, perte: perte, ceaUtile: ceaUtile,
@@ -287,16 +341,16 @@
       action: pReste < 15 ? "Visez au moins 20 % de votre net disponible chaque mois : revoyez les charges fixes ou étalez un crédit." : null,
       lien: "#profil?section=budget" });
 
-    /* 3. Épargne de précaution, en mois de dépenses incompressibles (20 points) */
-    var depenses = sy.chargesCredits + p.loyer + p.chargesFixes;
-    if (depenses < net * 0.3) depenses = net * 0.5;
+    /* 3. Réserve de sécurité, en mois de dépenses (même définition partout : OC.depensesMois) (20 points) */
+    var depenses = OC.depensesMois(sy).total;
     var mois = depenses > 0 ? p.epargneDisponible / depenses : 0;
     var pPrec = mois >= 6 ? 20 : mois >= 3 ? 13 : mois >= 1 ? 6 : 0;
-    var cible = Math.round(depenses * 6 / 100) * 100;
-    composantes.push({ cle: "precaution", libelle: "Épargne de précaution", points: pPrec, max: 20,
+    var cible = OC.cibleReserve(sy), moisR = p.reserve && p.reserve.mois ? p.reserve.mois : 0;
+    composantes.push({ cle: "precaution", libelle: "Réserve de sécurité", points: pPrec, max: 20,
       detail: p.epargneDisponible > 0 ? dt(p.epargneDisponible) + " disponibles, soit " + (Math.round(mois * 10) / 10).toLocaleString("fr-FR") + " mois de dépenses." : "Aucune épargne disponible déclarée.",
-      action: pPrec < 20 ? "Constituez une réserve de " + dt(cible) + " (6 mois de dépenses), disponible à tout moment." : null,
-      lien: "#profil?section=budget" });
+      action: pPrec < 20 ? (p.epargneDisponible < cible ? "Construisez votre réserve de sécurité : " + dt(cible) + (moisR ? " (" + moisR + " mois de dépenses)" : "") + ", disponible à tout moment."
+        : "Votre réserve est complète. Pour aller plus loin, visez 6 mois de dépenses.") : null,
+      lien: "#progression?onglet=objectifs&reserve=1" });
 
     /* 4. Épargne de long terme : versements annuels sur l'assurance vie et le CEA (15 points) */
     var ex = versementsAnnuels(p), tauxEp = net > 0 ? (ex.av + ex.cea) / (net * 12) : 0;
@@ -535,5 +589,5 @@
     return L.join("\n").slice(0, 9000);
   }
 
-  return { resumeAssistant: resumeAssistant, foyer: foyer, scoreSante: scoreSante, optimiseurFiscal: optimiseurFiscal, economieVersement: economieVersement, planVersement: planVersement, simulateurVie: simulateurVie, appliquerEvenements: appliquer, TYPES_EVT: TYPES_EVT };
+  return { resumeAssistant: resumeAssistant, foyer: foyer, scoreSante: scoreSante, optimiseurFiscal: optimiseurFiscal, economieVersement: economieVersement, planVersement: planVersement, reserve: reserve, revenusAVenir: revenusAVenir, simulateurVie: simulateurVie, appliquerEvenements: appliquer, TYPES_EVT: TYPES_EVT };
 });

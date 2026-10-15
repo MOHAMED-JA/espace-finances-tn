@@ -69,9 +69,9 @@
       return "en assurance vie ou CEA" + (e > 0.5 ? " : " + dt(e) + " d'impôt en moins" : "");
     }
     if (parts.length > 1) {
-      phr.push("D'abord " + dt(parts[0].montant) + " " + dest(parts[0].cle, parts[0].montant) + " (votre réserve couvre " + mois1(r.reserve.mois) + " mois de dépenses, il en faut " + D.RESERVE_MOIS + "), puis " + dt(parts[1].montant) + " " + dest(parts[1].cle, parts[1].montant) + ".");
+      phr.push("D'abord " + dt(parts[0].montant) + " " + dest(parts[0].cle, parts[0].montant) + " (votre réserve couvre " + mois1(r.reserve.mois) + " mois de dépenses pour " + dt(r.reserve.cible) + " visés), puis " + dt(parts[1].montant) + " " + dest(parts[1].cle, parts[1].montant) + ".");
     } else if (parts[0] && parts[0].cle === "reserve") {
-      phr.push("Tout " + dest("reserve") + " : votre réserve couvre " + mois1(r.reserve.mois) + " mois de dépenses, l'objectif est " + D.RESERVE_MOIS + " mois (" + dt(r.reserve.cible) + ").");
+      phr.push("Tout " + dest("reserve") + " : votre réserve couvre " + mois1(r.reserve.mois) + " mois de dépenses, l'objectif de votre réserve de sécurité est " + dt(r.reserve.cible) + ".");
     } else if (parts[0]) {
       phr.push("Votre réserve couvre déjà " + mois1(r.reserve.mois) + " mois de dépenses : " + dt(parts[0].montant) + " " + dest(parts[0].cle, parts[0].montant) + ".");
     }

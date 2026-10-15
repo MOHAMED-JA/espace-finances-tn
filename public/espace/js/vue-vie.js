@@ -301,7 +301,7 @@
         : "Après crédits, logement et contrats, il ne reste rien chaque mois.")
       : "Il vous reste " + F.dt0(mg.libre) + " DT par mois après crédits, logement, contrats et dépenses de vie (" +
         (mg.source === "budget" ? "selon votre budget du mois" : "estimées à la moitié du reste, faute de budget du mois") + "). J'en verse " + pctEntier(mg.part) +
-        " : " + F.dt0(mg.mensuel) + " DT × " + mg.mois + " mois.";
+        " : " + F.dt0(mg.mensuel) + " DT × " + mg.mois + " mois." + (mg.reserve > 0 ? " Votre réserve de sécurité, pas encore complète, prend d'abord sa part (" + F.dt0(mg.reserve) + " DT d'ici décembre)." : "");
     $("fi-plan-marge").disabled = mg.libre < 10;
     curseur("fi-plan-marge", mg.part);
     var pr = r.primes, blocP = $("fi-plan-primes-bloc");
@@ -310,7 +310,8 @@
       var netP = pr.liste.reduce(function (t, x) { return t + x.net; }, 0);
       $("fi-plan-primes-mt").textContent = F.dt0(pr.total) + " DT";
       $("fi-plan-primes-txt").textContent = (pr.liste.length > 1 ? "Primes de " + pr.liste.map(function (x) { return MOIS_PLAN[x.mois]; }).join(" et ") : "Prime de " + MOIS_PLAN[pr.liste[0].mois]) +
-        " : environ " + F.dt0(netP) + " DT net, versés le " + pr.liste.map(function (x) { return dateCourte(x.date); }).join(" et le ") + ". J'en place " + pctEntier(pr.part) + ".";
+        " : environ " + F.dt0(netP) + " DT net, versés le " + pr.liste.map(function (x) { return dateCourte(x.date); }).join(" et le ") + ". J'en place " + pctEntier(pr.part) + "." +
+        (pr.liste.some(function (x) { return x.reserve > 0; }) ? " " + F.dt0(pr.liste.reduce(function (t, x) { return t + x.reserve; }, 0)) + " DT vont d'abord à votre réserve de sécurité." : "");
       curseur("fi-plan-primes", pr.part);
     }
     var ep = r.epargne;

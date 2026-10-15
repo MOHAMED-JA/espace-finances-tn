@@ -386,6 +386,14 @@
           reserve: x.reserve === null || x.reserve === undefined || x.reserve === "" ? null : nombre(x.reserve, 0, 0, 1e9),
           partAv: x.partAv === null || x.partAv === undefined || x.partAv === "" ? null : nombre(x.partAv, 1, 0, 1) };
       })(p.planVersement),
+      /* « Ma réserve de sécurité » (15 oct. 2026) : objectif en mois de dépenses (1, 3 ou 6 ; 0 = montant libre),
+         part de la marge du mois et des primes mise de côté tant qu'elle n'est pas complète. */
+      reserve: (function (x) {
+        x = x || {};
+        var mois = [0, 1, 3, 6].indexOf(Number(x.mois)) !== -1 ? Number(x.mois) : 3;
+        return { mois: mois, montant: x.montant === null || x.montant === undefined || x.montant === "" ? null : nombre(x.montant, 0, 0, 1e8),
+          partMarge: nombre(x.partMarge, 0.5, 0, 1), partPrimes: nombre(x.partPrimes, 0.5, 0, 1) };
+      })(p.reserve),
       autresRevenus: nombre(p.autresRevenus, 0, 0, 1e7),
       quotiteNet: nombre(p.quotiteNet, QUOTITE, 0.1, 0.8),
       quotiteBrut: nombre(p.quotiteBrut, QUOTITE, 0.1, 0.8),
@@ -1055,6 +1063,34 @@
   }
 
   /* Conseils d'orientation, classés du plus utile au moins utile. */
+  /* Dépenses d'un mois et marge libre (15 oct. 2026) : une seule définition pour la réserve de sécurité, le score de
+     santé, « Rembourser ou épargner ? », les objectifs et le plan de versement. Salaire mensuel habituel (sans les primes),
+     moins crédits, logement et charges, contrats en cours et dépenses de vie : celles du budget du mois s'il existe,
+     sinon la moitié de ce qui reste (prudence). Jamais moins de 30 % du net (dépenses déclarées trop faibles). */
+  var ENVELOPPES_VIE = ["courses", "transport", "sante", "loisirs", "divers"];
+  function depensesMois(sy, maintenant) {
+    var p = sy.profil, m = maintenant || sy.maintenant || new Date();
+    var contrats = p.contrats.reduce(function (t, c) { return t + (contratCommence(c, m) ? c.versementMensuel : 0); }, 0);
+    var logement = p.loyer + p.chargesFixes, credits = sy.chargesCredits || 0, net = sy.salaire.netMensuel + p.autresRevenus;
+    var base = Math.max(0, net - credits - logement - contrats);
+    var env = p.budget && p.budget.enveloppes && p.budget.enveloppes.length ? p.budget.enveloppes : null, vie, source;
+    if (env) {
+      vie = env.reduce(function (t, e) { return t + (ENVELOPPES_VIE.indexOf(e.cle) !== -1 ? e.prevu : 0); }, 0);
+      var envLog = env.filter(function (e) { return e.cle === "logement"; })[0];
+      if (envLog) vie += Math.max(0, envLog.prevu - logement);
+      source = "budget";
+    } else { vie = base * 0.5; source = "estimation"; }
+    var total = credits + logement + contrats + vie, plancher = total < net * 0.3;
+    return { credits: credits, logement: logement, contrats: contrats, vie: vie, total: plancher ? net * 0.3 : total, plancher: plancher,
+      base: base, libre: Math.max(0, base - vie), source: source };
+  }
+  /* Montant visé pour la réserve de sécurité : n mois de dépenses (arrondi à la centaine) ou montant choisi. */
+  function cibleReserve(sy, reglages) {
+    var r = Object.assign({}, sy.profil.reserve || {}, reglages || {}), mois = [0, 1, 3, 6].indexOf(Number(r.mois)) !== -1 ? Number(r.mois) : 3;
+    if (mois === 0 && r.montant > 0) return Math.round(r.montant);
+    return Math.round((mois || 3) * depensesMois(sy).total / 100) * 100;
+  }
+
   function conseils(sy) {
     var p = sy.profil, s = sy.salaire, liste = [];
     function ajouter(niveau, module, titre, texte) { liste.push({ niveau: niveau, module: module, titre: titre, texte: texte }); }
@@ -1117,7 +1153,7 @@
     if (s.tranche.resteAvantSuivante !== null && s.tranche.resteAvantSuivante < 1500 && s.tranche.tauxSuivant) ajouter(1, "salaire", "Proche de la tranche suivante", "Il reste " + ent(s.tranche.resteAvantSuivante) + " DT de revenu imposable avant la tranche à " + ent(s.tranche.tauxSuivant * 100) + " %. Seule la part au-dessus sera taxée à ce taux.");
     if ((p.situation === "marie" || p.enfants > 0) && !p.chefDeFamille) ajouter(2, "salaire", "Chef de famille ?", "Si vous êtes le chef de famille au sens fiscal, cochez-le : 300 DT de déduction par an, plus les enfants à charge.");
     if (p.statut === "cdd" || p.statut === "contractuel") ajouter(1, "credit", "Contrat à durée déterminée", "Beaucoup de banques exigent un CDI ou une titularisation pour un crédit long ; préparez une attestation de l'employeur.");
-    var precaution = s.netMoyen * 3;
+    var precaution = cibleReserve(sy), moisReserve = p.reserve && p.reserve.mois ? p.reserve.mois : 3;
     sy.contrats.forEach(function (e) {
       if (!(e.mois > 0) || !(e.verse > 0)) return;
       var nom = e.type === "cea" ? "Votre CEA" : "Votre contrat vie" + (e.libelle && e.libelle !== "Contrat" && e.libelle.length > 2 ? " « " + e.libelle + " »" : "");
@@ -1126,7 +1162,7 @@
       texteC += e.dureeAtteinte ? " Il a passé " + e.dureeFiscale + " ans : l'avantage fiscal vous est acquis." : " Gardez-le au moins jusqu'en " + e.dateDureeFiscale + " (" + e.dureeFiscale + " ans) pour conserver l'avantage fiscal ; vos versements libres comptent aussi dans la déduction de l'année.";
       ajouter(1, "epargne", e.estime ? "Capital estimé de votre épargne" : "Votre épargne en cours", texteC);
     });
-    if (p.epargneDisponible < precaution) ajouter(1, "epargne", "Épargne de précaution", "Visez environ trois mois de net de côté (" + ent(precaution) + " DT) avant d'investir à long terme.");
+    if (p.epargneDisponible < precaution) ajouter(1, "epargne", "Réserve de sécurité", "Mettez d'abord de côté environ " + ent(precaution) + " DT (" + (moisReserve === 0 ? "le montant choisi" : moisReserve + " mois de dépenses") + "), disponibles à tout moment, avant d'investir à long terme.");
     sy.projets.forEach(function (pr) {
       if (pr.statut === "hors_portee") ajouter(2, pr.credit ? "credit" : "epargne", pr.libelle, "Ce projet dépasse aujourd'hui votre capacité" + (pr.epargneMensuelle > 0 ? " : il faudrait épargner " + ent(pr.epargneMensuelle) + " DT par mois" : "") + ". Allongez l'horizon, réduisez le montant ou augmentez l'apport.");
       else if (pr.statut === "a_preparer" && pr.epargneMensuelle > 0) ajouter(1, pr.credit ? "credit" : "epargne", pr.libelle, "Mettez de côté " + ent(pr.epargneMensuelle) + " DT par mois pendant " + pr.horizonAns + " an" + (pr.horizonAns > 1 ? "s" : "") + " pour le rendre possible.");
@@ -1151,7 +1187,7 @@
       [/^Chef de famille/, "#profil?section=identite", "Compléter ma situation"],
       [/^Contrat à durée/, "#profil?section=identite", "Voir mon profil"],
       [/^(Capital estimé|Votre épargne en cours)/, "#profil?section=contrats", "Mettre à jour mon contrat"],
-      [/^Épargne de précaution/, "#profil?section=budget", "Indiquer mon épargne"],
+      [/^Réserve de sécurité/, "#progression?onglet=objectifs&reserve=1", "Construire ma réserve"],
       [/^Une prime arrive/, "#vie?onglet=decider" + (primeDec ? "&somme=" + primeDec.montant : ""), "Que faire de cette prime ?"]
     ];
     liste.forEach(function (c) {
@@ -1226,7 +1262,7 @@
   }
 
   var API = {
-    TMM: TMM, definirTMM: definirTMM, CREDITS_TYPES: CREDITS_TYPES, calculAligne: calculAligne, sommeFiche: sommeFiche, GROUPES_FICHE: GROUPES_FICHE, MAX_LIGNES_FICHE: MAX_LIGNES_FICHE, lignesAuMois: lignesAuMois, profilAuMois: profilAuMois, ligneActive: ligneActive, cleMois: cleMois, signatureFiche: signatureFiche, lignesDatees: lignesDatees, ficheChanger: ficheChanger, ficheRetirer: ficheRetirer, ficheAnnulerFutur: ficheAnnulerFutur, ficheVue: ficheVue, moisPrecedent: moisPrecedent, moisSuivant: moisSuivant, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, pension: pension, futursRevenu: futursRevenu, lireEmail: lireEmail, lireTelephone: lireTelephone, formatTelephone: formatTelephone, contratCommence: contratCommence, normaliserChangement: normaliserChangement, normaliserScenario: normaliserScenario, MAX_SCENARIOS: MAX_SCENARIOS, MAX_CHANGEMENTS: MAX_CHANGEMENTS, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
+    TMM: TMM, definirTMM: definirTMM, CREDITS_TYPES: CREDITS_TYPES, calculAligne: calculAligne, sommeFiche: sommeFiche, GROUPES_FICHE: GROUPES_FICHE, MAX_LIGNES_FICHE: MAX_LIGNES_FICHE, lignesAuMois: lignesAuMois, profilAuMois: profilAuMois, ligneActive: ligneActive, cleMois: cleMois, signatureFiche: signatureFiche, lignesDatees: lignesDatees, ficheChanger: ficheChanger, ficheRetirer: ficheRetirer, ficheAnnulerFutur: ficheAnnulerFutur, ficheVue: ficheVue, moisPrecedent: moisPrecedent, moisSuivant: moisSuivant, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, pension: pension, futursRevenu: futursRevenu, lireEmail: lireEmail, lireTelephone: lireTelephone, formatTelephone: formatTelephone, contratCommence: contratCommence, depensesMois: depensesMois, cibleReserve: cibleReserve, normaliserChangement: normaliserChangement, normaliserScenario: normaliserScenario, MAX_SCENARIOS: MAX_SCENARIOS, MAX_CHANGEMENTS: MAX_CHANGEMENTS, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
     profilParDefaut: profilParDefaut, normaliser: normaliser, creditTermine: creditTermine, age: age, etatSalaire: etatSalaire, entreeBrut: entreeBrut,
     tranche: tranche, salaire: salaire, augmentation: augmentation, calendrierPrimes: calendrierPrimes, impotRestantAnnee: impotRestantAnnee,
     capitalPourMensualite: capitalPourMensualite, mensualitePourCapital: mensualitePourCapital, capacite: capacite,

@@ -119,12 +119,9 @@
       cree_le: o.cree_le || null
     };
   }
-  /* Cible suggérée pour l'épargne de précaution : n mois de dépenses fixes (crédits, logement, charges), sinon la moitié du net. */
-  function ciblePrecaution(sy, p, n) {
-    var fixes = (sy.budget.credits || 0) + (sy.budget.logement || 0) + (p.chargesFixes || 0);
-    var mensuel = fixes > 0 ? Math.max(fixes, sy.salaire.netMensuel * 0.5) : sy.salaire.netMensuel * 0.5;
-    return arrondi(mensuel * (n || 6), 100);
-  }
+  /* Cible suggérée pour l'épargne de précaution : n mois de dépenses (même définition que la réserve de sécurité,
+     OC.depensesMois, 15 oct. 2026). */
+  function ciblePrecaution(sy, p, n) { return arrondi(OC.depensesMois(sy).total * (n || 6), 100); }
   function capitalRestantCredit(c, mois) { return OC.capitalPourMensualite(c.mensualite, c.tauxPct, Math.max(0, mois)); }
 
   function etatObjectif(o0, versements, sy, p, maintenant) {
