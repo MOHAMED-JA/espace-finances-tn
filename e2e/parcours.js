@@ -121,7 +121,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   await etape("accueil : vidéo de présentation (30 s muette en boucle, son, pause, 1 min en grand, moins d'animations, téléphone)", async () => {
     await page.setViewportSize({ width: 1360, height: 900 });
     await page.goto(base + "/");
-    for (const f of ["orbite-30s.webm", "orbite-30s.mp4", "orbite-60s.webm", "orbite-60s.mp4", "orbite-affiche.jpg", "orbite-affiche.webp", "orbite-60s-affiche.jpg"]) {
+    for (const f of ["orbite-v3-30s.webm", "orbite-v3-30s.mp4", "orbite-v3-60s.webm", "orbite-v3-60s.mp4", "orbite-v3-affiche.jpg", "orbite-v3-affiche.webp", "orbite-v3-60s-affiche.jpg"]) {
       const r = await page.request.get(base + "/medias/" + f);
       assert(r.status() === 200 && (await r.body()).length > 50000, "fichier " + f);
     }
@@ -138,7 +138,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(await page.$eval("#film-video-complete", (v) => !v.getAttribute("poster")), "affiche de la version longue pas chargée avant l'ouverture");
     await page.click("#film-complet");
     await page.waitForSelector("#film-dlg[open]");
-    assert(/orbite-60s-affiche\.jpg$/.test(await page.$eval("#film-video-complete", (v) => v.poster)), "affiche posée à l'ouverture");
+    assert(/orbite-v3-60s-affiche\.jpg$/.test(await page.$eval("#film-video-complete", (v) => v.poster)), "affiche posée à l'ouverture");
     await page.waitForFunction(() => { const v = document.getElementById("film-video-complete"); return !v.paused && v.currentTime > 0.3 && v.duration > 55; }, null, { timeout: 15000 });
     await page.keyboard.press("Escape");
     await page.waitForFunction(() => !document.getElementById("film-dlg").open && document.getElementById("film-video-complete").paused);
