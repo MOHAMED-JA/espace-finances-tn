@@ -32,6 +32,7 @@
   <link rel="stylesheet" href="/espace/apparence.css">
   <link rel="stylesheet" href="/espace/sous-rubriques.css">
   <link rel="stylesheet" href="/espace/menu.css">
+  <link rel="stylesheet" href="/espace/installer.css">
   <link rel="stylesheet" href="/espace/decider.css">
   <link rel="stylesheet" href="/orbite/signature.css">
   <script src="/commun/config.js"></script>
@@ -134,6 +135,19 @@
             <h1 id="titre-orbite"><span id="salutation" data-sq>Bonjour</span></h1>
             <p class="vue__sous" id="phrase-orbite" data-sq>Votre salaire au centre, et tout le reste en orbite.</p>
           </header>
+
+          <!-- Installer Orbite (téléphone, pas encore installée) : installer.js -->
+          <section class="installer" id="installer-orbite" aria-labelledby="installer-titre" hidden>
+            <img class="installer__ico" src="/orbite/icone-192.png" alt="" width="44" height="44">
+            <div class="installer__texte">
+              <h2 class="installer__titre" id="installer-titre">Installer Orbite sur ce téléphone</h2>
+              <p>Icône sur l'écran d'accueil, plein écran, hors connexion. Gratuit, sans boutique.</p>
+            </div>
+            <div class="installer__actions">
+              <button type="button" class="bouton bouton--petit" data-installer="plus-tard">Plus tard</button>
+              <button type="button" class="bouton bouton--petit bouton--plein" data-installer="oui">Installer</button>
+            </div>
+          </section>
 
           <!-- Premier pas : profil minimal -->
           <section class="panneau demarrage" id="demarrage" aria-labelledby="titre-demarrage" hidden>
@@ -1397,8 +1411,8 @@
                 <p class="appli__etat" id="appli-etat">Vérification…</p>
                 <div class="reglage__boutons">
                   <button type="button" class="bouton bouton--petit bouton--plein" id="appli-installer" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg>Installer Orbite</button>
+                  <button type="button" class="bouton bouton--petit" id="appli-guide" aria-haspopup="dialog" hidden>Comment installer ?</button>
                 </div>
-                <p class="champ__aide" id="appli-ios" hidden>Sur iPhone ou iPad : touchez <strong>Partager</strong> dans Safari, puis <strong>Sur l'écran d'accueil</strong>.</p>
               </div>
             </section>
             <section class="panneau reglage" aria-labelledby="r-rappels">
@@ -1806,6 +1820,31 @@
     </div>
     <button type="button" class="menu-complet__recherche" id="menu-recherche"><svg aria-hidden="true"><use href="/orbite/icones.svg#recherche"/></svg><span>Rechercher une page ou une action</span><kbd>Ctrl K</kbd></button>
     <nav class="menu-complet__liste" id="menu-liste" aria-label="Toutes les rubriques"></nav>
+  </dialog>
+
+  <!-- Guide d'installation quand le navigateur ne propose pas le bouton (installer.js). -->
+  <dialog class="dialogue installer-guide" id="dlg-installer" aria-labelledby="installer-guide-titre">
+    <h2 id="installer-guide-titre">Installer Orbite</h2>
+    <p class="installer-guide__sous">Votre navigateur ne propose pas le bouton : 3 gestes suffisent.</p>
+    <div class="installer-guide__liste" id="installer-guide-liste">
+      <section class="installer-guide__nav" data-nav="chrome" aria-labelledby="ig-chrome">
+        <h3 id="ig-chrome">Chrome (Android)<span class="installer-guide__ici"> · votre navigateur</span></h3>
+        <ol><li>Touchez <strong>⋮</strong> en haut à droite</li><li>« <strong>Installer l'application</strong> » ou « <strong>Ajouter à l'écran d'accueil</strong> »</li><li>Confirmez « <strong>Installer</strong> »</li></ol>
+      </section>
+      <section class="installer-guide__nav" data-nav="samsung" aria-labelledby="ig-samsung">
+        <h3 id="ig-samsung">Samsung Internet<span class="installer-guide__ici"> · votre navigateur</span></h3>
+        <ol><li>Touchez <strong>☰</strong> en bas à droite</li><li>« <strong>Ajouter la page à</strong> » › « <strong>Écran d'accueil</strong> »</li><li>Confirmez « <strong>Ajouter</strong> »</li></ol>
+      </section>
+      <section class="installer-guide__nav" data-nav="ios" aria-labelledby="ig-ios">
+        <h3 id="ig-ios">iPhone et iPad (Safari)<span class="installer-guide__ici"> · votre navigateur</span></h3>
+        <ol><li>Touchez <strong>Partager</strong> (le carré avec une flèche)</li><li>« <strong>Sur l'écran d'accueil</strong> »</li><li>Touchez « <strong>Ajouter</strong> »</li></ol>
+      </section>
+      <section class="installer-guide__nav" data-nav="ordinateur" aria-labelledby="ig-ordinateur">
+        <h3 id="ig-ordinateur">Ordinateur (Chrome ou Edge)<span class="installer-guide__ici"> · votre navigateur</span></h3>
+        <ol><li>Cliquez sur l'icône <strong>Installer</strong> au bout de la barre d'adresse</li><li>Ou menu <strong>⋮</strong> › « <strong>Installer Orbite</strong> »</li><li>Confirmez « <strong>Installer</strong> »</li></ol>
+      </section>
+    </div>
+    <button type="button" class="bouton bouton--plein installer-guide__ok" id="installer-guide-ok">C'est compris</button>
   </dialog>
 
   <!-- ============ Modèles et dialogues ============ -->
@@ -2610,6 +2649,7 @@
   <script src="/espace/js/rappels-calcul.js"></script>
   <script src="/espace/js/nouveautes.js"></script>
   <script src="/espace/js/appli.js"></script>
+  <script src="/espace/js/installer.js"></script>
   <script src="/espace/js/vue-assistant.js"></script>
   <script src="/espace/js/sous-rubriques.js"></script>
   <script src="/espace/js/menu-complet.js"></script>

@@ -486,6 +486,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(await page.$eval("#noyau-val", (e) => !!e.querySelector(".roule") && /DT$/.test(e.textContent.trim())), "net en chiffres qui roulent, texte exact");
     assert((await page.$$("#fiche-orbite [data-choisir]")).length === 3, "fiche : crédit, contrat et projet listés");
     assert(/Tranche d'impôt/.test(await page.textContent("#fiche-orbite .orbite-reperes")), "les trois repères dans la vue d'ensemble");
+    assert(await page.isHidden("#installer-orbite"), "pas d'invitation à installer sur grand écran");
     await page.click('#fiche-orbite [data-choisir="contrat-0"]');
     await page.waitForFunction(() => /Assurance vie/.test(document.querySelector("#fiche-orbite .fiche-orbite__titre").textContent));
     assert(await page.$eval('.satellite[data-genre="vie"]', (b) => b.getAttribute("aria-pressed") === "true"), "satellite choisi");
@@ -836,6 +837,29 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(await pm.$eval('.menu-complet__ru--ici .menu-complet__nom', (n) => n.textContent === "Vie & impôts") && await pm.$eval('.menu-complet__ru--ici .menu-complet__puce[aria-current="true"]', (a) => a.textContent === "Décider"), "rubrique et sous-rubrique en cours marquées");
     await pm.keyboard.press("Escape");
     await pm.waitForSelector("#dlg-menu:not([open])", { state: "attached" });
+    /* Installer Orbite (gratuit, sans boutique) : carte dans Mon orbite et en haut du Menu, guide en 3 gestes, invitation du navigateur. */
+    await pm.tap('.onglets-bas a[data-vue="orbite"]');
+    await pm.waitForSelector("#installer-orbite:not([hidden])");
+    await pm.evaluate(() => Object.defineProperty(navigator, "userAgent", { get: () => "Mozilla/5.0 (Linux; Android 14; SM-A546B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Mobile Safari/537.36" }));
+    await pm.tap("#onglet-menu");
+    await pm.waitForSelector("#dlg-menu[open] #menu-liste > .installer--menu:first-child");
+    assert(!(await pm.$("#menu-liste .installer--menu [data-installer=plus-tard]")) && !(await pm.$("#menu-liste .installer--menu [id=installer-titre]")), "carte du menu sans « Plus tard » ni identifiant en double");
+    await pm.tap("#menu-liste .installer--menu [data-installer=oui]");
+    await pm.waitForSelector("#dlg-installer[open]");
+    assert(!(await pm.$eval("#dlg-menu", (d) => d.open)), "menu fermé avant le guide");
+    const guide = await pm.$$eval("#installer-guide-liste .installer-guide__nav", (ns) => ns.map((n) => n.getAttribute("data-nav") + (n.hidden ? "-" : "") + (n.classList.contains("installer-guide__nav--ici") ? "*" : "")));
+    assert(guide[0] === "chrome*" && guide.includes("ordinateur-"), "guide : navigateur du téléphone en premier, gestes de l'ordinateur masqués : " + guide);
+    await pm.screenshot({ path: path.join(CAPTURES, "installer-guide-telephone.png") });
+    await pm.tap("#installer-guide-ok");
+    await pm.waitForSelector("#dlg-installer:not([open])", { state: "attached" });
+    await pm.evaluate(() => { const e = new Event("beforeinstallprompt"); e.prompt = () => { window.__invite = 1; }; e.userChoice = Promise.resolve({ outcome: "dismissed" }); window.dispatchEvent(e); });
+    await pm.tap("#installer-orbite [data-installer=oui]");
+    await pm.waitForFunction(() => window.__invite === 1);
+    assert(!(await pm.$eval("#dlg-installer", (d) => d.open)), "invitation du navigateur utilisée, pas le guide");
+    await pm.screenshot({ path: path.join(CAPTURES, "installer-carte-telephone.png") });
+    await pm.tap("#installer-orbite [data-installer=plus-tard]");
+    await pm.waitForSelector("#installer-orbite[hidden]", { state: "attached" });
+    assert(await pm.evaluate(() => Number(localStorage.getItem("ef-installer-plus-tard")) > 0), "« Plus tard » retenu sur l'appareil");
     for (const vue of ["orbite", "salaire", "epargne", "credit", "profil"]) {
       if (vue === "profil") { await pm.tap("#onglet-menu"); await pm.waitForSelector("#dlg-menu[open]"); await pm.tap('.menu-complet__lien[href="#profil"]'); }
       else await pm.tap('.onglets-bas a[data-vue="' + vue + '"]');
@@ -1227,6 +1251,12 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(await page.isHidden("#hors-ligne"), "bandeau masqué en ligne");
     await contexte.grantPermissions(["notifications"]);
     await page.goto(base + "/espace/#compte?onglet=preferences");
+    await page.waitForSelector("#appli-guide", { state: "visible" });
+    await page.click("#appli-guide");
+    await page.waitForSelector("#dlg-installer[open]");
+    assert(await page.$eval("#installer-guide-liste .installer-guide__nav", (n) => n.getAttribute("data-nav") === "ordinateur" && !n.hidden), "Paramètres : guide d'installation, ordinateur en premier");
+    await page.keyboard.press("Escape");
+    await page.waitForSelector("#dlg-installer:not([open])", { state: "attached" });
     await page.click("#rappels-activer");
     await page.waitForFunction(() => /Rappels activés/.test(document.getElementById("rappels-etat").textContent));
     assert((await page.$$("#rappels-liste li")).length >= 1, "liste des rappels prévus");

@@ -1,0 +1,24 @@
+/* Orbite — inviter à installer l'application sur le téléphone (installer.js). */
+
+/* ---------- Carte (Mon orbite et haut du Menu) ---------- */
+.installer { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: center; margin: 0 0 16px; padding: 14px; border: 1px solid color-mix(in srgb, var(--salaire) 45%, var(--filet)); border-radius: 18px; background: linear-gradient(135deg, color-mix(in srgb, var(--salaire) 16%, var(--surface)), var(--surface) 70%); }
+.installer[hidden] { display: none; }
+.installer__ico { width: 44px; height: 44px; border-radius: 12px; }
+.installer__titre { margin: 0; font-size: 15.5px; line-height: 1.3; color: var(--encre); }
+.installer__texte p { margin: 2px 0 0; font-size: 13px; line-height: 1.4; color: var(--encre-2); }
+.installer__actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.installer--menu { margin: 6px 0 10px; }
+
+/* ---------- Guide en 3 gestes ---------- */
+dialog.installer-guide { width: min(92vw, 440px); padding: 22px; }
+.installer-guide h2 { margin: 0 0 4px; font-size: 22px; }
+.installer-guide__sous { margin: 0 0 14px; font-size: 14px; color: var(--encre-2); }
+.installer-guide__liste { display: grid; gap: 8px; }
+.installer-guide__nav { padding: 12px 14px; border: 1px solid var(--filet); border-radius: 14px; background: var(--surface); }
+.installer-guide__nav h3 { margin: 0 0 6px; font-size: 14.5px; }
+.installer-guide__nav ol { margin: 0; padding-left: 20px; font-size: 13.5px; line-height: 1.6; color: var(--encre-2); }
+.installer-guide__nav strong { color: var(--encre); font-weight: 650; }
+.installer-guide__ici { display: none; color: var(--salaire-t); }
+.installer-guide__nav--ici { border-color: color-mix(in srgb, var(--salaire) 45%, var(--filet)); background: color-mix(in srgb, var(--salaire) 10%, var(--surface)); }
+.installer-guide__nav--ici .installer-guide__ici { display: inline; }
+.installer-guide__ok { width: 100%; margin-top: 14px; }
