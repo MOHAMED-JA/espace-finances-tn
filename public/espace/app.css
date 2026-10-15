@@ -235,6 +235,14 @@ body.attente .onglets-bas a, body.attente .rail__liens a { pointer-events: none;
 .orbite-repere:active { transform: scale(.97); }
 .orbite-repere__lib { font-size: 12px; font-weight: 600; line-height: 1.25; color: var(--encre-3); }
 .orbite-repere__val { font-size: 15px; font-weight: 720; line-height: 1.2; }
+/* Le montant tient toujours sur une ligne : sa taille suit la largeur de la tuile (21 % ≈ « 99 999 DT » en entier), 15 px au plus. */
+.orbite-repere { container-type: inline-size; }
+.orbite-repere__nb { display: block; white-space: nowrap; font-size: min(1em, 21cqi); }
+.orbite-repere__nb .roule { vertical-align: top; }
+/* Libellé : « économisable » doit tenir sur la largeur de la tuile, sans être coupé au milieu. */
+.orbite-repere__lib { font-size: max(11px, min(12px, 14.5cqi)); hyphens: auto; }
+@media (max-width: 400px) { .orbite-reperes { gap: 6px; } .orbite-repere { padding: 10px; } }
+.orbite-repere__unite { display: block; margin-top: 2px; font-size: 12px; font-weight: 600; color: var(--encre-3); }
 .orbite-repere .point { width: 8px; height: 8px; }
 .fiche-orbite .encart { display: block; margin: 0; font-size: 14px; line-height: 1.5; }
 .fiche-orbite .encart--succes { background: var(--salaire-doux); color: var(--encre); }

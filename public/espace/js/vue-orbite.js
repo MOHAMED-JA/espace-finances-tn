@@ -182,7 +182,7 @@
     switch (p[0]) {
       case "charges": return { n: e.charges, f: DT3 };
       case "endet": return { n: e.endettement, f: function (v) { return F.pct(v, 1); } };
-      case "capa": return { n: e.capacite, f: function (v) { return F.dt0(v) + " DT / mois"; } };
+      case "capa": return { n: e.capacite, f: DT0 };
       case "kres": return { n: x.capitalRestant || 0, f: DT0 };
       case "mensualite": return { n: x.mensualite || 0, f: DT3 };
       case "interets": return { n: x.interets || 0, f: DT0 };
@@ -239,11 +239,14 @@
     var d = el("div"); d.appendChild(el("p", "fiche-orbite__sur", "Votre système")); d.appendChild(el("h3", "fiche-orbite__titre", "", { "data-v": "date" }));
     f.appendChild(d);
     var rep = el("ul", "orbite-reperes");
-    [["#salaire", "salaire", "Tranche d'impôt", repere.tranche, null],
-     ["#credit", "credit", "Mensualité possible", "", { "data-v": "capa", "data-montant": "" }],
-     ["#epargne", "epargne", "Impôt économisable", repere.eco, null]].forEach(function (r) {
-      var li = el("li"), a = el("a", "orbite-repere", null, { href: r[0] });
-      a.appendChild(el("span", "point point--" + r[1])); a.appendChild(el("span", "orbite-repere__lib", r[2])); a.appendChild(el("strong", "orbite-repere__val", r[3], r[4]));
+    /* L'unité (« par mois », « par an ») va sous le montant : sur téléphone, la tuile fait à peine 80 px de large. */
+    [["#salaire", "salaire", "Tranche d'impôt", repere.tranche, null, null],
+     ["#credit", "credit", "Mensualité possible", "", { "data-v": "capa", "data-montant": "" }, "par mois"],
+     ["#epargne", "epargne", "Impôt économisable", repere.eco, null, "par an"]].forEach(function (r) {
+      var li = el("li"), a = el("a", "orbite-repere", null, { href: r[0] }), v = el("strong", "orbite-repere__val");
+      a.appendChild(el("span", "point point--" + r[1])); a.appendChild(el("span", "orbite-repere__lib", r[2]));
+      v.appendChild(el("span", "orbite-repere__nb", r[3], r[4])); if (r[5]) v.appendChild(el("small", "orbite-repere__unite", " " + r[5]));
+      a.appendChild(v);
       li.appendChild(a); rep.appendChild(li);
     });
     f.appendChild(rep);
@@ -374,7 +377,7 @@
     $("noyau-lib").textContent = p.activite === "retraite" ? "Pension nette par mois" : "Net par mois";
     $("noyau-sous").textContent = "sur " + F.dt0(s.brutMensuel) + " DT brut" + (s.versements.nombre > 12 ? " · " + s.versements.nombre + " salaires" : "");
     var opt = sy.epargne.propositions[sy.epargne.propositions.length - 1];
-    repere = { net: s.netMensuel, tranche: F.pct(s.tranche.taux, 0), eco: F.dt0(opt ? opt.economieAnnuelle : 0) + " DT / an" };
+    repere = { net: s.netMensuel, tranche: F.pct(s.tranche.taux, 0), eco: F.dt0(opt ? opt.economieAnnuelle : 0) + " DT" };
     $("phrase-orbite").textContent = "Avec " + F.dt0(s.netMensuel) + " DT net par mois" +
       (p.credits.length ? " et " + p.credits.length + " crédit" + (p.credits.length > 1 ? "s" : "") + " en cours" : "") +
       ", voici ce que votre salaire rend possible.";

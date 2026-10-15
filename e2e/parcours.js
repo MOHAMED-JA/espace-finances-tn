@@ -1717,6 +1717,20 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector("#mo-calendrier:not([hidden]) .mo-evt");
     assert(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), "calendrier sans débordement");
     await page.screenshot({ path: path.join(CAPTURES, "mois-calendrier-mobile.png"), fullPage: true });
+    /* Repères de « Votre système » : montant entier dans sa tuile, unité dessous (« 345 DT / moi » coupé, 15 oct. 2026). */
+    await page.goto(base + "/espace/#orbite");
+    await page.waitForSelector("#fiche-orbite .orbite-repere__nb .roule");
+    for (const l of [360, 390]) {
+      await page.setViewportSize({ width: l, height: 844 });
+      const r = await page.$$eval("#fiche-orbite .orbite-repere", (as) => as.map((a) => {
+        const n = a.querySelector(".orbite-repere__nb"), g = document.createRange(); g.selectNodeContents(n);
+        const t = g.getBoundingClientRect(), b = a.getBoundingClientRect();
+        return { texte: a.querySelector(".orbite-repere__val").textContent.replace(/\s+/g, " ").trim(), dedans: t.right <= b.right - parseFloat(getComputedStyle(a).paddingRight) + 0.5 };
+      }));
+      assert(r.length === 3 && r.every((x) => x.dedans), "montants entiers dans les tuiles à " + l + " px : " + JSON.stringify(r));
+      assert(/DT par mois$/.test(r[1].texte) && /DT par an$/.test(r[2].texte), "unités « par mois » et « par an » sous les montants");
+    }
+    await page.screenshot({ path: path.join(CAPTURES, "orbite-reperes-mobile.png") });
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.evaluate((a) => window.Orbite.majProfil(JSON.parse(a), { immediat: true }), avant);
   });
