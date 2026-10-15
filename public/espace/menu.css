@@ -5,6 +5,10 @@
   .rail { padding: 18px 10px 14px; }
   .rail__liens a { gap: 10px; padding: 0 10px; font-size: 14.5px; }
   .rail__liens a[aria-current="page"]::before { left: -10px; }
+  /* Barre du haut plus étroite (la barre latérale prend 248 px) : boutons en icônes, comme sur téléphone. */
+  .barre { gap: 8px; padding-left: 20px; padding-right: 20px; }
+  .barre__actions .bouton__lib { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .barre__actions .bouton { width: 40px; padding: 0; }
 }
 
 /* ---------- Boutons d'ouverture ---------- */

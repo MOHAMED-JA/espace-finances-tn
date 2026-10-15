@@ -687,6 +687,7 @@ Capture de l'utilisateur sur téléphone (page en « version pour ordinateur »,
   - les 11 règles de navigation ont changé de seuil (barre latérale, barre du haut, onglets du bas, `.sous-nav`, bulle de l'Assistant, pastilles, signature) ;
   - de 768 à 1 023 px, la barre latérale fait 248 px (rembourrage réduit dans `menu.css`), 264 px au-delà ;
   - pour l'utilisateur : tablette, téléphone en paysage ou en « version ordinateur » ont l'affichage du PC.
+  - de 768 à 1 023 px, la barre du haut est plus étroite : boutons des modules en icônes et pas de « Ctrl K » (le seuil de `palette.css` reste à 1 024 px) ; mesuré : en haute lisibilité, elle débordait à 800 px.
 - **Menu complet** sur un écran de moins de 768 px :
   - **Ouverture** :
     - bouton ☰ `#menu-ouvrir` dans la barre du haut ;
