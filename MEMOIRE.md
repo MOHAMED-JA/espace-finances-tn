@@ -679,6 +679,24 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centtricies. Vidéo LinkedIn « 3 simulateurs + Orbite » (15 oct.)
+
+Demande : une vidéo 3D de 60 s qui récapitule les 4 applications, Orbite en dernier comme la plus avancée, avec une musique douce (« défi et timing »), et un texte LinkedIn. Choix validés : **16:9 + carré 1:1**, **60 s**, **musique composée**, **Orbite environ 40 % à la fin** ; extrait de 14 s et storyboard validés.
+
+- **Livrables** (bloc-notes de la session, `scratchpad/v5/`, non versionnés) :
+  - `Orbite-4-simulateurs-16x9.mp4` (27 Mo) et `-carre.mp4` (17 Mo) : 30 i/s, −14 LUFS, crête à −2,2 dBFS ;
+  - `miniature-linkedin.jpg` ;
+  - `texte-linkedin.md` : les 3 simulateurs avec leurs liens GitHub Pages, Orbite par `https://mohamed-ja.github.io/portail-rh/orbite/` (LinkedIn ne lit pas workers.dev), « de nouvelles fonctionnalités au fur et à mesure, selon vos besoins », sans prix.
+- **Musique** `musique.py` : entièrement synthétisée, donc libre de droits. 100 BPM, une mesure de 2,4 s. Ré mineur, puis fa majeur pour Orbite. Piano feutré, nappe, basse ronde, tic-tac d'horloge, montée de 29 à 33,6 s, impact à 33,6 s.
+- **Image** : `moteur-li.html#16x9|carre` + `rendu-li.js` (Chromium SwiftShader, rendu image par image puis ffmpeg).
+  - **Vraie 3D (three.js)** : planète en shader (bandes vert et violet, bord lumineux), 3 satellites (Salaire, Épargne vie & CEA, Crédit) sur leurs orbites, avec des étiquettes HTML projetées.
+  - **Fusion** : les satellites convergent en spirale, puis éclat, onde de choc et anneaux du logo Orbite.
+  - **Simulateurs** : vraies captures (`cap2.js`, mode sombre, exemple fictif : 2 500 DT brut, 45 000 DT de revenu et 400 DT par mois en assurance vie, crédit de 150 000 DT sur 20 ans à 8 %). Carte de verre et compteur :
+    - salaire : 1 849,310 DT net ;
+    - assurance vie & CEA : 1 674 TND d'impôt en moins ;
+    - crédit : mensualité de 1 254,660 TND.
+  - **Orbite** : réserve et plan de versement (captures), banques, relevé, bilan, assistant (images V2 et V3), puis « Et bien plus encore » (12 fonctions), et la carte de fin « De nouvelles fonctions arrivent, selon vos besoins ».
+
 ## 3 centnovovicies. Visite guidée à jour (15 oct.)
 
 Question de l'utilisateur : « la visite guidée est-elle à jour ? ». Non : rien depuis le 13 oct. (PR #131). Choix validé : « Nouveautés d'octobre » (maquette des textes validée).
