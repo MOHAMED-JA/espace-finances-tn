@@ -26,8 +26,10 @@
     var p = $("pastille-acces");
     p.hidden = !r.pastille;
     p.classList.toggle("pastille-acces--urgent", r.urgent);
-    $("pastille-acces-lib").textContent = r.etat === "expire" ? "S'abonner" : r.etat === "essai" ? (r.jours <= 1 ? "Essai : dernier jour" : "Essai : " + r.jours + " j") : "Renouveler";
-    p.setAttribute("aria-label", r.libelle + (r.etat === "actif" ? ", renouveler l'abonnement" : ", voir les formules"));
+    var visible = r.etat === "expire" ? "S'abonner" : r.etat === "essai" ? (r.jours <= 1 ? "Essai : dernier jour" : "Essai : " + r.jours + " j") : "Renouveler";
+    $("pastille-acces-lib").textContent = visible;
+    /* Nom accessible = texte visible d'abord (WCAG 2.5.3), puis le détail. */
+    p.setAttribute("aria-label", visible + " (" + r.libelle + ")" + (r.etat === "actif" ? ", renouveler l'abonnement" : ", voir les formules"));
     var b = $("badge-abonnement");
     b.hidden = !(r.etat === "essai" || r.etat === "expire");
     b.textContent = r.etat === "expire" ? "Terminé" : r.jours + " j";

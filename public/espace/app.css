@@ -57,7 +57,7 @@ body.attente .onglets-bas a, body.attente .rail__liens a { pointer-events: none;
 .temoin__ico svg { width: 16px; height: 16px; display: block; }
 .temoin__court { display: none; }
 .temoin[data-etat="envoi"] { color: var(--signal); background: var(--signal-soft); }
-.temoin[data-etat="ok"] { color: var(--succes); background: color-mix(in srgb, var(--succes) 14%, transparent); }
+.temoin[data-etat="ok"] { color: var(--succes); background: var(--succes-doux); }
 .temoin[data-etat="ancien"] { color: var(--encre-3); background: transparent; border-color: var(--hairline); }
 .temoin[data-etat="horsligne"] { color: var(--warning); background: color-mix(in srgb, var(--warning) 14%, transparent); }
 .temoin[data-etat="erreur"] { color: var(--erreur); background: color-mix(in srgb, var(--erreur) 12%, transparent); padding-right: 4px; }

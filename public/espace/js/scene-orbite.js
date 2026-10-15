@@ -95,7 +95,7 @@
           b.type = "button"; b.className = "satellite"; b.setAttribute("aria-pressed", "false");
           var tag = doc.createElement("span"); tag.className = "satellite__tag";
           var nom = doc.createElement("b"), sous = doc.createElement("small");
-          tag.appendChild(nom); tag.appendChild(sous); b.appendChild(tag);
+          tag.appendChild(nom); tag.appendChild(doc.createTextNode(" ")); tag.appendChild(sous); b.appendChild(tag);
           b.addEventListener("click", function (e) { e.stopPropagation(); choisir(choisi === s.id ? null : s.id, true); });
           s.bouton = b; s.tagNom = nom; s.tagSous = sous; s.tag = tag;
         }

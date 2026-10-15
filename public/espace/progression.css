@@ -42,6 +42,7 @@
 .pg-sources summary { cursor: pointer; font-weight: 650; color: var(--encre-2); }
 .pg-sources p { margin: 8px 0 0; }
 .pg-table { overflow-x: auto; }
+.pg-table:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .pg-table table { width: 100%; border-collapse: collapse; margin-top: 8px; font-family: var(--mono); font-size: 11.5px; }
 .pg-table th, .pg-table td { padding: 3px 5px; border-bottom: 1px solid var(--filet); text-align: right; white-space: nowrap; }
 .pg-table th:first-child, .pg-table td:first-child { text-align: left; }

@@ -126,7 +126,7 @@ ${JSON.stringify(ld, null, 2).replace(/</g, "\\u003c")}
         <span translate="no">Orbite</span>
         <span class="drapeau" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
       </a>
-      <a class="signature" href="${LINKEDIN}?isSelfProfile=true" target="_blank" rel="noopener noreferrer" aria-label="Conçu par Mohamed Aziz Jaouadi : profil LinkedIn (nouvel onglet)"><span class="signature__mono" aria-hidden="true">MJ</span><span class="signature__txt"><span class="signature__pre">Conçu par</span><span class="signature__nom" translate="no">Mohamed Aziz Jaouadi</span></span><span class="signature__in"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9.75h4v11H3v-11Zm6.5 0h3.8v1.5h.06c.53-1 1.83-2.06 3.77-2.06 4.03 0 4.77 2.65 4.77 6.1v5.46h-4v-4.84c0-1.16-.02-2.64-1.61-2.64-1.61 0-1.86 1.26-1.86 2.56v4.92h-4v-11Z"/></svg></span></a>
+      <a class="signature" href="${LINKEDIN}?isSelfProfile=true" target="_blank" rel="noopener noreferrer"><span class="signature__mono" aria-hidden="true">MJ</span><span class="signature__txt"><span class="signature__pre">Conçu par</span> <span class="signature__nom" translate="no">Mohamed Aziz Jaouadi</span></span><span class="signature__cache">, profil LinkedIn (nouvel onglet)</span><span class="signature__in"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9.75h4v11H3v-11Zm6.5 0h3.8v1.5h.06c.53-1 1.83-2.06 3.77-2.06 4.03 0 4.77 2.65 4.77 6.1v5.46h-4v-4.84c0-1.16-.02-2.64-1.61-2.64-1.61 0-1.86 1.26-1.86 2.56v4.92h-4v-11Z"/></svg></span></a>
       </div>
       <nav class="pages-nav" aria-label="Calculs gratuits">
 ${NAV.map((n) => `        <a href="/${n.slug}"${n.pages.includes(pg.cle) ? (n.slug === pg.slug ? ' aria-current="page"' : ' aria-current="true"') : ""}>${n.nav}</a>`).join("\n")}
@@ -312,7 +312,7 @@ ${noteCalc}
         <section class="tableau-bloc" aria-labelledby="titre-bareme">
           <h2 class="titre-section" id="titre-bareme">Barème de l'IRPP ${P.annee}</h2>
           <p>Chaque taux s'applique à la part du revenu annuel imposable comprise dans la tranche.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-bareme"><table>
             <thead><tr><th scope="col">Revenu annuel imposable</th><th scope="col">Taux</th></tr></thead>
             <tbody>
 ${C.bareme().map((t) => `              <tr><td>${t.a == null ? "Au-delà de " + N(t.de, 0) + " DT" : N(t.de, 0) + " à " + N(t.a, 0) + " DT"}</td><td>${PCT(t.taux)}</td></tr>`).join("\n")}
@@ -323,7 +323,7 @@ ${C.bareme().map((t) => `              <tr><td>${t.a == null ? "Au-delà de " + 
         <section class="tableau-bloc" aria-labelledby="titre-table">
           <h2 class="titre-section" id="titre-table">Brut et net les plus recherchés</h2>
           <p>Par mois, célibataire, secteur privé, 12 salaires par an.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-table"><table>
             <thead><tr><th scope="col">Brut</th><th scope="col">Impôt</th><th scope="col">Net</th></tr></thead>
             <tbody>
 ${C.tableauNet(m).map((l) => `              <tr${l.brut === 2500 ? ' class="vu"' : ""}><td>${N(l.brut, 0)} DT</td><td>${N(l.impot, 3)}</td><td class="fort">${N(l.net, 3)}</td></tr>`).join("\n")}
@@ -394,7 +394,7 @@ ${c.types.map((t) => `              <li>${t.libelle}<span>${v(aff, "dur_" + t.cl
         <section class="tableau-bloc" aria-labelledby="titre-t1">
           <h2 class="titre-section" id="titre-t1">Capacité selon le salaire net</h2>
           <p>Sans crédit en cours. Logement sur ${N(immo.dureeMois / 12, 0)} ans, voiture sur ${N(c.types[1].dureeMois / 12, 0)} ans.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-t1"><table>
             <thead><tr><th scope="col">Net par mois</th><th scope="col">Mensualité</th><th scope="col">Logement</th><th scope="col">Voiture</th></tr></thead>
             <tbody>
 ${nets.map((n) => { const x = C.credit({ net: n }, m); return `              <tr><td>${N(n, 0)} DT</td><td>${N(x.mensualiteMax, 3)}</td><td class="fort">${N(x.types[0].capital, 0)}</td><td>${N(x.types[1].capital, 0)}</td></tr>`; }).join("\n")}
@@ -404,7 +404,7 @@ ${nets.map((n) => { const x = C.credit({ net: n }, m); return `              <tr
         <section class="tableau-bloc" aria-labelledby="titre-t2">
           <h2 class="titre-section" id="titre-t2">Effet des crédits en cours</h2>
           <p>Pour ${DT(net0)} net par mois : montant possible pour un logement.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-t2"><table>
             <thead><tr><th scope="col">Crédits en cours</th><th scope="col">Mensualité possible</th><th scope="col">Logement</th></tr></thead>
             <tbody>
 ${encours.map((e) => { const x = C.credit({ net: net0, encours: e }, m); return `              <tr${e === 0 ? ' class="vu"' : ""}><td>${e === 0 ? "Aucun" : N(e, 0) + " DT par mois"}</td><td>${N(x.mensualiteMax, 3)}</td><td class="fort">${N(x.types[0].capital, 0)}</td></tr>`; }).join("\n")}
@@ -478,7 +478,7 @@ ${noteCalc}
         <section class="tableau-bloc" aria-labelledby="titre-t1">
           <h2 class="titre-section" id="titre-t1">Impôt évitable selon le salaire</h2>
           <p>Par an, célibataire, secteur privé, 12 salaires.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-t1"><table>
             <thead><tr><th scope="col">Brut par mois</th><th scope="col">Impôt de l'année</th><th scope="col">À verser</th><th scope="col">Économie</th></tr></thead>
             <tbody>
 ${bruts.map((x) => { const r = C.impot({ montant: x }, m); return `              <tr${x === 2500 ? ' class="vu"' : ""}><td>${N(x, 0)} DT</td><td>${N(r.impot, 3)}</td><td>${N(r.total, 0)}</td><td class="fort">${N(r.gain, 3)}</td></tr>`; }).join("\n")}
@@ -488,7 +488,7 @@ ${bruts.map((x) => { const r = C.impot({ montant: x }, m); return `             
         <section class="tableau-bloc" aria-labelledby="titre-t2">
           <h2 class="titre-section" id="titre-t2">Les deux placements en bref</h2>
           <p>Règles prises en compte par le calcul.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-t2"><table>
             <thead><tr><th scope="col">Règle</th><th scope="col">Assurance vie</th><th scope="col">CEA</th></tr></thead>
             <tbody>
               <tr><td>Déduction par an</td><td>${N(av.plafond, 0)} DT</td><td>${N(cea.plafond, 0)} DT</td></tr>
@@ -569,7 +569,7 @@ ${chef}
         <section class="tableau-bloc" aria-labelledby="titre-t1">
           <h2 class="titre-section" id="titre-t1">Taux CNSS selon la durée</h2>
           <p>Secteur privé, départ à ${R.cnss.ageLegal} ans.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-t1"><table>
             <thead><tr><th scope="col">Années de cotisation</th><th scope="col">Taux de pension</th></tr></thead>
             <tbody>
 ${[10, 15, 20, 25, 30].map((a) => `              <tr><td>${a} ans</td><td class="fort">${N(RT.tauxCnss(a * 4), 0)} %</td></tr>`).join("\n")}
@@ -579,7 +579,7 @@ ${[10, 15, 20, 25, 30].map((a) => `              <tr><td>${a} ans</td><td class=
         <section class="tableau-bloc" aria-labelledby="titre-t2">
           <h2 class="titre-section" id="titre-t2">Taux CNRPS selon les années de service</h2>
           <p>Secteur public.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-t2"><table>
             <thead><tr><th scope="col">Années de service</th><th scope="col">Taux de pension</th></tr></thead>
             <tbody>
 ${[15, 20, 25, 30, 35, 40].map((a) => `              <tr><td>${a} ans</td><td class="fort">${N(RT.tauxCnrps(a), 0)} %</td></tr>`).join("\n")}
@@ -662,7 +662,7 @@ ${champMontant("montant", "Montant emprunté", N(ex.montant, 0))}
         <section class="tableau-bloc" aria-labelledby="titre-t1">
           <h2 class="titre-section" id="titre-t1">Mensualité selon le montant et la durée</h2>
           <p>Au taux de ${N(tx, 1)} % (TMM + ${N(ex.marge, 0)} points), en dinars par mois.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-t1"><table>
             <thead><tr><th scope="col">Montant</th>${durees.map((a) => `<th scope="col">${a} ans</th>`).join("")}</tr></thead>
             <tbody>
 ${montants.map((k) => `              <tr><td>${N(k, 0)} DT</td>${durees.map((a) => `<td>${N(OC.mensualitePourCapital(k, tx, a * 12), 0)}</td>`).join("")}</tr>`).join("\n")}
@@ -673,7 +673,7 @@ ${montants.map((k) => `              <tr><td>${N(k, 0)} DT</td>${durees.map((a) 
         <section class="tableau-bloc" aria-labelledby="titre-t2">
           <h2 class="titre-section" id="titre-t2">Si le TMM augmente (taux variable)</h2>
           <p>Mensualité de trois crédits types selon la hausse du TMM.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-t2"><table>
             <thead><tr><th scope="col">Crédit</th>${hausses.map((h) => `<th scope="col">${h === 0 ? "TMM actuel" : "+ " + N(h, h % 1 ? 1 : 0) + " pt"}</th>`).join("")}</tr></thead>
             <tbody>
 ${exemples.map((k) => `              <tr${k.type === "auto" ? ' class="vu"' : ""}><td>${k.libelle}, ${N(k.montant, 0)} DT sur ${k.dureeAns} ans</td>${hausses.map((h) => `<td${h === 0 ? ' class="fort"' : ""}>${N(mensH(k, h), 0)}</td>`).join("")}</tr>`).join("\n")}
@@ -747,7 +747,7 @@ ${tete_calc("Modifiez les valeurs, tout se recalcule")}
         <section class="tableau-bloc" aria-labelledby="titre-t1">
           <h2 class="titre-section" id="titre-t1">Capital estimé selon le versement</h2>
           <p>Rendement de 6 % par an, sans frais, en dinars.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-t1"><table>
             <thead><tr><th scope="col">Par mois</th>${horizons.map((h) => `<th scope="col">${h} ans</th>`).join("")}</tr></thead>
             <tbody>
 ${versements.map((x) => `              <tr${x === 200 ? ' class="vu"' : ""}><td>${N(x, 0)} DT</td>${horizons.map((h) => `<td${h === 10 ? ' class="fort"' : ""}>${N(C.assuranceVie({ montant: 2500, versement: x, dureeAns: h, rendement: 6 }, m).capital, 0)}</td>`).join("")}</tr>`).join("\n")}
@@ -757,7 +757,7 @@ ${versements.map((x) => `              <tr${x === 200 ? ' class="vu"' : ""}><td>
         <section class="tableau-bloc" aria-labelledby="titre-t2">
           <h2 class="titre-section" id="titre-t2">Impôt économisé selon le salaire</h2>
           <p>Par an, célibataire, secteur privé, 12 salaires.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-t2"><table>
             <thead><tr><th scope="col">Brut par mois</th><th scope="col">Impôt de l'année</th><th scope="col">200 DT par mois</th><th scope="col">500 DT par mois</th></tr></thead>
             <tbody>
 ${bruts.map((b) => { const r2 = C.assuranceVie({ montant: b, versement: 200 }, m), r5 = C.assuranceVie({ montant: b, versement: 500 }, m); return `              <tr${b === 2500 ? ' class="vu"' : ""}><td>${N(b, 0)} DT</td><td>${N(r2.impot, 3)}</td><td class="fort">${N(r2.economie, 0)}</td><td>${N(r5.economie, 0)}</td></tr>`; }).join("\n")}
@@ -832,7 +832,7 @@ ${noteCalc}
         <section class="tableau-bloc" aria-labelledby="titre-t1">
           <h2 class="titre-section" id="titre-t1">Dépôt utile selon le salaire</h2>
           <p>Par an, célibataire, secteur privé, 12 salaires.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-t1"><table>
             <thead><tr><th scope="col">Brut par mois</th><th scope="col">Impôt de l'année</th><th scope="col">Dépôt utile</th><th scope="col">Économie</th></tr></thead>
             <tbody>
 ${bruts.map((b) => { const r = C.cea({ montant: b, depot: 1e6 }, m); return `              <tr${b === 2500 ? ' class="vu"' : ""}><td>${N(b, 0)} DT</td><td>${N(r.impot, 3)}</td><td>${N(r.utile, 0)}</td><td class="fort">${N(r.economie, 0)}</td></tr>`; }).join("\n")}
@@ -842,7 +842,7 @@ ${bruts.map((b) => { const r = C.cea({ montant: b, depot: 1e6 }, m); return `   
         <section class="tableau-bloc" aria-labelledby="titre-t2">
           <h2 class="titre-section" id="titre-t2">CEA ou assurance vie</h2>
           <p>Les règles prises en compte par le calcul.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-t2"><table>
             <thead><tr><th scope="col">Règle</th><th scope="col">CEA</th><th scope="col">Assurance vie</th></tr></thead>
             <tbody>
               <tr><td>Placement</td><td>bourse (actions, fonds)</td><td>contrat d'assurance</td></tr>
@@ -934,7 +934,7 @@ ${[1, 2, 3].map((j) => `              <li${siV(aff, "r" + j)}><span>${v(aff, "r"
         <section class="tableau-bloc" aria-labelledby="titre-t1">
           <h2 class="titre-section" id="titre-t1">Baisse de la mensualité à la première réduction</h2>
           <p>Pour 100&nbsp;000 DT empruntés à taux fixe, en dinars par mois.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-t1"><table>
             <thead><tr><th scope="col">Taux fixe</th>${durees.map((a) => `<th scope="col">${a} ans</th>`).join("")}</tr></thead>
             <tbody>
 ${taux.map((t) => `              <tr${t === D.taux ? ' class="vu"' : ""}><td>${N(t, 0)} %</td>${durees.map((a) => `<td>${baisse(t, a)}</td>`).join("")}</tr>`).join("\n")}
@@ -945,7 +945,7 @@ ${taux.map((t) => `              <tr${t === D.taux ? ' class="vu"' : ""}><td>${N
         <section class="tableau-bloc" aria-labelledby="titre-t2">
           <h2 class="titre-section" id="titre-t2">Les réductions de l'exemple</h2>
           <p>${N(capEx, 0)} DT à ${C.taux(D.taux)} sur ${D.duree / 12} ans, première échéance en janvier ${D.annee}.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-t2"><table>
             <thead><tr><th scope="col">Date</th><th scope="col">Nouveau taux</th><th scope="col">Mensualité</th></tr></thead>
             <tbody>
               <tr><td>Avant</td><td>${C.taux(D.taux)}</td><td>${N(r1.mensualiteAvant, 3)}</td></tr>
@@ -1022,7 +1022,7 @@ ${tete_calc("Modifiez les valeurs, tout se recalcule")}
         <section class="tableau-bloc" aria-labelledby="titre-t1">
           <h2 class="titre-section" id="titre-t1">10&nbsp;000 DT versés : tôt ou tard&nbsp;?</h2>
           <p>Crédit de ${N(D.montant, 0)} DT à ${N(D.taux, 0)} % sur ${D.duree / 12} ans, intérêts évités en dinars.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-t1"><table>
             <thead><tr><th scope="col">Versés après</th><th scope="col">Durée plus courte</th><th scope="col">Mensualité plus basse</th></tr></thead>
             <tbody>
 ${moments.map((p) => { const a = C.anticipe({ montant: D.montant, taux: D.taux, duree: D.duree, payees: p, somme: 10000 }); return `              <tr><td>${C.dureeTxt(p)}</td><td class="fort">${N(a.courte.economie, 0)} <small>(−${a.courte.gagnes} mois)</small></td><td>${N(a.basse.economie, 0)} <small>(−${N(a.basse.baisse, 0)} DT/mois)</small></td></tr>`; }).join("\n")}
@@ -1033,7 +1033,7 @@ ${moments.map((p) => { const a = C.anticipe({ montant: D.montant, taux: D.taux, 
         <section class="tableau-bloc" aria-labelledby="titre-t2">
           <h2 class="titre-section" id="titre-t2">Selon la somme versée</h2>
           <p>Même crédit, versement après ${D.payees} mensualités.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-t2"><table>
             <thead><tr><th scope="col">Somme versée</th><th scope="col">Mois gagnés</th><th scope="col">Nouvelle mensualité</th></tr></thead>
             <tbody>
 ${[5000, 10000, 20000, 40000].map((S) => { const a = C.anticipe({ montant: D.montant, taux: D.taux, duree: D.duree, payees: D.payees, somme: S }); return `              <tr${S === D.somme ? ' class="vu"' : ""}><td>${N(S, 0)} DT</td><td class="fort">${a.courte.gagnes}</td><td>${N(a.basse.mensualite, 3)}</td></tr>`; }).join("\n")}
@@ -1117,7 +1117,7 @@ ${D.credits.map((c, i) => ligne(Object.assign({ inclus: true }, c), i)).join("\n
         <section class="tableau-bloc" aria-labelledby="titre-t1">
           <h2 class="titre-section" id="titre-t1">Selon la durée du nouveau crédit</h2>
           <p>Exemple ci-dessus (${DT(rr.mensualiteAvant, 0)} par mois aujourd'hui), au taux de ${C.taux(rr.tauxPct)}.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-t1"><table>
             <thead><tr><th scope="col">Durée</th><th scope="col">Mensualité</th><th scope="col">Par mois</th><th scope="col">Coût total</th></tr></thead>
             <tbody>
 ${durees.map((n) => { const r = C.regroupement({ duree: n }).resultat; return `              <tr${n === D.duree ? ' class="vu"' : ""}><td>${n} mois</td><td class="fort">${N(r.mensualiteApres, 3)}</td><td>${r.gainMensuel > 0 ? "−" : "+"}${N(Math.abs(r.gainMensuel), 0)}</td><td>${r.difference > 0 ? "+" : "−"}${N(Math.abs(r.difference), 0)}</td></tr>`; }).join("\n")}
@@ -1128,7 +1128,7 @@ ${durees.map((n) => { const r = C.regroupement({ duree: n }).resultat; return ` 
         <section class="tableau-bloc" aria-labelledby="titre-t2">
           <h2 class="titre-section" id="titre-t2">Les crédits repris</h2>
           <p>Reste dû reconstitué à partir de la mensualité, du taux et des mois restants.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-t2"><table>
             <thead><tr><th scope="col">Crédit</th><th scope="col">Mensualité</th><th scope="col">Reste dû</th><th scope="col">Indemnité</th></tr></thead>
             <tbody>
 ${rr.lignes.map((l) => `              <tr><td>${esc(l.libelle)} · ${C.taux(l.tauxPct)} · ${l.moisRestants} mois</td><td>${N(l.mensualite, 0)}</td><td class="fort">${N(l.restantDu, 0)}</td><td>${N(l.indemnite, 0)}</td></tr>`).join("\n")}
@@ -1204,7 +1204,7 @@ ${basculeSecteur}
         <section class="tableau-bloc" aria-labelledby="titre-t1">
           <h2 class="titre-section" id="titre-t1">Coût employeur selon le brut</h2>
           <p>Par mois, secteur privé, célibataire, 12 salaires par an.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-t1"><table>
             <thead><tr><th scope="col">Brut</th><th scope="col">Net</th><th scope="col">Charges patronales</th><th scope="col">Coût employeur</th></tr></thead>
             <tbody>
 ${C.TABLE_BRUTS.map((b) => { const e = C.employeur({ montant: b }, m); return `              <tr${b === 2000 ? ' class="vu"' : ""}><td>${N(b, 0)} DT</td><td>${N(e.net, 3)}</td><td>${N(e.charges, 3)}</td><td class="fort">${N(e.cout, 3)}</td></tr>`; }).join("\n")}
@@ -1214,7 +1214,7 @@ ${C.TABLE_BRUTS.map((b) => { const e = C.employeur({ montant: b }, m); return ` 
         <section class="tableau-bloc" aria-labelledby="titre-t2">
           <h2 class="titre-section" id="titre-t2">Charges patronales ${P.annee}</h2>
           <p>Pour ${N(ex.brut, 0)} DT brut par mois, en dinars.</p>
-          <div class="defile"><table>
+          <div class="defile" tabindex="0" role="region" aria-labelledby="titre-t2"><table>
             <thead><tr><th scope="col">Charge</th><th scope="col">Taux</th><th scope="col">Montant</th></tr></thead>
             <tbody>
 ${ex.lignes.map(ligneTaux).join("\n")}

@@ -134,7 +134,7 @@
 .scene__barre i { flex: 1; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, .12); overflow: hidden; }
 .scene__barre i::after { content: ""; display: block; height: 100%; width: var(--p, 0%); background: linear-gradient(90deg, var(--salaire), var(--credit), var(--epargne)); }
 .chapitres { display: grid; }
-.chapitre { min-height: 82vh; display: grid; align-content: center; gap: 12px; padding-block: 30px; opacity: .4; transition: opacity 400ms ease; }
+.chapitre { min-height: 82vh; display: grid; align-content: center; gap: 12px; padding-block: 30px; opacity: .7; transition: opacity 400ms ease; }
 .chapitre--actif { opacity: 1; }
 .chapitre__num { font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--cosmos-encre-2); }
 .chapitre h3 { font-size: clamp(24px, 2.8vw, 34px); letter-spacing: -.025em; line-height: 1.12; color: #fff; text-wrap: balance; }
