@@ -679,6 +679,22 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centduotricies. Repères de « Votre système » sur téléphone (15 oct.)
+
+Capture de l'utilisateur (Mon orbite, environ 412 px, mode sombre) : la tuile « Mensualité possible » affichait « 345 DT / moi » et « 2 098 DT / an » passait à la ligne en laissant « an » seul. Maquette validée : montant sur une ligne, unité en petit dessous.
+
+- **Cause** : le montant animé (`Orbite.rouler`, `.roule` en `inline-flex` sans retour à la ligne) ne peut pas passer à la ligne ; « 345 DT / mois » faisait environ 100 px pour 81 px de place dans la tuile, la fin était coupée.
+- **Correction** :
+  - dans `vue-orbite.js` (`ficheEnsemble`), chaque repère contient `.orbite-repere__nb`, le montant (avec `data-v` s'il roule), puis `small.orbite-repere__unite` (« par mois », « par an ») ; `capa` et `repere.eco` se terminent maintenant par « DT » ;
+  - dans `app.css` :
+    - la tuile est un conteneur (`container-type: inline-size`) ;
+    - montant `font-size: min(1em, 21cqi)`, toujours sur une ligne : « 99 999 DT » tient entier, 15 px au plus ;
+    - libellé `max(11px, min(12px, 14.5cqi))` avec césure ;
+    - `.roule` en `vertical-align: top` pour aligner les trois montants ;
+    - sous 400 px : rembourrage 10 px, écart 6 px.
+- **Mesures** (profil fictif) : aucun débordement à 320, 360 et 412 px.
+- **Tests** : à 360 et 390 px dans l'étape e2e « Mon mois », la e2e vérifie le montant entier dans sa tuile et les unités ; capture `orbite-reperes-mobile.png`. SW `orbite-2026-10-15e`.
+
 ## 3 centunotricies. Menu complet sur téléphone et barre latérale dès 768 px (15 oct.)
 
 Capture de l'utilisateur sur téléphone (page en « version pour ordinateur », environ 900 px, sous le seuil de 1 024 px) : textes petits, barre du bas, rubriques cachées sous « Moi ». Demande : voir toutes les rubriques et sous-rubriques comme sur le PC. Choix validé : **« Les deux »**, maquette validée.
