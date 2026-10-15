@@ -63,12 +63,8 @@
   }
 
   /* Profil où l'épargne disponible a augmenté : mois de réserve et points de santé. */
-  function depensesReserve(sy) {
-    var p = sy.profil, net = sy.salaire.netMoyen + p.autresRevenus;
-    var d = sy.chargesCredits + p.loyer + p.chargesFixes;
-    /* Même règle que le score de santé : des dépenses déclarées trop faibles comptent pour la moitié du net. */
-    return d < net * 0.3 ? net * 0.5 : d;
-  }
+  /* Dépenses d'un mois : même définition que la réserve de sécurité et le score de santé (OC.depensesMois, 15 oct. 2026). */
+  function depensesReserve(sy) { return OC.depensesMois(sy).total; }
   function pointsReserve(mois) { return mois >= 6 ? 20 : mois >= 3 ? 13 : mois >= 1 ? 6 : 0; }
 
   /* ===================================================================
@@ -115,19 +111,20 @@
       valeur: valeurP, gain: valeurP - somme, disponibleAToutMoment: false
     });
 
-    /* 3. Épargne de précaution : disponible à tout moment. */
+    /* 3. Réserve de sécurité : disponible à tout moment. */
     var dep = depensesReserve(sy), moisAvant = dep > 0 ? p.epargneDisponible / dep : 0, moisApres = dep > 0 ? (p.epargneDisponible + somme) / dep : 0;
     var valeurE = somme * Math.pow(1 + re, H);
     choix.push({
-      cle: "reserve", disponible: somme > 0, libelle: "Épargne de précaution", moisAvant: moisAvant, moisApres: moisApres,
+      cle: "reserve", disponible: somme > 0, libelle: "Réserve de sécurité", moisAvant: moisAvant, moisApres: moisApres,
       points: pointsReserve(moisApres) - pointsReserve(moisAvant), valeur: valeurE, gain: valeurE - somme, disponibleAToutMoment: true
     });
 
     var dispo = choix.filter(function (c) { return c.disponible; });
     var meilleur = dispo.slice().sort(function (x, y) { return y.gain - x.gain; })[0] || null;
 
-    /* Conseil : compléter d'abord une réserve de 3 mois de dépenses, puis le choix le plus rentable. */
-    var manque = Math.max(0, RESERVE_MOIS * dep - p.epargneDisponible), parts = [];
+    /* Conseil : compléter d'abord la réserve de sécurité (3 mois de dépenses par défaut, réglable dans Ma progression),
+       puis le choix le plus rentable. */
+    var cibleR = OC.cibleReserve(sy), manque = Math.max(0, cibleR - p.epargneDisponible), parts = [];
     var meilleurPlace = dispo.filter(function (c) { return c.cle !== "reserve"; }).sort(function (x, y) { return y.gain - x.gain; })[0];
     if (somme > 0) {
       var versReserve = manque > 0 ? Math.min(somme, Math.ceil(manque / 10) * 10) : 0;
@@ -136,7 +133,7 @@
     }
     return {
       somme: somme, horizon: H, hypotheses: hy, choix: choix, meilleur: meilleur ? meilleur.cle : null,
-      reserve: { depensesMois: dep, cible: RESERVE_MOIS * dep, manque: manque, mois: moisAvant },
+      reserve: { depensesMois: dep, cible: cibleR, manque: manque, mois: moisAvant },
       conseil: { parts: parts, partage: parts.length > 1 }
     };
   }

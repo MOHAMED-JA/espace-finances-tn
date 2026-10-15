@@ -26,7 +26,7 @@ test('Yasmine : loyer, reste à vivre, épargne de précaution, impôt', () => {
   assert.equal(y.age, 26);
   proche(y.loyerPart, 450 / y.net, 1e-9);
   proche(y.reste, y.net - 450, 1e-6);
-  assert.equal(y.precaution, 4400);
+  assert.equal(y.precaution, 5800, '6 mois de dépenses, même définition que la réserve de sécurité');
   assert.ok(y.gainImpot > 0);
 });
 

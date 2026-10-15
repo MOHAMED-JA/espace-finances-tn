@@ -679,6 +679,56 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centseptvicies. Ma réserve de sécurité (15 oct.)
+
+Chantier choisi par l'utilisateur après le programme d'améliorations (son épargne de précaution est à 0). Maquette validée : « Ma progression + tuile ».
+
+**Une seule définition**. Avant, la réserve était calculée de quatre façons : 3 mois de net (conseils), 6 mois de charges fixes (score et objectifs), 3 mois de dépenses (Décider et plan). Elle passe maintenant partout par deux fonctions :
+- `OC.depensesMois(sy)` = crédits + loyer et charges + contrats en cours + dépenses de vie. Les dépenses de vie viennent du budget du mois (courses, transport, santé, loisirs, divers, et le logement au-delà du profil) ; sans budget, c'est la moitié de ce qui reste. Plancher : 30 % du net. La fonction rend aussi `base` et `libre` (la marge du mois) ;
+- `OC.cibleReserve(sy, reglages)` = n mois × dépenses, arrondi à la centaine, ou montant libre.
+
+Branchements :
+- **conseils** : « Réserve de sécurité », lien vers la carte ;
+- **score de santé** : composante `precaution`, libellé « Réserve de sécurité », mêmes paliers 1, 3 et 6 mois, action et lien vers la carte ;
+- **Décider** : `depensesReserve`, cible, phrases ;
+- **objectifs** : `PG.ciblePrecaution` ;
+- **plan de versement** : réserve conseillée ;
+- **accueil public** : l'exemple « Yasmine » passe de 4 400 à 5 800 DT, toujours 6 mois de dépenses.
+
+**Profil** : `reserve { mois: 1|3|6|0 (0 = montant libre), montant, partMarge, partPrimes }`. Par défaut : 3 mois, 50 % de la marge, 50 % des primes.
+
+**Moteur** `OI.reserve(sy, reglages, { maintenant })` :
+- **revenus à venir** : `OI.revenusAVenir` donne la marge libre de chaque jour de paie et les primes nettes sur 72 mois. Le mois en cours compte toujours ; une prime déjà versée est écartée ;
+- **part de la réserve** : `partReserve` prend sa part de chaque revenu jusqu'à ce que la réserve soit complète ;
+- **résultats** :
+  - points cumulés et date d'atteinte ;
+  - repères à 1, 3 et 6 mois ;
+  - partage de la prochaine prime ;
+  - l'ordre conseillé : la réserve, puis l'impôt de l'année (gain du plan), puis le crédit le plus cher.
+
+**Partage avec le plan de versement** : tant que la réserve n'est pas complète, elle prend d'abord sa part de chaque revenu, et le plan prend la sienne dans ce qui reste. Le plan rend `marge.reserve` et `primes.liste[].reserve`, et ses textes le disent.
+
+**Interface** :
+- **carte `#pg-reserve`** en tête de Ma progression › Objectifs (`vue-reserve.js`, styles dans `progression.css`) :
+  - état ;
+  - jauge avec les repères 1, 3 et 6 mois ;
+  - puces radio 1 / 3 / 6 / montant libre ;
+  - curseurs pour la part de la marge et des primes, avec une barre de partage réserve / assurance vie ;
+  - date de réserve complète ;
+  - formulaire « J'ai mis de côté » (épargne disponible + montant, annulable) ;
+  - rappels `reserveAAAAMM` jusqu'à la date d'atteinte (6 au plus) ;
+  - graphique en escalier (moteur commun) avec la ligne d'objectif ;
+  - l'ordre conseillé, avec des liens vers le plan et Décider.
+- **Tuile `#reserve-tuile`** sur Mon orbite, avant « Votre net, partagé », vers `#progression?onglet=objectifs&reserve=1`.
+- **Ctrl K** « Ma réserve de sécurité ».
+
+**Tests** :
+- `tests/espace/reserve.test.js` (6) ; tests Décider et récit ajustés ; 606 au total ;
+- étape e2e « Ma réserve de sécurité » ;
+- axe : 0 violation sur la carte, la tuile et le plan.
+
+Nouveautés « 2026-10-15b », SW `orbite-2026-10-15b`.
+
 ## 3 centsexvicies. Audit accessibilité et vitesse (15 oct.)
 
 Point 8 du programme d'améliorations, le dernier.

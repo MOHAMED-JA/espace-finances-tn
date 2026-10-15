@@ -2304,6 +2304,50 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.evaluate((a) => window.Orbite.majProfil(a, { immediat: true }), avant);
   });
 
+  await etape("Ma réserve de sécurité : objectif en mois, montant libre, mis de côté, rappels, graphique, tuile de Mon orbite", async () => {
+    const avant = await page.evaluate(() => { const p = window.Orbite.profil(); return { epargneDisponible: p.epargneDisponible, reserve: p.reserve, rappelsPerso: p.rappelsPerso }; });
+    await page.evaluate(() => window.Orbite.majProfil({ epargneDisponible: 1000, reserve: { mois: 3, montant: null, partMarge: 0.5, partPrimes: 0.5 } }, { immediat: true }));
+    await page.goto(base + "/espace/#progression?onglet=objectifs&reserve=1");
+    await page.waitForSelector("#pg-reserve:not([hidden]) #rs-ordre li");
+    const nb = (t) => t.replace(/\s/g, " ");
+    const dt = (v) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Math.round(v)).replace(/\s/g, " ") + " DT";
+    const moteur = () => page.evaluate(() => { const r = window.OrbiteIntelligence.reserve(window.Orbite.synthese()); return { cible: r.cible, actuel: r.actuel, n: r.points.length, mois: r.reglages.mois }; });
+    let r = await moteur();
+    assert(nb(await page.textContent("#rs-actuel")) === dt(1000), "épargne affichée : " + await page.textContent("#rs-actuel"));
+    assert(nb(await page.textContent("#rs-sur")).includes(dt(r.cible)), "objectif affiché = moteur (" + r.cible + ")");
+    assert(r.cible === await page.evaluate(() => window.OrbiteCalcul.cibleReserve(window.Orbite.synthese())), "une seule cible");
+    assert(await page.getAttribute('#rs-puces [data-mois="3"]', "aria-checked") === "true", "3 mois par défaut");
+    if (r.n > 1) await page.waitForSelector("#rs-graphe svg");
+    await page.click('#rs-puces [data-mois="6"]');
+    await page.waitForFunction(() => window.Orbite.profil().reserve.mois === 6);
+    const r6 = await moteur();
+    assert(r6.cible > r.cible && nb(await page.textContent("#rs-sur")).includes(dt(r6.cible)), "6 mois : objectif plus haut");
+    await page.click('#rs-puces [data-mois="0"]');
+    await page.waitForSelector("#rs-libre-bloc:not([hidden])");
+    await page.fill("#rs-libre", "4000");
+    await page.press("#rs-libre", "Tab");
+    await page.waitForFunction(() => window.Orbite.profil().reserve.mois === 0 && window.Orbite.profil().reserve.montant === 4000);
+    assert((await moteur()).cible === 4000, "montant libre");
+    await page.click('#rs-puces [data-mois="3"]');
+    await page.waitForFunction(() => window.Orbite.profil().reserve.mois === 3);
+    await page.fill("#rs-ajout-mt", "500");
+    await page.click("#rs-ajout button[type=submit]");
+    await page.waitForFunction(() => window.Orbite.profil().epargneDisponible === 1500);
+    assert(nb(await page.textContent("#rs-actuel")) === dt(1500), "mis de côté ajouté");
+    await page.click("#rs-rappel");
+    await page.waitForFunction(() => window.Orbite.profil().rappelsPerso.some((x) => /^reserve\d{6}$/.test(x.id)));
+    await (await page.$("#pg-reserve")).screenshot({ path: path.join(CAPTURES, "reserve.png") });
+    const vp = page.viewportSize();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(200);
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "téléphone : pas de défilement horizontal");
+    await page.setViewportSize(vp);
+    await page.goto(base + "/espace/#orbite");
+    await page.waitForSelector("#reserve-tuile:not([hidden])");
+    assert(/Réserve/.test(await page.textContent("#reserve-tuile")) && /reserve=1/.test(await page.getAttribute("#reserve-tuile", "href")), "tuile de Mon orbite");
+    await page.evaluate((a) => window.Orbite.majProfil(a, { immediat: true }), avant);
+  });
+
   await etape("Ma progression : pouvoir d'achat, courbe, projection, objectifs, « J'ai épargné » annulable, défis, rappel", async () => {
     await page.evaluate(() => window.Orbite.majProfil({ dateEmbauche: "2019-03-01", montant: 3400, sens: "brut", periode: "mensuel", epargneDisponible: 5000, historiqueSalaire: [
       { montant: 2400, sens: "brut", periode: "mensuel", mois: 0, annee: 0 }, { montant: 2650, sens: "brut", periode: "mensuel", mois: 3, annee: 2021 },

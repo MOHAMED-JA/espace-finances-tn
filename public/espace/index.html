@@ -204,6 +204,12 @@
             </aside>
           </div>
 
+          <!-- Réserve de sécurité (tuile, 15 oct. 2026) -->
+          <a class="reserve-tuile" id="reserve-tuile" href="#progression?onglet=objectifs&amp;reserve=1" hidden>
+            <span class="reserve-tuile__rond" id="reserve-tuile-rond" aria-hidden="true"><span id="reserve-tuile-pct"></span></span>
+            <span class="reserve-tuile__txt"><b id="reserve-tuile-titre"></b><small id="reserve-tuile-sous"></small></span>
+            <svg class="reserve-tuile__fleche" aria-hidden="true"><use href="/orbite/icones.svg#fleche"/></svg>
+          </a>
           <!-- Budget orbital -->
           <section class="panneau budget" aria-labelledby="titre-budget">
             <div class="panneau__tete">
@@ -1540,6 +1546,59 @@
           <!-- ============ Objectifs ============ -->
           <div class="pg-panneau" id="pg-objectifs" role="tabpanel" aria-labelledby="pg-tab-objectifs" hidden>
             <p class="pg-erreur" id="pg-obj-erreur" role="alert" hidden></p>
+            <!-- Ma réserve de sécurité (15 oct. 2026) : vue-reserve.js -->
+            <section class="panneau reserve" id="pg-reserve" aria-labelledby="rs-titre">
+              <div class="reserve__tete">
+                <div><h2 id="rs-titre">Ma réserve de sécurité</h2><p class="panneau__sous">L'argent des imprévus : panne, santé, perte de revenu. Disponible à tout moment, jamais placé en bourse.</p></div>
+                <span class="reserve__etat" id="rs-etat"></span>
+              </div>
+              <p class="reserve__chiffres"><b class="chiffre" id="rs-actuel"></b><span id="rs-sur"></span></p>
+              <div class="reserve__jauge" role="img" aria-labelledby="rs-jauge-lib">
+                <i class="reserve__plein" id="rs-plein"></i><em class="reserve__vous" id="rs-vous" aria-hidden="true"></em><span class="reserve__trait" id="rs-trait" aria-hidden="true"></span>
+                <ol class="reserve__reperes" id="rs-reperes" aria-hidden="true"></ol>
+              </div>
+              <p class="cache" id="rs-jauge-lib"></p>
+              <div class="reserve__objectif">
+                <span class="reserve__objectif-lib" id="rs-obj-lib">Objectif :</span>
+                <div class="plan__puces" role="radiogroup" aria-labelledby="rs-obj-lib" id="rs-puces">
+                  <button type="button" class="plan__puce" role="radio" data-mois="1">1 mois</button>
+                  <button type="button" class="plan__puce" role="radio" data-mois="3">3 mois <small>conseillé</small></button>
+                  <button type="button" class="plan__puce" role="radio" data-mois="6">6 mois</button>
+                  <button type="button" class="plan__puce" role="radio" data-mois="0">Montant libre</button>
+                </div>
+                <div class="champ reserve__libre" id="rs-libre-bloc" hidden><label for="rs-libre">Montant visé</label><div class="saisie"><input id="rs-libre" type="text" inputmode="decimal" autocomplete="off"><span class="saisie__unite">DT</span></div></div>
+              </div>
+              <p class="reserve__note" id="rs-depenses"></p>
+              <div class="reserve__grille">
+                <div class="reserve__bloc">
+                  <h3>Comment l'atteindre</h3>
+                  <div class="plan__src">
+                    <div class="plan__src-l"><label for="rs-part-marge">Chaque mois</label><strong class="chiffre" id="rs-mensuel"></strong></div>
+                    <p class="plan__aide" id="rs-mensuel-txt"></p>
+                    <input type="range" class="curseur plan__curseur" id="rs-part-marge" min="0" max="100" step="5" aria-describedby="rs-mensuel-txt">
+                  </div>
+                  <div class="plan__src" id="rs-prime-bloc">
+                    <div class="plan__src-l"><label for="rs-part-primes">Primes</label><strong class="chiffre" id="rs-prime-mt"></strong></div>
+                    <p class="plan__aide" id="rs-prime-txt"></p>
+                    <div class="reserve__partage" id="rs-partage" aria-hidden="true"><i class="reserve__partage-r" id="rs-partage-r"></i><i class="reserve__partage-a" id="rs-partage-a"></i></div>
+                    <input type="range" class="curseur plan__curseur" id="rs-part-primes" min="0" max="100" step="5" aria-describedby="rs-prime-txt">
+                  </div>
+                  <p class="plan__total"><span id="rs-date-lib">Réserve complète en</span><b class="chiffre" id="rs-date"></b></p>
+                  <form class="reserve__ajout" id="rs-ajout" novalidate>
+                    <div class="champ"><label for="rs-ajout-mt">J'ai mis de côté</label><div class="saisie"><input id="rs-ajout-mt" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><span class="saisie__unite">DT</span></div></div>
+                    <button type="submit" class="bouton bouton--plein bouton--petit">Ajouter à ma réserve</button>
+                  </form>
+                  <button type="button" class="bouton bouton--petit reserve__rappel" id="rs-rappel">Me le rappeler chaque mois</button>
+                </div>
+                <div class="reserve__bloc">
+                  <h3>Mois après mois</h3>
+                  <div class="reserve__graphe" id="rs-graphe"></div>
+                  <p class="reserve__note">Gardez la réserve sur un compte d'épargne disponible à tout moment, pas sur un CEA (bloqué 5 ans) ni sur l'assurance vie.</p>
+                </div>
+              </div>
+              <h3 class="reserve__ordre-titre">L'ordre conseillé pour votre argent</h3>
+              <ol class="reserve__ordre" id="rs-ordre" role="list"></ol>
+            </section>
             <div class="pg-objectifs" id="pg-liste" aria-live="polite"></div>
             <div class="pg-grille">
               <section class="panneau" aria-labelledby="pg-t-defis">
@@ -2518,6 +2577,7 @@
   <script src="/espace/js/progression-calcul.js"></script>
   <script src="/espace/js/retraite-calcul.js"></script>
   <script src="/espace/js/vue-progression.js"></script>
+  <script src="/espace/js/vue-reserve.js"></script>
   <script src="/espace/js/calendrier-calcul.js"></script>
   <script src="/espace/js/vue-mois.js"></script>
   <script src="/espace/js/annee-calcul.js"></script>

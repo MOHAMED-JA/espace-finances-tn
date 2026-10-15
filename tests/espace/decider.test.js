@@ -61,7 +61,7 @@ test("assurance vie / CEA : économie d'impôt du moteur fiscal, rendement à l'
 test('réserve et conseil : compléter 3 mois de dépenses avant de placer', () => {
   const r = D.comparer(sy(), { somme: 3000 });
   const dep = r.reserve.depensesMois;
-  proche(r.reserve.manque, 3 * dep - 4000, 0.001);
+  proche(r.reserve.manque, Math.round(3 * dep / 100) * 100 - 4000, 0.001, 'réserve de sécurité : 3 mois de dépenses arrondis à la centaine');
   assert.equal(r.conseil.parts.length, 2);
   assert.equal(r.conseil.parts[0].cle, 'reserve');
   assert.equal(r.conseil.parts[0].montant, Math.ceil(r.reserve.manque / 10) * 10);
