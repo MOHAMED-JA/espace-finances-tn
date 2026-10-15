@@ -88,23 +88,30 @@
   else doc.addEventListener("orbite:pret", planifier, { once: true });
 
   /* ---------- Installation ---------- */
+  /* L'invitation du navigateur (Chrome, Edge, Samsung Internet) est gardée pour le bouton « Installer » ;
+     sans elle, le guide en 3 gestes d'installer.js prend le relais. installer.js écoute « orbite:installation ». */
   window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); invitation = e; majAppli(); });
   window.addEventListener("appinstalled", function () { invitation = null; majAppli(); O.toast("Orbite est installée : retrouvez-la sur votre écran d'accueil."); });
   function majAppli() {
-    var etat = $("appli-etat"), b = $("appli-installer"), ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !installee();
+    var etat = $("appli-etat"), b = $("appli-installer"), g = $("appli-guide");
     b.hidden = !invitation;
-    $("appli-ios").hidden = !ios;
+    g.hidden = !!invitation || installee();
     etat.textContent = installee() ? "Orbite est installée sur cet appareil." :
       invitation ? "Orbite peut être installée sur cet appareil." :
-      ios ? "Ajoutez Orbite à votre écran d'accueil depuis Safari." :
-      enregistrement || (navigator.serviceWorker && navigator.serviceWorker.controller) ? "Orbite fonctionne hors connexion sur ce navigateur. Pour l'installer, utilisez le menu du navigateur (« Installer l'application »)." :
-      "L'installation n'est pas proposée par ce navigateur.";
+      "Installez Orbite depuis le menu de votre navigateur : 3 gestes suffisent.";
+    doc.dispatchEvent(new CustomEvent("orbite:installation"));
   }
-  $("appli-installer").addEventListener("click", function () {
-    if (!invitation) return;
-    invitation.prompt();
-    invitation.userChoice.then(function () { invitation = null; majAppli(); }).catch(function () {});
-  });
+  /* Ouvre l'invitation du navigateur ; renvoie une promesse : true si l'utilisateur a accepté. */
+  function proposer() {
+    if (!invitation) return Promise.resolve(false);
+    var i = invitation;
+    i.prompt();
+    return i.userChoice.then(function (c) { invitation = null; majAppli(); return !!c && c.outcome === "accepted"; }).catch(function () { return false; });
+  }
+  $("appli-installer").addEventListener("click", function () { proposer(); });
+  $("appli-guide").addEventListener("click", function () { if (window.OrbiteInstaller) window.OrbiteInstaller.guide(); });
+  window.OrbiteAppli = { installee: installee, peutProposer: function () { return !!invitation; }, proposer: proposer };
+  majAppli();
 
   /* ---------- Rappels ---------- */
   function liste() {

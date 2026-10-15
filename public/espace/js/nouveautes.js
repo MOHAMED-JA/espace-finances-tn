@@ -3,9 +3,10 @@
  * Changer « version » pour les montrer de nouveau ; 2 à 4 points courts, du point de vue de l'utilisateur.
  */
 window.ORBITE_NOUVEAUTES = {
-  version: "2026-10-15c",
+  version: "2026-10-15d",
   date: "15 octobre 2026",
   points: [
+    { titre: "Orbite sur votre écran d'accueil.", texte: "Sur téléphone, « Installer » (dans Mon orbite ou en haut du Menu) ajoute Orbite à votre écran d'accueil : elle s'ouvre en plein écran, comme une application, et reste consultable sans réseau. Gratuit, sans passer par une boutique ; si votre navigateur n'a pas de bouton, Orbite vous montre les 3 gestes à faire." },
     { titre: "Tout le menu sur votre téléphone.", texte: "L'onglet « Menu » en bas (ou ☰ en haut) ouvre toutes les rubriques et toutes leurs sous-rubriques, comme la barre latérale de l'ordinateur : un appui vous y emmène. Sur tablette, en paysage ou en « version ordinateur », la barre latérale s'affiche directement." },
     { titre: "Ma réserve de sécurité.", texte: "Ma progression › Objectifs : l'argent des imprévus, en mois de dépenses (3 conseillés). Où vous en êtes, combien mettre de côté chaque mois et sur vos primes, la date à laquelle elle sera complète, et l'ordre conseillé : la réserve, puis l'assurance vie, puis le remboursement anticipé. Une seule réserve partout : score de santé, « Rembourser ou épargner ? » et plan de versement la partagent." },
     { titre: "Mon plan de versement : combien verser, et où.", texte: "Vie & impôts › Impôt : Orbite calcule ce que vous pouvez vraiment verser d'ici le 31 décembre (une part de votre marge du mois, de vos primes à venir et de votre épargne, en gardant une réserve). Choisissez la répartition assurance vie / CEA en pourcentage : l'impôt en moins, le coût réel et le calendrier des versements suivent en direct, avec un rappel chaque mois si vous le souhaitez." },

@@ -37,6 +37,9 @@
       });
     });
     liste.innerHTML = h;
+    /* Invitation à installer Orbite (installer.js), en tête de liste tant qu'elle n'est pas installée. */
+    var inst = window.OrbiteInstaller && window.OrbiteInstaller.carteMenu();
+    if (inst) liste.insertBefore(inst, liste.firstChild);
   }
 
   function etat(ouvert) { boutons.forEach(function (b) { b.setAttribute("aria-expanded", ouvert ? "true" : "false"); }); }

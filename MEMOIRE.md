@@ -679,6 +679,31 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centtertricies. Installer Orbite sur le téléphone, sans boutique (15 oct.)
+
+Question de l'utilisateur : « mettre l'application sur Play Store ? ».
+- **Réponse donnée** :
+  - **Google Play** : compte développeur payant (frais uniques), 12 testeurs pendant 14 jours pour un compte personnel, et paiement Google exigé pour les abonnements vendus dans l'application. Écarté (règle : pas de solution payante).
+  - **Samsung Galaxy Store** : réservé aux vendeurs « commerciaux », société enregistrée avec numéro DUNS. Écarté.
+  - **Retenu** : l'application web installable, gratuite. Choix « Les deux », mais le Galaxy Store est tombé ; maquette validée.
+- **Carte « Installer Orbite sur ce téléphone »** (`installer.js`, `installer.css`) :
+  - dans Mon orbite, `#installer-orbite`, sous l'en-tête ;
+  - en tête du Menu (`menu-complet.js` appelle `OrbiteInstaller.carteMenu()`, copie sans « Plus tard » ni identifiant) ;
+  - affichée seulement sur téléphone (< 768 px), si Orbite n'est pas installée (`display-mode: standalone`) et après le premier pas ;
+  - « Plus tard » la cache 30 jours (`localStorage` `ef-installer-plus-tard`) ;
+  - « Installer » ouvre l'invitation du navigateur (`beforeinstallprompt`, gardée par `appli.js`, exposée par `window.OrbiteAppli` : `installee`, `peutProposer`, `proposer`), sinon le guide.
+- **Guide en 3 gestes** (`#dlg-installer`) :
+  - Chrome Android, Samsung Internet, iPhone/iPad Safari et ordinateur ;
+  - le navigateur détecté passe en premier, marqué « · votre navigateur » ;
+  - les gestes de l'ordinateur sont masqués sur téléphone.
+- **Paramètres › Application** : bouton « Comment installer ? » (`#appli-guide`) quand le navigateur n'offre pas d'invitation ; il remplace l'ancienne aide iPhone `#appli-ios`. `appli.js` émet `orbite:installation` à chaque changement d'état.
+- **Le jour d'une boutique** : le même site peut être empaqueté (Trusted Web Activity, avec un outil gratuit comme PWABuilder ou Bubblewrap) et lié par `/.well-known/assetlinks.json`, qui contient l'empreinte SHA-256 de la clé. La clé de signature reste chez l'utilisateur, jamais dans le dépôt ni dans la conversation.
+- **Tests e2e** :
+  - téléphone : carte, menu, guide avec Chrome Android en premier, invitation simulée, « Plus tard » ;
+  - grand écran : pas de carte ;
+  - Paramètres : le guide s'ouvre avec l'ordinateur en premier.
+- **Versions** : nouveautés « 2026-10-15d » (« Orbite sur votre écran d'accueil. ») ; SW `orbite-2026-10-15f`.
+
 ## 3 centduotricies. Repères de « Votre système » sur téléphone (15 oct.)
 
 Capture de l'utilisateur (Mon orbite, environ 412 px, mode sombre) : la tuile « Mensualité possible » affichait « 345 DT / moi » et « 2 098 DT / an » passait à la ligne en laissant « an » seul. Maquette validée : montant sur une ligne, unité en petit dessous.
