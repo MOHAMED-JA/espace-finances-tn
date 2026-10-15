@@ -679,6 +679,45 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centsexvicies. Audit accessibilité et vitesse (15 oct.)
+
+Point 8 du programme d'améliorations, le dernier.
+
+**Méthode** : outils dans le bloc-notes de la session (`scratchpad/audit8/`), non versionnés.
+- **Accessibilité** : axe-core 4.14, règles WCAG 2.0 / 2.1 / 2.2 AA :
+  - 20 écrans de l'application (tous les onglets de Crédit, de Vie & impôts et de Mon mois) avec un profil fictif ;
+  - les 17 pages publiques ;
+  - en clair et en sombre, sur ordinateur (1 360 px) et sur téléphone (390 px).
+- **Vitesse** : téléphone, processeur ralenti × 4, 4G lente (1,6 Mbit/s, 150 ms), cache vide. Mesures : FCP, LCP, CLS, poids et nombre de requêtes.
+
+**Corrections d'accessibilité** :
+- **Nom accessible qui reprend le texte visible** (WCAG 2.5.3) :
+  - signature « Conçu par » (17 pages et le rail de l'application) : `aria-label` retiré, espace entre « Conçu par » et le nom, « , profil LinkedIn (nouvel onglet) » en texte caché (`.signature__cache` dans `signature.css`) ;
+  - bouton Ctrl K : texte caché « Rechercher ou agir » et `<kbd>` lisible ;
+  - pastille d'abonnement : le nom commence par le texte affiché ;
+  - satellites de Mon orbite : espace entre le nom et le détail, « DT » plus mis en minuscules.
+- **Contraste** :
+  - témoin « Enregistré » : fond `--succes-doux`, contraste passé de 4,25 à 6 ;
+  - chapitres inactifs de l'accueil : opacité 0,4 → 0,7.
+  - Les alertes axe restantes sur l'accueil viennent de l'animation d'apparition au défilement : il n'en reste aucune une fois la page défilée.
+- **Tableaux qui défilent** (pages publiques `.defile`, inflation de Ma progression `.pg-table`) : `tabindex="0"`, `role="region"`, nom (titre de la section) et contour au focus, pour le défilement au clavier.
+
+**Corrections de vitesse** :
+- **Une seule copie des polices** : `meridien.css` (connexion, Espace, CGV…) et le préchargement de `connexion.html` pointent maintenant vers `/orbite/polices/`, comme les pages publiques. Mona Sans (96 Ko) n'est plus téléchargée deux fois entre les pages publiques et l'application. Les fichiers de `/commun/polices/` restent en place.
+- **Accueil** :
+  - affiche de la vidéo en WebP 1280 px (`orbite-affiche.webp`, 61 Ko au lieu de 137 Ko ; le JPG reste pour les données structurées) ;
+  - affiche de la vidéo d'une minute posée seulement à l'ouverture (`data-poster`, 82 Ko économisés) ;
+  - poids de l'accueil : 832 → 675 Ko.
+- **Saut de mise en page à l'arrivée de la police des titres** (le titre changeait de nombre de lignes) :
+  - police de repli « Bricolage Repli » (Arial / Helvetica / Roboto locales, `size-adjust: 98 %`, hauteurs calées), placée avant Mona Sans dans `--affiche` ;
+  - Bricolage en `font-display: optional` : si elle n'est pas là dans les premiers instants, la page garde la police de repli et ne saute pas ; Bricolage sert dès la page suivante, depuis le cache.
+  - Un repli calé seul ne suffisait pas : à la limite d'un retour à la ligne, le titre gagnait ou perdait encore une ligne.
+  - CLS : page CEA 0,113 → 0,002, coût employeur 0,104 → 0,002 ; toutes les pages mesurées sont à 0,002 au plus.
+
+**Résultat** : 0 violation WCAG AA sur les 20 écrans et les 17 pages (hors faux positif de l'animation de l'accueil). Mesures sur téléphone ralenti : FCP 0,6 à 1,7 s selon la page, CLS ≤ 0,03.
+- **Tests** : `npm test` 600 ; e2e : l'affiche de la version longue n'est posée qu'à l'ouverture, nouveaux fichiers médias contrôlés.
+- SW `orbite-2026-10-15a`.
+
 ## 3 centquinvicies. Mon plan de versement (14 oct.)
 
 Question de l'utilisateur : « l'application me donne-t-elle le montant exact d'assurance vie pour le 45 %, le montant du CEA, la proportion entre les deux selon des pourcentages paramétrables, et le montant que je peux utiliser selon ma situation ? ». Réponse : le montant exact oui (complément de l'optimiseur), le reste non ; maquette « Mon plan de versement » validée (« Plan complet »).

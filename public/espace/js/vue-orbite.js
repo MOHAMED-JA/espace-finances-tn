@@ -29,7 +29,7 @@
     return "Ajouter";
   }
   function libelleSat(s, e) {
-    var t = s.nom + ", " + texteTag(s, e).toLowerCase();
+    var tag = texteTag(s, e), t = s.nom + ", " + tag.charAt(0).toLowerCase() + tag.slice(1);
     if (s.genre === "credit" && s.fin && e.actif !== false) t += ", fin " + s.fin;
     return t + ". Ouvrir sa fiche";
   }
