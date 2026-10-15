@@ -2346,6 +2346,9 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector("#reserve-tuile:not([hidden])");
     assert(/Réserve/.test(await page.textContent("#reserve-tuile")) && /reserve=1/.test(await page.getAttribute("#reserve-tuile", "href")), "tuile de Mon orbite");
     await page.evaluate((a) => window.Orbite.majProfil(a, { immediat: true }), avant);
+    /* Ma progression revient sur son premier onglet pour l'étape suivante. */
+    await page.goto(base + "/espace/#progression?onglet=carriere");
+    await page.waitForSelector("#pg-carriere:not([hidden])");
   });
 
   await etape("Ma progression : pouvoir d'achat, courbe, projection, objectifs, « J'ai épargné » annulable, défis, rappel", async () => {
