@@ -49,7 +49,7 @@
 .rail__signature .signature__in { width: 20px; height: 20px; border-radius: 5px; }
 .rail__signature .signature__in svg { width: 11px; height: 11px; }
 .barre-signature { margin: 4px 16px 0; }
-@media (min-width: 1024px) { .barre-signature { display: none; } }
+@media (min-width: 768px) { .barre-signature { display: none; } }
 .ecran__signature { align-self: flex-start; margin-top: -20px; }
 .doc-barre { height: auto; min-height: var(--barre, 64px); padding-block: 10px; }
 .entete__ligne { padding-block: 10px; }

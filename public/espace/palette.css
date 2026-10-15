@@ -4,7 +4,7 @@
 .barre__palette { gap: 8px; }
 .barre__palette:hover svg, .barre__palette:focus-visible svg { transform: none; }
 .barre__palette kbd { display: none; font-family: var(--mono); font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 6px; border: 1px solid var(--filet-fort); color: var(--encre-3); }
-@media (min-width: 1024px) { .barre__palette kbd { display: inline-block; } }
+@media (min-width: 768px) { .barre__palette kbd { display: inline-block; } }
 
 dialog.palette { width: min(620px, calc(100vw - 24px)); max-height: min(78vh, 640px); margin-top: max(48px, 8vh); padding: 0; display: none; grid-template-rows: auto minmax(0, 1fr) auto; }
 dialog.palette[open] { display: grid; animation: palette-entre 180ms var(--sortie); }

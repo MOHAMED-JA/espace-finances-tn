@@ -31,6 +31,7 @@
   <link rel="stylesheet" href="/espace/confort.css">
   <link rel="stylesheet" href="/espace/apparence.css">
   <link rel="stylesheet" href="/espace/sous-rubriques.css">
+  <link rel="stylesheet" href="/espace/menu.css">
   <link rel="stylesheet" href="/espace/decider.css">
   <link rel="stylesheet" href="/orbite/signature.css">
   <script src="/commun/config.js"></script>
@@ -100,6 +101,7 @@
         <button type="button" class="bouton bouton--fantome bouton--petit barre__aide barre__palette" id="palette-ouvrir" title="Rechercher ou agir : Ctrl K, ou /"><svg aria-hidden="true"><use href="/orbite/icones.svg#recherche"/></svg><span class="cache">Rechercher ou agir</span> <kbd>Ctrl K</kbd></button>
         <button type="button" class="bouton bouton--fantome bouton--petit barre__aide barre__apps" id="apps-ouvrir" aria-label="Mes applications" aria-haspopup="dialog" title="Mes applications et simulateurs"><svg aria-hidden="true"><use href="/orbite/icones.svg#grille"/></svg></button>
         <button type="button" class="bouton bouton--fantome bouton--petit barre__aide" id="aide-visite" aria-label="Guide : revoir la visite guidée" title="Revoir la visite guidée"><svg aria-hidden="true"><use href="/orbite/icones.svg#boussole"/></svg><span class="barre__aide-lib" aria-hidden="true">Guide</span></button>
+        <button type="button" class="bouton bouton--fantome bouton--petit barre__aide barre__menu" id="menu-ouvrir" aria-label="Menu : toutes les rubriques" aria-haspopup="dialog" aria-controls="dlg-menu" aria-expanded="false" title="Toutes les rubriques et sous-rubriques"><svg aria-hidden="true"><use href="/orbite/icones.svg#menu"/></svg></button>
         <a class="pastille-acces" id="pastille-acces" href="#abonnement" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#couronne"/></svg><span id="pastille-acces-lib"></span></a>
         <div class="barre__actions" id="barre-actions" hidden>
           <button type="button" class="bouton bouton--petit" id="reprendre-profil" title="Reprendre mon profil"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span class="bouton__lib">Reprendre mon profil</span></button>
@@ -1791,9 +1793,20 @@
       <a href="#salaire" data-vue="salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#salaire"/></svg><span data-lib-salaire>Salaire</span></a>
       <a href="#epargne" data-vue="epargne"><svg aria-hidden="true"><use href="/orbite/icones.svg#epargne"/></svg><span>Épargne</span></a>
       <a href="#credit" data-vue="credit"><svg aria-hidden="true"><use href="/orbite/icones.svg#credit"/></svg><span>Crédit</span></a>
-      <a href="#profil" data-vue="profil" data-vues="profil simulations compte abonnement vie progression mois"><svg aria-hidden="true"><use href="/orbite/icones.svg#profil"/></svg><span>Moi</span></a>
+      <button type="button" class="onglets-bas__menu" id="onglet-menu" aria-haspopup="dialog" aria-controls="dlg-menu" aria-expanded="false" data-vues="profil simulations compte abonnement vie progression mois assistant admin"><svg aria-hidden="true"><use href="/orbite/icones.svg#menu"/></svg><span>Menu</span></button>
     </nav>
   </div>
+
+  <!-- Menu complet (téléphone) : toutes les rubriques et sous-rubriques, comme la barre latérale (menu-complet.js). -->
+  <dialog class="dialogue menu-complet" id="dlg-menu" aria-labelledby="menu-titre">
+    <div class="menu-complet__tete">
+      <span class="menu-complet__poignee" aria-hidden="true"></span>
+      <h2 id="menu-titre">Menu</h2>
+      <button type="button" class="bouton bouton--fantome bouton--icone bouton--petit" id="menu-fermer" aria-label="Fermer le menu"><svg aria-hidden="true"><use href="/orbite/icones.svg#fermer"/></svg></button>
+    </div>
+    <button type="button" class="menu-complet__recherche" id="menu-recherche"><svg aria-hidden="true"><use href="/orbite/icones.svg#recherche"/></svg><span>Rechercher une page ou une action</span><kbd>Ctrl K</kbd></button>
+    <nav class="menu-complet__liste" id="menu-liste" aria-label="Toutes les rubriques"></nav>
+  </dialog>
 
   <!-- ============ Modèles et dialogues ============ -->
   <template id="modele-carte">
@@ -2599,6 +2612,7 @@
   <script src="/espace/js/appli.js"></script>
   <script src="/espace/js/vue-assistant.js"></script>
   <script src="/espace/js/sous-rubriques.js"></script>
+  <script src="/espace/js/menu-complet.js"></script>
   <script src="/espace/js/visite.js"></script>
 </body>
 </html>
