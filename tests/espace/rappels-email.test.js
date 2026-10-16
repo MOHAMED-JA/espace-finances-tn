@@ -24,12 +24,13 @@ function plan(m) {
 /* Aucun montant : ni « DT », ni pourcentage chiffré, ni nombre à 3 chiffres ou plus. */
 const MONTANT = /\bDT\b|\d+(,\d+)? ?%|\d{3,}(?![-\d]*\d{2}T)/;
 
-test('planEmail : chaque rappel a type et textes d\'email, sans aucun montant', () => {
+test('planEmail : chaque rappel a type et textes d\'email, sans aucun montant', async () => {
+  const G = await charger();
   const { liste, plan: p } = plan();
   assert.ok(p.length >= 3, 'essai, crédit, fiscal, rappel perso');
   assert.equal(p.length, liste.length);
   for (const x of p) {
-    assert.ok(['essai', 'abonnement', 'credit', 'reduction', 'perso', 'fiscal'].includes(x.type), x.id);
+    assert.ok(G.TYPES.includes(x.type), x.id);
     assert.ok(x.titre && x.bouton && x.etiquette, x.id);
     for (const champ of ['titre', 'corps', 'conseil', 'etiquette', 'bouton']) {
       const t = String(x[champ]).replace(/\b20\d\d\b/g, '');
@@ -142,4 +143,22 @@ test('adresses : connexion directe, contact seulement une fois confirmée', asyn
   assert.deepEqual(G.adresses({ email: 'a@x.tn', contact: 'b@y.tn' }), { envoyer: null, aConfirmer: 'b@y.tn' });
   assert.deepEqual(G.adresses({ email: 'a@x.tn', contact: 'b@y.tn', adresse_confirmee: 'b@y.tn' }), { envoyer: 'b@y.tn', aConfirmer: null });
   assert.deepEqual(G.adresses({ email: 'a@x.tn', contact: 'c@z.tn', adresse_confirmee: 'b@y.tn' }), { envoyer: null, aConfirmer: 'c@z.tn' });
+});
+
+/* Régression (16 oct. 2026) : le type « versement » manquait au serveur, le rappel était écarté sans bruit. */
+test('types : tous les types écrits par rappels-calcul.js sont acceptés par le serveur', async () => {
+  const G = await charger();
+  const fs = require('node:fs');
+  const source = fs.readFileSync(require('node:path').resolve(__dirname, '../../public/espace/js/rappels-calcul.js'), 'utf8');
+  const types = [...new Set([...source.matchAll(/type: "([a-z]+)"/g)].map((x) => x[1]))];
+  assert.ok(types.includes('versement') && types.length >= 7, types.join());
+  for (const t of types) assert.ok(G.TYPES.includes(t), 'type refusé par le serveur : ' + t);
+  const sy = O.synthese(Object.assign({}, PROFIL, { jourVersement: 17, contrats: [{ type: 'av', versementMensuel: 300, anneeDebut: 2025, moisDebut: 1 }] }), {}, M);
+  const p = R.planEmail(R.rappels(sy, null, null, new Date('2026-10-16T21:00:00')));
+  const v = p.find((x) => x.type === 'versement');
+  assert.ok(v, 'rappel de versement dans le plan');
+  const gardes = G.nettoyerPlan(p);
+  assert.ok(gardes.some((x) => x.id === v.id), 'rappel de versement gardé par le serveur');
+  const envoi = G.aEnvoyer(p, [], new Date('2026-10-17T11:30:00Z'), {});
+  assert.ok(envoi.some((x) => x.id === v.id), 'envoyé le 17 octobre');
 });
