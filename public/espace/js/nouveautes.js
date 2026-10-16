@@ -3,9 +3,10 @@
  * Changer « version » pour les montrer de nouveau ; 2 à 4 points courts, du point de vue de l'utilisateur.
  */
 window.ORBITE_NOUVEAUTES = {
-  version: "2026-10-16c",
+  version: "2026-10-16d",
   date: "16 octobre 2026",
   points: [
+    { titre: "Un découvert baisse votre score.", texte: "Si un compte courant est à découvert, votre score de santé perd 10 points, avec la ligne « Découvert bancaire » dans Santé financière. Le ramener à zéro retire le malus." },
     { titre: "Mes comptes : le solde de vos comptes analysé.", texte: "Mon mois › Comptes : notez le solde de chaque compte (courant, épargne, autre banque) ou lisez-le dans un relevé. Orbite trace la courbe, repère les fins de mois tendues et les jours à découvert, liste vos points forts et vos points faibles, et met à jour votre épargne disponible : score de santé, réserve et conseils sont refaits à chaque nouveau solde." },
     { titre: "Verrouillage : le délai se choisit tout de suite.", texte: "Paramètres › Sécurité › Verrouillage : la liste « Verrouiller après » (tout de suite, 1, 5 ou 15 minutes) s'ouvre maintenant même avant d'activer l'empreinte, et votre choix est repris à l'activation." },
     { titre: "Double authentification et verrouillage.", texte: "Paramètres › Sécurité : ajoutez un code à 6 chiffres (Google Authenticator…) demandé une seule fois sur chaque nouvel appareil ; même avec votre mot de passe, personne n'entre sans votre téléphone. Et, sur votre téléphone, Orbite peut se verrouiller en arrière-plan et se rouvrir avec votre empreinte ou votre visage." },

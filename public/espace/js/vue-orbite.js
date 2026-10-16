@@ -662,6 +662,15 @@
       li.appendChild(cree("small", null, c.detail));
       ul.appendChild(li);
     });
+    if (r.malus) {
+      var m = cree("li", "sante__critere sante__critere--malus");
+      var mt = cree("div", "sante__critere-tete");
+      mt.appendChild(cree("span", "sante__critere-lib", "Découvert bancaire"));
+      mt.appendChild(cree("strong", "chiffre", "−" + Math.abs(r.malus.points) + " points"));
+      m.appendChild(mt);
+      m.appendChild(cree("small", null, r.malus.detail));
+      ul.appendChild(m);
+    }
     var ol = $("sante-objectifs");
     ol.textContent = "";
     $("sante-objectifs-bloc").hidden = !r.objectifs.length;

@@ -377,12 +377,23 @@
       action: hauts.length ? "Demandez une renégociation ou un rachat de " + hauts.map(function (h) { return h.libelle.toLowerCase(); }).join(", ") + "." : null,
       lien: "#credit" });
 
-    var score = composantes.reduce(function (t2, c) { return t2 + c.points; }, 0);
+    /* Découvert bancaire (16 oct. 2026) : un compte courant à découvert ne fait pas partie des six critères (il ne peut
+       pas baisser l'épargne disponible, qui ne descend pas sous zéro) : il retire 10 points, affichés à part. */
+    var decouvert = 0, malus = null;
+    (p.comptes || []).forEach(function (c) {
+      if (c.type !== "courant" || !c.soldes || !c.soldes.length) return;
+      var der = c.soldes[c.soldes.length - 1];
+      if (der.v < 0) decouvert += der.v;
+    });
+    if (decouvert < 0) malus = { points: -10, detail: "Compte courant à découvert de " + dt(-decouvert) + ". Chaque jour à découvert coûte des agios.",
+      action: "Régler le découvert : le ramener à zéro retire le malus.", lien: "#mois?onglet=comptes" };
+    var score = Math.max(0, composantes.reduce(function (t2, c) { return t2 + c.points; }, 0) + (malus ? malus.points : 0));
     var niveau = NIVEAUX.filter(function (n) { return score >= n[0]; })[0][1];
     var objectifs = composantes.filter(function (c) { return c.action; })
       .map(function (c) { return { cle: c.cle, libelle: c.libelle, gain: c.max - c.points, action: c.action, lien: c.lien }; })
       .sort(function (a, c) { return c.gain - a.gain; }).slice(0, 3);
-    return { score: score, niveau: niveau, composantes: composantes, objectifs: objectifs };
+    if (malus) objectifs.unshift({ cle: "decouvert", libelle: "Découvert bancaire", gain: -malus.points, action: malus.action, lien: malus.lien });
+    return { score: score, niveau: niveau, composantes: composantes, objectifs: objectifs, malus: malus };
   }
 
   /* ===================================================================
