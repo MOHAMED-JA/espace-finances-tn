@@ -3625,8 +3625,12 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await cdp.send("WebAuthn.addVirtualAuthenticator", { options: { protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true } });
     await ps.reload();
     await ps.waitForSelector("#verrou-actif:not([disabled])", { state: "attached" });
+    /* La liste du délai est utilisable interrupteur éteint (4 choix) et son choix est repris à l'activation. */
+    assert(await ps.evaluate(() => { const s = document.getElementById("verrou-delai"); return !s.disabled && s.options.length === 4; }), "liste « Verrouiller après » active, 4 choix");
+    await ps.selectOption("#verrou-delai", "300");
     await ps.click('label:has(#verrou-actif)');
     await ps.waitForFunction(() => !!localStorage.getItem("ef-verrou") && document.getElementById("verrou-actif").checked);
+    assert(await ps.evaluate(() => JSON.parse(localStorage.getItem("ef-verrou")).delai === 300), "le délai choisi avant l'activation est conservé");
     assert(await ps.isHidden("#verrou"), "pas verrouillé juste après l'activation");
     /* Ouverture à froid : verrouillée, rien de lisible derrière. */
     await ps.evaluate(() => sessionStorage.removeItem("ef-verrou-ouvert"));

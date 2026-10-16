@@ -111,7 +111,7 @@
     var r = reglage();
     interr.checked = !!r;
     if (r) delai.value = String(r.delai);
-    delai.disabled = !r;
+    /* Le délai reste choisissable interrupteur éteint : il est repris à l'activation. */
     return disponible().then(function (ok) {
       $("verrou-indispo").hidden = ok || !!r;
       interr.disabled = !ok && !r;

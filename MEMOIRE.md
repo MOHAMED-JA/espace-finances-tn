@@ -2086,3 +2086,8 @@ Branche `lot2`. Tout tourne sur l'appareil ; aucune nouvelle table, aucune migra
   - Passer de fixe à « TMM + marge » garde le taux : la marge peut être négative (−20 à 20, type `signe`), affichée « TMM 7,5 % − 3 points = 4,5 % ». Avant, la marge était bloquée à 0 et le taux sautait à 7,5 %, ce qui faisait baisser le capital cible.
   - Le décodeur de lien accepte `mg >= -tmm`.
   - `.cr-taux` est en `align-items: start` (les champs TMM et marge étaient décalés).
+
+## 3 centsexquintricies. Liste « Verrouiller après » (16 oct.)
+
+- Bug signalé : la liste du délai ne montrait qu'une valeur. Cause : le `<select>` était `disabled` interrupteur éteint, donc il ne s'ouvrait pas. Corrigé dans `verrou.js` (`rendreReglage` ne désactive plus la liste ; la valeur choisie est reprise à l'activation).
+- e2e : la liste a 4 choix, est active avant l'activation, et le délai choisi (300 s) est conservé. SW `orbite-2026-10-16b`, nouveautés « 2026-10-16b ».
