@@ -11,3 +11,11 @@ promo/*/*.wav
 *.mp4
 # Sauf la vidéo de l'accueil, servie par le site
 !public/medias/*.mp4
+
+# Android : sorties de compilation et clés de signature (jamais versionnées)
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.jks
+*.keystore

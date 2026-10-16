@@ -1,0 +1,48 @@
+# Orbite — compile le paquet Android (Trusted Web Activity) : AAB pour Google Play et APK, NON signés.
+# La signature se fait hors de GitHub avec la clé d'envoi (jamais dans le dépôt ni dans les secrets du dépôt).
+# Les outils de signature Android (apksigner, zipalign) sont joints pour signer l'APK hors ligne.
+name: Android
+
+on:
+  push:
+    paths: ["android/**", ".github/workflows/android.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compiler:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Compiler l'AAB et l'APK (non signés)
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon bundleRelease assembleRelease
+      - name: Rassembler les paquets et les outils de signature
+        run: |
+          set -eu
+          mkdir -p sortie/outils
+          cp android/app/build/outputs/bundle/release/*.aab sortie/orbite-non-signe.aab
+          cp android/app/build/outputs/apk/release/*.apk sortie/orbite-non-signe.apk
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          cp "$BT/lib/apksigner.jar" "$BT/zipalign" sortie/outils/
+          [ -d "$BT/lib64" ] && cp -r "$BT/lib64" sortie/outils/ || true
+          basename "$BT" > sortie/outils/version-build-tools.txt
+          sha256sum sortie/*.aab sortie/*.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: orbite-android-non-signe
+          path: sortie/
+          retention-days: 30

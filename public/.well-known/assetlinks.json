@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "tn.orbite.app",
+      "sha256_cert_fingerprints": [
+        "0D:A8:EA:66:27:BA:02:83:75:08:32:15:80:B2:75:90:79:75:53:7E:6A:2D:5D:16:EE:09:20:6A:E4:B0:FE:08"
+      ]
+    }
+  }
+]
