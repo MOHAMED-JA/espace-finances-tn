@@ -73,6 +73,8 @@ async function paiementDe(reference: string) {
 /* Vérifie auprès de la passerelle et active l'abonnement si le paiement est confirmé. */
 async function verifierEtActiver(p: Record<string, any>) {
   if (p.statut === "paye") return { statut: "paye", deja: true };
+  /* Achat Google Play : vérifié seulement par l'action « play » (jeton d'achat), jamais par une passerelle. */
+  if (p.passerelle === "play") return { statut: "en_attente" };
   const pg = passerelle({ ...env, PASSERELLE: p.passerelle });
   const v = await pg.verifier(p);
   if (v.paye) {

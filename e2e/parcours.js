@@ -745,6 +745,61 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector("#vue-salaire:not([hidden])");
   });
 
+  await etape("application Android (Google Play) : prix Google, sans code promo ni carte, achat, en attente, reprise à l'ouverture", async () => {
+    const pp = await page.context().newPage();
+    suivre(pp);
+    /* Simule l'application : Digital Goods API + Payment Request de Google Play (prix fictifs en dinars). */
+    await pp.addInitScript(() => {
+      window.__achats = [{ itemId: "orbite_mensuel", purchaseToken: "jeton-play-ok-repris-0123456789" }];
+      window.__prochainJeton = "jeton-play-ok-annuel-0123456789";
+      window.__fini = [];
+      window.getDigitalGoodsService = async (m) => m === "https://play.google.com/billing" ? {
+        getDetails: async (ids) => ids.map((id) => ({ itemId: id, title: id, price: { currency: "TND", value: { orbite_mensuel: "9.900", orbite_semestriel: "49.900", orbite_annuel: "79.900" }[id] } })),
+        listPurchases: async () => window.__achats.splice(0)
+      } : null;
+      window.PaymentRequest = function (methodes) {
+        this.show = async () => ({ details: { purchaseToken: window.__prochainJeton, sku: methodes[0].data.sku }, complete: async (e) => { window.__fini.push(methodes[0].data.sku + ":" + e); } });
+      };
+    });
+    const abAvant = faux.abonnementDe("aziz@exemple.tn"), finAvant = Math.max(Date.now(), Date.parse(abAvant.fin || 0) || 0, Date.parse(abAvant.essai_fin || 0) || 0);
+    await pp.goto(base + "/espace/?source=play#abonnement");
+    await pp.waitForSelector("#vue-abonnement:not([hidden])");
+    assert((await pp.getAttribute("html", "data-play")) === "oui", "application reconnue");
+    assert(!/source=play/.test(pp.url()), "paramètre retiré de l'adresse : " + pp.url());
+    /* Reprise : l'achat mensuel payé mais pas encore enregistré est envoyé au serveur à l'ouverture. */
+    await pp.waitForFunction(() => /Achat Google Play enregistré/.test([...document.querySelectorAll(".toast")].map((t) => t.textContent).join(" ")));
+    assert(faux.jetonsPlay().includes("jeton-play-ok-repris-0123456789"), "achat repris");
+    await pp.waitForFunction(() => document.querySelectorAll("#ab-offres .ab-offre").length === 3);
+    assert(await pp.isHidden(".ab-code"), "pas de code promo du site dans l'application");
+    assert(/Google Play/.test(await pp.textContent("#ab-garantie-paiement")) && !/carte bancaire, sur la page/.test(await pp.textContent("#ab-garantie-paiement")), "garantie : Google Play");
+    const bouton = (await pp.textContent("#ab-payer-lib")).replace(/\s/g, " ");
+    assert(/^Payer avec Google Play · 79,900 DT · annuel$/.test(bouton), "bouton Google Play : " + bouton);
+    const offresTxt = (await pp.textContent("#ab-offres")).replace(/\s/g, " ");
+    assert(/33 %/.test(offresTxt), "réduction recalculée sur les prix Google : " + offresTxt);
+    await pp.screenshot({ path: path.join(CAPTURES, "07b-abonnement-google-play.png"), fullPage: true });
+    await pp.click("#ab-payer");
+    await pp.waitForFunction(() => /Paiement confirmé/.test([...document.querySelectorAll(".toast")].map((t) => t.textContent).join(" ")));
+    assert((await pp.evaluate(() => window.__fini)).join() === "orbite_annuel:success", "fenêtre Google Play fermée sur succès");
+    await pp.waitForFunction(() => /Google Play/.test(document.getElementById("ab-historique").textContent));
+    const gain = (Date.parse(faux.abonnementDe("aziz@exemple.tn").fin) - finAvant) / 86400000;
+    assert(gain > 360 && gain < 400, "1 mois repris + 12 mois achetés (" + Math.round(gain) + " j)");
+    /* Paiement en attente chez Google : message, rien d'activé. */
+    await pp.evaluate(() => { window.__prochainJeton = "jeton-play-attente-0123456789"; });
+    await pp.click("#ab-payer");
+    await pp.waitForFunction(() => /en attente chez Google Play/.test([...document.querySelectorAll(".toast")].map((t) => t.textContent).join(" ")));
+    assert((await pp.evaluate(() => window.__fini)).slice(-1)[0] === "orbite_annuel:unknown", "attente signalée à Google Play");
+    await pp.close();
+  });
+
+  await etape("site hors application : paiement Google Play absent, carte bancaire proposée", async () => {
+    await page.goto(base + "/espace/#abonnement");
+    await page.reload();
+    await page.waitForFunction(() => document.querySelectorAll("#ab-offres .ab-offre").length === 3);
+    assert((await page.getAttribute("html", "data-play")) === null, "site ordinaire");
+    assert(!(await page.isHidden(".ab-code")), "code promo proposé sur le site");
+    assert(/^Payer \d/.test((await page.textContent("#ab-payer-lib")).trim()), "paiement du site");
+  });
+
   await etape("anti-robots : avec une clé Turnstile, le jeton est exigé et transmis à Supabase à la connexion", async () => {
     const t = await navigateur.newContext({ locale: "fr-FR" });
     await t.route(SUPABASE + "/**", (r) => faux.gerer(r));
@@ -3769,6 +3824,18 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(!(await ps.evaluate(() => Object.keys(localStorage).some((k) => /auth-token|ef-session|sb-/.test(k)))), "session de l'appareil fermée");
     refusAttendus = false;
     await cs.close();
+  });
+
+  await etape("page publique de suppression de compte (exigée par Google Play) : étapes, données effacées, lien vers l'écran", async () => {
+    await page.goto(base + "/");
+    await Promise.all([page.waitForURL(/\/suppression-compte$/), page.click('footer a[href="/suppression-compte"]')]);
+    const t = (await page.textContent("main")).replace(/\s/g, " ");
+    assert(/Paramètres › Vos données/.test(t) && /Supprimer mon compte/.test(t) && /SUPPRIMER/.test(t), "étapes décrites");
+    assert(/Achats Google Play/.test(t) && /Ce qui est effacé/.test(t), "données effacées et achats Google Play expliqués");
+    const lien = await page.getAttribute('main a[href^="/connexion.html"]', "href");
+    assert(decodeURIComponent(lien).endsWith("/espace/#compte?onglet=donnees"), "lien vers Paramètres › Vos données : " + lien);
+    await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.waitForSelector("#supprimer-compte", { state: "visible" });
   });
 
   await etape("déconnexion puis suppression définitive du compte", async () => {

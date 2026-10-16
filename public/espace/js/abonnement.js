@@ -171,6 +171,7 @@
     if (!play) return;
     doc.querySelector(".ab-code").hidden = true;
     $("ab-garantie-paiement").textContent = "Par Google Play, avec le moyen de paiement de votre compte Google : Orbite ne voit jamais votre carte.";
+    $("ab-legal-prix").textContent = "Prix affichés et encaissés par Google Play, toutes taxes comprises. L'abonnement vaut aussi sur le site.";
   }
   preparerPlay();
 

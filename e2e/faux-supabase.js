@@ -39,6 +39,7 @@ function creer() {
   ];
   const abonnements = new Map();  // user id -> { essai_fin, fin, formule, offert }
   let paiements = [];
+  const jetonsPlay = [];
   const photos = new Map();  // chemin -> Buffer (stockage privé « avatars »)
   /* Administration (migration 0006) : admins, alertes d'inscription, compteurs anonymes. */
   const admins = new Set();
@@ -343,6 +344,25 @@ function creer() {
         paiements.push({ reference, user_id: u.id, formule: f.cle, montant_millimes: px.prix, code_promo: px.code, prix_initial_millimes: px.code ? px.prix_initial : null, passerelle: "test", statut: "cree", cree_le: new Date().toISOString(), paye_le: null, test: null });
         return repondre(route, 200, { url: url.origin.replace(/.*/, "") + "/espace/paiement-test.html?ref=" + reference, reference });
       }
+      /* Application Android : achat Google Play (jeton « jeton-play-ok… » = payé, « jeton-play-attente… » = en attente). */
+      if (corps.action === "play") {
+        const cle = { orbite_mensuel: "mensuel", orbite_semestriel: "semestriel", orbite_annuel: "annuel" }[corps.produit];
+        if (!cle || !/^[A-Za-z0-9._-]{20,}$/.test(corps.jeton || "")) return repondre(route, 400, { erreur: "Achat invalide" });
+        if (/^jeton-play-attente/.test(corps.jeton)) return repondre(route, 200, { statut: "en_attente" });
+        if (!/^jeton-play-ok/.test(corps.jeton)) return repondre(route, 404, { erreur: "Achat introuvable chez Google Play." });
+        const emp = "play-" + crypto.createHash("sha256").update(corps.jeton).digest("hex");
+        let p = paiements.find((x) => x.reference_passerelle === emp);
+        if (p && p.user_id !== u.id) return repondre(route, 409, { erreur: "Cet achat est déjà rattaché à un autre compte Orbite." });
+        const deja = !!p && p.statut === "paye";
+        if (!p) {
+          const f = FORMULES.find((x) => x.cle === cle);
+          p = { reference: "ORB-" + new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + crypto.randomBytes(4).toString("hex").toUpperCase(), user_id: u.id, formule: cle, montant_millimes: f.prix_millimes, code_promo: null, prix_initial_millimes: null, passerelle: "play", reference_passerelle: emp, statut: "cree", cree_le: new Date().toISOString(), paye_le: null };
+          paiements.push(p);
+        }
+        activer(p);
+        jetonsPlay.push(corps.jeton);
+        return repondre(route, 200, { statut: "paye", deja, fin: abonnementDe(u.id).fin });
+      }
       const p = paiements.find((x) => x.reference === corps.reference && x.user_id === u.id);
       if (!p) return repondre(route, 404, { erreur: "Commande introuvable" });
       if (corps.action === "detail") {
@@ -538,7 +558,7 @@ function creer() {
     }
     if (url.pathname === "/rest/v1/paiements") {
       return repondre(route, 200, paiements.filter((p) => p.user_id === u.id).sort((a, b) => b.cree_le.localeCompare(a.cree_le))
-        .map(({ reference, formule, montant_millimes, statut, cree_le, paye_le }) => ({ reference, formule, montant_millimes, statut, cree_le, paye_le })));
+        .map(({ reference, formule, montant_millimes, statut, cree_le, paye_le, passerelle }) => ({ reference, formule, montant_millimes, statut, cree_le, paye_le, passerelle })));
     }
     if (url.pathname === "/rest/v1/rpc/exporter_mes_donnees") {
       return repondre(route, 200, { exporte_le: new Date().toISOString(), profil: profils.get(u.id), simulations: simulations.filter((s) => s.user_id === u.id) });
@@ -562,6 +582,7 @@ function creer() {
     consentementsDe(email) { const id = comptes.get(email).user.id; return consentements.filter((c) => c.user_id === id); },
     accepterPour(email, version) { consentements.push({ id: crypto.randomUUID(), user_id: comptes.get(email).user.id, version, documents: "confidentialite+cgv", accepte_le: new Date().toISOString() }); },
     paiements: () => paiements,
+    jetonsPlay: () => jetonsPlay,
     photos: () => photos,
     abonnementDe(email) { return abonnementDe(comptes.get(email).user.id); },
     partageDe(email) { return etatPartage(comptes.get(email).user.id); },
