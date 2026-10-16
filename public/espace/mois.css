@@ -1,11 +1,12 @@
 /* Orbite — « Mon mois » : budget par enveloppe et calendrier de l'argent (point 5). */
 .mo-tete { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
-.mo-onglets { position: relative; display: inline-grid; grid-template-columns: 1fr 1fr; padding: 4px; border-radius: 999px; background: var(--surface); box-shadow: var(--ombre-1); border: 1px solid var(--filet); }
+.mo-onglets { position: relative; display: inline-grid; grid-template-columns: 1fr 1fr 1fr; padding: 4px; border-radius: 999px; background: var(--surface); box-shadow: var(--ombre-1); border: 1px solid var(--filet); }
 .mo-onglets button { position: relative; z-index: 1; font: inherit; font-size: 14px; font-weight: 650; border: 0; background: none; color: var(--encre-3); min-height: 38px; padding: 0 22px; border-radius: 999px; cursor: pointer; transition: color 200ms ease; }
 .mo-onglets button[aria-selected="true"] { color: var(--inverse); }
 .mo-onglets button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.mo-onglets i { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px); border-radius: 999px; background: var(--encre); transition: transform 360ms var(--sortie); }
+.mo-onglets i { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 3); border-radius: 999px; background: var(--encre); transition: transform 360ms var(--sortie); }
 .mo-onglets[data-o="calendrier"] i { transform: translateX(100%); }
+.mo-onglets[data-o="comptes"] i { transform: translateX(200%); }
 
 .mo-panneau { display: grid; gap: 18px; }
 .mo-mois-nav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }

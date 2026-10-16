@@ -3408,6 +3408,114 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.evaluate((a) => window.Orbite.majProfil(JSON.parse(a), { immediat: true }), avant);
   });
 
+  await etape("Mes comptes : premier solde, relevé (soldes datés), courbe, analyse refaite (avant → après), Mon orbite, modifier, supprimer et annuler, téléphone", async () => {
+    await page.setViewportSize({ width: 1360, height: 900 });
+    const avant = await page.evaluate(() => JSON.stringify(window.Orbite.profil()));
+    await page.evaluate(() => window.Orbite.majProfil({ comptes: [], comptesAnalyse: null, jourPaie: 27, epargneDisponible: 1000 }, { immediat: true }));
+    const iso = (decal) => { const d = new Date(); d.setDate(d.getDate() + decal); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+    const fr = (decal) => { const x = iso(decal); return x.slice(8) + "/" + x.slice(5, 7) + "/" + x.slice(0, 4); };
+    await page.goto(base + "/espace/#mois?onglet=comptes");
+    await page.waitForSelector("#cpt-vide", { state: "visible" });
+    /* Mouvement réduit (après l'affichage) : pas de fondu entre les vues pendant les clics. */
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.waitForTimeout(300);
+    assert(await page.isVisible("#cpt-commencer"), "toujours dans Mon mois › Comptes");
+    assert(await page.isHidden("#cpt-plein") && await page.isHidden("#cpt-analyse-bloc"), "état vide seul");
+    assert(await page.getAttribute(".mo-onglets", "data-o") === "comptes", "onglet Comptes actif");
+    /* 1. Premier solde : nouveau compte courant. */
+    await page.click("#cpt-commencer");
+    await page.waitForSelector("#dlg-solde[open]");
+    assert(await page.inputValue("#cpt-compte") === "__nv" && await page.isVisible("#cpt-nv"), "premier compte proposé");
+    assert(await page.inputValue("#cpt-date") === iso(0), "date du jour par défaut");
+    await page.fill("#cpt-nv-nom", "Compte courant");
+    await page.fill("#cpt-nv-banque", "Banque A");
+    await page.fill("#cpt-montant", "1 240,500");
+    await page.waitForSelector("#cpt-apres:not([hidden])");
+    assert(/épargne disponible 1 000 → /.test((await page.textContent("#cpt-apres")).replace(/\s/g, " ")), "aperçu : " + await page.textContent("#cpt-apres"));
+    await page.click("#cpt-valider");
+    await page.waitForFunction(() => window.Orbite.profil().comptes.length === 1);
+    let p = await page.evaluate(() => window.Orbite.profil());
+    assert(p.comptes[0].nom === "Compte courant" && p.comptes[0].type === "courant" && p.comptes[0].soldes[0].v === 1240.5, "compte créé : " + JSON.stringify(p.comptes));
+    assert(p.epargneDisponible < 1240.5 && p.comptesAnalyse && p.comptesAnalyse.avant.epargne === 1000, "épargne disponible dérivée et analyse gardée : " + JSON.stringify([p.epargneDisponible, p.comptesAnalyse]));
+    await page.waitForSelector('.toast:has-text("Solde enregistré")');
+    await page.waitForSelector("#cpt-plein:not([hidden]) #cpt-liste li");
+    /* 2. Compte épargne depuis un relevé CSV (colonne Solde) : soldes datés cochés, rien d'autre gardé. */
+    await page.click("#cpt-nouveau");
+    await page.waitForSelector("#dlg-solde[open]");
+    await page.selectOption("#cpt-compte", "__nv");
+    await page.fill("#cpt-nv-nom", "Compte épargne");
+    await page.check('input[name="cpt-nv-type"][value="epargne"]');
+    const csv = "Date;Libellé;Débit;Crédit;Solde\n" + fr(-80) + ";VERSEMENT EPARGNE;;500,000;6 000,000\n" + fr(-40) + ";VERSEMENT EPARGNE;;400,000;6 400,000\n" + fr(-10) + ";VERSEMENT EPARGNE;;400,000;6 800,000\n";
+    await page.setInputFiles("#cpt-rel-fichier", { name: "releve-epargne.csv", mimeType: "text/csv", buffer: Buffer.from(csv, "utf8") });
+    await page.waitForSelector("#cpt-trouves li:nth-child(3)");
+    assert(/3 soldes trouvés/.test(await page.textContent("#cpt-rel-etat")), "soldes trouvés");
+    await page.click("#cpt-valider");
+    await page.waitForFunction(() => window.Orbite.profil().comptes.length === 2);
+    p = await page.evaluate(() => window.Orbite.profil());
+    assert(p.comptes[1].type === "epargne" && p.comptes[1].soldes.length === 3 && p.comptes[1].soldes.every((x) => x.src === "releve"), "épargne : " + JSON.stringify(p.comptes[1]));
+    assert(!JSON.stringify(p.comptes).includes("VERSEMENT"), "aucun libellé du relevé gardé");
+    /* 3. Solde plus ancien sur le compte courant : il complète la courbe (point bas). */
+    await page.click("#cpt-nouveau");
+    await page.waitForSelector("#dlg-solde[open]");
+    await page.selectOption("#cpt-compte", "c1");
+    await page.fill("#cpt-montant", "86,04");
+    await page.fill("#cpt-date", iso(-22));
+    await page.waitForFunction(() => /plus ancien que le dernier connu/.test(document.getElementById("cpt-apres").textContent));
+    await page.click("#cpt-valider");
+    await page.waitForFunction(() => window.Orbite.profil().comptes[0].soldes.length === 2);
+    await page.evaluate(() => window.Orbite.majProfil({ comptes: window.Orbite.profil().comptes.map((c) => c.id === "c1" ? Object.assign({}, c, { soldes: c.soldes.concat([{ d: (() => { const d = new Date(); d.setDate(d.getDate() - 60); return d.toISOString().slice(0, 10); })(), v: 900 }]) }) : c) }, { immediat: true }));
+    /* 4. Rendu : total, liste, courbe, analyse avec avant → après. */
+    await page.waitForSelector("#cpt-graphe svg");
+    assert((await page.textContent("#cpt-total")).replace(/\s/g, " ").includes("8 040,500"), "total : " + await page.textContent("#cpt-total"));
+    assert(await page.$$eval("#cpt-liste li", (l) => l.length) === 2, "2 comptes listés");
+    assert(await page.isVisible("#cpt-analyse-bloc .cpt-refait") && await page.$$eval("#cpt-analyse-bloc .cpt-delta div", (l) => l.length) === 3, "avant → après");
+    const points = await page.$$eval("#cpt-analyse-bloc .cpt-point b", (l) => l.map((b) => b.textContent));
+    assert(points.some((t) => /Fin de mois tendue/.test(t)) && points.some((t) => /Jamais à découvert/.test(t)), "points : " + points);
+    assert(/Point bas/.test(await page.textContent("#cpt-graphe")), "point bas sur la courbe");
+    await page.screenshot({ path: path.join(CAPTURES, "comptes.png"), fullPage: true });
+    /* 5. Mon orbite : « Ce que dit votre solde ». */
+    await page.goto(base + "/espace/#orbite?partie=sante");
+    await page.waitForSelector("#solde-orbite:not([hidden]) .cpt-point");
+    await page.goto(base + "/espace/#mois?onglet=comptes");
+    await page.waitForSelector("#cpt-liste li");
+    /* 6. Modifier : renommer et retirer un solde. */
+    await page.click('#cpt-liste [data-compte="c1"]');
+    await page.waitForSelector("#dlg-compte[open]");
+    await page.fill("#cpt-ed-nom", "Courant principal");
+    await page.click("#cpt-ed-soldes li:first-child [data-retirer]");
+    assert(await page.$eval("#cpt-ed-soldes li:first-child", (li) => li.classList.contains("cpt-hist__ligne--retire")), "solde marqué à retirer");
+    await page.click('#form-compte button[value="ok"]');
+    await page.waitForFunction(() => { const c = window.Orbite.profil().comptes[0]; return c.nom === "Courant principal" && c.soldes.length === 2; });
+    /* 7. Supprimer le compte épargne, puis annuler. */
+    await page.click('#cpt-liste [data-compte="c2"]');
+    await page.waitForSelector("#dlg-compte[open]");
+    await page.click("#cpt-ed-supprimer");
+    await page.waitForSelector("#cpt-ed-confirmer:not([hidden])");
+    await page.click("#cpt-ed-supprimer-oui");
+    await page.waitForFunction(() => window.Orbite.profil().comptes.length === 1);
+    await page.click('.toast:has-text("supprimé") button:has-text("Annuler")');
+    await page.waitForFunction(() => window.Orbite.profil().comptes.length === 2);
+    /* 8. Rien à enregistrer : message, fenêtre gardée. */
+    await page.click("#cpt-nouveau");
+    await page.waitForSelector("#dlg-solde[open]");
+    await page.click("#cpt-valider");
+    assert(await page.isVisible("#cpt-err") && await page.isVisible("#dlg-solde"), "erreur sans solde");
+    await page.click('#form-solde button[value="annuler"]');
+    /* 9. Téléphone. */
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(400);
+    assert(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), "Mes comptes sans débordement sur téléphone");
+    await page.screenshot({ path: path.join(CAPTURES, "comptes-telephone.png"), fullPage: true });
+    await page.click("#cpt-nouveau");
+    await page.waitForSelector("#dlg-solde[open]");
+    assert(!(await page.evaluate(() => { const d = document.getElementById("dlg-solde"); return d.scrollWidth > d.clientWidth + 1; })), "fenêtre sans débordement");
+    await page.screenshot({ path: path.join(CAPTURES, "comptes-solde-telephone.png") });
+    await page.click('#form-solde button[value="annuler"]');
+    await page.setViewportSize({ width: 1360, height: 900 });
+    await page.emulateMedia({ reducedMotion: null });
+    await page.evaluate((a) => window.Orbite.majProfil(JSON.parse(a), { immediat: true }), avant);
+  });
+
   await etape("bilan annuel en PDF : bouton dans Ma progression, aperçu avec les vrais chiffres, sections à cocher, coordonnées décochées, PDF valide, Ctrl K, téléphone", async () => {
     await page.setViewportSize({ width: 1360, height: 900 });
     await page.goto(base + "/espace/#progression");

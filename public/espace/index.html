@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="/espace/abonnement.css">
   <link rel="stylesheet" href="/espace/progression.css">
   <link rel="stylesheet" href="/espace/mois.css">
+  <link rel="stylesheet" href="/espace/comptes.css">
   <link rel="stylesheet" href="/espace/annee.css">
   <link rel="stylesheet" href="/espace/fiche.css">
   <link rel="stylesheet" href="/espace/dossier.css">
@@ -293,6 +294,14 @@
               <h3>Pour gagner des points</h3>
               <ol class="sante__objectifs-liste" id="sante-objectifs"></ol>
             </div>
+          </section>
+
+          <!-- Ce que dit votre solde (Mes comptes, 16 oct. 2026) : analyse refaite à chaque nouveau solde (vue-comptes.js) -->
+          <section class="bloc-orbite cpt-orbite" id="solde-orbite" aria-labelledby="titre-solde-orbite" hidden>
+            <div class="bloc-orbite__tete"><div><h2 id="titre-solde-orbite">Ce que dit votre solde</h2>
+              <p>D'après les soldes de vos comptes : vos points forts et ce qui reste à améliorer.</p></div>
+              <a class="bouton bouton--petit" href="#mois?onglet=comptes"><svg aria-hidden="true"><use href="/orbite/icones.svg#portefeuille"/></svg>Mes comptes</a></div>
+            <div class="cpt-analyse" data-analyse></div>
           </section>
 
           <!-- Patrimoine net -->
@@ -1715,12 +1724,13 @@
           <header class="vue__tete mo-tete">
             <div>
               <h1 id="titre-mois">Mon mois</h1>
-              <p class="vue__sous">Votre budget par enveloppe et toutes les dates d'argent du mois : paie, prélèvements, versements.</p>
+              <p class="vue__sous">Votre budget par enveloppe, toutes les dates d'argent du mois et le solde de vos comptes.</p>
             </div>
             <div class="mo-onglets" role="tablist" aria-label="Mon mois" data-o="budget">
               <i aria-hidden="true"></i>
               <button type="button" role="tab" id="mo-tab-budget" aria-controls="mo-budget" aria-selected="true" data-onglet="budget">Budget</button>
               <button type="button" role="tab" id="mo-tab-calendrier" aria-controls="mo-calendrier" aria-selected="false" tabindex="-1" data-onglet="calendrier">Calendrier</button>
+              <button type="button" role="tab" id="mo-tab-comptes" aria-controls="mo-comptes" aria-selected="false" tabindex="-1" data-onglet="comptes">Comptes</button>
             </div>
           </header>
 
@@ -1814,6 +1824,38 @@
               <summary><svg aria-hidden="true"><use href="/orbite/icones.svg#outils"/></svg><span>Régler les dates<small>Jour de paie, jour de prélèvement de chaque crédit, jour de versement de l'épargne.</small></span></summary>
               <div class="mo-dates__champs" id="mo-dates-champs"></div>
             </details>
+          </div>
+
+          <!-- ============ Comptes (Mes comptes, maquette validée le 16 oct. 2026 ; vue-comptes.js) ============ -->
+          <div class="mo-panneau" id="mo-comptes" role="tabpanel" aria-labelledby="mo-tab-comptes" hidden>
+            <section class="panneau cpt-vide" id="cpt-vide" aria-labelledby="cpt-t-vide" hidden>
+              <span class="cpt-vide__ico" aria-hidden="true"><svg><use href="/orbite/icones.svg#portefeuille"/></svg></span>
+              <h2 id="cpt-t-vide">Suivez le solde de vos comptes</h2>
+              <p>Compte courant, compte épargne, autre banque : notez leur solde de temps en temps (ou lisez-le dans un relevé). Orbite trace la courbe, repère les fins de mois tendues et met à jour votre épargne disponible, votre score de santé et votre réserve de sécurité.</p>
+              <button type="button" class="bouton bouton--plein" id="cpt-commencer"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg>Ajouter mon premier solde</button>
+            </section>
+            <div class="cpt-grille" id="cpt-plein" hidden>
+              <section class="panneau cpt-total" aria-labelledby="cpt-t-total">
+                <div class="cpt-total__tete"><h2 id="cpt-t-total">Tout votre argent</h2><span class="cpt-puce" id="cpt-maj"></span></div>
+                <p class="cpt-total__chiffre chiffre" id="cpt-total"></p>
+                <p class="cpt-tendance" id="cpt-tendance"></p>
+                <div class="cpt-graphe" id="cpt-graphe"></div>
+              </section>
+              <section class="panneau cpt-comptes" aria-labelledby="cpt-t-liste">
+                <h2 id="cpt-t-liste">Mes comptes</h2>
+                <p class="panneau__sous" id="cpt-dispo"></p>
+                <ul class="cpt-liste" id="cpt-liste" role="list"></ul>
+                <div class="cpt-actions">
+                  <button type="button" class="bouton bouton--plein" id="cpt-nouveau"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg>Nouveau solde</button>
+                  <button type="button" class="bouton" id="cpt-lire"><svg aria-hidden="true"><use href="/orbite/icones.svg#fiche"/></svg>Lire un relevé</button>
+                </div>
+              </section>
+            </div>
+            <section class="panneau cpt-analyse-panneau" id="cpt-analyse-bloc" aria-labelledby="cpt-t-analyse" hidden>
+              <h2 id="cpt-t-analyse">Ce que dit votre solde</h2>
+              <div class="cpt-analyse" data-analyse></div>
+            </section>
+            <p class="ce-note"><svg aria-hidden="true"><use href="/orbite/icones.svg#cadenas"/></svg><span>Vos soldes sont gardés dans votre profil, protégés comme lui (et par la double authentification si vous l'avez activée). Un relevé est lu sur votre appareil : seuls les soldes datés que vous cochez sont gardés, jamais les opérations.</span></p>
           </div>
         </section>
       </main>
@@ -2440,6 +2482,70 @@
     </form>
   </dialog>
 
+  <!-- Mes comptes : nouveau solde (tapé ou lu dans un relevé) et modification d'un compte (vue-comptes.js) -->
+  <dialog class="dialogue cpt-dlg" id="dlg-solde" aria-labelledby="cpt-dlg-titre">
+    <form method="dialog" id="form-solde" novalidate>
+      <div class="dialogue__tete"><h2 id="cpt-dlg-titre">Nouveau solde</h2></div>
+      <div class="dialogue__corps">
+        <div class="champ"><label for="cpt-compte">Compte</label><div class="saisie"><select id="cpt-compte"></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
+        <div class="cpt-nv" id="cpt-nv" hidden>
+          <div class="grille-champs">
+            <div class="champ"><label for="cpt-nv-nom">Nom du compte</label><div class="saisie"><input id="cpt-nv-nom" type="text" maxlength="30" autocomplete="off" placeholder="Compte courant"></div></div>
+            <div class="champ"><label for="cpt-nv-banque">Banque <small>(facultatif)</small></label><div class="saisie"><input id="cpt-nv-banque" type="text" maxlength="30" autocomplete="off"></div></div>
+          </div>
+          <fieldset class="cpt-types"><legend>Type de compte</legend>
+            <label><input type="radio" name="cpt-nv-type" value="courant" checked><span><b>Compte courant</b><small>Le salaire arrive ici, les dépenses en partent</small></span></label>
+            <label><input type="radio" name="cpt-nv-type" value="epargne"><span><b>Compte épargne</b><small>De l'argent mis de côté</small></span></label>
+          </fieldset>
+        </div>
+        <div class="grille-champs">
+          <div class="champ"><label for="cpt-montant">Solde</label><div class="saisie"><input id="cpt-montant" type="text" inputmode="decimal" autocomplete="off" aria-describedby="cpt-montant-aide"><span class="saisie__unite">DT</span></div><span class="champ__aide" id="cpt-montant-aide">Négatif si le compte est à découvert (−120)</span></div>
+          <div class="champ"><label for="cpt-date">Date</label><div class="saisie"><input id="cpt-date" type="date"></div></div>
+        </div>
+        <p class="erreur-champ" id="cpt-err" role="alert" hidden></p>
+        <p class="cpt-apres" id="cpt-apres" aria-live="polite" hidden></p>
+        <div class="cpt-sep"><span>ou depuis votre relevé</span></div>
+        <div class="cpt-rel">
+          <button type="button" class="bouton bouton--petit" id="cpt-rel-choisir"><svg aria-hidden="true"><use href="/orbite/icones.svg#fiche"/></svg>Choisir un relevé</button>
+          <input type="file" id="cpt-rel-fichier" accept=".pdf,.csv,.txt,application/pdf,text/csv,text/plain,image/*" hidden>
+          <p class="cpt-rel__etat" id="cpt-rel-etat" role="status" aria-live="polite" hidden></p>
+          <ul class="cpt-trouves" id="cpt-trouves" role="list"></ul>
+        </div>
+      </div>
+      <div class="dialogue__pied">
+        <button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Annuler</button>
+        <button type="submit" class="bouton bouton--plein" value="ok" id="cpt-valider">Enregistrer et refaire l'analyse</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialogue cpt-dlg" id="dlg-compte" aria-labelledby="cpt-ed-titre">
+    <form method="dialog" id="form-compte" novalidate>
+      <div class="dialogue__tete"><h2 id="cpt-ed-titre">Modifier le compte</h2></div>
+      <div class="dialogue__corps">
+        <div class="grille-champs">
+          <div class="champ"><label for="cpt-ed-nom">Nom du compte</label><div class="saisie"><input id="cpt-ed-nom" type="text" maxlength="30" autocomplete="off"></div></div>
+          <div class="champ"><label for="cpt-ed-banque">Banque <small>(facultatif)</small></label><div class="saisie"><input id="cpt-ed-banque" type="text" maxlength="30" autocomplete="off"></div></div>
+        </div>
+        <fieldset class="cpt-types"><legend>Type de compte</legend>
+          <label><input type="radio" name="cpt-ed-type" value="courant"><span><b>Compte courant</b><small>Le salaire arrive ici, les dépenses en partent</small></span></label>
+          <label><input type="radio" name="cpt-ed-type" value="epargne"><span><b>Compte épargne</b><small>De l'argent mis de côté</small></span></label>
+        </fieldset>
+        <h3 class="cpt-hist__titre">Derniers soldes</h3>
+        <ul class="cpt-hist" id="cpt-ed-soldes" role="list"></ul>
+        <div class="cpt-suppr" id="cpt-ed-confirmer" hidden>
+          <p id="cpt-ed-confirmer-txt"></p>
+          <button type="button" class="bouton bouton--danger-plein" id="cpt-ed-supprimer-oui">Oui, supprimer</button>
+        </div>
+      </div>
+      <div class="dialogue__pied">
+        <button type="button" class="bouton bouton--fantome pg-supprimer" id="cpt-ed-supprimer"><svg aria-hidden="true"><use href="/orbite/icones.svg#poubelle"/></svg>Supprimer le compte</button>
+        <button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Annuler</button>
+        <button type="submit" class="bouton bouton--plein" value="ok">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog class="dialogue" id="dlg-objectif" aria-labelledby="dlg-obj-titre">
     <form method="dialog" id="form-objectif" novalidate>
       <div class="dialogue__tete"><h2 id="dlg-obj-titre">Nouvel objectif</h2></div>
@@ -2636,6 +2742,7 @@
   <script src="/moteurs/salaire/pension.js"></script>
   <script src="/espace/js/budget-calcul.js"></script>
   <script src="/espace/js/releve-calcul.js"></script>
+  <script src="/espace/js/comptes-calcul.js"></script>
   <script src="/espace/js/orbite-calcul.js"></script>
   <script src="/espace/js/orbite-intelligence.js"></script>
   <script src="/espace/js/assistant-local.js"></script>
@@ -2702,6 +2809,7 @@
   <script src="/espace/js/vue-bilan.js"></script>
   <script src="/espace/js/fiche-lecture.js"></script>
   <script src="/espace/js/releve-import.js"></script>
+  <script src="/espace/js/vue-comptes.js"></script>
   <script src="/espace/js/fiche-calcul.js"></script>
   <script src="/espace/js/dossier-calcul.js"></script>
   <script src="/espace/js/negociateur-calcul.js"></script>
