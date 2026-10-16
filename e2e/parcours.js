@@ -58,12 +58,14 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   await contexte.route(SUPABASE + "/**", (r) => faux.gerer(r));
   await contexte.route("https://api.pwnedpasswords.com/**", fuites);
   const problemes = [];
+  /* Étape « sécurité » : le serveur refuse exprès (403 sans le code, 422 mauvais code) ; ces refus ne sont pas des erreurs. */
+  let refusAttendus = false;
   function suivre(p) {
     p.on("pageerror", (e) => problemes.push("Erreur JS " + p.url() + " : " + e.message));
     p.on("console", (m) => {
       const t = m.text();
       if (/Content Security Policy|Refused to/i.test(t)) problemes.push("CSP " + p.url() + " : " + t);
-      else if (m.type() === "error" && !/Failed to load resource.*(401|404|406)/.test(t)) problemes.push("Console " + p.url() + " : " + t);
+      else if (m.type() === "error" && !/Failed to load resource.*(401|404|406)/.test(t) && !(refusAttendus && /Failed to load resource.*(403|422)/.test(t))) problemes.push("Console " + p.url() + " : " + t);
     });
   }
   contexte.on("page", suivre);
@@ -3534,6 +3536,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   });
 
   await etape("sécurité : double authentification (activer, code à la connexion, exigée par le serveur, désactiver) et verrouillage par empreinte", async () => {
+    refusAttendus = true;
     const EM = "securite@exemple.tn", MDP = "Securite-compte-2026!";
     /* WebAuthn refuse une adresse IP comme identifiant de site : ce parcours passe par « localhost ». */
     const bl = base.replace("127.0.0.1", "localhost");
@@ -3652,6 +3655,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await ps.click("#verrou-mdp");
     await ps.waitForURL(/connexion\.html/);
     assert(!(await ps.evaluate(() => Object.keys(localStorage).some((k) => /auth-token|ef-session|sb-/.test(k)))), "session de l'appareil fermée");
+    refusAttendus = false;
     await cs.close();
   });
 
