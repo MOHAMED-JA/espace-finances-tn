@@ -115,3 +115,22 @@ test('relevé : soldes datés imprimés (ligne « Solde au », colonne Solde, or
   assert.deepEqual(R.depuisCsv(csv, MAINTENANT).soldes, [{ d: '2026-10-02', v: 1135 }, { d: '2026-10-03', v: 1100 }]);
   assert.deepEqual(R.depuisCsv('Date;Libellé;Montant\n03/10/2026;SHELL;-35,000', MAINTENANT).soldes, []);
 });
+
+test('découvert bancaire : −10 points dans le score de santé, même sans épargne déclarée', () => {
+  const OI = require('../../public/espace/js/orbite-intelligence.js');
+  const base = { montant: 2500, periode: 'mensuel', sens: 'net', secteur: 'prive', loyer: 800, jourPaie: 27, enfants: 0 };
+  const score = (comptes) => {
+    let p = OC.normaliser(Object.assign({}, base, { comptes: C.normaliser(comptes) }));
+    const d = C.epargneDisponible(p.comptes, { depensesMois: OC.depensesMois(OC.synthese(p)).total, jourPaie: 27, maintenant: MAINTENANT });
+    p = OC.normaliser(Object.assign({}, base, { comptes: p.comptes, epargneDisponible: d.libre }));
+    return OI.scoreSante(OC.synthese(p));
+  };
+  const courant = (v) => [{ id: 'c1', nom: 'Courant', type: 'courant', soldes: [{ d: '2026-10-13', v }] }];
+  const sans = score([]), debit = score(courant(-120)), positif = score(courant(1240));
+  assert.equal(debit.score, sans.score - 10);
+  assert.equal(debit.malus.points, -10);
+  assert.equal(positif.score, sans.score);
+  assert.equal(positif.malus, null);
+  assert.equal(debit.objectifs[0].cle, 'decouvert');
+  assert.ok(score(courant(-99999)).score >= 0);
+});
