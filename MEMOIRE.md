@@ -679,6 +679,26 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centquatertricies. Compte Google Play, kit de la fiche, mod « choix-modele » (16 oct.)
+
+- **Compte développeur Google Play** : l'utilisateur a choisi de payer les 25 USD, cette fois seulement.
+  - Fait : validation en deux étapes (active depuis 2021) ; compte « Vous-même » (personnel) ; profil public avec le Gmail ; « À propos de vous » (texte honnête, site d'Orbite) ; catégories « Aucune des réponses » (Orbite ne vend aucun produit financier) ; contact privé.
+  - **Pièce d'identité** : la CIN est en arabe. Google exige un nom identique à la pièce, d'où le **passeport** (nom en lettres latines) : nom à comparer avec « MOHAMED AZIZ JAOUADI » avant de payer.
+  - Ensuite : vérification d'identité (1 à 3 jours), puis test fermé avec 12 testeurs pendant 14 jours (compte personnel créé après le 13 nov. 2023).
+- **Kit de la fiche Play** (dossier temporaire, non versionné, profil fictif) :
+  - fiche à copier : nom (28 caractères), description courte (78), description complète, catégorie Finance, public 18 ans et plus ;
+  - brouillon de la sécurité des données ;
+  - icône 512, image de présentation 1024 × 500, 7 captures 1080 × 1920 avec légendes.
+- **Paquet Android à faire** une fois le compte validé :
+  - Trusted Web Activity (Bubblewrap ou PWABuilder, gratuits) ;
+  - signature des versions par Google (Play App Signing) ;
+  - empreinte SHA-256 dans `public/.well-known/assetlinks.json` ; vérifier que Workers publie bien `.well-known`.
+- **Mod Claude « choix-modele »**, hors dépôt Orbite :
+  - facile → Haiku 5.5, moyenne → Sonnet 5.5, difficile → Opus 5.5 ;
+  - garde-fou : le code ne descend jamais sous Sonnet, et Haiku ne modifie aucun fichier ;
+  - `/modele auto|haiku|sonnet|opus`, choix affiché dans la barre d'état ;
+  - prêt dans `/home/user/claude-choix-modele` : commit fait, aucun secret trouvé par le scan. Le dépôt privé `MOHAMED-JA/claude-choix-modele` reste à créer à la main (l'intégration GitHub refuse de le créer d'ici), puis on y pousse le commit.
+
 ## 3 centtertricies. Installer Orbite sur le téléphone, sans boutique (15 oct.)
 
 Question de l'utilisateur : « mettre l'application sur Play Store ? ».
