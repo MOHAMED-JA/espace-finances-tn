@@ -1,0 +1,91 @@
+{
+  "packageId": "tn.orbite.app",
+  "host": "espace-finances-tn.jaouadimohamedaziz.workers.dev",
+  "name": "Orbite",
+  "launcherName": "Orbite",
+  "display": "standalone",
+  "themeColor": "#0A0D16",
+  "themeColorDark": "#000000",
+  "navigationColor": "#000000",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#F3F4F8",
+  "enableNotifications": false,
+  "startUrl": "/espace/",
+  "iconUrl": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/orbite/icone.svg",
+  "maskableIconUrl": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/orbite/icone-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./cle-envoi-orbite.jks",
+    "alias": "orbite"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [
+    {
+      "name": "Mettre à jour mon salaire",
+      "shortName": "Salaire",
+      "url": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/espace/#profil?section=salaire&salaire=1",
+      "chosenIconUrl": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/orbite/raccourcis/salaire.png"
+    },
+    {
+      "name": "Dossier banque",
+      "shortName": "Dossier",
+      "url": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/espace/#credit?dossier=1",
+      "chosenIconUrl": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/orbite/raccourcis/dossier.png"
+    },
+    {
+      "name": "Mon orbite",
+      "shortName": "Orbite",
+      "url": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/espace/#orbite",
+      "chosenIconUrl": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/orbite/raccourcis/orbite.png"
+    },
+    {
+      "name": "Ma progression",
+      "shortName": "Progression",
+      "url": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/espace/#progression",
+      "chosenIconUrl": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/orbite/raccourcis/progression.png"
+    }
+  ],
+  "generatorApp": "bubblewrap-core",
+  "webManifestUrl": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/",
+  "minSdkVersion": 24,
+  "shareTarget": {
+    "action": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/espace/recevoir",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "fichiers",
+          "accept": [
+            "application/pdf",
+            ".pdf",
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        }
+      ]
+    }
+  },
+  "orientation": "portrait",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "launchHandlerClientMode": "",
+  "displayOverride": [],
+  "appVersion": "1.0.0"
+}
