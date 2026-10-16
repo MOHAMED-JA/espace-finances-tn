@@ -291,7 +291,7 @@
     acces: function () { return client.rpc("mon_acces").then(verifier); },
     formules: function () { return client.from("formules").select("cle, libelle, mois, prix_millimes, ordre").order("ordre").then(verifier); },
     paiements: function () {
-      return client.from("paiements").select("reference, formule, montant_millimes, statut, cree_le, paye_le")
+      return client.from("paiements").select("reference, formule, montant_millimes, statut, cree_le, paye_le, passerelle")
         .order("cree_le", { ascending: false }).limit(20).then(verifier);
     },
     /* Prix affichés (offre de lancement, code promo éventuel) : toujours calculés par le serveur. */
@@ -300,7 +300,9 @@
     commander: function (formule, code) { return appelPaiement({ action: "creer", formule: formule, code: code || undefined }); },
     verifier: function (reference) { return appelPaiement({ action: "verifier", reference: reference }); },
     detail: function (reference) { return appelPaiement({ action: "detail", reference: reference }); },
-    simuler: function (reference, resultat) { return appelPaiement({ action: "simuler", reference: reference, resultat: resultat }); }
+    simuler: function (reference, resultat) { return appelPaiement({ action: "simuler", reference: reference, resultat: resultat }); },
+    /* Application Android : achat Google Play vérifié, enregistré une fois et consommé par le serveur. */
+    play: function (produit, jeton) { return appelPaiement({ action: "play", produit: produit, jeton: jeton }); }
   };
 
   /* Administration : chaque fonction vérifie côté serveur que le compte est administrateur. */

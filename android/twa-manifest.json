@@ -12,7 +12,7 @@
   "navigationDividerColorDark": "#000000",
   "backgroundColor": "#F3F4F8",
   "enableNotifications": false,
-  "startUrl": "/espace/",
+  "startUrl": "/espace/?source=play",
   "iconUrl": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/orbite/icone.svg",
   "maskableIconUrl": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/orbite/icone-maskable-512.png",
   "splashScreenFadeOutDuration": 300,
@@ -20,8 +20,8 @@
     "path": "./cle-envoi-orbite.jks",
     "alias": "orbite"
   },
-  "appVersionName": "1.0.0",
-  "appVersionCode": 1,
+  "appVersionName": "1.0.1",
+  "appVersionCode": 2,
   "shortcuts": [
     {
       "name": "Mettre à jour mon salaire",
@@ -51,7 +51,11 @@
   "generatorApp": "bubblewrap-core",
   "webManifestUrl": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/manifest.webmanifest",
   "fallbackType": "customtabs",
-  "features": {},
+  "features": {
+    "playBilling": {
+      "enabled": true
+    }
+  },
   "alphaDependencies": {
     "enabled": false
   },
@@ -87,5 +91,5 @@
   "fileHandlers": [],
   "launchHandlerClientMode": "",
   "displayOverride": [],
-  "appVersion": "1.0.0"
+  "appVersion": "1.0.1"
 }

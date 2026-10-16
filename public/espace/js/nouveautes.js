@@ -3,9 +3,11 @@
  * Changer « version » pour les montrer de nouveau ; 2 à 4 points courts, du point de vue de l'utilisateur.
  */
 window.ORBITE_NOUVEAUTES = {
-  version: "2026-10-16d",
+  version: "2026-10-16e",
   date: "16 octobre 2026",
   points: [
+    { titre: "Votre abonnement, sur le site comme dans l'application.", texte: "Orbite se prépare pour Google Play. Dans l'application Android, les formules s'achètent par Google Play ; un abonnement pris sur le site ou dans l'application vaut partout, avec le même compte." },
+    { titre: "Supprimer son compte, pas à pas.", texte: "Une page publique explique comment supprimer votre compte depuis n'importe quel appareil et ce qui est effacé : lien « Supprimer son compte » en bas de l'accueil, et Paramètres › Vos données." },
     { titre: "Un découvert baisse votre score.", texte: "Si un compte courant est à découvert, votre score de santé perd 10 points, avec la ligne « Découvert bancaire » dans Santé financière. Le ramener à zéro retire le malus." },
     { titre: "Mes comptes : le solde de vos comptes analysé.", texte: "Mon mois › Comptes : notez le solde de chaque compte (courant, épargne, autre banque) ou lisez-le dans un relevé. Orbite trace la courbe, repère les fins de mois tendues et les jours à découvert, liste vos points forts et vos points faibles, et met à jour votre épargne disponible : score de santé, réserve et conseils sont refaits à chaque nouveau solde." },
     { titre: "Verrouillage : le délai se choisit tout de suite.", texte: "Paramètres › Sécurité › Verrouillage : la liste « Verrouiller après » (tout de suite, 1, 5 ou 15 minutes) s'ouvre maintenant même avant d'activer l'empreinte, et votre choix est repris à l'activation." },

@@ -9,9 +9,12 @@ const json = await (await fetch('http://localhost:8099/manifest.webmanifest')).j
 const m = TwaManifest.fromWebManifestJson(url, json);
 Object.assign(m, {
   packageId: 'tn.orbite.app', name: 'Orbite', launcherName: 'Orbite',
-  startUrl: '/espace/', appVersionCode: 1, appVersionName: '1.0.0',
-  fallbackType: 'customtabs', enableNotifications: false, orientation: 'portrait',
+  // ?source=play : le site sait qu'il tourne dans l'application (paiement par Google Play uniquement).
+  startUrl: '/espace/?source=play', appVersionCode: 2, appVersionName: '1.0.1',
+  fallbackType: 'customtabs', enableNotifications: false, orientation: 'portrait', minSdkVersion: 24,
   signingKey: { path: './cle-envoi-orbite.jks', alias: 'orbite' },
+  // Facturation Google Play (Digital Goods API + Payment Request) : ajoute PaymentActivity et la bibliothèque billing.
+  features: { playBilling: { enabled: true } },
 });
 m.generatorApp = 'bubblewrap-core';
 const local = (u) => u && u.replace(`https://${hote}`, 'http://localhost:8099');

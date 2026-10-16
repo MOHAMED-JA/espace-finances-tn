@@ -1085,7 +1085,7 @@
             </div>
           </form>
           <ul class="ab-garanties" role="list">
-            <li><svg aria-hidden="true"><use href="/orbite/icones.svg#bouclier"/></svg><span><strong>Paiement sécurisé</strong>Par carte bancaire, sur la page de la passerelle agréée : Orbite ne voit jamais votre carte.</span></li>
+            <li><svg aria-hidden="true"><use href="/orbite/icones.svg#bouclier"/></svg><span><strong>Paiement sécurisé</strong><span id="ab-garantie-paiement">Par carte bancaire, sur la page de la passerelle agréée : Orbite ne voit jamais votre carte.</span></span></li>
             <li><svg aria-hidden="true"><use href="/orbite/icones.svg#horloge"/></svg><span><strong>Sans engagement</strong>Prépayé, sans renouvellement automatique : vous êtes prévenu avant la fin.</span></li>
             <li><svg aria-hidden="true"><use href="/orbite/icones.svg#valide"/></svg><span><strong>Durée cumulable</strong>Un nouvel achat s'ajoute à la fin de votre abonnement en cours.</span></li>
           </ul>
@@ -1127,7 +1127,7 @@
             <h2 id="ab-hist-titre">Historique des paiements</h2>
             <ul class="ab-historique__liste" id="ab-historique" role="list"></ul>
           </section>
-          <p class="ab-legal">En payant, vous acceptez les <a href="/cgv.html">conditions générales de vente</a>. Prix en dinars tunisiens, toutes taxes comprises.</p>
+          <p class="ab-legal">En payant, vous acceptez les <a href="/cgv.html">conditions générales de vente</a>. <span id="ab-legal-prix">Prix en dinars tunisiens, toutes taxes comprises.</span></p>
         </section>
 
         <!-- ======== Paramètres (route #compte, onglet par #compte?onglet=…) ======== -->
@@ -2784,6 +2784,7 @@
   <script src="/espace/js/recevoir-calcul.js"></script>
   <script src="/espace/js/recevoir.js"></script>
   <script src="/espace/js/abonnement-calcul.js"></script>
+  <script src="/espace/js/play-achat.js"></script>
   <script src="/espace/js/abonnement.js"></script>
   <script src="/espace/js/parametres.js"></script>
   <script src="/espace/js/admin.js"></script>
