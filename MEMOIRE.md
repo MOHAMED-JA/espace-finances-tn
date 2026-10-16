@@ -2141,3 +2141,9 @@ Demande : « application fonctionnelle et prête à déployer sur Play Store »,
 - **Documents** (bloc-notes, pas dans le dépôt) : fiche Google Play complète (sécurité des données, accès pour l'examen, produits, fonctionnalités financières), guide en 12 étapes, message aux testeurs, capture n° 8 « Mes comptes ».
 - SW `orbite-2026-10-16f`, nouveautés « 2026-10-16e ».
 - **Après le premier envoi** : ajouter l'empreinte SHA-256 de la clé de signature Google Play dans `assetlinks.json`.
+
+## 3 centdecemquintricies. Correction : les rappels de versement ne partaient jamais par e-mail (16 oct.)
+
+- Cause : la fonction serveur `rappels-email` (`gabarit.js`, liste `TYPES`) ne connaissait pas le type « versement » écrit par `rappels-calcul.js` : `nettoyerPlan` l'écartait sans bruit. Le rappel du jour de versement d'épargne n'a donc jamais été envoyé (l'e-mail attendu le 15 oct. n'était pas un problème d'heure).
+- Correction : `TYPES` contient « versement » (et « placement », pour les échéances du lot A) ; couleurs associées. Fonction **v5 déployée** et vérifiée (démarre, secrets présents).
+- Test de non-régression `types` (`tests/espace/rappels-email.test.js`) : lit tous les `type: "…"` de `rappels-calcul.js` et vérifie que le serveur les accepte ; un profil avec jour de versement produit un rappel gardé et envoyé. Vérifié : le test échoue sur l'ancien code. Le test existant utilise désormais `G.TYPES` au lieu d'une liste recopiée.

@@ -8,10 +8,12 @@
  */
 
 export const LIMITES = { rappels: 40, parEmail: 6, texte: 300, titre: 120, etiquette: 80, bouton: 40 };
-export const TYPES = ["essai", "abonnement", "credit", "reduction", "perso", "fiscal"];
+/* Doit contenir TOUS les types écrits par public/espace/js/rappels-calcul.js : un type absent est écarté sans bruit
+   (le rappel de versement d'épargne n'est jamais parti avant le 16 oct. 2026). Le test « types » le vérifie. */
+export const TYPES = ["essai", "abonnement", "credit", "reduction", "versement", "perso", "fiscal", "placement"];
 const URL_INTERNE = /^\/espace\/#[a-z]+(\?[a-z0-9=&._-]*)?$/i;
 const ID = /^[a-z0-9_-]{1,80}$/i;
-const COULEURS = { essai: "#0A0D14", abonnement: "#0A0D14", credit: "#1F45C7", reduction: "#1F45C7", perso: "#067647", fiscal: "#5925DC" };
+const COULEURS = { essai: "#0A0D14", abonnement: "#0A0D14", credit: "#1F45C7", reduction: "#1F45C7", versement: "#067647", perso: "#067647", fiscal: "#5925DC", placement: "#B54708" };
 const POLICE = "'Mona Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const MONO = "'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace";
 const JOUR = 86400000;
