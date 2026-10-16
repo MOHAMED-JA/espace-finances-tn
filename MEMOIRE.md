@@ -679,6 +679,40 @@ Feuille de route demandée par l'utilisateur, livrée lot par lot :
     - `ETAPES=regex` permet de ne jouer que certaines étapes (inclure l'inscription et le premier pas).
   - Nouveautés « 2026-10-12b », SW `orbite-2026-10-12b`.
 
+## 3 centquintricies. Double authentification et verrouillage par empreinte (16 oct.)
+
+Idées proposées (10). L'utilisateur a choisi de maquetter : sécurité, chasseur d'abonnements, mode conseiller. **Seule la sécurité est validée** : les deux autres maquettes attendent.
+- **Double authentification (TOTP, Supabase MFA)** :
+  - `commun/mfa.js` (`EFMfa`) : `aalDe`, `requis`, `verifier` (essaie chaque appareil), `messageErreur` ;
+  - Paramètres › Sécurité (`securite.js`, `securite.css`) :
+    - « Activer » : code QR (SVG réencodé, un « # » coupait l'adresse data:), clé, premier code tapé (validé à 6 chiffres) ;
+    - « Ajouter un appareil de secours », « Désactiver » (vraie fenêtre `#dlg-2fa-off`, jamais `confirm()`) ;
+    - facteurs non vérifiés nettoyés à l'ouverture ou à l'annulation.
+  - Connexion : étape « Code de vérification » (`#etape-code`) après le mot de passe, au retour de Google ou avec `?mfa=1`. « Ce n'est pas moi » déconnecte cet appareil.
+  - `session.js` : une session « aal1 » d'un compte protégé est renvoyée vers `/connexion.html?mfa=1&suite=…`, sauf hors connexion.
+  - **Choix de l'utilisateur** : code demandé **seulement sur un nouvel appareil**, ou après « Se déconnecter ». La session rafraîchie garde « aal2 », un test e2e le vérifie. Les options « appareil de confiance même après déconnexion » et « une seule fois pour toujours » ont été écartées comme trop faibles.
+  - **Serveur, migration 0016** (`supabase/migrations/0016_mfa.sql`) :
+    - `mfa_ok()` : aal2, ou aucun facteur vérifié ;
+    - politique restrictive `mfa_aal2` sur abonnements, consentements, objectifs, objectifs_versements, paiements, profils, rappels_email, rappels_envoyes et simulations ;
+    - contrôle ajouté dans `exiger_admin` (donc toutes les fonctions admin_*), `supprimer_mon_compte` et `partage_admin_definir` ;
+    - les autres fonctions RPC (mon_acces, rappels_*, compter_usage…) ne contiennent pas de données financières et ne sont pas encore contrôlées.
+    - **Application en production soumise à l'accord de l'utilisateur** (outil Supabase avec approbation).
+- **Verrouillage par empreinte ou visage** (`verrou.js`) :
+  - WebAuthn local, authentificateur de l'appareil, vérification de l'utilisateur obligatoire, rien envoyé au serveur ;
+  - réglage `ef-verrou` (clé, délai 0/60/300/900 s, compte) ;
+  - ouverture à froid verrouillée, sauf juste après la connexion ou un déverrouillage (`sessionStorage` `ef-verrou-ouvert`) ; retour d'arrière-plan verrouillé après le délai ;
+  - écran `<dialog id="verrou">` modal : le reste est inerte et caché, et une fenêtre ouverte pendant le verrou est remise dessous (MutationObserver) ;
+  - « Utiliser mon mot de passe » ferme la session de cet appareil (une seule redirection).
+  - WebAuthn refuse une adresse IP : l'étape e2e passe par `localhost`.
+- **Faux Supabase** : facteurs, défi et vérification TOTP réels (RFC 6238, testé sur les vecteurs officiels), jetons aal1 ou aal2, données refusées en 403 sans aal2. `Faux.totp(clé)` est exporté pour les tests.
+- **e2e** : nouvelle étape « sécurité », avec un contexte en mouvement réduit (les transitions de page bloquaient les clics). Elle couvre :
+  - l'activation, le mauvais code puis le bon ;
+  - le refus des données serveur en aal1 ;
+  - le code à la reconnexion, l'espace qui renvoie au code, et l'absence de code au rechargement et après rafraîchissement ;
+  - la désactivation ;
+  - le verrou : authentificateur virtuel, ouverture à froid, retour d'arrière-plan, fenêtre restée dessous, mot de passe.
+- Nouveautés « 2026-10-16a », SW `orbite-2026-10-16a`.
+
 ## 3 centquatertricies. Compte Google Play, kit de la fiche, mod « choix-modele » (16 oct.)
 
 - **Compte développeur Google Play** : l'utilisateur a choisi de payer les 25 USD, cette fois seulement.

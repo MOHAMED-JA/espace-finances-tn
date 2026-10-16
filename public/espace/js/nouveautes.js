@@ -3,9 +3,10 @@
  * Changer « version » pour les montrer de nouveau ; 2 à 4 points courts, du point de vue de l'utilisateur.
  */
 window.ORBITE_NOUVEAUTES = {
-  version: "2026-10-15d",
-  date: "15 octobre 2026",
+  version: "2026-10-16a",
+  date: "16 octobre 2026",
   points: [
+    { titre: "Double authentification et verrouillage.", texte: "Paramètres › Sécurité : ajoutez un code à 6 chiffres (Google Authenticator…) demandé une seule fois sur chaque nouvel appareil ; même avec votre mot de passe, personne n'entre sans votre téléphone. Et, sur votre téléphone, Orbite peut se verrouiller en arrière-plan et se rouvrir avec votre empreinte ou votre visage." },
     { titre: "Orbite sur votre écran d'accueil.", texte: "Sur téléphone, « Installer » (dans Mon orbite ou en haut du Menu) ajoute Orbite à votre écran d'accueil : elle s'ouvre en plein écran, comme une application, et reste consultable sans réseau. Gratuit, sans passer par une boutique ; si votre navigateur n'a pas de bouton, Orbite vous montre les 3 gestes à faire." },
     { titre: "Tout le menu sur votre téléphone.", texte: "L'onglet « Menu » en bas (ou ☰ en haut) ouvre toutes les rubriques et toutes leurs sous-rubriques, comme la barre latérale de l'ordinateur : un appui vous y emmène. Sur tablette, en paysage ou en « version ordinateur », la barre latérale s'affiche directement." },
     { titre: "Ma réserve de sécurité.", texte: "Ma progression › Objectifs : l'argent des imprévus, en mois de dépenses (3 conseillés). Où vous en êtes, combien mettre de côté chaque mois et sur vos primes, la date à laquelle elle sera complète, et l'ordre conseillé : la réserve, puis l'assurance vie, puis le remboursement anticipé. Une seule réserve partout : score de santé, « Rembourser ou épargner ? » et plan de versement la partagent." },

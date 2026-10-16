@@ -9,6 +9,17 @@ const crypto = require("node:crypto");
 
 function b64url(o) { return Buffer.from(JSON.stringify(o)).toString("base64url"); }
 
+/* Double authentification (migration 0016) : code TOTP à 6 chiffres (RFC 6238, SHA-1, 30 s), clé en base32. */
+const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+function base32(buf) { let bits = "", out = ""; for (const b of buf) bits += b.toString(2).padStart(8, "0"); for (let i = 0; i + 5 <= bits.length; i += 5) out += B32[parseInt(bits.slice(i, i + 5), 2)]; return out; }
+function debase32(s) { let bits = ""; for (const c of s.replace(/[\s=]/g, "").toUpperCase()) bits += B32.indexOf(c).toString(2).padStart(5, "0"); const out = []; for (let i = 0; i + 8 <= bits.length; i += 8) out.push(parseInt(bits.slice(i, i + 8), 2)); return Buffer.from(out); }
+function totp(secret, decalage) {
+  const pas = Math.floor(Date.now() / 30000) + (decalage || 0), c = Buffer.alloc(8);
+  c.writeUInt32BE(Math.floor(pas / 2 ** 32), 0); c.writeUInt32BE(pas >>> 0, 4);
+  const h = crypto.createHmac("sha1", debase32(secret)).update(c).digest(), o = h[h.length - 1] & 15;
+  return String(((h.readUInt32BE(o) & 0x7fffffff) % 1000000)).padStart(6, "0");
+}
+
 function creer() {
   const comptes = new Map();   // email -> { user, mdp }
   const jetons = new Map();    // access_token -> user id
@@ -90,13 +101,23 @@ function creer() {
     p.statut = "paye"; p.paye_le = new Date().toISOString();
   }
 
-  function jeton(user) {
+  const aalJeton = new Map();   // access_token -> "aal1" | "aal2"
+  const aalRafraich = new Map();
+  const secrets = new Map();    // factor id -> clé base32
+  const defis = new Map();      // challenge id -> factor id
+  function jeton(user, aal) {
+    const niveau = aal || "aal1";
     const exp = Math.floor(Date.now() / 1000) + 3600;
-    const access = b64url({ alg: "HS256", typ: "JWT" }) + "." + b64url({ sub: user.id, email: user.email, role: "authenticated", aud: "authenticated", exp, iat: exp - 3600, session_id: crypto.randomUUID() }) + ".c2lnbmF0dXJl";
+    const access = b64url({ alg: "HS256", typ: "JWT" }) + "." + b64url({ sub: user.id, email: user.email, role: "authenticated", aud: "authenticated", exp, iat: exp - 3600, session_id: crypto.randomUUID(), aal: niveau, amr: [{ method: niveau === "aal2" ? "totp" : "password", timestamp: exp - 3600 }] }) + ".c2lnbmF0dXJl";
     const refresh = crypto.randomBytes(12).toString("hex");
-    jetons.set(access, user.id);
-    rafraich.set(refresh, user.id);
+    jetons.set(access, user.id); aalJeton.set(access, niveau);
+    rafraich.set(refresh, user.id); aalRafraich.set(refresh, niveau);
     return { access_token: access, token_type: "bearer", expires_in: 3600, expires_at: exp, refresh_token: refresh, user };
+  }
+  /* Comme la migration 0016 : un compte protégé ne touche à ses données qu'en « aal2 ». */
+  function mfaOk(req, u) {
+    const t = (req.headers()["authorization"] || "").replace(/^Bearer\s+/i, "");
+    return !(u.factors || []).some((f) => f.status === "verified") || aalJeton.get(t) === "aal2";
   }
   function userParId(id) { for (const c of comptes.values()) if (c.user.id === id) return c.user; return null; }
   function auth(req) {
@@ -181,7 +202,7 @@ function creer() {
       if (type === "refresh_token") {
         const id = rafraich.get(corps.refresh_token);
         if (!id) return repondre(route, 400, { code: 400, error_code: "refresh_token_not_found", msg: "Invalid Refresh Token" });
-        return repondre(route, 200, jeton(userParId(id)));
+        return repondre(route, 200, jeton(userParId(id), aalRafraich.get(corps.refresh_token)));
       }
     }
     if (url.pathname === "/auth/v1/user") {
@@ -197,6 +218,39 @@ function creer() {
         return repondre(route, 200, c.user);
       }
       return repondre(route, 200, u);
+    }
+    /* ---------- Double authentification (TOTP) ---------- */
+    if (url.pathname.startsWith("/auth/v1/factors")) {
+      const u = auth(req);
+      if (!u) return repondre(route, 401, { code: 401, error_code: "bad_jwt", msg: "invalid JWT" });
+      const t = (req.headers()["authorization"] || "").replace(/^Bearer\s+/i, "");
+      const m = url.pathname.match(/^\/auth\/v1\/factors(?:\/([^/]+))?(?:\/(challenge|verify))?$/);
+      u.factors = u.factors || [];
+      if (methode === "POST" && !m[1]) {
+        if (u.factors.some((f) => f.friendly_name === corps.friendly_name)) return repondre(route, 422, { code: 422, error_code: "mfa_factor_name_conflict", msg: "A factor with the friendly name already exists" });
+        if (u.factors.some((f) => f.status === "verified") && aalJeton.get(t) !== "aal2") return repondre(route, 403, { code: 403, error_code: "insufficient_aal", msg: "AAL2 required to enroll a new factor" });
+        const id = crypto.randomUUID(), secret = base32(crypto.randomBytes(20));
+        u.factors.push({ id, friendly_name: corps.friendly_name, factor_type: "totp", status: "unverified", created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+        secrets.set(id, secret);
+        const uri = "otpauth://totp/" + encodeURIComponent((corps.issuer || "Orbite") + ":" + u.email) + "?secret=" + secret + "&issuer=" + encodeURIComponent(corps.issuer || "Orbite");
+        return repondre(route, 200, { id, type: "totp", friendly_name: corps.friendly_name, totp: { qr_code: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="#fff"/><rect x="1" y="1" width="3" height="3"/><rect x="6" y="1" width="3" height="3"/><rect x="1" y="6" width="3" height="3"/></svg>', secret, uri } });
+      }
+      const f = u.factors.find((x) => x.id === m[1]);
+      if (!f) return repondre(route, 404, { code: 404, error_code: "mfa_factor_not_found", msg: "Factor not found" });
+      if (methode === "POST" && m[2] === "challenge") { const id = crypto.randomUUID(); defis.set(id, f.id); return repondre(route, 200, { id, type: "totp", expires_at: Math.floor(Date.now() / 1000) + 300 }); }
+      if (methode === "POST" && m[2] === "verify") {
+        if (defis.get(corps.challenge_id) !== f.id) return repondre(route, 422, { code: 422, error_code: "mfa_challenge_expired", msg: "Challenge expired" });
+        const secret = secrets.get(f.id), code = String(corps.code || "");
+        if (![-1, 0, 1].some((d) => totp(secret, d) === code)) return repondre(route, 422, { code: 422, error_code: "mfa_verification_failed", msg: "Invalid TOTP code entered" });
+        defis.delete(corps.challenge_id);
+        f.status = "verified"; f.updated_at = new Date().toISOString();
+        return repondre(route, 200, jeton(u, "aal2"));
+      }
+      if (methode === "DELETE") {
+        if (f.status === "verified" && aalJeton.get(t) !== "aal2") return repondre(route, 403, { code: 403, error_code: "insufficient_aal", msg: "AAL2 required to unenroll a verified factor" });
+        u.factors = u.factors.filter((x) => x.id !== f.id); secrets.delete(f.id);
+        return repondre(route, 200, { id: f.id });
+      }
     }
     if (url.pathname === "/auth/v1/logout") {
       const t = (req.headers()["authorization"] || "").replace(/^Bearer\s+/i, "");
@@ -304,6 +358,7 @@ function creer() {
       return repondre(route, 400, { erreur: "Action inconnue" });
     }
     if (url.pathname.startsWith("/rest/v1/") && !u) return repondre(route, 401, { code: "PGRST301", message: "JWT expired" });
+    if (url.pathname.startsWith("/rest/v1/") && !mfaOk(req, u)) return repondre(route, 403, { code: "42501", message: "Double authentification requise" });
 
     if (url.pathname === "/rest/v1/simulations") {
       const f = filtres(url);
@@ -524,8 +579,10 @@ function creer() {
     confirmationsEnvoyees: () => confirmationsEnvoyees,
     comptes,
     journal,
-    jetonPour(email) { return jeton(comptes.get(email).user); }
+    jetonPour(email) { return jeton(comptes.get(email).user); },
+    /* Code à 6 chiffres actuel pour une clé (la personne qui lit son application d'authentification). */
+    totp
   };
 }
 
-module.exports = { creer };
+module.exports = { creer, totp };
