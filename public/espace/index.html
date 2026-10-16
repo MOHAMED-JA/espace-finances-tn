@@ -33,6 +33,7 @@
   <link rel="stylesheet" href="/espace/sous-rubriques.css">
   <link rel="stylesheet" href="/espace/menu.css">
   <link rel="stylesheet" href="/espace/installer.css">
+  <link rel="stylesheet" href="/espace/securite.css">
   <link rel="stylesheet" href="/espace/decider.css">
   <link rel="stylesheet" href="/orbite/signature.css">
   <script src="/commun/config.js"></script>
@@ -1437,6 +1438,25 @@
                 <div><button type="submit" class="bouton bouton--plein bouton--petit">Changer le mot de passe</button></div>
               </form>
             </section>
+            <section class="panneau reglage" id="bloc-2fa" aria-labelledby="r-2fa">
+              <div class="reglage__texte"><h2 id="r-2fa">Double authentification <span class="securite-etat" id="etat-2fa" data-actif="non">Désactivée</span></h2>
+                <p>En plus du mot de passe, un code à 6 chiffres de votre application d'authentification (Google Authenticator, Microsoft Authenticator…), demandé une seule fois sur chaque nouvel appareil, puis seulement après « Se déconnecter ». Même avec votre mot de passe, personne n'entre sans votre téléphone.</p>
+                <p class="champ__aide" id="appareils-2fa" hidden></p></div>
+              <div class="reglage__controle reglage__boutons">
+                <button type="button" class="bouton bouton--plein bouton--petit" id="activer-2fa" aria-haspopup="dialog"><svg aria-hidden="true"><use href="/orbite/icones.svg#bouclier"/></svg>Activer</button>
+                <button type="button" class="bouton bouton--petit" id="secours-2fa" aria-haspopup="dialog" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg>Ajouter un appareil de secours</button>
+                <button type="button" class="bouton bouton--petit bouton--fermer" id="desactiver-2fa" hidden>Désactiver</button>
+              </div>
+            </section>
+            <section class="panneau reglage" id="bloc-verrou" aria-labelledby="r-verrou">
+              <div class="reglage__texte"><h2 id="r-verrou">Verrouillage de l'application</h2>
+                <p>Orbite se verrouille quand elle reste en arrière-plan ; votre empreinte ou votre visage la rouvrent, comme une application bancaire. Réglage propre à cet appareil.</p>
+                <p class="champ__aide" id="verrou-indispo" hidden>Cet appareil ou ce navigateur ne propose pas de déverrouillage par empreinte ou visage.</p></div>
+              <div class="reglage__controle">
+                <label class="interrupteur"><span>Verrouiller avec l'empreinte ou le visage</span><input type="checkbox" id="verrou-actif" role="switch"><span class="interrupteur__piste" aria-hidden="true"></span></label>
+                <div class="champ"><label for="verrou-delai">Verrouiller après</label><div class="saisie"><select id="verrou-delai"><option value="0">Dès qu'Orbite passe en arrière-plan</option><option value="60" selected>1 minute en arrière-plan</option><option value="300">5 minutes en arrière-plan</option><option value="900">15 minutes en arrière-plan</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
+              </div>
+            </section>
             <section class="panneau reglage" aria-labelledby="r-sessions">
               <div class="reglage__texte"><h2 id="r-sessions">Sessions</h2><p id="param-connexion">Fermez Orbite sur tous vos appareils, par exemple après avoir utilisé un ordinateur partagé.</p></div>
               <div class="reglage__controle reglage__boutons">
@@ -1845,6 +1865,49 @@
       </section>
     </div>
     <button type="button" class="bouton bouton--plein installer-guide__ok" id="installer-guide-ok">C'est compris</button>
+  </dialog>
+
+  <!-- Activer la double authentification (securite.js) -->
+  <dialog class="dialogue dlg-2fa" id="dlg-2fa" aria-labelledby="dlg-2fa-titre">
+    <div class="dialogue__tete"><h2 id="dlg-2fa-titre">Activer la double authentification</h2></div>
+    <div class="dialogue__corps">
+      <p class="dlg-2fa__sous" id="dlg-2fa-sous">2 minutes, une seule fois. Il vous faut une application d'authentification gratuite sur votre téléphone.</p>
+      <p class="dlg-2fa__etape"><span class="dlg-2fa__num" aria-hidden="true">1</span>Scannez ce code avec votre application</p>
+      <div class="dlg-2fa__qr"><img id="qr-2fa" alt="Code QR à scanner avec votre application d'authentification" width="176" height="176"></div>
+      <p class="dlg-2fa__cle-lib">Ou entrez cette clé dans l'application :</p>
+      <p class="dlg-2fa__cle chiffre" id="cle-2fa" translate="no"></p>
+      <p class="dlg-2fa__etape"><span class="dlg-2fa__num" aria-hidden="true">2</span>Tapez le code à 6 chiffres affiché</p>
+      <div class="champ"><label for="code-activer-2fa" class="visuellement-cache">Code à 6 chiffres</label><div class="saisie"><input id="code-activer-2fa" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="7" spellcheck="false" aria-describedby="code-activer-2fa-erreur"></div>
+        <p class="erreur-champ" id="code-activer-2fa-erreur" hidden></p></div>
+      <p class="ce-note"><svg aria-hidden="true"><use href="/orbite/icones.svg#cadenas"/></svg><span>Conseil : ajoutez ensuite un appareil de secours (une tablette, le téléphone d'un proche de confiance), au cas où vous perdriez le vôtre.</span></p>
+    </div>
+    <div class="dialogue__pied">
+      <button type="button" class="bouton bouton--fantome" id="annuler-2fa">Annuler</button>
+      <button type="button" class="bouton bouton--plein" id="valider-2fa">Activer</button>
+    </div>
+  </dialog>
+
+  <dialog class="dialogue" id="dlg-2fa-off" aria-labelledby="dlg-2fa-off-titre">
+    <form method="dialog">
+      <div class="dialogue__tete"><h2 id="dlg-2fa-off-titre">Désactiver la double authentification ?</h2></div>
+      <div class="dialogue__corps"><p>Votre mot de passe suffira de nouveau pour entrer dans Orbite. Tous les appareils enregistrés seront retirés.</p></div>
+      <div class="dialogue__pied">
+        <button type="submit" class="bouton bouton--fantome" value="annuler">Garder la protection</button>
+        <button type="submit" class="bouton bouton--danger-plein" value="ok" id="dlg-2fa-off-ok">Désactiver</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Écran verrouillé (verrou.js) : empreinte ou visage pour rouvrir Orbite. -->
+  <dialog class="verrou" id="verrou" aria-labelledby="verrou-titre">
+    <img class="verrou__logo" src="/orbite/icone-192.png" alt="" width="84" height="84">
+    <h2 id="verrou-titre">Orbite est verrouillée</h2>
+    <p id="verrou-texte">Touchez le bouton pour déverrouiller avec votre empreinte ou votre visage.</p>
+    <button type="button" class="verrou__empreinte" id="verrou-ouvrir" aria-label="Déverrouiller avec l'empreinte ou le visage">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M12 11v3a6 6 0 0 1-1.2 3.6"/><path d="M8.5 9.5a3.5 3.5 0 0 1 7 0V14c0 1.6-.4 3.1-1.1 4.4"/><path d="M5.5 15.5c.3-1 .5-2.1.5-3.2V9.5a6 6 0 0 1 12 0v2.5"/><path d="M4 7.2A9 9 0 0 1 20.4 8"/><path d="M18 15.8c-.2 1.5-.6 2.9-1.2 4.2"/></svg>
+    </button>
+    <p class="verrou__erreur" id="verrou-erreur" role="alert" hidden></p>
+    <button type="button" class="verrou__lien" id="verrou-mdp">Utiliser mon mot de passe</button>
   </dialog>
 
   <!-- ============ Modèles et dialogues ============ -->
@@ -2562,6 +2625,7 @@
   <script src="/commun/modele.js"></script>
   <script src="/commun/consentement.js"></script>
   <script src="/commun/session.js"></script>
+  <script src="/commun/mfa.js"></script>
   <script src="/moteurs/salaire/parametres.js"></script>
   <script src="/moteurs/salaire/calcul.js"></script>
   <script src="/moteurs/salaire/etat.js"></script>
@@ -2650,6 +2714,8 @@
   <script src="/espace/js/nouveautes.js"></script>
   <script src="/espace/js/appli.js"></script>
   <script src="/espace/js/installer.js"></script>
+  <script src="/espace/js/securite.js"></script>
+  <script src="/espace/js/verrou.js"></script>
   <script src="/espace/js/vue-assistant.js"></script>
   <script src="/espace/js/sous-rubriques.js"></script>
   <script src="/espace/js/menu-complet.js"></script>

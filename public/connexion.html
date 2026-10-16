@@ -115,6 +115,22 @@
             <button type="button" class="lien-discret" data-mode-lien="connexion" hidden>← Retour à la connexion</button>
           </p>
         </section>
+
+        <!-- Double authentification : le code à 6 chiffres après le mot de passe (commun/mfa.js). -->
+        <section class="panneau-auth etape-code" id="etape-code" aria-labelledby="titre-code" hidden>
+          <h1 id="titre-code" tabindex="-1">Code de vérification</h1>
+          <p class="sous-titre">Ouvrez votre application d'authentification (Google Authenticator…) et tapez le code à 6 chiffres d'Orbite. Une seule fois sur cet appareil : Orbite ne vous le redemandera pas tant que vous ne vous déconnectez pas.</p>
+          <div id="message-code" class="message" role="alert" hidden></div>
+          <form id="form-code" novalidate>
+            <div class="champ">
+              <label for="code-2fa">Code à 6 chiffres</label>
+              <input id="code-2fa" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="7" pattern="[0-9 ]*" spellcheck="false" aria-describedby="code-2fa-erreur">
+              <p class="erreur" id="code-2fa-erreur" hidden></p>
+            </div>
+            <button type="submit" class="bouton bouton--principal bouton--plein bouton-envoi" id="envoyer-code">Vérifier</button>
+          </form>
+          <p class="bas-formulaire"><button type="button" class="lien-discret" id="code-annuler">Ce n'est pas moi : me déconnecter</button></p>
+        </section>
       </div>
       <p class="mentions"><a href="/">Accueil</a> · <a href="/confidentialite.html">Confidentialité</a></p>
     </main>
@@ -127,6 +143,7 @@
   <script src="/commun/modele.js"></script>
   <script src="/commun/consentement.js"></script>
   <script src="/commun/session.js"></script>
+  <script src="/commun/mfa.js"></script>
   <script src="/commun/fuites.js"></script>
   <script src="/commun/turnstile.js"></script>
   <script src="/commun/connexion-scene.js"></script>

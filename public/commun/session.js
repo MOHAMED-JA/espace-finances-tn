@@ -51,6 +51,13 @@
           return client.auth.signOut({ scope: "local" }).finally(function () { location.replace(adresseConnexion()); })
             .then(function () { return new Promise(function () {}); });
         }
+        /* Double authentification : une session sans le code (« aal1 ») repasse par l'étape du code.
+           Hors connexion, la session de l'appareil suffit (le serveur, lui, refuse sans « aal2 »). */
+        if (window.EFMfa && !horsLigne && window.EFMfa.requis(u, s)) {
+          var suiteCode = location.pathname + location.search + location.hash;
+          location.replace("/connexion.html?mfa=1&suite=" + encodeURIComponent(suiteCode));
+          return new Promise(function () {});
+        }
         /* Politique de confidentialité et CGV : acceptation obligatoire (écran bloquant si besoin). */
         if (!window.EFConsentement) return u;
         return window.EFConsentement.garantir(u, {

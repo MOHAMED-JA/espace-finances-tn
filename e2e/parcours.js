@@ -58,12 +58,14 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   await contexte.route(SUPABASE + "/**", (r) => faux.gerer(r));
   await contexte.route("https://api.pwnedpasswords.com/**", fuites);
   const problemes = [];
+  /* Étape « sécurité » : le serveur refuse exprès (403 sans le code, 422 mauvais code) ; ces refus ne sont pas des erreurs. */
+  let refusAttendus = false;
   function suivre(p) {
     p.on("pageerror", (e) => problemes.push("Erreur JS " + p.url() + " : " + e.message));
     p.on("console", (m) => {
       const t = m.text();
       if (/Content Security Policy|Refused to/i.test(t)) problemes.push("CSP " + p.url() + " : " + t);
-      else if (m.type() === "error" && !/Failed to load resource.*(401|404|406)/.test(t)) problemes.push("Console " + p.url() + " : " + t);
+      else if (m.type() === "error" && !/Failed to load resource.*(401|404|406)/.test(t) && !(refusAttendus && /Failed to load resource.*(403|422)/.test(t))) problemes.push("Console " + p.url() + " : " + t);
     });
   }
   contexte.on("page", suivre);
@@ -3531,6 +3533,130 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => { const m = window.Orbite.utilisateur().user_metadata; return !m.orbite_accent && !m.orbite_densite && !m.orbite_taille; });
     assert((await page.evaluate(() => localStorage.getItem("ef-apparence"))) === null && await page.isDisabled("#apparence-origine"), "appareil remis à zéro");
     assert(await attendreFond("#enregistrer", avantBouton), "bouton principal revenu à l'encre");
+  });
+
+  await etape("sécurité : double authentification (activer, code à la connexion, exigée par le serveur, désactiver) et verrouillage par empreinte", async () => {
+    refusAttendus = true;
+    const EM = "securite@exemple.tn", MDP = "Securite-compte-2026!";
+    /* WebAuthn refuse une adresse IP comme identifiant de site : ce parcours passe par « localhost ». */
+    const bl = base.replace("127.0.0.1", "localhost");
+    faux.ajouterCompte(EM, MDP, { full_name: "Sam Sécurité", orbite_consentement: VERSION_ACCORD, orbite_partage_demande: new Date().toISOString(), orbite_partage_reponse: "non",
+      orbite: { prenom: "Sam", nom: "Sécurité", dateNaissance: "1990-05-02", salaireBrut: 2600 } });
+    const cs = await navigateur.newContext({ viewport: { width: 1280, height: 900 }, locale: "fr-FR", reducedMotion: "reduce" });
+    await cs.route(SUPABASE + "/**", (r) => faux.gerer(r));
+    await cs.route("https://api.pwnedpasswords.com/**", fuites);
+    await cs.addInitScript(() => { try { localStorage.setItem("orbite-nouveautes", "vu"); } catch (e) {} });
+    const ps = await cs.newPage();
+    suivre(ps);
+    const connecter = async () => {
+      await ps.bringToFront();
+      await ps.goto(bl + "/connexion.html");
+      await ps.fill("#email", EM); await ps.fill("#mdp", MDP); await ps.click("#envoyer");
+    };
+    const fermerNotes = async () => {
+      await ps.waitForTimeout(1200);
+      if (await ps.isVisible("#dlg-nouveautes")) await ps.click('#dlg-nouveautes button[value="ok"]');
+      for (let i = 0; i < 4 && await ps.$(".visite"); i++) { await ps.keyboard.press("Escape"); await ps.waitForTimeout(250); }
+    };
+    await connecter();
+    await ps.waitForURL(/\/espace\//);
+    await fermerNotes();
+    /* Activer : code QR, clé, premier code tapé (lu ici avec la même clé, comme l'application d'authentification). */
+    await ps.goto(bl + "/espace/#compte?onglet=securite");
+    await ps.waitForSelector("#activer-2fa", { state: "visible" });
+    assert(await ps.$eval("#etat-2fa", (e) => e.getAttribute("data-actif") === "non" && e.textContent === "Désactivée"), "désactivée au départ");
+    await ps.click("#activer-2fa");
+    await ps.waitForSelector("#dlg-2fa[open]");
+    const cle = (await ps.textContent("#cle-2fa")).replace(/\s/g, "");
+    assert(/^[A-Z2-7]{32}$/.test(cle) && await ps.$eval("#qr-2fa", (i) => /^data:image\/svg\+xml/.test(i.src)), "clé et code QR affichés");
+    await ps.waitForFunction(() => document.getElementById("qr-2fa").complete && document.getElementById("qr-2fa").naturalWidth > 0);
+    await ps.fill("#code-activer-2fa", "000000");
+    await ps.click("#valider-2fa");
+    await ps.waitForSelector("#code-activer-2fa-erreur:not([hidden])");
+    await ps.screenshot({ path: path.join(CAPTURES, "securite-activer-2fa.png") });
+    await ps.fill("#code-activer-2fa", Faux.totp(cle));
+    await ps.waitForSelector("#dlg-2fa:not([open])", { state: "attached" });
+    await ps.waitForFunction(() => document.getElementById("etat-2fa").getAttribute("data-actif") === "oui");
+    assert(!(await ps.isVisible("#activer-2fa")) && await ps.isVisible("#secours-2fa") && await ps.isVisible("#desactiver-2fa"), "boutons une fois activée");
+    const user = faux.comptes.get(EM).user;
+    assert(user.factors.length === 1 && user.factors[0].status === "verified", "appareil vérifié côté serveur");
+    await ps.screenshot({ path: path.join(CAPTURES, "securite-reglages.png"), fullPage: true });
+    /* Serveur : le mot de passe seul (« aal1 ») ne lit plus les données du compte. */
+    const aal1 = faux.jetonPour(EM).access_token;
+    const statut = await ps.evaluate(async (a) => (await fetch(a.url + "/rest/v1/simulations?select=id", { headers: { apikey: "x", Authorization: "Bearer " + a.t } })).status, { url: SUPABASE, t: aal1 });
+    assert(statut === 403, "données refusées sans le code : " + statut);
+    /* Connexion : le code après le mot de passe ; un mauvais code refusé ; l'espace renvoie à l'étape du code. */
+    await ps.click("#deconnexion");
+    await ps.waitForURL(/connexion\.html/);
+    await connecter();
+    await ps.waitForSelector("#etape-code:not([hidden])");
+    assert(await ps.isHidden("#panneau-auth") && await ps.isHidden("[data-onglets]"), "formulaire remplacé par l'étape du code");
+    await ps.fill("#code-2fa", "000000");
+    await ps.waitForSelector("#code-2fa-erreur:not([hidden])");
+    await ps.screenshot({ path: path.join(CAPTURES, "securite-connexion-code.png") });
+    await ps.goto(bl + "/espace/#credit");
+    await ps.waitForURL(/connexion\.html\?mfa=1/);
+    await ps.waitForSelector("#etape-code:not([hidden])");
+    await ps.fill("#code-2fa", Faux.totp(cle));
+    await ps.waitForURL(/\/espace\/#credit/);
+    await ps.waitForSelector("#vue-credit:not([hidden])");
+    await fermerNotes();
+    /* Appareil déjà vérifié : rouvrir Orbite (rechargement, session rafraîchie) ne redemande pas le code. */
+    await ps.reload();
+    await ps.waitForSelector("#vue-credit:not([hidden])");
+    assert(/\/espace\//.test(ps.url()), "pas de code redemandé sur cet appareil : " + ps.url());
+    await ps.evaluate(() => window.Espace.client.auth.refreshSession());
+    await ps.reload();
+    await ps.waitForSelector("#vue-credit:not([hidden])");
+    assert(/\/espace\//.test(ps.url()) && await ps.evaluate(async () => window.EFMfa.aalDe((await window.Espace.client.auth.getSession()).data.session) === "aal2"), "session rafraîchie toujours vérifiée");
+    await fermerNotes();
+    /* Désactiver (vraie fenêtre de confirmation). */
+    await ps.bringToFront();
+    await ps.goto(bl + "/espace/#compte?onglet=securite");
+    await ps.waitForSelector("#desactiver-2fa", { state: "visible" });
+    await ps.click("#desactiver-2fa");
+    await ps.waitForSelector("#dlg-2fa-off[open]");
+    await ps.click("#dlg-2fa-off-ok");
+    await ps.waitForFunction(() => document.getElementById("etat-2fa").getAttribute("data-actif") === "non");
+    assert((user.factors || []).length === 0, "appareils retirés côté serveur");
+    /* Verrouillage : authentificateur virtuel de l'appareil (empreinte acceptée). */
+    const cdp = await cs.newCDPSession(ps);
+    await cdp.send("WebAuthn.enable");
+    await cdp.send("WebAuthn.addVirtualAuthenticator", { options: { protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true } });
+    await ps.reload();
+    await ps.waitForSelector("#verrou-actif:not([disabled])", { state: "attached" });
+    await ps.click('label:has(#verrou-actif)');
+    await ps.waitForFunction(() => !!localStorage.getItem("ef-verrou") && document.getElementById("verrou-actif").checked);
+    assert(await ps.isHidden("#verrou"), "pas verrouillé juste après l'activation");
+    /* Ouverture à froid : verrouillée, rien de lisible derrière. */
+    await ps.evaluate(() => sessionStorage.removeItem("ef-verrou-ouvert"));
+    await ps.reload();
+    await ps.waitForSelector("#verrou[open]");
+    assert(await ps.evaluate(() => getComputedStyle(document.querySelector(".app")).visibility === "hidden" && document.querySelector(".app").hasAttribute("inert")), "Orbite cachée et inerte derrière le verrou");
+    await ps.screenshot({ path: path.join(CAPTURES, "securite-verrou.png") });
+    /* Une fenêtre qui s'ouvre pendant le verrou (« Quoi de neuf ») reste dessous. */
+    await ps.evaluate(() => document.getElementById("dlg-nouveautes").showModal());
+    await ps.waitForTimeout(200);
+    assert(await ps.evaluate(() => !!document.elementFromPoint(innerWidth / 2, innerHeight / 2).closest("#verrou")), "l'écran verrouillé reste au premier plan");
+    await ps.click("#verrou-ouvrir");
+    await ps.waitForSelector("#verrou:not([open])", { state: "attached" });
+    await ps.evaluate(() => document.getElementById("dlg-nouveautes").close());
+    /* Retour d'arrière-plan après le délai (ici : immédiat). */
+    await ps.selectOption("#verrou-delai", "0");
+    await ps.evaluate(() => {
+      const etat = (v) => { Object.defineProperty(document, "visibilityState", { configurable: true, get: () => v }); document.dispatchEvent(new Event("visibilitychange")); };
+      etat("hidden"); etat("visible");
+    });
+    await ps.waitForSelector("#verrou[open]");
+    await ps.click("#verrou-ouvrir");
+    await ps.waitForSelector("#verrou:not([open])", { state: "attached" });
+    /* « Utiliser mon mot de passe » : déconnexion de cet appareil, page de connexion. */
+    await ps.evaluate(() => window.OrbiteVerrou.verrouiller());
+    await ps.click("#verrou-mdp");
+    await ps.waitForURL(/connexion\.html/);
+    assert(!(await ps.evaluate(() => Object.keys(localStorage).some((k) => /auth-token|ef-session|sb-/.test(k)))), "session de l'appareil fermée");
+    refusAttendus = false;
+    await cs.close();
   });
 
   await etape("déconnexion puis suppression définitive du compte", async () => {

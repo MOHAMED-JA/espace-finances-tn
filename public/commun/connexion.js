@@ -46,6 +46,20 @@
     return String(o.prenom || (m.full_name || m.name || "").split(" ")[0] || "").slice(0, 40);
   }
   function entrer(u) {
+    /* Compte protégé par la double authentification : le code avant d'entrer. */
+    var MFA = window.EFMfa;
+    if (MFA) {
+      return client.auth.getSession().then(function (r) {
+        var s = r.data && r.data.session;
+        if (s && MFA.requis(s.user || u, s)) demanderCode(s.user || u);
+        else decoller(u);
+      });
+    }
+    decoller(u);
+  }
+  function decoller(u) {
+    /* Juste connecté par mot de passe (et code) : pas d'écran verrouillé en arrivant dans l'espace. */
+    try { sessionStorage.setItem("ef-verrou-ouvert", "1"); } catch (e) {}
     var S = window.OrbiteConnexion;
     var fin = function () { location.replace(suite); };
     if (!S) { fin(); return; }
@@ -265,6 +279,39 @@
   }
   var googleActif = true;
 
+  /* ---------- Double authentification : étape « code à 6 chiffres » ---------- */
+  var etapeCode = $("etape-code"), msgCode = $("message-code");
+  function demanderCode(u) {
+    onglets.hidden = true; panneau.hidden = true; etapeCode.hidden = false;
+    msgCode.hidden = true;
+    $("code-2fa").value = "";
+    $("titre-code").focus();
+    etapeCode._user = u;
+  }
+  function erreurCode(texte) {
+    var el = $("code-2fa-erreur");
+    el.textContent = texte || ""; el.hidden = !texte;
+    $("code-2fa").setAttribute("aria-invalid", texte ? "true" : "false");
+    if (texte) { var c = document.querySelector(".carte-auth"); c.classList.remove("secoue"); void c.offsetWidth; c.classList.add("secoue"); }
+  }
+  $("code-2fa").addEventListener("input", function () {
+    if (this.getAttribute("aria-invalid") === "true") erreurCode("");
+    if (window.EFMfa.codeValide(this.value) && this.value.replace(/\s/g, "").length === 6) $("form-code").requestSubmit();
+  });
+  $("form-code").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var code = $("code-2fa").value.replace(/\s/g, ""), b = $("envoyer-code");
+    if (!window.EFMfa.codeValide(code)) { erreurCode("Tapez les 6 chiffres affichés dans votre application."); $("code-2fa").focus(); return; }
+    if (b.disabled) return;
+    occupe(b, true);
+    window.EFMfa.verifier(client, code).then(function () { decoller(etapeCode._user); })
+      .catch(function (err) { erreurCode(window.EFMfa.messageErreur(err)); $("code-2fa").select(); })
+      .finally(function () { occupe(b, false); });
+  });
+  $("code-annuler").addEventListener("click", function () {
+    client.auth.signOut({ scope: "local" }).catch(function () {}).then(function () { location.replace("/connexion.html"); });
+  });
+
   /* ---------- Démarrage ---------- */
   var modeDemande = params.get("mode");
   var erreurUrl = params.get("error_description") || new URLSearchParams(location.hash.slice(1)).get("error_description");
@@ -282,7 +329,8 @@
     client.auth.getSession().then(function (r) {
       if (!(r.data && r.data.session)) return;
       /* Retour de Google ou d'un lien de confirmation : transition de bienvenue ; session déjà ouverte : ouverture directe. */
-      if (params.get("code") || /access_token=/.test(location.hash) || params.get("confirme")) entrer(r.data.session.user);
+      if (params.get("code") || /access_token=/.test(location.hash) || params.get("confirme") || params.get("mfa")) entrer(r.data.session.user);
+      else if (window.EFMfa && window.EFMfa.requis(r.data.session.user, r.data.session)) demanderCode(r.data.session.user);
       else location.replace(suite);
     });
   }

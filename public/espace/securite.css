@@ -1,0 +1,36 @@
+/* Orbite — double authentification (securite.js) et verrouillage par empreinte (verrou.js). */
+
+.securite-etat { display: inline-flex; vertical-align: middle; margin-left: 6px; padding: 2px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 700; letter-spacing: 0; }
+.securite-etat[data-actif="non"] { background: color-mix(in srgb, var(--alerte) 16%, transparent); color: var(--alerte); }
+.securite-etat[data-actif="oui"] { background: color-mix(in srgb, var(--salaire) 18%, transparent); color: var(--salaire-t); }
+
+/* ---------- Fenêtre « Activer » ---------- */
+dialog.dlg-2fa { width: min(94vw, 440px); }
+.dlg-2fa__sous { margin: 0 0 6px; color: var(--encre-2); font-size: 14px; line-height: 1.45; }
+.dlg-2fa__etape { display: flex; align-items: center; gap: 10px; margin: 14px 0 8px; font-weight: 650; font-size: 14.5px; }
+.dlg-2fa__num { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--salaire); color: #04140C; font-size: 13px; font-weight: 800; }
+.dlg-2fa__qr { display: grid; place-items: center; width: 196px; height: 196px; margin: 4px auto 8px; border-radius: 16px; background: #fff; }
+.dlg-2fa__qr img { width: 176px; height: 176px; }
+.dlg-2fa__cle-lib { margin: 0; text-align: center; font-size: 12.5px; color: var(--encre-3); }
+.dlg-2fa__cle { margin: 4px 0 0; padding: 8px; border: 1px dashed var(--filet-fort); border-radius: 10px; text-align: center; font: 600 14px var(--mono, ui-monospace, monospace); letter-spacing: .08em; color: var(--encre-2); word-break: break-all; user-select: all; }
+#code-activer-2fa { font: 700 24px/1 var(--mono, ui-monospace, monospace); letter-spacing: .4em; text-align: center; }
+
+/* ---------- Écran verrouillé ---------- */
+dialog.verrou { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; border: 0; border-radius: 0; padding: 24px; text-align: center; background: #070A12; color: #F3F4F8; }
+dialog.verrou[open] { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+dialog.verrou::backdrop { background: #070A12; }
+.verrou__logo { width: 84px; height: 84px; border-radius: 22px; }
+.verrou h2 { margin: 6px 0 0; font-size: 26px; }
+.verrou p { margin: 0; max-width: 320px; color: #C9CDD8; font-size: 15px; line-height: 1.45; }
+.verrou__empreinte { margin-top: 18px; width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center; border: 2px solid #4ADE80; background: transparent; color: #4ADE80; box-shadow: 0 0 0 10px rgba(74, 222, 128, .12); cursor: pointer; transition: transform 160ms var(--sortie, ease-out), box-shadow 160ms ease; }
+.verrou__empreinte:active { transform: scale(.96); }
+.verrou__empreinte:focus-visible { outline: 3px solid #F3F4F8; outline-offset: 4px; }
+.verrou__empreinte:disabled { opacity: .6; }
+.verrou__empreinte svg { width: 48px; height: 48px; }
+.verrou__erreur { color: #FCA5A5 !important; font-size: 14px !important; }
+.verrou__lien { margin-top: 10px; border: 0; background: none; color: #C9CDD8; font: inherit; font-size: 14px; text-decoration: underline; cursor: pointer; }
+.verrou__lien:focus-visible { outline: 2px solid #F3F4F8; outline-offset: 3px; }
+/* Rien d'Orbite ne reste lisible derrière l'écran verrouillé. */
+html.verrouille .app, html.verrouille dialog:not(#verrou) { visibility: hidden; }
+html.verrouille body { overflow: hidden; }
+@media (prefers-reduced-motion: reduce) { .verrou__empreinte { transition: none; } }
