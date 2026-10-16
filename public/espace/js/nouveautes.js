@@ -3,9 +3,10 @@
  * Changer « version » pour les montrer de nouveau ; 2 à 4 points courts, du point de vue de l'utilisateur.
  */
 window.ORBITE_NOUVEAUTES = {
-  version: "2026-10-16a",
+  version: "2026-10-16b",
   date: "16 octobre 2026",
   points: [
+    { titre: "Verrouillage : le délai se choisit tout de suite.", texte: "Paramètres › Sécurité › Verrouillage : la liste « Verrouiller après » (tout de suite, 1, 5 ou 15 minutes) s'ouvre maintenant même avant d'activer l'empreinte, et votre choix est repris à l'activation." },
     { titre: "Double authentification et verrouillage.", texte: "Paramètres › Sécurité : ajoutez un code à 6 chiffres (Google Authenticator…) demandé une seule fois sur chaque nouvel appareil ; même avec votre mot de passe, personne n'entre sans votre téléphone. Et, sur votre téléphone, Orbite peut se verrouiller en arrière-plan et se rouvrir avec votre empreinte ou votre visage." },
     { titre: "Orbite sur votre écran d'accueil.", texte: "Sur téléphone, « Installer » (dans Mon orbite ou en haut du Menu) ajoute Orbite à votre écran d'accueil : elle s'ouvre en plein écran, comme une application, et reste consultable sans réseau. Gratuit, sans passer par une boutique ; si votre navigateur n'a pas de bouton, Orbite vous montre les 3 gestes à faire." },
     { titre: "Tout le menu sur votre téléphone.", texte: "L'onglet « Menu » en bas (ou ☰ en haut) ouvre toutes les rubriques et toutes leurs sous-rubriques, comme la barre latérale de l'ordinateur : un appui vous y emmène. Sur tablette, en paysage ou en « version ordinateur », la barre latérale s'affiche directement." },
