@@ -54,6 +54,20 @@
     return a;
   }
   try { if (/^\/espace\//.test(location.pathname)) poserApparence(JSON.parse(localStorage.getItem("ef-apparence") || "null")); } catch (e) {}
-  window.EFTheme = { appliquer: appliquer, effectif: effectif, soleil: soleil, nuitATunis: nuitATunis, APPARENCE: APPARENCE, normaliserApparence: normaliserApparence, poserApparence: poserApparence };
+  /* Application Android (Google Play) : ouverte avec ?source=play ou depuis l'application (referrer android-app://).
+     Retenu pour l'onglet seulement (sessionStorage) : Chrome partage le localStorage avec l'application. */
+  var play = false;
+  try {
+    var q = new URLSearchParams(location.search);
+    if (q.get("source") === "play" || /^android-app:\/\/tn\.orbite\.app/.test(document.referrer || "")) sessionStorage.setItem("ef-play", "oui");
+    play = sessionStorage.getItem("ef-play") === "oui";
+    if (q.has("source") && q.get("source") === "play" && history.replaceState) {
+      q.delete("source");
+      var reste = q.toString();
+      history.replaceState(history.state, "", location.pathname + (reste ? "?" + reste : "") + location.hash);
+    }
+  } catch (e) {}
+  if (play) racine.setAttribute("data-play", "oui");
+  window.EFTheme = { play: play, appliquer: appliquer, effectif: effectif, soleil: soleil, nuitATunis: nuitATunis, APPARENCE: APPARENCE, normaliserApparence: normaliserApparence, poserApparence: poserApparence };
   if (typeof module !== "undefined" && module.exports) module.exports = window.EFTheme;
 })();

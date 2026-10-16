@@ -10,6 +10,8 @@
   var acces = null, formules = [], choisie = null, paiementsCharges = false;
   /* Prix calculés par le serveur (offre de lancement, code promo appliqué). */
   var prixServeur = [], codeApplique = null;
+  /* Application Android : paiement par Google Play uniquement (prix et achat fournis par Google). */
+  var P = window.OrbitePlay, play = !!(P && P.dansApplication()), offresPlay = [], etatPlay = "attente";
 
   var DATE = new Intl.DateTimeFormat("fr-TN", { day: "numeric", month: "long", year: "numeric" });
   function date(iso) { return iso ? DATE.format(new Date(iso)) : ""; }
@@ -58,10 +60,16 @@
   /* ---------- Offres ---------- */
   function rendreOffres() {
     var box = $("ab-offres");
-    var liste = A.offres(formules, prixServeur);
+    var liste = offresAffichees();
     box.textContent = "";
-    box.setAttribute("aria-busy", "false");
-    if (!liste.length) { box.appendChild(cree("p", "ab-vide", "Les formules n'ont pas pu être chargées. Réessayez dans un instant.")); return; }
+    box.setAttribute("aria-busy", play && etatPlay === "attente" ? "true" : "false");
+    if (!liste.length) {
+      box.appendChild(cree("p", "ab-vide", !play ? "Les formules n'ont pas pu être chargées. Réessayez dans un instant."
+        : etatPlay === "attente" ? "Chargement des prix Google Play…"
+        : "Le paiement Google Play n'est pas disponible sur cet appareil pour le moment. Mettez à jour Google Play et Chrome, puis rouvrez Orbite."));
+      majBouton();
+      return;
+    }
     if (!choisie || !liste.some(function (o) { return o.cle === choisie; })) choisie = (liste.filter(function (o) { return o.recommandee; })[0] || liste[0]).cle;
     liste.forEach(function (o, i) {
       var l = cree("label", "ab-offre" + (o.recommandee ? " ab-offre--vedette" : ""));
@@ -81,15 +89,15 @@
         carte.appendChild(pr);
       }
       var prix = cree("span", "ab-offre__prix");
-      if (o.prixAvant) { var av = cree("s", "ab-offre__avant chiffre", F.dt3(o.prixAvant)); av.setAttribute("aria-label", "au lieu de " + dt3(o.prixAvant)); prix.appendChild(av); }
-      prix.appendChild(cree("strong", "chiffre", F.dt3(o.prix)));
-      prix.appendChild(cree("span", null, "DT"));
+      if (o.prixTexte) prix.appendChild(cree("strong", "chiffre", o.prixTexte));
+      else if (o.prixAvant) { var av = cree("s", "ab-offre__avant chiffre", F.dt3(o.prixAvant)); av.setAttribute("aria-label", "au lieu de " + dt3(o.prixAvant)); prix.appendChild(av); }
+      if (!o.prixTexte) { prix.appendChild(cree("strong", "chiffre", F.dt3(o.prix))); prix.appendChild(cree("span", null, "DT")); }
       carte.appendChild(prix);
-      carte.appendChild(cree("span", "ab-offre__mois", o.mois === 1 ? "par mois, sans engagement" : "soit " + dt3(o.prixMois) + " par mois · " + o.mois + " mois"));
+      carte.appendChild(cree("span", "ab-offre__mois", o.mois === 1 ? "par mois, sans engagement" : "soit " + (o.prixMoisTexte || dt3(o.prixMois)) + " par mois · " + o.mois + " mois"));
       if (o.economie > 0) {
         var gain = cree("span", "ab-offre__gain");
         gain.appendChild(icone("valide"));
-        gain.appendChild(cree("span", null, (o.moisOfferts ? o.moisOfferts + " mois offerts · " : "") + "vous économisez " + dt3(o.economie) + (o.recommandee ? " (−" + o.reductionPct + " %)" : "")));
+        gain.appendChild(cree("span", null, (o.moisOfferts ? o.moisOfferts + " mois offerts · " : "") + "vous économisez " + (o.economieTexte || dt3(o.economie)) + (o.recommandee ? " (−" + o.reductionPct + " %)" : "")));
         carte.appendChild(gain);
       }
       l.appendChild(carte);
@@ -97,11 +105,13 @@
     });
     majBouton();
   }
+  function offresAffichees() { return play ? offresPlay : A.offres(formules, prixServeur); }
   function majBouton() {
-    var o = A.offres(formules, prixServeur).filter(function (x) { return x.cle === choisie; })[0];
+    var o = offresAffichees().filter(function (x) { return x.cle === choisie; })[0];
     var b = $("ab-payer");
     b.disabled = !o;
-    $("ab-payer-lib").textContent = o ? "Payer " + dt3(o.prix) + " · " + o.libelle.toLowerCase() : "Choisir une formule";
+    $("ab-payer-lib").textContent = o ? (play ? "Payer avec Google Play · " + o.prixTexte : "Payer " + dt3(o.prix)) + " · " + o.libelle.toLowerCase()
+      : play && etatPlay === "indisponible" ? "Google Play indisponible" : "Choisir une formule";
   }
   $("ab-offres").addEventListener("change", function (e) {
     if (e.target.name !== "ab-formule") return;
@@ -116,6 +126,7 @@
     var b = $("ab-payer"), err = $("ab-erreur");
     err.hidden = true;
     b.disabled = true; b.setAttribute("aria-busy", "true");
+    if (play) { acheterPlay(b, err); return; }
     $("ab-payer-lib").textContent = "Redirection vers le paiement sécurisé…";
     E.abonnement.commander(choisie, codeApplique).then(function (r) {
       var url = A.adressePaiementSure(r && r.url);
@@ -128,6 +139,40 @@
       majBouton();
     });
   });
+
+  /* Achat Google Play : la fenêtre de Google encaisse, le serveur vérifie et active. */
+  function acheterPlay(b, err) {
+    $("ab-payer-lib").textContent = "Ouverture de Google Play…";
+    P.acheter(choisie, E).then(function (r) {
+      if (!r) return;
+      if (r.ok) {
+        return charger().then(function () {
+          chargerHistorique();
+          O.toast(r.texte + " Votre abonnement est actif jusqu'au " + date(acces && acces.fin) + ".", { duree: 9000 });
+          celebrer();
+        });
+      }
+      chargerHistorique();
+      O.toast(r.texte, r.attente ? { duree: 9000 } : { erreur: true });
+    }).catch(function (x) {
+      err.textContent = (x && x.message) || "Le paiement Google Play n'a pas pu démarrer. Réessayez dans un instant.";
+      err.hidden = false;
+    }).finally(function () {
+      b.removeAttribute("aria-busy");
+      majBouton();
+    });
+  }
+  function chargerPlay() {
+    return P.details().then(function (d) { offresPlay = P.offres(formules, d); }, function () { offresPlay = []; })
+      .then(function () { etatPlay = offresPlay.length ? "ok" : "indisponible"; });
+  }
+  /* Dans l'application : pas de code promo du site ni de paiement par carte (règle Google Play). */
+  function preparerPlay() {
+    if (!play) return;
+    doc.querySelector(".ab-code").hidden = true;
+    $("ab-garantie-paiement").textContent = "Par Google Play, avec le moyen de paiement de votre compte Google : Orbite ne voit jamais votre carte.";
+  }
+  preparerPlay();
 
   /* ---------- Code promo : vérifié par le serveur, qui recalcule aussi les prix ---------- */
   function messageCode(t, type) { var m = $("ab-code-msg"); m.textContent = t || ""; m.setAttribute("data-type", type || ""); }
@@ -219,7 +264,7 @@
       g.appendChild(cree("small", null, date(p.paye_le || p.cree_le) + " · " + p.reference));
       li.appendChild(g);
       var d = cree("span", "ab-ligne__d");
-      d.appendChild(cree("strong", "chiffre", dt3(p.montant_millimes / 1000)));
+      d.appendChild(p.passerelle === "play" ? cree("strong", null, "Google Play") : cree("strong", "chiffre", dt3(p.montant_millimes / 1000)));
       d.appendChild(cree("span", "puce ab-ligne__statut", STATUTS[p.statut] || p.statut));
       li.appendChild(d);
       ul.appendChild(li);
@@ -234,13 +279,14 @@
   function charger() {
     return Promise.all([
       E.abonnement.acces().then(function (a) { acces = a; }),
-      E.abonnement.formules().then(function (f) { formules = f || []; }),
+      E.abonnement.formules().then(function (f) { formules = f || []; }).then(function () { if (play) return chargerPlay(); }),
       chargerPrix()
     ]).then(function () {
       rendreAcces(); rendreOffres();
     }).catch(function () {
       /* Service indisponible : on n'empêche jamais l'accès par erreur. */
       acces = acces || null;
+      if (play && etatPlay === "attente") etatPlay = "indisponible";
       rendreOffres();
       if (acces) rendreAcces();
       else { $("ab-statut-titre").textContent = "Abonnement"; $("ab-statut-sous").textContent = "L'état de votre abonnement n'a pas pu être lu. Réessayez dans un instant."; }
@@ -281,7 +327,18 @@
     if (e.detail.vue === "abonnement" && !paiementsCharges) chargerHistorique();
   });
 
-  function demarrer() { charger().then(retourPaiement); chargerParrainage().then(parrainEnAttente); }
+  /* Application : un achat payé mais pas encore enregistré est repris à l'ouverture. */
+  function restaurerPlay() {
+    if (!play) return;
+    P.restaurer(E).then(function (n) {
+      if (!n) return;
+      return charger().then(function () {
+        chargerHistorique();
+        O.toast("Achat Google Play enregistré : votre abonnement est actif jusqu'au " + date(acces && acces.fin) + ".", { duree: 9000 });
+      });
+    }).catch(function () {});
+  }
+  function demarrer() { charger().then(play ? restaurerPlay : retourPaiement); chargerParrainage().then(parrainEnAttente); }
   if (O.pret) demarrer();
   else doc.addEventListener("orbite:pret", demarrer, { once: true });
 

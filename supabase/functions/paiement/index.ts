@@ -16,9 +16,14 @@
  *   KONNECT_API_KEY, KONNECT_WALLET_ID, KONNECT_SANDBOX (0 = production)
  *   FLOUCI_APP_TOKEN, FLOUCI_APP_SECRET
  *   CLICTOPAY_USER, CLICTOPAY_PASSWORD, CLICTOPAY_TEST (0 = production)
+ *   GOOGLE_PLAY_COMPTE_SERVICE   JSON du compte de service Google (application Android : action « play », voir play.js)
+ *
+ * Application Android (Google Play) : { action: "play", produit, jeton } → vérifie l'achat auprès de Google,
+ *   l'enregistre une seule fois (empreinte du jeton), active l'abonnement et consomme l'achat.
  */
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { passerelle, nouvelleReference, REFERENCE_VALIDE } from "./passerelles.js";
+import { formuleDe, JETON_VALIDE, lireCompte, jetonAcces, lireAchat, etatAchat, consommer, empreinte } from "./play.js";
 
 const env = Deno.env.toObject();
 env.URL_APPLICATION = (env.URL_APPLICATION || "https://espace-finances-tn.jaouadimohamedaziz.workers.dev").replace(/\/+$/, "");
@@ -116,6 +121,43 @@ async function creer(req: Request, u: { id: string }, formule: string, code: str
   }
 }
 
+/* ---------- Google Play (application Android) ---------- */
+async function play(req: Request, u: { id: string }, produit: string, jeton: string) {
+  const formule = formuleDe(produit);
+  if (!formule || !JETON_VALIDE.test(jeton)) return repondre(req, { erreur: "Achat invalide" }, 400);
+  if (!env.GOOGLE_PLAY_COMPTE_SERVICE) return repondre(req, { erreur: "Le paiement Google Play n'est pas encore ouvert.", code: "configuration" }, 503);
+  const emp = await empreinte(jeton);
+  let p = (await admin.from("paiements").select("*").eq("passerelle", "play").eq("reference_passerelle", emp).maybeSingle()).data;
+  if (p && p.user_id !== u.id) return repondre(req, { erreur: "Cet achat est déjà rattaché à un autre compte Orbite." }, 409);
+  let acces: string, achat: Record<string, any> | null;
+  try {
+    acces = await jetonAcces(lireCompte(env.GOOGLE_PLAY_COMPTE_SERVICE), fetch);
+    achat = await lireAchat(produit, jeton, acces, fetch);
+  } catch (_e) { return repondre(req, { erreur: "Google Play ne répond pas. Votre achat sera vérifié à la prochaine ouverture d'Orbite." }, 502); }
+  const e = etatAchat(achat, produit);
+  if (!e.connu) return repondre(req, { erreur: "Achat introuvable chez Google Play." }, 404);
+  if (!e.paye) return repondre(req, { statut: e.attente ? "en_attente" : "echec" });
+  if (!p) {
+    const { data: f } = await admin.from("formules").select("cle, prix_millimes").eq("cle", formule).maybeSingle();
+    if (!f) return repondre(req, { erreur: "Formule inconnue" }, 400);
+    const { data: cree, error } = await admin.from("paiements").insert({
+      user_id: u.id, formule, montant_millimes: f.prix_millimes, passerelle: "play", reference: nouvelleReference(),
+      reference_passerelle: emp, detail: { commande: e.commande, test: e.test }
+    }).select("*").maybeSingle();
+    /* Deux vérifications simultanées du même achat : l'index unique n'en garde qu'une. */
+    p = error ? (await admin.from("paiements").select("*").eq("passerelle", "play").eq("reference_passerelle", emp).maybeSingle()).data : cree;
+    if (!p || p.user_id !== u.id) return repondre(req, { erreur: "Achat impossible à enregistrer" }, 500);
+  }
+  let fin = null, deja = p.statut === "paye";
+  if (!deja) {
+    const { data, error } = await admin.rpc("activer_paiement", { p_reference: p.reference, p_reference_passerelle: null });
+    if (error) return repondre(req, { erreur: "Activation impossible pour le moment. Votre achat sera vérifié à la prochaine ouverture d'Orbite." }, 500);
+    fin = data && data.fin;
+  }
+  if (!e.consomme) { try { await consommer(produit, jeton, acces, fetch); } catch (_e) { /* reconsommé à la prochaine vérification */ } }
+  return repondre(req, { statut: "paye", deja, fin });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: entetes(req) });
   const url = new URL(req.url);
@@ -137,6 +179,7 @@ Deno.serve(async (req) => {
   try { corps = await req.json(); } catch { return repondre(req, { erreur: "Requête invalide" }, 400); }
 
   if (corps.action === "creer") return creer(req, u, String(corps.formule || ""), String(corps.code || ""));
+  if (corps.action === "play") return play(req, u, String(corps.produit || ""), String(corps.jeton || ""));
 
   const ref = String(corps.reference || "");
   if (!REFERENCE_VALIDE.test(ref)) return repondre(req, { erreur: "Référence invalide" }, 400);
