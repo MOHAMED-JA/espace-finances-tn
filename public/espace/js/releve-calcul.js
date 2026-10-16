@@ -90,9 +90,23 @@
     return x > lim ? (+d.slice(0, 4) - 1) + d.slice(4) : d;
   }
 
-  /* Sens d'une opération : la variation du solde (le plus sûr), sinon la colonne, le signe, puis les mots. */
+  /* Soldes datés écrits sur le relevé (colonne « Solde », lignes « Solde au 01/10 ») → [{ d, v }] : un solde par jour,
+     celui de fin de journée (le dernier écrit si le relevé va du plus ancien au plus récent, le premier sinon).
+     Les soldes recalculés à partir des montants ne sont pas repris : seuls ceux imprimés par la banque font foi. */
+  function soldesDates(ops) {
+    var lus = ops.filter(function (o) { return o.date && o.solde != null && isFinite(o.solde); });
+    var datesOps = ops.filter(function (o) { return o.date && !o.marqueur; }).map(function (o) { return o.date; });
+    var recent = datesOps.length > 1 && datesOps[0] > datesOps[datesOps.length - 1];
+    var parJour = {};
+    lus.forEach(function (o) { if (!recent || !(o.date in parJour)) parJour[o.date] = arr(o.solde); });
+    return Object.keys(parJour).sort().map(function (d) { return { d: d, v: parJour[d] }; });
+  }
+
+  /* Sens d'une opération : la variation du solde (le plus sûr), sinon la colonne, le signe, puis les mots.
+     Le tableau rendu porte aussi .soldes (non énumérable) : les soldes datés lus sur le relevé (Mes comptes). */
   function finaliser(ops) {
     var solde = null, r = [];
+    Object.defineProperty(r, "soldes", { value: soldesDates(ops), enumerable: false });
     ops.forEach(function (o) {
       /* Ligne de solde (« Solde au 01/10 ») : pas une opération, elle pose le solde de départ. */
       if (o.marqueur) { solde = o.solde; return; }
@@ -146,7 +160,11 @@
       var libelle = textes.join(" ").replace(/\s+/g, " ").trim();
       /* Ligne de solde (« Solde au 01/10 ») : elle sert à trouver le sens des opérations suivantes. */
       if (TOTAL.test(texteCle(libelle))) { derniere = null; return; }
-      if (SOLDE.test(texteCle(libelle)) && montants.length) { ops.push({ marqueur: true, solde: montants[montants.length - 1].v }); derniere = null; return; }
+      if (SOLDE.test(texteCle(libelle)) && montants.length) {
+        /* Date du solde : en tête de ligne, sinon écrite dans le libellé (« Solde au 30/09/2026 »). */
+        var dm = d || (function () { var mots = cs.join(" ").split(/\s+/); for (var k = 0; k < mots.length; k++) { var b = date(mots[k], annee); if (b) return recaler(b, !/\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}/.test(mots[k]), maintenant); } return null; })();
+        ops.push({ marqueur: true, solde: montants[montants.length - 1].v, date: dm }); derniere = null; return;
+      }
       if (!d) {
         /* Suite du libellé de l'opération précédente (deuxième ligne). */
         if (derniere && !montants.length && libelle && libelle.length < 60 && !SOLDE.test(texteCle(libelle))) derniere.libelle = (derniere.libelle + " " + libelle).slice(0, 80);
@@ -321,7 +339,7 @@
     return "Relevé du " + fmt(a, a.slice(0, 4) !== z.slice(0, 4)) + " au " + fmt(z, true);
   }
 
-  return { montant: montant, estMontant: estMontant, date: date, depuisLignes: depuisLignes, depuisCsv: depuisCsv, cleMarchand: cleMarchand,
+  return { montant: montant, estMontant: estMontant, date: date, soldesDates: soldesDates, depuisLignes: depuisLignes, depuisCsv: depuisCsv, cleMarchand: cleMarchand,
     categoriser: categoriser, bilan: bilan, empreinte: empreinte, appliquer: appliquer, periode: periode, moisGarde: moisGarde,
     ENVELOPPES: ENVELOPPES, IMPORTS_MAX: IMPORTS_MAX };
 });

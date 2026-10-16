@@ -1,5 +1,5 @@
 /*
- * Orbite — « Mon mois » (route #mois, onglet par #mois?onglet=budget|calendrier). Point 5, choix validés le 12 oct. 2026.
+ * Orbite — « Mon mois » (route #mois, onglet par #mois?onglet=budget|calendrier|comptes ; Comptes : vue-comptes.js). Point 5, choix validés le 12 oct. 2026.
  * Budget : enveloppes proposées depuis le profil (BudgetCalcul.proposition) tant que l'utilisateur ne les a pas modifiées,
  * dépense notée en une phrase (BudgetCalcul.phrase), reste à vivre et montant par jour jusqu'à la paie. Seuls les totaux par
  * enveloppe sont gardés, dans le profil (profil.budget) ; chaque changement s'annule depuis le message.
@@ -28,7 +28,7 @@
   function info(def) { return B.ENVELOPPES.filter(function (e) { return e.cle === def; })[0]; }
 
   /* ---------- Onglets ---------- */
-  var ONGLETS = ["budget", "calendrier"], barre = doc.querySelector(".mo-onglets");
+  var ONGLETS = ["budget", "calendrier", "comptes"], barre = doc.querySelector(".mo-onglets");
   function ouvrirOnglet(cle, focus) {
     if (ONGLETS.indexOf(cle) === -1) cle = "budget";
     barre.setAttribute("data-o", cle);
@@ -341,7 +341,8 @@
   /* ---------- Rendu et navigation ---------- */
   function rendre() {
     if ($("vue-mois").hidden) return;
-    if (ongletActif() === "calendrier") rendreCalendrier(); else rendreBudget();
+    var o = ongletActif();
+    if (o === "calendrier") rendreCalendrier(); else if (o === "comptes") { if (window.OrbiteComptes) window.OrbiteComptes.rendre(); } else rendreBudget();
   }
   /* Pour l'import du relevé (releve-import.js) : plan du mois et enregistrement avec « Annuler ». */
   window.OrbiteBudget = { plan: plan, enregistrer: enregistrer };
