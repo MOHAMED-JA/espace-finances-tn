@@ -33,7 +33,7 @@
 .og-zone.og-ton-ok { fill: color-mix(in srgb, var(--g-ok) 12%, transparent); }
 .og-zone.og-ton-danger { fill: color-mix(in srgb, var(--g-danger) 10%, transparent); }
 .og-seuil { stroke: var(--encre-2); stroke-width: 1.5; stroke-dasharray: 4 4; }
-.og-seuil__lib, .og-verticale__lib { fill: var(--encre-2); font-size: 11.5px; font-weight: 650; }
+.og-seuil__lib, .og-verticale__lib { fill: var(--encre-2); font-size: 11.5px; font-weight: 650; paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
 .og-verticale { stroke: var(--encre-3); stroke-width: 1; stroke-dasharray: 3 4; }
 .og-curseur { stroke: var(--encre); stroke-width: 1.5; }
 .og-viseur { stroke: var(--encre-3); stroke-width: 1; }

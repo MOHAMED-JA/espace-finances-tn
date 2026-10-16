@@ -204,9 +204,22 @@
       el("line", { class: "og-seuil", x1: g.l, x2: W - g.r, y1: Y(o.seuil.y).toFixed(1), y2: Y(o.seuil.y).toFixed(1) }, svg);
       if (o.seuil.lib) el("text", { class: "og-seuil__lib", x: W - g.r - 4, y: (Y(o.seuil.y) - 6).toFixed(1), "text-anchor": "end" }, svg).textContent = o.seuil.lib;
     }
-    (o.verticales || []).forEach(function (v) {
+    /* Étiquettes des verticales : sur la première rangée libre (deux dates proches ne se chevauchent plus). */
+    var rangees = [];
+    (o.verticales || []).slice().sort(function (a, b) { return a.x - b.x; }).forEach(function (v) {
       el("line", { class: "og-verticale", x1: X(v.x).toFixed(1), x2: X(v.x).toFixed(1), y1: g.t, y2: H - g.b }, svg);
-      if (v.lib) el("text", { class: "og-verticale__lib", x: (X(v.x) + (X(v.x) > W - 90 ? -6 : 6)).toFixed(1), y: g.t + 12, "text-anchor": X(v.x) > W - 90 ? "end" : "start" }, svg).textContent = v.lib;
+      if (!v.lib) return;
+      var fin = X(v.x) > W - 90, x = X(v.x) + (fin ? -6 : 6);
+      var t = el("text", { class: "og-verticale__lib", x: x.toFixed(1), y: g.t + 12, "text-anchor": fin ? "end" : "start" }, svg);
+      t.textContent = v.lib;
+      var l = 0; try { l = t.getComputedTextLength(); } catch (e) { l = 0; }
+      if (!(l > 0)) l = v.lib.length * 6.6;
+      /* Trop longue pour tenir à droite de la ligne : écrite à sa gauche. */
+      if (!fin && x + l > W - 4) { fin = true; x = X(v.x) - 6; t.setAttribute("x", x.toFixed(1)); t.setAttribute("text-anchor", "end"); }
+      var a = fin ? x - l : x, b = fin ? x : x + l, r = 0;
+      while (rangees[r] && rangees[r].some(function (z) { return a < z[1] + 8 && b > z[0] - 8; })) r++;
+      (rangees[r] = rangees[r] || []).push([a, b]);
+      t.setAttribute("y", (g.t + 12 + r * 16).toFixed(1));
     });
     series.forEach(function (s) {
       if (!s.pts.length) return;
