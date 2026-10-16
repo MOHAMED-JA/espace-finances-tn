@@ -2091,3 +2091,14 @@ Branche `lot2`. Tout tourne sur l'appareil ; aucune nouvelle table, aucune migra
 
 - Bug signalé : la liste du délai ne montrait qu'une valeur. Cause : le `<select>` était `disabled` interrupteur éteint, donc il ne s'ouvrait pas. Corrigé dans `verrou.js` (`rendreReglage` ne désactive plus la liste ; la valeur choisie est reprise à l'activation).
 - e2e : la liste a 4 choix, est active avant l'activation, et le délai choisi (300 s) est conservé. SW `orbite-2026-10-16b`, nouveautés « 2026-10-16b ».
+
+## 3 centseptquintricies. Paquet Android pour Google Play (16 oct.)
+
+- **Protection serveur 0016 appliquée en production** par l'utilisateur (SQL Editor, « Success »), vérifiée : 9 politiques `mfa_aal2`, `mfa_ok()` présente, contrôle dans `exiger_admin`, `supprimer_mon_compte` et `partage_admin_definir`. La double authentification peut être activée.
+- **Projet Android** `android/` (Trusted Web Activity, `@bubblewrap/core` 1.27, AGP 8.9.1, SDK 36, min 21) :
+  - identifiant **`tn.orbite.app`**, version 1 / 1.0.0, portrait, repli Custom Tabs, raccourcis et partage de PDF repris du manifeste ;
+  - généré depuis `public/` servi en local (le site n'est pas joignable depuis la session) : `android/generer.mjs` ;
+  - notice : `android/LISEZMOI.md`.
+- **Compilation** : `dl.google.com` est bloqué par le réseau de la session → workflow `.github/workflows/android.yml` (GitHub Actions) qui produit l'AAB et l'APK **non signés**, et joint `apksigner.jar` et `zipalign`.
+- **Clé d'envoi** `cle-envoi-orbite.jks` (RSA 3072, alias `orbite`) créée hors du dépôt, remise à l'utilisateur avec son mot de passe dans une archive. **Jamais dans le dépôt** (`*.jks` ignoré) ni dans les secrets GitHub. Avec la « Signature d'application par Google Play », une clé d'envoi perdue peut être réinitialisée par Google.
+- **`public/.well-known/assetlinks.json`** : empreinte de la clé d'envoi `0D:A8:EA:66:…:FE:08`. **À compléter** avec l'empreinte de la clé de signature Google Play après le premier envoi.
