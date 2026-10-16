@@ -2122,3 +2122,7 @@ Idée de l'utilisateur : le solde bancaire dans Orbite, pour voir sa santé fina
 - Cause : le score ne lit que l'épargne disponible, qui reste à zéro en cas de découvert (elle ne descend pas sous zéro). Sans épargne déclarée, le score était identique avec ou sans découvert.
 - Choix de l'utilisateur (AskUserQuestion) : **−10 points**, ligne visible « Découvert bancaire » dans Santé financière, objectif « Régler le découvert ». Calcul dans `orbite-intelligence.js` (`scoreSante`, `malus`), affichage dans `vue-orbite.js`. Score plancher 0.
 - Test unitaire ajouté. SW `orbite-2026-10-16d`, nouveautés « 2026-10-16d ».
+
+### Correction : étiquettes des lignes verticales superposées (16 oct.)
+- Signalé sur le graphique du patrimoine net : deux fins de crédit la même année (2032) écrivaient leurs étiquettes l'une sur l'autre.
+- `orbite-graphe.js` : chaque étiquette de verticale est mesurée (`getComputedTextLength`) et placée sur la première rangée libre (16 px plus bas si elle chevauche) ; trop longue à droite, elle passe à gauche de sa ligne. `graphe.css` : contour de la couleur du fond (`paint-order: stroke`) pour rester lisible sur les tracés. Vaut pour tous les graphiques (patrimoine, épargne, progression…). SW `orbite-2026-10-16e`.
