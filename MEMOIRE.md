@@ -2095,7 +2095,7 @@ Branche `lot2`. Tout tourne sur l'appareil ; aucune nouvelle table, aucune migra
 ## 3 centseptquintricies. Paquet Android pour Google Play (16 oct.)
 
 - **Protection serveur 0016 appliquée en production** par l'utilisateur (SQL Editor, « Success »), vérifiée : 9 politiques `mfa_aal2`, `mfa_ok()` présente, contrôle dans `exiger_admin`, `supprimer_mon_compte` et `partage_admin_definir`. La double authentification peut être activée.
-- **Projet Android** `android/` (Trusted Web Activity, `@bubblewrap/core` 1.27, AGP 8.9.1, SDK 36, min 21) :
+- **Projet Android** `android/` (Trusted Web Activity, `@bubblewrap/core` 1.27, AGP 8.9.1, SDK 36, min 24) :
   - identifiant **`tn.orbite.app`**, version 1 / 1.0.0, portrait, repli Custom Tabs, raccourcis et partage de PDF repris du manifeste ;
   - généré depuis `public/` servi en local (le site n'est pas joignable depuis la session) : `android/generer.mjs` ;
   - notice : `android/LISEZMOI.md`.

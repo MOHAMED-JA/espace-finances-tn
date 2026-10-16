@@ -59,7 +59,7 @@
   "isChromeOSOnly": false,
   "isMetaQuest": false,
   "fullScopeUrl": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/",
-  "minSdkVersion": 21,
+  "minSdkVersion": 24,
   "shareTarget": {
     "action": "https://espace-finances-tn.jaouadimohamedaziz.workers.dev/espace/recevoir",
     "method": "POST",
