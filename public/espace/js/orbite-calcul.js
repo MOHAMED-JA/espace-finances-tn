@@ -12,12 +12,12 @@
       require("../../moteurs/salaire/calcul.js"), require("../../moteurs/salaire/parametres.js"),
       require("../../moteurs/salaire/etat.js"), require("../../moteurs/vie/moteur-fiscal.js"),
       require("../../moteurs/vie/scenario.js"), require("../../moteurs/salaire/pension.js"), require("./budget-calcul.js"), require("./comptes-calcul.js"),
-      require("./placements-calcul.js"), require("./pilotage-calcul.js")
+      require("./placements-calcul.js"), require("./pilotage-calcul.js"), require("./ensemble-calcul.js")
     );
   } else {
-    racine.OrbiteCalcul = fabrique(racine.CalculSalaire, racine.PARAMETRES_PAIE, racine.EtatSimulation, racine.MoteurFiscal, racine.Scenario, racine.CalculPension, racine.BudgetCalcul, racine.ComptesCalcul, racine.PlacementsCalcul, racine.PilotageCalcul);
+    racine.OrbiteCalcul = fabrique(racine.CalculSalaire, racine.PARAMETRES_PAIE, racine.EtatSimulation, racine.MoteurFiscal, racine.Scenario, racine.CalculPension, racine.BudgetCalcul, racine.ComptesCalcul, racine.PlacementsCalcul, racine.PilotageCalcul, racine.EnsembleCalcul);
   }
-})(typeof self !== "undefined" ? self : this, function (C, P, E, MF, SC, CP, BC, CC, PL, PI) {
+})(typeof self !== "undefined" ? self : this, function (C, P, E, MF, SC, CP, BC, CC, PL, PI, EC) {
   "use strict";
 
   /* Hypothèses par défaut des crédits types (modifiables dans le module Crédit). */
@@ -370,6 +370,13 @@
       factures: PI ? PI.normaliser({ factures: p.factures }).factures : undefined,
       assurances: PI ? PI.normaliser({ assurances: p.assurances }).assurances : undefined,
       proches: PI ? PI.normaliser({ proches: p.proches }).proches : undefined,
+      /* Lot C (17 oct. 2026) : relevé mensuel du patrimoine net (historique réel, 36 mois) ; hypothèses de la liberté financière. */
+      patrimoineHisto: EC ? EC.normaliserHistorique(p.patrimoineHisto) : undefined,
+      liberte: (function (x) {
+        x = x || {};
+        return { rendementReel: nombre(x.rendementReel, 2, -5, 15), tauxRetrait: nombre(x.tauxRetrait, 4, 2, 8),
+          epargneMois: x.epargneMois === null || x.epargneMois === undefined || x.epargneMois === "" ? null : nombre(x.epargneMois, 0, 0, 1e7) };
+      })(p.liberte),
       /* Autres lignes de la fiche de paie (13 oct. 2026), par mois : retenues sociales déductibles de l'impôt,
          versements non imposables, retenues sur le net ; impôt aligné sur la fiche (IRPP + CSS du mois et brut de la fiche). */
       lignesFiche: normaliserLignesFiche(p.lignesFiche),

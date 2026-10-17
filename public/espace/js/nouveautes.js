@@ -3,9 +3,12 @@
  * Changer « version » pour les montrer de nouveau ; 2 à 4 points courts, du point de vue de l'utilisateur.
  */
 window.ORBITE_NOUVEAUTES = {
-  version: "2026-10-17b",
+  version: "2026-10-17c",
   date: "17 octobre 2026",
   points: [
+    { titre: "Votre patrimoine à 360°.", texte: "Mon orbite › Patrimoine : tout ce que vous possédez moins tout ce que vous devez, chaque ligne s'ouvre sur son module. Orbite garde un relevé par mois : vous voyez ce qui a bougé depuis le mois dernier et votre vraie courbe, qui se remplit à partir d'aujourd'hui." },
+    { titre: "Liberté financière.", texte: "Ma progression › Liberté : combien il vous faut pour vivre de votre patrimoine (25 ans de dépenses), où vous en êtes, l'année où vous y arriveriez à ce rythme, et les trois leviers qui vous font gagner le plus d'années." },
+    { titre: "Mon coffre, sur votre appareil.", texte: "Mon espace › Mon coffre : fiches de paie, contrats, attestations rangés par thème et chiffrés sur votre téléphone, ouverts par votre empreinte. Rien n'est envoyé sur internet ; une sauvegarde chiffrée par votre mot de passe vous protège si vous changez de téléphone." },
     { titre: "Les 90 prochains jours de votre compte.", texte: "Mon mois › Prévision : à partir de votre dernier solde, Orbite trace votre compte courant jour par jour (salaire, crédits, budget, factures, assurances, remboursements des proches) et repère à l'avance un découvert, avec sa cause et la somme à virer pour l'éviter." },
     { titre: "Factures et abonnements repérés.", texte: "Mon mois › Factures : lisez 2 ou 3 relevés, Orbite repère ce qui revient (forfait, internet, STEG, SONEDE, syndic…), signale les hausses de prix et dit ce que vous gagnez à arrêter un abonnement. Le relevé est lu sur votre appareil." },
     { titre: "Vos assurances et l'argent entre proches.", texte: "Mon patrimoine › Assurances : primes, échéances et manques évidents (bien loué non assuré, crédit mal couvert). Mon patrimoine › Proches : ce que vous avez prêté ou emprunté, l'échéancier et un rappel le jour prévu, pour vous seul." },

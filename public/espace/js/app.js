@@ -571,8 +571,8 @@
   }
 
   /* ---------- Navigation ---------- */
-  var VUES = ["orbite", "profil", "salaire", "epargne", "credit", "simulations", "abonnement", "compte", "admin", "vie", "progression", "mois", "placements", "assistant"];
-  var TITRES = { orbite: "Mon orbite", profil: "Mon profil", salaire: "Salaire", epargne: "Épargne vie & CEA", credit: "Crédit", simulations: "Simulations", abonnement: "Abonnement", compte: "Paramètres", admin: "Administration", vie: "Vie & impôts", progression: "Ma progression", mois: "Mon mois", placements: "Mon patrimoine", assistant: "Assistant" };
+  var VUES = ["orbite", "profil", "salaire", "epargne", "credit", "simulations", "abonnement", "compte", "admin", "vie", "progression", "mois", "placements", "coffre", "assistant"];
+  var TITRES = { orbite: "Mon orbite", profil: "Mon profil", salaire: "Salaire", epargne: "Épargne vie & CEA", credit: "Crédit", simulations: "Simulations", abonnement: "Abonnement", compte: "Paramètres", admin: "Administration", vie: "Vie & impôts", progression: "Ma progression", mois: "Mon mois", placements: "Mon patrimoine", coffre: "Mon coffre", assistant: "Assistant" };
   /* Garde d'accès (abonnement) : une vue refusée mène à la page d'abonnement. */
   var garde = null;
   function lireRoute() {

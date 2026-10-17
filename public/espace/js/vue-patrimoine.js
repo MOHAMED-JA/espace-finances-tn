@@ -3,27 +3,64 @@
  * Ce que l'on possède (logement, autres biens, épargne, contrats) moins ce que l'on doit (reste dû des crédits),
  * la hausse par mois, la courbe année par année (moteur commun des graphiques) et les jalons (fin des crédits…).
  * Calculs : decider-calcul.js. Valeur du logement, autres biens et hausse annuelle : gardés dans le profil (patrimoine).
+ * Lot C (maquette C1, 17 oct. 2026) : « à 360° ». Chaque ligne s'ouvre sur son module, ce qui a bougé ce mois-ci, et
+ * l'historique réel : un relevé par mois gardé dans le profil (patrimoineHisto), jamais d'historique inventé (ensemble-calcul.js).
  */
 (function () {
   "use strict";
-  var O = window.Orbite, D = window.DeciderCalcul, doc = document;
+  var O = window.Orbite, D = window.DeciderCalcul, EC = window.EnsembleCalcul, OC = window.OrbiteCalcul, doc = document;
   if (!O || !D) return;
   var F = O.F, $ = O.$;
 
   function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function dt(v) { return F.dt0(v) + " DT"; }
   function lire(id) { var r = F.lire($(id).value); return r.valide ? (r.vide ? 0 : r.valeur) : null; }
-  function ligne(x) { return "<li><span>" + esc(x.libelle) + (x.estime ? "<small>estimé</small>" : "") + "</span><b>" + F.dt0(x.montant) + "</b></li>"; }
+  function ligne(x) {
+    var corps = "<span>" + esc(x.libelle) + (x.estime ? "<small>estimé</small>" : "") + "</span><b>" + F.dt0(x.montant) + "</b>";
+    return EC ? '<li><a class="pn__lien" href="' + esc(EC.lien(x.cle)) + '">' + corps + "</a></li>" : "<li>" + corps + "</li>";
+  }
+  function signe(v) { return (v >= 0 ? "+" : "−") + F.dt0(Math.abs(v)); }
+  /* Ce mois-ci et historique (lot C). Le relevé du mois est gardé dans le profil s'il a changé. */
+  function rendre360(sy, r) {
+    if (!EC) return null;
+    var p = sy.profil, m = sy.maintenant || new Date(), inst = EC.instantane(r, m), histo = EC.avecInstantane(p.patrimoineHisto, inst);
+    /* Pas de relevé tant que le profil est vierge (premier pas) : rien n'est enregistré à la place de l'utilisateur. */
+    if (!(O.profilVierge && O.profilVierge()) && EC.changeA(p.patrimoineHisto, inst)) O.majProfil({ patrimoineHisto: histo });
+    var credits = (p.credits || []).map(function (c, i) {
+      var rest = sy.credits && sy.credits[i] ? sy.credits[i].restantes : c.moisRestants;
+      return { crd: D.resteDu ? D.resteDu(c, rest) : c.capitalRestant, mensualite: c.mensualite, tauxPct: c.tauxPct, actif: rest > 0 };
+    });
+    var vers = (p.contrats || []).reduce(function (t, c) { return t + (OC && OC.contratCommence(c, m) ? c.versementMensuel : 0); }, 0);
+    var cm = EC.ceMois(p.patrimoineHisto, inst, { credits: credits, versementsEpargne: vers });
+    $("pn-mois-titre").textContent = cm.reel ? "Depuis " + EC.libMois(cm.depuis) : "Ce mois-ci (estimé)";
+    $("pn-mois").innerHTML = cm.lignes.length ? cm.lignes.map(function (l) { return "<li><span>" + esc(l.lib) + "</span><b class=\"" + (l.v >= 0 ? "pn__plus" : "pn__moins") + "\">" + signe(l.v) + "</b></li>"; }).join("") +
+      '<li class="pn__tot"><span>Au total</span><b>' + signe(cm.variation) + " DT</b></li>" : '<li class="pn__vide"><span>Rien n\'a bougé pour l\'instant.</span></li>';
+    $("pn-mois-note").textContent = cm.reel ? "Écarts réels entre vos deux derniers relevés mensuels." : "Estimé d'après vos mensualités et vos versements d'épargne ; le mois prochain, Orbite comparera avec le relevé de ce mois-ci.";
+    var z = $("pn-histo");
+    if (histo.length >= 2 && window.OrbiteGraphe) {
+      window.OrbiteGraphe.lignes(z, {
+        titre: "Votre patrimoine net, mois par mois", resume: "De " + dt(histo[0].net) + " en " + EC.libMois(histo[0].m) + " à " + dt(histo[histo.length - 1].net) + " en " + EC.libMois(histo[histo.length - 1].m) + ".",
+        series: [{ nom: "Patrimoine net", c: 3, pts: histo.map(function (h, i) { return [i, h.net]; }), aire: true }],
+        ticksX: histo.map(function (h, i) { return { v: i, lib: EC.libMois(h.m) }; }), titreX: function (x) { var h = histo[Math.round(x)]; return h ? EC.libMois(h.m) : ""; },
+        fmtV: dt, fmtY: function (v) { return F.dt0(v); }, hauteur: 170, legende: false, tableau: { entete: "Mois" }
+      });
+      $("pn-histo-note").textContent = histo.length + " relevés mensuels depuis " + EC.libMois(histo[0].m) + ".";
+    } else {
+      z.textContent = "";
+      $("pn-histo-note").textContent = "Votre historique commence en " + EC.libMois(inst.m) + " : un relevé est gardé chaque mois, la courbe se remplit à partir d'aujourd'hui (aucun chiffre passé n'est inventé).";
+    }
+    return cm;
+  }
 
   function rendre() {
     var sy = O.synthese(), sec = $("patrimoine");
     if (!sy || !sec || $("vue-orbite").hidden) return;
     var r = D.patrimoine(sy), p = sy.profil, pa = p.patrimoine || {};
     $("pn-net").textContent = dt(r.net);
-    var h = $("pn-hausse");
-    h.hidden = Math.abs(r.parMois) < 1;
-    h.textContent = (r.parMois >= 0 ? "▲ +" : "▼ −") + F.dt0(Math.abs(r.parMois)) + " DT par mois";
-    h.classList.toggle("pn__hausse--baisse", r.parMois < 0);
+    var h = $("pn-hausse"), cm = rendre360(sy, r), v = cm ? cm.variation : r.parMois;
+    h.hidden = Math.abs(v) < 1;
+    h.textContent = (v >= 0 ? "▲ +" : "▼ −") + F.dt0(Math.abs(v)) + (cm ? " DT ce mois-ci" + (cm.reel ? "" : " (estimé)") : " DT par mois");
+    h.classList.toggle("pn__hausse--baisse", v < 0);
     var tot = r.totalActifs + r.totalPassifs, pa_ = tot > 0 ? r.totalActifs / tot : 1;
     $("pn-prop").style.setProperty("--a", (pa_ * 100).toFixed(2) + "%");
     $("pn-leg-a").textContent = "Ce que vous possédez · " + F.dt0(r.totalActifs);

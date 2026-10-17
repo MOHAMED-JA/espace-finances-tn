@@ -76,7 +76,7 @@
   }
 
   /* ---------- PDF ---------- */
-  function lirePdf(octets, progres, pagesMax) {
+  function lirePdf(octets, progres, pagesMax, texteSeul) {
     return pdfjs().then(function (lib) {
       progres("ouvrir", 0.1);
       return lib.getDocument({ data: octets, isEvalSupported: false, disableFontFace: true, useSystemFonts: false, enableXfa: false, stopAtErrors: false }).promise;
@@ -101,8 +101,9 @@
         var lignes = [];
         pages.forEach(function (p) { lignes = lignes.concat(lignesDepuisItems(p.items)); });
         var utiles = lignes.filter(function (l) { return /\d/.test(l.texte); }).length;
-        /* PDF scanné (aucun texte) : on dessine la première page et on la lit comme une photo. */
-        if (utiles < 3) {
+        /* PDF scanné (aucun texte) : on dessine la première page et on la lit comme une photo
+           (sauf texteSeul : Mon coffre ne cherche qu'une date dans le texte, sans lecture d'image). */
+        if (utiles < 3 && !texteSeul) {
           var p0 = pages[0], echelle = Math.min(3, 2400 / Math.max(p0.vue.width, p0.vue.height));
           var v = p0.page.getViewport({ scale: echelle }), c = document.createElement("canvas");
           c.width = Math.round(v.width); c.height = Math.round(v.height);
@@ -214,7 +215,7 @@
     if (!fichier) return Promise.reject(erreur("vide", "Aucun fichier choisi."));
     if (fichier.size > TAILLE_MAX) return Promise.reject(erreur("taille", "Ce fichier dépasse 15 Mo. Envoyez la première page seulement, ou une photo."));
     /* options.pagesMax : 3 par défaut (fiche de paie) ; un tableau d'amortissement en demande davantage. */
-    if (estPdf(fichier)) return fichier.arrayBuffer().then(function (b) { return lirePdf(new Uint8Array(b), progres, options && options.pagesMax); });
+    if (estPdf(fichier)) return fichier.arrayBuffer().then(function (b) { return lirePdf(new Uint8Array(b), progres, options && options.pagesMax, options && options.texteSeul); });
     if (estImage(fichier)) return preparerImage(fichier).then(function (c) { progres("image", 0.1); return lireCanevas(c, progres); });
     return Promise.reject(erreur("format", "Choisissez un PDF ou une photo (JPG, PNG)."));
   }

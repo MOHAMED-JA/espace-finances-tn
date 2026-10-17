@@ -1,0 +1,66 @@
+/* Orbite — lot C : liberté financière (Ma progression › Liberté) et coffre à documents (Mon coffre). */
+
+/* ---------- Liberté financière ---------- */
+.lb-panneau { display: grid; gap: 18px; }
+.lb-panneau[hidden] { display: none; }
+.lb-carte { display: grid; gap: 14px; }
+.lb-titre { margin: 0; font-size: 18px; }
+.lb-haut { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 22px; align-items: center; }
+.lb-anneau-boite { position: relative; width: 150px; height: 150px; }
+.lb-anneau { width: 150px; height: 150px; }
+.lb-anneau circle { fill: none; stroke-width: 12; stroke-linecap: round; }
+.lb-anneau__fond { stroke: var(--surface-2); }
+.lb-anneau__val { stroke: var(--salaire); }
+.lb-pct { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--affiche); font-size: 30px; letter-spacing: -.02em; }
+.lb-txt { display: grid; gap: 6px; }
+.lb-txt p { margin: 0; }
+.lb-somme { font-size: 15px; color: var(--encre-2); }
+.lb-quand { font-family: var(--affiche); font-size: clamp(24px, 4vw, 34px); line-height: 1.1; letter-spacing: -.02em; font-weight: 800; }
+.lb-revenus { font-size: 14.5px; color: var(--encre-2); }
+.lb-revenus b { color: var(--encre); }
+.lb-leviers { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.lb-levier { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 14px; border-radius: var(--r-int); background: var(--fond); border: 1px solid var(--filet); }
+.lb-levier__ico { display: grid; place-items: center; width: 46px; height: 40px; border-radius: 12px; background: var(--salaire-doux); color: var(--salaire-t); font-weight: 800; font-size: 14px; }
+.lb-levier div { display: grid; gap: 2px; min-width: 0; }
+.lb-levier div b { font-size: 14.5px; }
+.lb-levier div span { color: var(--encre-3); font-size: 13px; }
+.lb-gain { color: var(--salaire-t); font-size: 15px; white-space: nowrap; }
+.lb-hyp { display: grid; gap: 14px; }
+.lb-hyp summary { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; list-style: none; }
+.lb-hyp summary::-webkit-details-marker { display: none; }
+.lb-hyp summary svg { width: 18px; height: 18px; }
+.lb-hyp .bouton { justify-self: start; }
+
+/* ---------- Coffre ---------- */
+.cf-zone { display: grid; gap: 18px; }
+.cf-bandeau { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding: 14px 16px; border-radius: var(--r-int); background: var(--salaire-doux); border: 1px solid color-mix(in srgb, var(--salaire) 30%, transparent); }
+.cf-bandeau > svg { width: 20px; height: 20px; color: var(--salaire-t); margin-top: 2px; }
+.cf-bandeau div { display: grid; gap: 3px; font-size: 14px; line-height: 1.5; }
+.cf-bandeau span { color: var(--encre-2); }
+.cf-ferme { display: grid; justify-items: start; gap: 12px; }
+.cf-ferme h2 { margin: 0; font-size: 20px; }
+.cf-ferme p { margin: 0; max-width: 62ch; color: var(--encre-2); font-size: 14.5px; line-height: 1.55; }
+.cf-ico { --c: var(--credit); }
+.cf-chev svg { transition: transform 200ms ease; }
+[aria-expanded="true"] .cf-chev svg { transform: rotate(180deg); }
+.cf-docs { list-style: none; margin: 0 0 8px 50px; padding: 0; display: grid; gap: 8px; }
+.cf-doc { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: 12px; background: var(--fond); border: 1px solid var(--filet); }
+.cf-doc div:first-child { display: grid; gap: 2px; min-width: 0; }
+.cf-doc b { font-size: 14px; overflow-wrap: anywhere; }
+.cf-doc small { color: var(--encre-3); font-size: 12.5px; }
+.cf-doc--vide { color: var(--encre-3); font-size: 13.5px; }
+.cf-doc__actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.cf-dlg .dialogue__corps { display: grid; gap: 12px; }
+.cf-dlg__fichier { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--fond); color: var(--encre-2); font-size: 13.5px; overflow-wrap: anywhere; }
+.cfs-bloc { display: grid; gap: 12px; padding: 14px; border-radius: var(--r-int); background: var(--fond); border: 1px solid var(--filet); }
+.cfs-bloc h3 { margin: 0; font-size: 15px; }
+.cfs-bloc p { margin: 0; color: var(--encre-2); font-size: 13.5px; line-height: 1.5; }
+.cfs-bloc .bouton { justify-self: start; }
+
+@media (max-width: 640px) {
+  .lb-haut { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .lb-levier { grid-template-columns: 46px minmax(0, 1fr); }
+  .lb-gain { grid-column: 2; }
+  .cf-docs { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .cf-chev svg { transition: none; } }
