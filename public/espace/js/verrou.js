@@ -152,5 +152,14 @@
   (function () { var ouvert = false; try { ouvert = sessionStorage.getItem(OUVERT) === "1"; } catch (e) {} if (lire() && !ouvert) verrouiller(); })();
   if (O.pret) demarrer(); else doc.addEventListener("orbite:pret", demarrer, { once: true });
 
-  window.OrbiteVerrou = { verrouiller: verrouiller, deverrouiller: deverrouiller, actif: function () { return !!reglage(); }, verrouille: function () { return verrouille; } };
+  /* Mon coffre (lot C) : confirmer l'empreinte sans verrouiller l'application. null : verrouillage non activé. */
+  function verifier() {
+    var r = reglage();
+    if (!r) return Promise.resolve(null);
+    return navigator.credentials.get({ publicKey: {
+      challenge: hasard(32), rpId: location.hostname, timeout: 60000, userVerification: "required",
+      allowCredentials: [{ type: "public-key", id: deb64(r.cle) }]
+    } }).then(function (c) { return !!c; }, function () { return false; });
+  }
+  window.OrbiteVerrou = { verrouiller: verrouiller, deverrouiller: deverrouiller, verifier: verifier, actif: function () { return !!reglage(); }, verrouille: function () { return verrouille; } };
 })();

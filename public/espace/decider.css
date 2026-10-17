@@ -68,6 +68,19 @@
 .pn__bilan li small { display: block; font-size: 12px; color: var(--encre-3); }
 .pn__bilan .pn__tot { border-top: 1px solid var(--filet); padding-top: 8px; font-weight: 700; color: var(--encre); }
 .pn__vide span { color: var(--encre-3); }
+/* Lot C : lignes qui ouvrent leur module, ce mois-ci, historique réel. */
+.pn__bilan .pn__lien { display: flex; justify-content: space-between; gap: 8px; width: 100%; color: inherit; text-decoration: none; border-radius: 8px; padding: 2px 4px; margin: -2px -4px; transition: background-color 160ms ease; }
+.pn__bilan .pn__lien:hover { background: var(--surface); }
+.pn__bilan .pn__lien:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.pn__mois { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 12px; }
+.pn__mois > div { padding: 14px; border-radius: 16px; background: var(--surface-2); display: grid; gap: 8px; align-content: start; min-width: 0; }
+.pn__mois h3 { margin: 0; font-size: 12.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--encre-3); }
+.pn__mois ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.pn__mois li { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; color: var(--encre-2); }
+.pn__mois li b { font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--encre); }
+.pn__mois .pn__plus { color: var(--salaire-t); } .pn__mois .pn__moins { color: var(--alerte); }
+.pn__mois .pn__tot { border-top: 1px solid var(--filet); padding-top: 8px; font-weight: 700; color: var(--encre); }
+.pn__histo:empty { display: none; }
 .pn__biens { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: start; }
 .pn__biens .champ { margin: 0; }
 .pn__jalons { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
@@ -81,7 +94,7 @@
   .dc-choix__v { grid-column: 2; text-align: left; }
   .dc-choix__v strong { display: inline; margin-right: 6px; font-size: 20px; }
   .dc-barre { grid-template-columns: 110px minmax(0, 1fr) 68px; font-size: 13px; }
-  .dc-hyp__champs, .pn__bilan, .pn__biens { grid-template-columns: 1fr; }
+  .dc-hyp__champs, .pn__bilan, .pn__biens, .pn__mois { grid-template-columns: 1fr; }
   .pn__tete strong { font-size: 34px; }
 }
 @media (prefers-reduced-motion: reduce) { .dc-barre__b, .pn__prop-a { transition: none; } }

@@ -3793,6 +3793,113 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.evaluate((a) => window.Orbite.majProfil(JSON.parse(a), { immediat: true }), avant);
   });
 
+  await etape("vue d'ensemble (lot C) : patrimoine 360° (liens, ce mois-ci, historique réel), liberté financière (leviers, hypothèses), coffre chiffré (ranger, ouvrir, sauvegarde, restauration, supprimer), téléphone", async () => {
+    await page.setViewportSize({ width: 1360, height: 900 });
+    const avant = await page.evaluate(() => JSON.stringify(window.Orbite.profil()));
+    await page.evaluate(() => window.Orbite.majProfil({ patrimoineHisto: [], liberte: null, epargneDisponible: 8000, proches: [{ id: "x1", sens: "prete", nom: "K.", montant: 1300, recus: [] }],
+      placements: { or: [{ id: "o1", grammes: 50, carats: 18 }], coursOr: { g18: 200, du: new Date().toISOString().slice(0, 10) } } }, { immediat: true }));
+    await page.goto(base + "/espace/#orbite?partie=patrimoine");
+    await page.waitForSelector("#pn-actifs .pn__lien");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.waitForTimeout(400);
+    /* 1. Patrimoine 360° : chaque ligne ouvre son module ; relevé du mois gardé ; ce mois-ci estimé ; historique qui commence. */
+    assert(await page.getAttribute('#pn-actifs a[href="#placements?onglet=proches"]', "href") === "#placements?onglet=proches", "ligne « Prêté aux proches » vers son module");
+    assert(await page.$('#pn-actifs a[href="#placements?onglet=immo"]'), "ligne « Or » vers Mon patrimoine");
+    await page.waitForFunction(() => (window.Orbite.profil().patrimoineHisto || []).length === 1);
+    const h = await page.evaluate(() => window.Orbite.profil().patrimoineHisto[0]);
+    assert(h.m === new Date().toISOString().slice(0, 7) && h.a.proches === 1300 && h.a.or === 10000, "relevé du mois : " + JSON.stringify(h));
+    assert(/Votre historique commence en/.test(await page.textContent("#pn-histo-note")), "historique réel, rien d'inventé");
+    assert(/estimé/.test(await page.textContent("#pn-mois-titre")), "ce mois-ci estimé sans relevé précédent");
+    /* Un relevé du mois précédent : écarts réels et courbe. */
+    await page.evaluate(() => { const p = window.Orbite.profil(), d = new Date(); d.setMonth(d.getMonth() - 1);
+      const m = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"), h0 = p.patrimoineHisto[0];
+      window.Orbite.majProfil({ patrimoineHisto: [{ m: m, net: h0.net - 900, actifs: h0.actifs - 900, dettes: h0.dettes, a: Object.assign({}, h0.a, { or: h0.a.or - 900 }) }, h0] }, { immediat: true }); });
+    await page.waitForSelector("#pn-histo svg");
+    assert(/Depuis/.test(await page.textContent("#pn-mois-titre")), "écarts réels depuis le relevé précédent");
+    assert(/Placements, or et bourse\s*\+900/.test((await page.textContent("#pn-mois")).replace(/\s+/g, " ")), "or : +900 : " + await page.textContent("#pn-mois"));
+    assert(/\+900 DT ce mois-ci/.test((await page.textContent("#pn-hausse")).replace(/\s/g, " ")), "pastille : " + await page.textContent("#pn-hausse"));
+    await page.screenshot({ path: path.join(CAPTURES, "patrimoine-360.png"), fullPage: false, clip: await page.$eval("#patrimoine", (e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y + scrollY, width: r.width, height: Math.min(r.height, 1600) }; }) }).catch(() => {});
+    /* 2. Liberté financière. */
+    await page.goto(base + "/espace/#progression?onglet=liberte");
+    await page.waitForSelector("#pg-liberte .lb-anneau");
+    const lib = (await page.textContent("#pg-liberte")).replace(/\s+/g, " ");
+    assert(/Vivre de votre patrimoine/.test(lib) && /\d+ %/.test(lib) && /Revenus sans travailler/.test(lib), "liberté : " + lib.slice(0, 200));
+    assert(await page.$$eval("#pg-liberte .lb-levier", (l) => l.length) >= 2, "leviers chiffrés");
+    assert(/ne s'additionnent pas/.test(lib), "les années ne s'additionnent pas");
+    await page.click("#pg-liberte .lb-hyp summary");
+    await page.fill("#lb-rendement", "3");
+    await page.click("#lb-appliquer");
+    await page.waitForFunction(() => window.Orbite.profil().liberte.rendementReel === 3);
+    await page.waitForSelector('.toast:has-text("Liberté financière recalculée")');
+    await page.screenshot({ path: path.join(CAPTURES, "liberte.png"), fullPage: true });
+    /* 3. Coffre : fermé, ouvert (verrouillage non activé), document rangé et chiffré, date notée, ouvert, modifié. */
+    await page.goto(base + "/espace/#coffre");
+    await page.waitForSelector("#cf-zone .cf-ferme");
+    await page.click('[data-cf="ouvrir"]');
+    await page.waitForSelector('[data-cf="ranger"]');
+    const contenu = "Contrat d'assurance auto (fictif). Date d'échéance : 20/12/2030.";
+    await page.setInputFiles("#cf-fichier", { name: "contrat-assurance-auto.txt", mimeType: "text/plain", buffer: Buffer.from(contenu, "utf8") });
+    await page.waitForSelector("#dlg-coffre[open]");
+    assert(await page.inputValue("#cf-f-cat") === "assurances", "thème deviné d'après le nom");
+    await page.fill("#cf-f-titre", "Contrat auto");
+    await page.fill("#cf-f-date", (new Date().getFullYear()) + "-12-31");
+    await page.fill("#cf-f-quoi", "Assurance auto : fin");
+    await page.click("#cf-dlg-ok");
+    await page.waitForSelector('.toast:has-text("Document rangé et chiffré")');
+    await page.waitForSelector(".cf-doc b:has-text('Contrat auto')");
+    const brut = await page.evaluate(() => new Promise((ok) => { const r = indexedDB.open("orbite-coffre-" + window.Orbite.utilisateur().id); r.onsuccess = () => { const t = r.result.transaction("docs").objectStore("docs").getAll(); t.onsuccess = () => ok(JSON.stringify(t.result.map((x) => [Array.from(x.meta.data).length, Array.from(x.contenu.data).length]))); }; }));
+    assert(/\[\[\d+,\d+\]\]/.test(brut), "une fiche et un contenu chiffrés : " + brut);
+    const lisible = await page.evaluate(() => new Promise((ok) => { const r = indexedDB.open("orbite-coffre-" + window.Orbite.utilisateur().id); r.onsuccess = () => { const t = r.result.transaction("docs").objectStore("docs").getAll(); t.onsuccess = () => ok(new TextDecoder().decode(t.result[0].contenu.data) + new TextDecoder().decode(t.result[0].meta.data)); }; }));
+    assert(!/Contrat|assurance/.test(lisible), "rien de lisible dans le stockage de l'appareil");
+    const [tele] = await Promise.all([page.waitForEvent("download"), page.click("[data-cf-ouvrir]")]);
+    assert(tele.suggestedFilename() === "contrat-assurance-auto.txt", "document rendu tel quel");
+    assert(fs.readFileSync(await tele.path(), "utf8") === contenu, "contenu identique après déchiffrement");
+    /* 4. Sauvegarde chiffrée puis restauration (rien en double). */
+    await page.click('[data-cf="sauvegarde"]');
+    await page.waitForSelector("#dlg-coffre-sauvegarde[open]");
+    await page.fill("#cfs-mdp", "court");
+    await page.click("#cfs-exporter");
+    assert(/10 caractères/.test(await page.textContent("#cfs-err")), "mot de passe trop court refusé");
+    await page.fill("#cfs-mdp", "sauvegarde fictive 42");
+    await page.fill("#cfs-mdp2", "sauvegarde fictive 42");
+    const [sv] = await Promise.all([page.waitForEvent("download", { timeout: 60000 }), page.click("#cfs-exporter")]);
+    const fichierSv = fs.readFileSync(await sv.path(), "utf8");
+    assert(JSON.parse(fichierSv).format === "orbite-coffre-1" && !fichierSv.includes("Contrat auto"), "sauvegarde chiffrée");
+    await page.click('[data-cf="sauvegarde"]');
+    await page.waitForSelector("#dlg-coffre-sauvegarde[open]");
+    await page.setInputFiles("#cfs-fichier", { name: "coffre.orbite", mimeType: "application/octet-stream", buffer: Buffer.from(fichierSv, "utf8") });
+    await page.fill("#cfs-mdp-r", "mauvais mot de passe 1");
+    await page.click("#cfs-restaurer");
+    await page.waitForFunction(() => /Mot de passe incorrect/.test(document.getElementById("cfs-err").textContent), null, { timeout: 60000 });
+    await page.fill("#cfs-mdp-r", "sauvegarde fictive 42");
+    await page.click("#cfs-restaurer");
+    await page.waitForSelector('.toast:has-text("Rien de nouveau")', { timeout: 60000 });
+    /* 5. « À ne pas oublier », refermer, supprimer. */
+    await page.screenshot({ path: path.join(CAPTURES, "coffre.png"), fullPage: true });
+    await page.click('[data-cf="fermer"]');
+    await page.waitForSelector("#cf-zone .cf-ferme");
+    await page.click('[data-cf="ouvrir"]');
+    await page.click('[data-cf-cat="assurances"]');
+    await page.waitForSelector(".cf-doc b:has-text('Contrat auto')");
+    assert(await page.getAttribute('[data-cf-cat="assurances"]', "aria-expanded") === "true", "thème déplié");
+    await page.click("[data-cf-modifier]");
+    await page.waitForSelector("#dlg-coffre[open]");
+    await page.click("#cf-dlg-supprimer");
+    await page.click("#cf-dlg-supprimer-oui");
+    await page.waitForSelector('.toast:has-text("Document supprimé")');
+    /* 6. Téléphone. */
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (const h2 of ["#coffre", "#progression?onglet=liberte", "#orbite?partie=patrimoine"]) {
+      await page.goto(base + "/espace/" + h2);
+      await page.waitForTimeout(500);
+      assert(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), "sans débordement sur téléphone : " + h2);
+      await page.screenshot({ path: path.join(CAPTURES, "ensemble-" + h2.replace(/\W+/g, "-") + "-telephone.png"), fullPage: true });
+    }
+    await page.setViewportSize({ width: 1360, height: 900 });
+    await page.emulateMedia({ reducedMotion: null });
+    await page.evaluate((a) => window.Orbite.majProfil(JSON.parse(a), { immediat: true }), avant);
+  });
+
   await etape("bilan annuel en PDF : bouton dans Ma progression, aperçu avec les vrais chiffres, sections à cocher, coordonnées décochées, PDF valide, Ctrl K, téléphone", async () => {
     await page.setViewportSize({ width: 1360, height: 900 });
     await page.goto(base + "/espace/#progression");

@@ -155,11 +155,12 @@
 }
 
 /* Onglets à trois positions (Carrière, Objectifs, Retraite) */
-.pg-onglets { grid-template-columns: repeat(3, 1fr); }
-.pg-onglets i { width: calc((100% - 8px) / 3); }
+.pg-onglets { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.pg-onglets i { width: calc((100% - 8px) / 4); }
 .pg-onglets[data-o="objectifs"] i { transform: translateX(100%); }
 .pg-onglets[data-o="retraite"] i { transform: translateX(200%); }
-@media (max-width: 420px) { .pg-onglets button { padding: 0 12px; } }
+.pg-onglets[data-o="liberte"] i { transform: translateX(300%); }
+@media (max-width: 420px) { .pg-onglets button { padding: 0 4px; font-size: 13px; } }
 
 /* ---------- Retraite ---------- */
 #pg-retraite { display: grid; gap: 18px; }

@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="/espace/comptes.css">
   <link rel="stylesheet" href="/espace/placements.css">
   <link rel="stylesheet" href="/espace/pilotage.css">
+  <link rel="stylesheet" href="/espace/ensemble.css">
   <link rel="stylesheet" href="/espace/annee.css">
   <link rel="stylesheet" href="/espace/fiche.css">
   <link rel="stylesheet" href="/espace/dossier.css">
@@ -79,6 +80,7 @@
       <p class="rail__titre" id="rail-perso">Mon espace</p>
       <ul class="rail__liens" role="list" aria-labelledby="rail-perso">
         <li><a href="#simulations" data-vue="simulations"><svg aria-hidden="true"><use href="/orbite/icones.svg#liste"/></svg><span>Simulations</span><span class="rail__compte" id="compte-total"></span></a></li>
+        <li><a href="#coffre" data-vue="coffre"><svg aria-hidden="true"><use href="/orbite/icones.svg#cadenas"/></svg><span>Mon coffre</span></a></li>
         <li><a href="#abonnement" data-vue="abonnement"><svg aria-hidden="true"><use href="/orbite/icones.svg#couronne"/></svg><span>Abonnement</span><span class="rail__badge rail__badge--acces" id="badge-abonnement" hidden></span></a></li>
         <li><a href="#compte" data-vue="compte"><svg aria-hidden="true"><use href="/orbite/icones.svg#compte"/></svg><span>Paramètres</span></a></li>
         <li id="rail-admin" hidden><a href="#admin" data-vue="admin"><svg aria-hidden="true"><use href="/orbite/icones.svg#bouclier"/></svg><span>Administration</span><span class="rail__badge" id="badge-admin" hidden></span></a></li>
@@ -309,8 +311,8 @@
 
           <!-- Patrimoine net -->
           <section class="bloc-orbite pn" id="patrimoine" aria-labelledby="titre-patrimoine">
-            <div class="bloc-orbite__tete"><div><h2 id="titre-patrimoine">Votre patrimoine net</h2>
-              <p>Ce que vous possédez moins ce que vous devez, et comment il grandit chaque mois.</p></div></div>
+            <div class="bloc-orbite__tete"><div><h2 id="titre-patrimoine">Votre patrimoine à 360°</h2>
+              <p>Tout ce que vous possédez moins tout ce que vous devez, alimenté par tous les modules : chaque ligne s'ouvre sur son module.</p></div></div>
             <div class="panneau pn__carte">
               <div class="pn__tete"><strong class="chiffre" id="pn-net">—</strong><span class="pn__hausse" id="pn-hausse" hidden></span></div>
               <div class="pn__prop" id="pn-prop" aria-hidden="true"><i class="pn__prop-a"></i><i class="pn__prop-p"></i></div>
@@ -318,6 +320,11 @@
               <div class="pn__bilan">
                 <div><h3>Ce que vous possédez</h3><ul id="pn-actifs" role="list"></ul></div>
                 <div><h3>Ce que vous devez</h3><ul id="pn-passifs" role="list"></ul></div>
+              </div>
+              <!-- Lot C (maquette C1) : ce qui a bougé ce mois-ci et l'historique réel, relevé chaque mois (ensemble-calcul.js) -->
+              <div class="pn__mois">
+                <div><h3 id="pn-mois-titre">Ce mois-ci</h3><ul id="pn-mois" role="list"></ul><p class="pn__note" id="pn-mois-note"></p></div>
+                <div><h3>Votre historique</h3><div class="pn__histo" id="pn-histo"></div><p class="pn__note" id="pn-histo-note"></p></div>
               </div>
               <div class="pn__biens">
                 <div class="champ"><label for="pn-logement">Valeur estimée de votre logement</label><div class="saisie"><input id="pn-logement" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><span class="saisie__unite">DT</span></div><p class="champ__aide">Prix auquel il se vendrait aujourd'hui. Laissez vide si vous êtes locataire.</p></div>
@@ -797,6 +804,17 @@
         </section>
 
         <!-- ======== Simulations ======== -->
+        <!-- ============ Mon coffre (lot C, maquette C3 validée le 16 oct. 2026 ; coffre-calcul.js, vue-coffre.js) ============ -->
+        <section class="vue" id="vue-coffre" data-vue="coffre" aria-labelledby="titre-coffre" hidden>
+          <header class="vue__tete">
+            <div>
+              <h1 id="titre-coffre">Mon coffre</h1>
+              <p class="vue__sous">Vos papiers importants rangés par thème, chiffrés sur cet appareil et retrouvés en deux gestes.</p>
+            </div>
+          </header>
+          <div class="cf-zone" id="cf-zone" aria-live="polite"></div>
+        </section>
+
         <section class="vue" id="vue-simulations" data-vue="simulations" aria-labelledby="titre-simulations" hidden>
           <header class="vue__tete">
             <h1 id="titre-simulations">Simulations</h1>
@@ -1538,6 +1556,7 @@
               <button type="button" role="tab" id="pg-tab-carriere" aria-controls="pg-carriere" aria-selected="true" data-onglet="carriere">Carrière</button>
               <button type="button" role="tab" id="pg-tab-objectifs" aria-controls="pg-objectifs" aria-selected="false" tabindex="-1" data-onglet="objectifs">Objectifs</button>
               <button type="button" role="tab" id="pg-tab-retraite" aria-controls="pg-retraite" aria-selected="false" tabindex="-1" data-onglet="retraite">Retraite</button>
+              <button type="button" role="tab" id="pg-tab-liberte" aria-controls="pg-liberte" aria-selected="false" tabindex="-1" data-onglet="liberte">Liberté</button>
             </div>
           </header>
 
@@ -1721,6 +1740,8 @@
               </div>
             </div>
           </div>
+          <!-- Lot C (maquette C2) : liberté financière (ensemble-calcul.js, vue-liberte.js) -->
+          <div class="pg-panneau lb-panneau" id="pg-liberte" role="tabpanel" aria-labelledby="pg-tab-liberte" hidden></div>
         </section>
         <!-- ======== Mon mois : budget et calendrier (point 5) ======== -->
         <!-- ============ Mon patrimoine (lot A, maquette validée le 16 oct. 2026 ; placements-calcul.js, vue-placements.js) ============ -->
@@ -2517,6 +2538,61 @@
     </form>
   </dialog>
 
+  <!-- Mon coffre : ranger ou modifier un document (vue-coffre.js) -->
+  <dialog class="dialogue cf-dlg" id="dlg-coffre" aria-labelledby="cf-dlg-titre">
+    <form method="dialog" id="form-coffre">
+      <div class="dialogue__tete"><h2 id="cf-dlg-titre">Ranger un document</h2></div>
+      <div class="dialogue__corps">
+        <p class="cf-dlg__fichier" id="cf-dlg-fichier"></p>
+        <div class="grille-champs">
+          <div class="champ"><label for="cf-f-titre">Titre</label><div class="saisie"><input id="cf-f-titre" type="text" maxlength="60" autocomplete="off"></div></div>
+          <div class="champ"><label for="cf-f-cat">Thème</label><div class="saisie"><select id="cf-f-cat"></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
+          <div class="champ"><label for="cf-f-date">Date à ne pas oublier</label><div class="saisie"><input id="cf-f-date" type="date" aria-describedby="cf-dlg-date-aide"></div><span class="champ__aide" id="cf-dlg-date-aide"></span></div>
+          <div class="champ"><label for="cf-f-quoi">C'est…</label><div class="saisie"><input id="cf-f-quoi" type="text" maxlength="60" autocomplete="off" placeholder="Ex. fin du contrat"></div></div>
+        </div>
+        <p class="pa-dlg__err" id="cf-dlg-err" role="alert" hidden></p>
+        <div class="cpt-suppr" id="cf-dlg-confirmer" hidden>
+          <p>Supprimer ce document de cet appareil ? Il ne pourra être retrouvé que dans une sauvegarde.</p>
+          <button type="button" class="bouton bouton--danger-plein" id="cf-dlg-supprimer-oui">Oui, supprimer</button>
+        </div>
+      </div>
+      <div class="dialogue__pied">
+        <button type="button" class="bouton bouton--fantome pg-supprimer" id="cf-dlg-supprimer" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#poubelle"/></svg>Supprimer</button>
+        <button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Annuler</button>
+        <button type="submit" class="bouton bouton--plein" value="ok" id="cf-dlg-ok">Ranger</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Mon coffre : sauvegarde chiffrée par mot de passe, et restauration (vue-coffre.js) -->
+  <dialog class="dialogue cf-dlg" id="dlg-coffre-sauvegarde" aria-labelledby="cfs-titre">
+    <form method="dialog">
+      <div class="dialogue__tete"><h2 id="cfs-titre">Sauvegarde chiffrée</h2></div>
+      <div class="dialogue__corps">
+        <div class="cfs-bloc">
+          <h3>Créer une sauvegarde</h3>
+          <p>Un fichier qui contient tous vos documents, chiffré par un mot de passe que vous choisissez. Gardez-le où vous voulez. Orbite ne connaît pas ce mot de passe : perdu, personne ne pourra ouvrir la sauvegarde.</p>
+          <div class="grille-champs">
+            <div class="champ"><label for="cfs-mdp">Mot de passe</label><div class="saisie"><input id="cfs-mdp" type="password" autocomplete="new-password" minlength="10"></div><span class="champ__aide">10 caractères au moins, lettres et chiffres</span></div>
+            <div class="champ"><label for="cfs-mdp2">Le même, encore</label><div class="saisie"><input id="cfs-mdp2" type="password" autocomplete="new-password"></div></div>
+          </div>
+          <button type="button" class="bouton bouton--plein" id="cfs-exporter"><svg aria-hidden="true"><use href="/orbite/icones.svg#telecharger"/></svg>Créer la sauvegarde</button>
+        </div>
+        <div class="cfs-bloc">
+          <h3>Restaurer une sauvegarde</h3>
+          <p>Sur un nouveau téléphone, par exemple : les documents déjà présents ne sont pas ajoutés deux fois.</p>
+          <div class="grille-champs">
+            <div class="champ"><label for="cfs-fichier">Fichier de sauvegarde</label><input id="cfs-fichier" type="file" accept=".orbite,application/octet-stream,application/json"></div>
+            <div class="champ"><label for="cfs-mdp-r">Mot de passe de la sauvegarde</label><div class="saisie"><input id="cfs-mdp-r" type="password" autocomplete="current-password"></div></div>
+          </div>
+          <button type="button" class="bouton" id="cfs-restaurer"><svg aria-hidden="true"><use href="/orbite/icones.svg#retablir"/></svg>Restaurer</button>
+        </div>
+        <p class="pa-dlg__err" id="cfs-err" role="alert" hidden></p>
+      </div>
+      <div class="dialogue__pied"><button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Fermer</button></div>
+    </form>
+  </dialog>
+
   <!-- Lot B (factures, assurances, proches) : une seule fenêtre, dont les champs dépendent de ce que l'on ajoute ou modifie (vue-pilotage.js) -->
   <dialog class="dialogue pa-dlg" id="dlg-pilotage" aria-labelledby="pi-dlg-titre">
     <form method="dialog" id="form-pilotage">
@@ -2824,6 +2900,8 @@
   <script src="/espace/js/comptes-calcul.js"></script>
   <script src="/espace/js/placements-calcul.js"></script>
   <script src="/espace/js/pilotage-calcul.js"></script>
+  <script src="/espace/js/ensemble-calcul.js"></script>
+  <script src="/espace/js/coffre-calcul.js"></script>
   <script src="/espace/js/orbite-calcul.js"></script>
   <script src="/espace/js/orbite-intelligence.js"></script>
   <script src="/espace/js/assistant-local.js"></script>
@@ -2894,6 +2972,8 @@
   <script src="/espace/js/vue-comptes.js"></script>
   <script src="/espace/js/vue-placements.js"></script>
   <script src="/espace/js/vue-pilotage.js"></script>
+  <script src="/espace/js/vue-liberte.js"></script>
+  <script src="/espace/js/vue-coffre.js"></script>
   <script src="/espace/js/fiche-calcul.js"></script>
   <script src="/espace/js/dossier-calcul.js"></script>
   <script src="/espace/js/negociateur-calcul.js"></script>

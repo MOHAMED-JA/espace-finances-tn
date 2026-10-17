@@ -30,7 +30,7 @@
   function signaler() { doc.dispatchEvent(new CustomEvent("orbite:objectifs")); }
 
   /* ---------- Onglets ---------- */
-  var ONGLETS = ["carriere", "objectifs", "retraite"], barre = doc.querySelector(".pg-onglets");
+  var ONGLETS = ["carriere", "objectifs", "retraite", "liberte"], barre = doc.querySelector(".pg-onglets");
   function ouvrirOnglet(cle, focus) {
     if (ONGLETS.indexOf(cle) === -1) cle = "carriere";
     barre.setAttribute("data-o", cle);
@@ -593,7 +593,8 @@
   function rendre() {
     if ($("vue-progression").hidden) return;
     var o = ongletActif();
-    if (o === "objectifs") rendreObjectifs(); else if (o === "retraite") rendreRetraite(); else rendreCarriere();
+    if (o === "objectifs") rendreObjectifs(); else if (o === "retraite") rendreRetraite();
+    else if (o === "liberte") { if (window.OrbiteLiberte) window.OrbiteLiberte.rendre(); } else rendreCarriere();
   }
   doc.addEventListener("orbite:vue", function (e) {
     if (e.detail.vue !== "progression") return;
