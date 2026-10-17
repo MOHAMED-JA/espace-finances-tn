@@ -11,11 +11,11 @@
  */
 (function (racine, fabrique) {
   if (typeof module === "object" && module.exports) {
-    module.exports = fabrique(require("./orbite-calcul.js"), require("./orbite-intelligence.js"), require("./placements-calcul.js"));
+    module.exports = fabrique(require("./orbite-calcul.js"), require("./orbite-intelligence.js"), require("./placements-calcul.js"), require("./pilotage-calcul.js"));
   } else {
-    racine.DeciderCalcul = fabrique(racine.OrbiteCalcul, racine.OrbiteIntelligence, racine.PlacementsCalcul);
+    racine.DeciderCalcul = fabrique(racine.OrbiteCalcul, racine.OrbiteIntelligence, racine.PlacementsCalcul, racine.PilotageCalcul);
   }
-})(typeof self !== "undefined" ? self : this, function (OC, OI, PL) {
+})(typeof self !== "undefined" ? self : this, function (OC, OI, PL, PI) {
   "use strict";
 
   var MOIS = OC.MOIS;
@@ -173,6 +173,12 @@
     }
     if (capContrats > 0) actifs.push({ cle: "contrats", libelle: "Assurance vie et CEA", montant: capContrats, estime: contrats.some(function (c) { return c.estime; }) });
     var passifs = credits.map(function (x) { return { cle: "credit-" + x.i, libelle: x.c.libelle, montant: x.crd, estime: !(x.c.capitalRestant > 0) }; });
+    /* Entre proches (lot B) : ce qu'on vous doit est un actif, ce que vous devez une dette ; constants dans la projection. */
+    var pro = PI && p.proches && p.proches.length ? PI.analyserProches(p.proches, { aujourdhui: PI.iso(m) }) : null, detteProches = 0;
+    if (pro) {
+      if (pro.onVousDoit > 0) { actifs.push({ cle: "proches", libelle: "Prêté aux proches", montant: pro.onVousDoit }); valPlac += pro.onVousDoit; }
+      if (pro.vousDevez > 0) { passifs.push({ cle: "proches-dette", libelle: "Dû à des proches", montant: pro.vousDevez }); detteProches = pro.vousDevez; }
+    }
     var totA = actifs.reduce(function (t, a) { return t + a.montant; }, 0), totP = passifs.reduce(function (t, a) { return t + a.montant; }, 0);
 
     /* Projection mois par mois : logement +hausse par an, contrats au rendement avec leurs versements, crédits amortis. */
@@ -186,7 +192,7 @@
     var net12 = null;
     for (var k = 1; k <= ans * 12; k++) {
       lg *= 1 + hlM; ct = ct * (1 + raM) + versements;
-      var dettes = 0;
+      var dettes = detteProches;
       etat.forEach(function (e) {
         if (e.crd > 0.0005) { e.crd = e.t > 0 ? moisCredit(e.crd, e.M, e.t).crd : Math.max(0, e.crd - e.M); if (e.crd <= 0.0005 && e.fin === null) e.fin = k; }
         dettes += e.crd;
