@@ -179,3 +179,11 @@ test('patrimoine net : prêté aux proches en actif, dû à un proche en dette, 
   assert.equal(n.factures[0].cat, 'internet');
   assert.equal(n.assurances[0].prime, 640);
 });
+
+test('factures repérées : un paiement rapproché en trop n\'empêche pas de reconnaître la série', () => {
+  const ops = [['2026-05-12', 92], ['2026-07-11', 104], ['2026-07-15', 58], ['2026-09-12', 88], ['2026-09-20', 58]].map(([d, v]) => ({ date: d, libelle: 'STEG FACTURE', montant: v, sens: 'debit' }));
+  const t = PI.detecterFactures(ops, [], []);
+  assert.equal(t.length, 1);
+  assert.equal(t[0].periode, 2);
+  assert.deepEqual(t[0].historique.map((h) => h.d), ['2026-05-12', '2026-07-11', '2026-09-12']);
+});

@@ -184,7 +184,17 @@
       if (hist.length < 2) return;
       var ecarts = []; for (var i = 1; i < hist.length; i++) ecarts.push(ecart(hist[i - 1].d, hist[i].d));
       var periode = periodeDe(mediane(ecarts));
+      /* Médiane brouillée par une ligne en trop (deux paiements rapprochés) : on essaie avec les écarts de plus de 20 jours. */
+      var longs = ecarts.filter(function (e) { return e > 20; });
+      if (!periode && longs.length) periode = periodeDe(mediane(longs));
       if (!periode) return;
+      /* Un paiement à moins de 60 % d'une période du précédent n'est pas une échéance : il est écarté (achat ponctuel, rattrapage). */
+      var gardes = [hist[0]];
+      for (var j = 1; j < hist.length; j++) if (ecart(gardes[gardes.length - 1].d, hist[j].d) >= periode * 30 * 0.6) gardes.push(hist[j]);
+      if (gardes.length < 2) return;
+      hist = gardes; ecarts = [];
+      for (var q = 1; q < hist.length; q++) ecarts.push(ecart(hist[q - 1].d, hist[q].d));
+      periode = periodeDe(mediane(ecarts)) || periode;
       /* Tous les écarts doivent tenir dans la période (une ligne manquante, soit 2 périodes, est tolérée). */
       if (ecarts.some(function (e) { var p = periodeDe(e); return p !== periode && p !== periode * 2 && !(periode === 1 && p === 2); })) return;
       var vals = hist.map(function (h) { return h.v; }), moy = vals.reduce(function (t, v) { return t + v; }, 0) / vals.length;
