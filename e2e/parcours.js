@@ -3686,14 +3686,14 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     const avant = await page.evaluate(() => JSON.stringify(window.Orbite.profil()));
     const iso = (decal) => { const d = new Date(); d.setDate(d.getDate() + decal); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
     const fr = (x) => x.slice(8) + "/" + x.slice(5, 7) + "/" + x.slice(0, 4);
-    await page.evaluate((auj) => window.Orbite.majProfil({ factures: [], assurances: [], proches: [], placements: null, jourPaie: 27, epargneDisponible: 3000,
+    await page.evaluate((auj) => window.Orbite.majProfil({ factures: [], assurances: [], proches: [], placements: null, jourPaie: 27, epargneDisponible: 20000, contrats: [], credits: [], loyer: 0, chargesFixes: 0, situation: "celibataire", enfants: 0,
       comptes: [{ id: "c1", nom: "Compte courant", type: "courant", soldes: [{ d: auj, v: 900 }] }] }, { immediat: true }), iso(0));
     await page.goto(base + "/espace/#mois?onglet=prevision");
     await page.waitForSelector("#mo-prevision .pi-graphe svg");
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.waitForTimeout(300);
     assert(await page.getAttribute(".mo-onglets", "data-o") === "prevision", "onglet Prévision");
-    /* 1. Une assurance annuelle de 2 500 DT dans 20 jours : découvert repéré, cause et solution. */
+    /* 1. Une assurance annuelle de 9 000 DT dans 20 jours : découvert repéré, cause et solution. */
     await page.goto(base + "/espace/#placements?onglet=assurances");
     await page.waitForSelector("#pa-assurances .pa-vide");
     assert(await page.isHidden("#pa-source"), "pas de règles fiscales sous les assurances");
@@ -3701,13 +3701,13 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector("#dlg-pilotage[open]");
     assert(await page.isHidden('[data-champ-de="credit"]') && await page.isHidden('[data-champ-de="bien"]'), "champs du crédit et du bien cachés pour une auto");
     await page.fill("#pi-f-nom", "Tous risques");
-    await page.fill("#pi-f-prime", "2 500");
+    await page.fill("#pi-f-prime", "9 000");
     await page.fill("#pi-f-echeance", iso(20));
     await page.click("#pi-dlg-ok");
     await page.waitForFunction(() => window.Orbite.profil().assurances.length === 1);
     await page.waitForSelector('.toast:has-text("Contrat ajouté")');
     await page.waitForSelector("#pa-assurances .cpt-liste li");
-    assert(/2 500 DT \/ an/.test((await page.textContent("#pa-assurances")).replace(/\s/g, " ")), "total des primes");
+    assert(/9 000 DT \/ an/.test((await page.textContent("#pa-assurances")).replace(/\s/g, " ")), "total des primes");
     assert(/Échéance le/.test(await page.textContent("#pa-assurances .cpt-points")), "échéance proche signalée");
     await page.click('#pa-assurances [data-pi-ajouter="assurance"]');
     await page.waitForSelector("#dlg-pilotage[open]");
@@ -3717,7 +3717,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.goto(base + "/espace/#mois?onglet=prevision");
     await page.waitForSelector("#mo-prevision .pa-alerte");
     const alerte = (await page.textContent("#mo-prevision .pa-alerte")).replace(/\s/g, " ");
-    assert(/Découvert prévu/.test(alerte) && /Cause : assurance tous risques \(2 500 DT\)/.test(alerte) && !/\.\./.test(alerte), "découvert et cause : " + alerte);
+    assert(/Découvert prévu/.test(alerte) && /Cause : assurance tous risques \(9 000 DT\)/.test(alerte) && !/\.\./.test(alerte), "découvert et cause : " + alerte);
     assert(/Virer \d[\d ]* DT de l'épargne le/.test((await page.textContent("#mo-prevision .pi-etapes")).replace(/\s/g, " ")), "solution chiffrée");
     assert(await page.isVisible("#mo-prevision .og-zone"), "zone sous zéro sur la courbe");
     await page.screenshot({ path: path.join(CAPTURES, "prevision.png"), fullPage: true });
