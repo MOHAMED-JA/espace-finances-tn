@@ -62,7 +62,6 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   let refusAttendus = false;
   function suivre(p) {
     p.on("pageerror", (e) => problemes.push("Erreur JS " + p.url() + " : " + e.message));
-    if (process.env.DEBUG403) p.on("response", (r) => { if (r.status() === 403) console.log("403", r.url().replace(/^https?:\/\/[^/]+/, ""), p.url()); });
     p.on("console", (m) => {
       const t = m.text();
       if (/Content Security Policy|Refused to/i.test(t)) problemes.push("CSP " + p.url() + " : " + t);
@@ -3999,7 +3998,6 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector('#pc-liste .pc-conseiller:has-text("consulté")');
     assert(/consult.{1,2} \d+ fois/.test(await page.textContent("#pc-liste")), "consultations visibles : " + await page.textContent("#pc-liste"));
     await page.screenshot({ path: path.join(CAPTURES, "conseiller-partage-client.png"), fullPage: false });
-    if (process.env.DEBUG403) console.log("DIAG", await page.evaluate(() => { const l = []; for (let e = document.querySelector("[data-pc-retirer]"); e && e !== document.body; e = e.parentElement) { const c = getComputedStyle(e); l.push((e.id || e.className || e.tagName) + ":" + c.display + "/" + Math.round(e.getBoundingClientRect().width) + (e.hidden ? "/hidden" : "")); } return l.join(" < "); }));
     await page.waitForSelector("[data-pc-retirer]", { state: "visible", timeout: 60000 });
     const diag = await page.evaluate(() => { const b = document.querySelector("[data-pc-retirer]"), p = b.closest(".param-panneau"); return { onglet: p && p.getAttribute("data-onglet"), cache: p && p.hidden, hash: location.hash, w: b.getBoundingClientRect().width }; });
     await page.evaluate(() => document.querySelector("[data-pc-retirer]").click());
