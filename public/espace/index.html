@@ -80,6 +80,7 @@
       <p class="rail__titre" id="rail-perso">Mon espace</p>
       <ul class="rail__liens" role="list" aria-labelledby="rail-perso">
         <li><a href="#simulations" data-vue="simulations"><svg aria-hidden="true"><use href="/orbite/icones.svg#liste"/></svg><span>Simulations</span><span class="rail__compte" id="compte-total"></span></a></li>
+        <li id="rail-clients" hidden><a href="#clients" data-vue="clients"><svg aria-hidden="true"><use href="/orbite/icones.svg#bouclier"/></svg><span>Mes clients</span></a></li>
         <li><a href="#coffre" data-vue="coffre"><svg aria-hidden="true"><use href="/orbite/icones.svg#cadenas"/></svg><span>Mon coffre</span></a></li>
         <li><a href="#abonnement" data-vue="abonnement"><svg aria-hidden="true"><use href="/orbite/icones.svg#couronne"/></svg><span>Abonnement</span><span class="rail__badge rail__badge--acces" id="badge-abonnement" hidden></span></a></li>
         <li><a href="#compte" data-vue="compte"><svg aria-hidden="true"><use href="/orbite/icones.svg#compte"/></svg><span>Paramètres</span></a></li>
@@ -804,6 +805,17 @@
         </section>
 
         <!-- ======== Simulations ======== -->
+        <!-- ============ Mes clients (mode conseiller, lot C, maquette C4 ; conseiller.js, migration 0018) ============ -->
+        <section class="vue" id="vue-clients" data-vue="clients" aria-labelledby="titre-clients" hidden>
+          <header class="vue__tete">
+            <div>
+              <h1 id="titre-clients">Mes clients</h1>
+              <p class="vue__sous">Les clients qui ont accepté de partager leur Orbite avec vous, leurs alertes du moment et un bilan prêt pour le rendez-vous.</p>
+            </div>
+          </header>
+          <div class="cf-zone" id="cl-zone" aria-live="polite"></div>
+        </section>
+
         <!-- ============ Mon coffre (lot C, maquette C3 validée le 16 oct. 2026 ; coffre-calcul.js, vue-coffre.js) ============ -->
         <section class="vue" id="vue-coffre" data-vue="coffre" aria-labelledby="titre-coffre" hidden>
           <header class="vue__tete">
@@ -1258,6 +1270,17 @@
                 <p class="admin__note">Seuls les comptes qui ont coché « J'accepte d'être recontacté·e » dans Mon profil apparaissent ici. S'ils décochent, ils disparaissent aussitôt. Sans email de contact saisi, c'est l'email de connexion.</p>
                 <ul class="admin__contacts" id="admin-contacts"></ul>
               </section>
+              <section class="panneau admin__bloc" aria-labelledby="admin-t-conseillers">
+                <div class="admin__tete"><h2 id="admin-t-conseillers">Conseillers</h2></div>
+                <p class="admin__note">Un conseiller voit, en lecture seule, l'Orbite des clients qui acceptent son code d'invitation. Il doit activer la double authentification. Retirer le rôle coupe aussitôt l'accès à tous ses clients.</p>
+                <form class="admin__form-conseiller" id="form-conseiller" novalidate>
+                  <div class="champ"><label for="acn-email">Adresse du compte</label><div class="saisie"><input id="acn-email" type="email" autocomplete="off"></div></div>
+                  <div class="champ"><label for="acn-nom">Nom affiché aux clients</label><div class="saisie"><input id="acn-nom" type="text" maxlength="60" autocomplete="off" placeholder="Ex. Nadia C., Banque A"></div></div>
+                  <p class="erreur-champ" id="acn-erreur" role="alert" hidden></p>
+                  <button type="submit" class="bouton bouton--plein bouton--petit">Donner le rôle de conseiller</button>
+                </form>
+                <ul class="admin__contacts" id="admin-conseillers"></ul>
+              </section>
               <section class="panneau admin__bloc" aria-labelledby="admin-t-fiches">
                 <div class="admin__tete"><h2 id="admin-t-fiches">Fiches partagées</h2></div>
                 <p class="admin__note">Seuls les comptes qui ont activé « Partager ma fiche avec l'administrateur » apparaissent ici. Chaque ouverture de fiche est enregistrée et visible par l'utilisateur.</p>
@@ -1536,6 +1559,24 @@
               </div>
               <p class="reglage__desc" id="r-partage-desc">Facultatif. Si vous l'activez, l'administrateur d'Orbite peut consulter votre profil (nom, dates, salaire, crédits, contrats, famille) pour vous aider ou améliorer l'application. Il n'y a jamais accès sans votre accord, vous pouvez le retirer à tout moment avec un effet immédiat, et chaque consultation est enregistrée.</p>
               <p class="reglage__etat" id="partage-etat" aria-live="polite" hidden></p>
+            </section>
+            <!-- Mode conseiller (lot C) : accepter un conseiller avec son code, voir les consultations, retirer l'accord -->
+            <section class="panneau reglage reglage--carte" aria-labelledby="r-conseiller">
+              <div class="reglage__tete">
+                <span class="reglage__ico" aria-hidden="true"><svg><use href="/orbite/icones.svg#profil"/></svg></span>
+                <h2 id="r-conseiller">Partager avec un conseiller</h2>
+              </div>
+              <p class="reglage__desc">Votre banquier, assureur ou expert-comptable utilise Orbite ? Avec le code qu'il vous donne, il voit votre Orbite en lecture seule, sans rien pouvoir modifier. Chaque consultation est enregistrée ici et vous retirez l'accord quand vous voulez.</p>
+              <div class="pc-code">
+                <div class="champ"><label for="pc-code">Code du conseiller</label><div class="saisie"><input id="pc-code" type="text" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Ex. K7Q2M 9XR4T"></div></div>
+                <button type="button" class="bouton" id="pc-voir">Vérifier le code</button>
+              </div>
+              <p class="reglage__desc pc-etat" id="pc-etat" role="status" hidden></p>
+              <div class="pc-confirmer" id="pc-confirmer" hidden>
+                <p id="pc-confirmer-txt"></p>
+                <div class="pa-actions"><button type="button" class="bouton bouton--plein" id="pc-accepter">J'accepte</button><button type="button" class="bouton bouton--fantome" id="pc-refuser">Non merci</button></div>
+              </div>
+              <div class="pc-liste" id="pc-liste" aria-live="polite"></div>
             </section>
             </div>
             </div>
@@ -2974,6 +3015,7 @@
   <script src="/espace/js/vue-pilotage.js"></script>
   <script src="/espace/js/vue-liberte.js"></script>
   <script src="/espace/js/vue-coffre.js"></script>
+  <script src="/espace/js/conseiller.js"></script>
   <script src="/espace/js/fiche-calcul.js"></script>
   <script src="/espace/js/dossier-calcul.js"></script>
   <script src="/espace/js/negociateur-calcul.js"></script>

@@ -3900,6 +3900,122 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.evaluate((a) => window.Orbite.majProfil(JSON.parse(a), { immediat: true }), avant);
   });
 
+  await etape("mode conseiller : rôle donné par l'admin, double authentification exigée, code d'invitation, accord du client, lecture seule, consultations journalisées, retrait immédiat", async () => {
+    await page.setViewportSize({ width: 1360, height: 900 });
+    const EM = "conseil@exemple.tn", MDP = "Conseil-compte-2026!";
+    faux.ajouterCompte(EM, MDP, { full_name: "Nadia Conseil", orbite_consentement: VERSION_ACCORD, orbite_partage_demande: new Date().toISOString(), orbite_partage_reponse: "non",
+      orbite: { prenom: "Nadia", nom: "Conseil", dateNaissance: "1985-03-02", montant: 3000 } });
+    faux.marquerAdmin("aziz@exemple.tn");
+    const avantNom = await page.evaluate(() => { const p = window.Orbite.profil(); return { prenom: p.prenom, nom: p.nom }; });
+    await page.evaluate(() => window.Orbite.majProfil({ prenom: "Aziz", nom: "Test" }, { immediat: true }));
+    /* 1. L'administrateur donne le rôle. */
+    await page.goto(base + "/espace/#admin");
+    await page.reload();
+    await page.waitForSelector("#form-conseiller", { state: "visible" });
+    await page.fill("#acn-email", EM);
+    await page.fill("#acn-nom", "Nadia C., Banque A");
+    await page.click('#form-conseiller button[type="submit"]');
+    await page.waitForSelector('#admin-conseillers li:has-text("Nadia C., Banque A")');
+    /* 2. Le conseiller sans double authentification : rien. Puis avec : invitation. */
+    const cc = await navigateur.newContext({ viewport: { width: 1280, height: 900 }, locale: "fr-FR", reducedMotion: "reduce" });
+    await cc.route(SUPABASE + "/**", (r) => faux.gerer(r));
+    await cc.route("https://api.pwnedpasswords.com/**", fuites);
+    await cc.addInitScript(() => { try { localStorage.setItem("orbite-nouveautes", "vu"); } catch (e) {} });
+    const pc = await cc.newPage();
+    suivre(pc);
+    const fermerNotes = async () => {
+      await pc.waitForTimeout(1200);
+      if (await pc.isVisible("#dlg-nouveautes")) await pc.click('#dlg-nouveautes button[value="ok"]');
+      for (let i = 0; i < 4 && await pc.$(".visite"); i++) { await pc.keyboard.press("Escape"); await pc.waitForTimeout(250); }
+    };
+    await pc.goto(base + "/connexion.html");
+    await pc.fill("#email", EM); await pc.fill("#mdp", MDP); await pc.click("#envoyer");
+    await pc.waitForURL(/\/espace\//);
+    await fermerNotes();
+    await pc.goto(base + "/espace/#clients");
+    await pc.waitForSelector("#rail-clients:not([hidden])", { state: "attached" });
+    await pc.waitForSelector('#cl-zone h2:has-text("Double authentification requise")');
+    const secret = faux.ajouterFacteur(EM);
+    await pc.click("#deconnexion");
+    await pc.waitForURL(/connexion\.html/);
+    await pc.fill("#email", EM); await pc.fill("#mdp", MDP); await pc.click("#envoyer");
+    await pc.waitForSelector("#etape-code:not([hidden])");
+    await pc.fill("#code-2fa", Faux.totp(secret));
+    await pc.waitForURL(/\/espace\//);
+    await fermerNotes();
+    await pc.goto(base + "/espace/#clients");
+    await pc.waitForSelector('#cl-zone h2:has-text("Aucun client")');
+    await pc.click('[data-cl="inviter"]');
+    await pc.waitForSelector("#cl-zone .cl-code");
+    const code = (await pc.textContent("#cl-zone .cl-code")).replace(/\s/g, "");
+    assert(/^[A-HJ-NP-Z2-9]{10}$/.test(code), "code d'invitation : " + code);
+    /* 3. Le client vérifie le code, voit qui l'invite, accepte. */
+    await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.waitForSelector("#pc-code", { state: "visible" });
+    assert(/Aucun conseiller/.test(await page.textContent("#pc-liste")), "aucun conseiller au départ");
+    await page.fill("#pc-code", "ABC");
+    await page.click("#pc-voir");
+    assert(/10 caractères/.test(await page.textContent("#pc-etat")), "code mal formé refusé");
+    await page.fill("#pc-code", "AAAAA AAAAA");
+    await page.click("#pc-voir");
+    await page.waitForFunction(() => /inconnu|expiré/.test(document.getElementById("pc-etat").textContent));
+    await page.fill("#pc-code", code.slice(0, 5) + " " + code.slice(5).toLowerCase());
+    await page.click("#pc-voir");
+    await page.waitForSelector("#pc-confirmer:not([hidden])");
+    assert(/Nadia C., Banque A vous invite/.test(await page.textContent("#pc-confirmer-txt")), "nom du conseiller montré avant d'accepter");
+    await page.click("#pc-accepter");
+    await page.waitForSelector('#pc-liste .pc-conseiller:has-text("pas encore consulté")');
+    /* Le code ne sert qu'une fois. */
+    await page.fill("#pc-code", code);
+    await page.click("#pc-voir");
+    await page.waitForFunction(() => /déjà utilisé|inconnu/.test(document.getElementById("pc-etat").textContent));
+    /* 4. Le conseiller voit le client en lecture seule, ouvre, télécharge le bilan. */
+    await pc.bringToFront();
+    await pc.goto(base + "/espace/#orbite");
+    await pc.goto(base + "/espace/#clients");
+    await pc.waitForSelector("#cl-zone .cl-client");
+    const carte = (await pc.textContent("#cl-zone .cl-client")).replace(/\s+/g, " ");
+    assert(/Aziz T\./.test(carte) && /Patrimoine net/.test(carte) && /Score de santé\s*\d+ \/ 100/.test(carte), "carte du client : " + carte.slice(0, 200));
+    assert(!/aziz@exemple\.tn/.test(await pc.textContent("#cl-zone")), "jamais l'e-mail du client");
+    await pc.click("[data-cl-ouvrir]");
+    await pc.waitForSelector("#cl-zone .cl-details");
+    const [pdf] = await Promise.all([pc.waitForEvent("download", { timeout: 60000 }), pc.click("[data-cl-bilan]")]);
+    assert(/^bilan-aziz-t-\d{4}\.pdf$/.test(pdf.suggestedFilename()) && fs.readFileSync(await pdf.path()).slice(0, 5).toString() === "%PDF-", "bilan PDF du client : " + pdf.suggestedFilename());
+    await pc.screenshot({ path: path.join(CAPTURES, "conseiller-clients.png"), fullPage: true });
+    assert(faux.consultationsConseiller.length >= 1, "consultation journalisée");
+    /* 5. Le client voit la consultation et retire l'accord (deux gestes). */
+    await page.bringToFront();
+    await page.goto(base + "/espace/#orbite");
+    await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.waitForSelector('#pc-liste .pc-conseiller:has-text("consulté")');
+    assert(/consulté \d+ fois/.test(await page.textContent("#pc-liste")), "consultations visibles : " + await page.textContent("#pc-liste"));
+    await page.screenshot({ path: path.join(CAPTURES, "conseiller-partage-client.png"), fullPage: false });
+    await page.$eval("[data-pc-retirer]", (b) => b.scrollIntoView({ block: "center" }));
+    await page.click("[data-pc-retirer]");
+    assert(/Confirmer/.test(await page.textContent("[data-pc-retirer]")), "confirmation avant le retrait");
+    await page.click("[data-pc-retirer]");
+    await page.waitForSelector('#pc-liste:has-text("Aucun conseiller")');
+    await pc.bringToFront();
+    await pc.goto(base + "/espace/#orbite");
+    await pc.goto(base + "/espace/#clients");
+    await pc.waitForSelector('#cl-zone h2:has-text("Aucun client")');
+    /* 6. Téléphone (conseiller), puis rôle retiré par l'admin : le menu disparaît. */
+    await pc.setViewportSize({ width: 390, height: 844 });
+    await pc.waitForTimeout(300);
+    assert(!(await pc.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), "Mes clients sans débordement sur téléphone");
+    await page.bringToFront();
+    await page.goto(base + "/espace/#orbite");
+    await page.goto(base + "/espace/#admin");
+    await page.waitForSelector('#admin-conseillers [data-ac-retirer]');
+    await page.click('#admin-conseillers [data-ac-retirer]');
+    await page.waitForSelector('#admin-conseillers li:has-text("Aucun conseiller")');
+    await pc.reload();
+    await pc.waitForTimeout(1500);
+    assert(await pc.$eval("#rail-clients", (e) => e.hidden), "menu « Mes clients » retiré");
+    await cc.close();
+    await page.evaluate((n) => window.Orbite.majProfil(n, { immediat: true }), avantNom);
+  });
+
   await etape("bilan annuel en PDF : bouton dans Ma progression, aperçu avec les vrais chiffres, sections à cocher, coordonnées décochées, PDF valide, Ctrl K, téléphone", async () => {
     await page.setViewportSize({ width: 1360, height: 900 });
     await page.goto(base + "/espace/#progression");

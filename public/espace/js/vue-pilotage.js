@@ -92,12 +92,13 @@
   /* ===================================================================
      Contexte commun
      =================================================================== */
-  function donnees() {
-    var p = O.profil() || {}, n = PI.normaliser(p);
+  /* p : un profil (celui du compte par défaut ; Mes clients passe celui d'un client, en lecture seule). */
+  function donnees(p0) {
+    var p = p0 || O.profil() || {}, n = PI.normaliser(p);
     return { profil: p, factures: n.factures, assurances: n.assurances, proches: n.proches };
   }
   function reserveInfo(sy) {
-    try { var r = OI && OI.reserve ? OI.reserve(sy, (O.profil() || {}).reserve || {}, {}) : null; return r ? { manque: r.manque, parMois: r.mensuel, depenses: r.depenses.total } : null; }
+    try { var r = OI && OI.reserve ? OI.reserve(sy, (sy.profil && sy.profil.reserve) || {}, {}) : null; return r ? { manque: r.manque, parMois: r.mensuel, depenses: r.depenses.total } : null; }
     catch (e) { return null; }
   }
   function creditsActifs(sy, p) {
@@ -126,8 +127,8 @@
     var d = l.reduce(function (m, c) { var x = CC.dernier(c).d; return x > m ? x : m; }, "");
     return { d: d, v: CC.totalA(l, d), n: l.length };
   }
-  function calculPrevision() {
-    var d = donnees(), p = d.profil, sy = O.synthese();
+  function calculPrevision(p0, sy0) {
+    var d = donnees(p0), p = d.profil, sy = sy0 || O.synthese();
     if (!sy) return { aucun: true };
     var s = soldeCourant(p);
     if (!s) return { aucun: true };
@@ -136,7 +137,7 @@
     var r = reserveInfo(sy);
     var pv = PI.prevision({
       aujourdhui: aujourdhui(), jours: 90, solde: { v: s.v, d: s.d },
-      paie: { montant: sy.salaire.netMensuel + (p.autresRevenus || 0), jour: p.jourPaie },
+      paie: { montant: sy.salaire.netMensuel + (p.autresRevenus || 0), jour: p.jourPaie || 0 },
       credits: creditsActifs(sy, p), epargne: { montant: epargne, jour: p.jourVersement },
       logement: { montant: (p.loyer || 0) + (p.chargesFixes || 0), jour: 1 }, vieMois: dm.vie,
       factures: analyseFactures(d, sy).lignes, assurances: analyseAssurances(d, sy).lignes, proches: analyseProches(d).lignes,
@@ -653,5 +654,12 @@
     else if (o === "assurances" && !$("pa-assurances").hidden) rendreAssurances();
     else if (o === "proches" && !$("pa-proches").hidden) rendreProches();
   }
-  window.OrbitePilotage = { rendre: rendre, ouvrir: ouvrir, prevision: calculPrevision, ajouterOps: ajouterOps };
+  /* Alertes du moment pour un profil (Mes clients) : échéances d'assurance, retards entre proches. */
+  function alertes(p0, sy0) {
+    var d = donnees(p0), sy = sy0 || O.synthese(), a = analyseAssurances(d, sy), x = analyseProches(d), l = [];
+    if (a.prochaine && a.prochaine.jours <= 30) l.push({ cle: "assurance", texte: "Assurance " + a.prochaine.nom.toLowerCase() + " à renouveler", d: a.prochaine.d });
+    x.lignes.filter(function (y) { return y.retard > 0; }).forEach(function (y) { l.push({ cle: "proche", texte: (y.sens === "prete" ? "Remboursement en retard (prêt à " : "Remboursement en retard (dû à ") + y.nom + ")", d: y.prochaine ? y.prochaine.d : "" }); });
+    return l;
+  }
+  window.OrbitePilotage = { rendre: rendre, ouvrir: ouvrir, prevision: calculPrevision, alertes: alertes, ajouterOps: ajouterOps };
 })();

@@ -132,6 +132,12 @@
     [/user already registered|already been registered/i, "Un compte existe déjà avec cette adresse. Connectez-vous ou réinitialisez le mot de passe."],
     [/password should be at least|weak password|password is too weak/i, "Mot de passe trop faible : 10 caractères au moins, avec lettres, chiffres et symbole."],
     [/rate limit|too many requests|429/i, "Trop de tentatives. Patientez quelques minutes avant de réessayer."],
+    /* Mode conseiller (migration 0018). */
+    [/code inconnu|déjà utilisé ou expiré/i, "Code inconnu, déjà utilisé ou expiré : demandez-en un nouveau à votre conseiller."],
+    [/réservé aux conseillers/i, "Cet espace est réservé aux conseillers désignés par l'administrateur."],
+    [/aucun compte avec cette adresse/i, "Aucun compte Orbite avec cette adresse : la personne doit d'abord créer son compte."],
+    [/trop d'invitations/i, "Trop d'invitations en attente (20 au plus) : attendez qu'elles soient utilisées ou expirent."],
+    [/double authentification requise/i, "Double authentification requise : activez-la dans Paramètres › Sécurité, puis reconnectez-vous."],
     [/unable to validate email|invalid email|email address .* invalid/i, "Adresse e-mail invalide."],
     [/same password|should be different/i, "Le nouveau mot de passe doit être différent de l'ancien."],
     [/limite de 200/i, "Vous avez atteint la limite de 200 simulations. Supprimez-en quelques-unes."],
