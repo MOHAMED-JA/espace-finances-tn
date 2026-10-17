@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="/espace/progression.css">
   <link rel="stylesheet" href="/espace/mois.css">
   <link rel="stylesheet" href="/espace/comptes.css">
+  <link rel="stylesheet" href="/espace/placements.css">
   <link rel="stylesheet" href="/espace/annee.css">
   <link rel="stylesheet" href="/espace/fiche.css">
   <link rel="stylesheet" href="/espace/dossier.css">
@@ -71,6 +72,7 @@
         <li><a href="#vie" data-vue="vie"><svg aria-hidden="true"><use href="/orbite/icones.svg#cible"/></svg><span>Vie &amp; impôts</span></a></li>
         <li><a href="#progression" data-vue="progression"><svg aria-hidden="true"><use href="/orbite/icones.svg#hausse"/></svg><span>Ma progression</span></a></li>
         <li><a href="#mois" data-vue="mois"><svg aria-hidden="true"><use href="/orbite/icones.svg#calendrier"/></svg><span>Mon mois</span></a></li>
+        <li><a href="#placements" data-vue="placements"><svg aria-hidden="true"><use href="/orbite/icones.svg#portefeuille"/></svg><span>Mon patrimoine</span></a></li>
         <li><a href="#assistant" data-vue="assistant"><svg aria-hidden="true"><use href="/orbite/icones.svg#etoile"/></svg><span>Assistant</span></a></li>
       </ul>
       <p class="rail__titre" id="rail-perso">Mon espace</p>
@@ -1720,6 +1722,28 @@
           </div>
         </section>
         <!-- ======== Mon mois : budget et calendrier (point 5) ======== -->
+        <!-- ============ Mon patrimoine (lot A, maquette validée le 16 oct. 2026 ; placements-calcul.js, vue-placements.js) ============ -->
+        <section class="vue" id="vue-placements" data-vue="placements" aria-labelledby="titre-placements" hidden>
+          <header class="vue__tete pa-tete">
+            <div>
+              <h1 id="titre-placements">Mon patrimoine</h1>
+              <p class="vue__sous">Bourse, dépôts, immobilier et or : ce que vous avez placé, ce que cela rapporte vraiment, et ce qu'il faut surveiller.</p>
+            </div>
+            <div class="pa-onglets" role="tablist" aria-label="Mon patrimoine" data-o="bourse">
+              <i aria-hidden="true"></i>
+              <button type="button" role="tab" id="pa-tab-bourse" aria-controls="pa-bourse" aria-selected="true" data-onglet="bourse">Bourse</button>
+              <button type="button" role="tab" id="pa-tab-depots" aria-controls="pa-depots" aria-selected="false" tabindex="-1" data-onglet="depots">Dépôts</button>
+              <button type="button" role="tab" id="pa-tab-immo" aria-controls="pa-immo" aria-selected="false" tabindex="-1" data-onglet="immo">Immo &amp; or</button>
+              <button type="button" role="tab" id="pa-tab-synthese" aria-controls="pa-synthese" aria-selected="false" tabindex="-1" data-onglet="synthese">Synthèse</button>
+            </div>
+          </header>
+          <div class="pa-panneau" id="pa-bourse" role="tabpanel" aria-labelledby="pa-tab-bourse"></div>
+          <div class="pa-panneau" id="pa-depots" role="tabpanel" aria-labelledby="pa-tab-depots" hidden></div>
+          <div class="pa-panneau" id="pa-immo" role="tabpanel" aria-labelledby="pa-tab-immo" hidden></div>
+          <div class="pa-panneau" id="pa-synthese" role="tabpanel" aria-labelledby="pa-tab-synthese" hidden></div>
+          <p class="pa-source" id="pa-source"></p>
+        </section>
+
         <section class="vue" id="vue-mois" data-vue="mois" aria-labelledby="titre-mois" hidden>
           <header class="vue__tete mo-tete">
             <div>
@@ -2482,6 +2506,28 @@
     </form>
   </dialog>
 
+  <!-- Mon patrimoine : une seule fenêtre, dont les champs dépendent de ce que l'on ajoute ou modifie (vue-placements.js) -->
+  <dialog class="dialogue pa-dlg" id="dlg-placement" aria-labelledby="pa-dlg-titre">
+    <form method="dialog" id="form-placement" novalidate>
+      <div class="dialogue__tete"><h2 id="pa-dlg-titre">Ajouter</h2></div>
+      <div class="dialogue__corps">
+        <p class="pa-dlg__aide" id="pa-dlg-aide" hidden></p>
+        <div class="grille-champs" id="pa-dlg-champs"></div>
+        <p class="pa-dlg__apercu" id="pa-dlg-apercu" aria-live="polite" hidden></p>
+        <p class="pa-dlg__err" id="pa-dlg-err" role="alert" hidden></p>
+        <div class="cpt-suppr" id="pa-dlg-confirmer" hidden>
+          <p id="pa-dlg-confirmer-txt"></p>
+          <button type="button" class="bouton bouton--danger-plein" id="pa-dlg-supprimer-oui">Oui, supprimer</button>
+        </div>
+      </div>
+      <div class="dialogue__pied">
+        <button type="button" class="bouton bouton--fantome pg-supprimer" id="pa-dlg-supprimer" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#poubelle"/></svg>Supprimer</button>
+        <button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Annuler</button>
+        <button type="submit" class="bouton bouton--plein" value="ok" id="pa-dlg-ok">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- Mes comptes : nouveau solde (tapé ou lu dans un relevé) et modification d'un compte (vue-comptes.js) -->
   <dialog class="dialogue cpt-dlg" id="dlg-solde" aria-labelledby="cpt-dlg-titre">
     <form method="dialog" id="form-solde" novalidate>
@@ -2743,6 +2789,7 @@
   <script src="/espace/js/budget-calcul.js"></script>
   <script src="/espace/js/releve-calcul.js"></script>
   <script src="/espace/js/comptes-calcul.js"></script>
+  <script src="/espace/js/placements-calcul.js"></script>
   <script src="/espace/js/orbite-calcul.js"></script>
   <script src="/espace/js/orbite-intelligence.js"></script>
   <script src="/espace/js/assistant-local.js"></script>
@@ -2811,6 +2858,7 @@
   <script src="/espace/js/fiche-lecture.js"></script>
   <script src="/espace/js/releve-import.js"></script>
   <script src="/espace/js/vue-comptes.js"></script>
+  <script src="/espace/js/vue-placements.js"></script>
   <script src="/espace/js/fiche-calcul.js"></script>
   <script src="/espace/js/dossier-calcul.js"></script>
   <script src="/espace/js/negociateur-calcul.js"></script>
