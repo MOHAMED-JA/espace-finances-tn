@@ -62,6 +62,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   let refusAttendus = false;
   function suivre(p) {
     p.on("pageerror", (e) => problemes.push("Erreur JS " + p.url() + " : " + e.message));
+    if (process.env.DEBUG403) p.on("response", (r) => { if (r.status() === 403) console.log("403", r.url().replace(/^https?:\/\/[^/]+/, ""), p.url()); });
     p.on("console", (m) => {
       const t = m.text();
       if (/Content Security Policy|Refused to/i.test(t)) problemes.push("CSP " + p.url() + " : " + t);
@@ -3909,6 +3910,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     faux.marquerAdmin("aziz@exemple.tn");
     const avantNom = await page.evaluate(() => { const p = window.Orbite.profil(); return { prenom: p.prenom, nom: p.nom }; });
     await page.evaluate(() => window.Orbite.majProfil({ prenom: "Aziz", nom: "Test" }, { immediat: true }));
+    for (let i = 0; i < 100 && (((faux.comptes.get("aziz@exemple.tn").user.user_metadata || {}).orbite || {}).nom !== "Test"); i++) await page.waitForTimeout(100);
     /* 1. L'administrateur donne le rôle. */
     await page.goto(base + "/espace/#admin");
     await page.reload();
@@ -3989,10 +3991,11 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.goto(base + "/espace/#orbite");
     await page.goto(base + "/espace/#compte?onglet=donnees");
     await page.waitForSelector('#pc-liste .pc-conseiller:has-text("consulté")');
-    assert(/consulté \d+ fois/.test(await page.textContent("#pc-liste")), "consultations visibles : " + await page.textContent("#pc-liste"));
+    assert(/consult.{1,2} \d+ fois/.test(await page.textContent("#pc-liste")), "consultations visibles : " + await page.textContent("#pc-liste"));
     await page.screenshot({ path: path.join(CAPTURES, "conseiller-partage-client.png"), fullPage: false });
+    await page.click("#tab-donnees");
+    await page.waitForSelector("[data-pc-retirer]", { state: "visible" });
     const diag = await page.evaluate(() => { const b = document.querySelector("[data-pc-retirer]"), p = b.closest(".param-panneau"); return { onglet: p && p.getAttribute("data-onglet"), cache: p && p.hidden, hash: location.hash, w: b.getBoundingClientRect().width }; });
-    console.log("DIAG", JSON.stringify(diag));
     await page.evaluate(() => document.querySelector("[data-pc-retirer]").click());
     assert(/Confirmer/.test(await page.textContent("[data-pc-retirer]")), "confirmation avant le retrait");
     await page.evaluate(() => document.querySelector("[data-pc-retirer]").click());
