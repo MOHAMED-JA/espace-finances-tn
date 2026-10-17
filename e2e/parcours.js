@@ -3571,6 +3571,116 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.evaluate((a) => window.Orbite.majProfil(JSON.parse(a), { immediat: true }), avant);
   });
 
+  await etape("Mon patrimoine : titre (aperçu, plus-value), cours, dépôt (échéance proche), bien loué, or, synthèse (donut, inflation), patrimoine net, supprimer et annuler, téléphone", async () => {
+    await page.setViewportSize({ width: 1360, height: 900 });
+    const avant = await page.evaluate(() => JSON.stringify(window.Orbite.profil()));
+    await page.evaluate(() => window.Orbite.majProfil({ placements: null }, { immediat: true }));
+    const iso = (decal) => { const d = new Date(); d.setDate(d.getDate() + decal); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+    await page.goto(base + "/espace/#placements");
+    await page.waitForSelector("#pa-bourse .pa-vide", { state: "visible" });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.waitForTimeout(300);
+    assert(await page.getAttribute(".pa-onglets", "data-o") === "bourse", "onglet Bourse par défaut");
+    /* 1. Titre : aperçu de la plus-value, puis enregistré. */
+    await page.click('#pa-bourse [data-ajouter="titre"]');
+    await page.waitForSelector("#dlg-placement[open]");
+    assert(await page.inputValue("#pa-f-coursDu") === iso(0), "date du cours du jour");
+    await page.fill("#pa-f-nom", "SICAV obligataire A");
+    await page.selectOption("#pa-f-type", "sicav_oblig");
+    await page.fill("#pa-f-quantite", "120");
+    await page.fill("#pa-f-investi", "8 090");
+    await page.fill("#pa-f-cours", "71,25");
+    await page.waitForSelector("#pa-dlg-apercu:not([hidden])");
+    assert(/8 550,000 DT.*\+460/.test((await page.textContent("#pa-dlg-apercu")).replace(/\s/g, " ")), "aperçu : " + await page.textContent("#pa-dlg-apercu"));
+    await page.click("#pa-dlg-ok");
+    await page.waitForFunction(() => (window.Orbite.profil().placements || {}).titres && window.Orbite.profil().placements.titres.length === 1);
+    await page.waitForSelector('.toast:has-text("Ajouté à Mon patrimoine")');
+    await page.waitForSelector("#pa-bourse .cpt-liste li");
+    assert(/\+5,7 %/.test(await page.textContent("#pa-bourse")), "plus-value de la ligne");
+    /* 2. Mettre à jour les cours. */
+    await page.click('#pa-bourse [data-ajouter="cours"]');
+    await page.waitForSelector("#dlg-placement[open]");
+    await page.fill("#pa-f-cours-t1", "75");
+    await page.click("#pa-dlg-ok");
+    await page.waitForFunction(() => window.Orbite.profil().placements.titres[0].cours === 75);
+    /* 3. Erreur : montant manquant, fenêtre gardée. */
+    await page.click("#pa-tab-depots");
+    await page.waitForSelector("#pa-depots .pa-vide");
+    assert(/onglet=depots/.test(page.url()), "onglet dans l'adresse");
+    await page.click('#pa-depots [data-ajouter="taux"]');
+    await page.waitForSelector("#dlg-placement[open]");
+    await page.click("#pa-dlg-ok");
+    assert(await page.isVisible("#pa-dlg-err") && await page.isVisible("#dlg-placement"), "erreur sans montant");
+    /* 4. Dépôt à terme qui arrive à échéance dans 12 jours. */
+    await page.selectOption("#pa-f-type", "dat");
+    await page.fill("#pa-f-banque", "Banque A");
+    await page.fill("#pa-f-montant", "10 000");
+    await page.fill("#pa-f-tauxBrut", "8,25");
+    await page.fill("#pa-f-fin", iso(12));
+    await page.waitForFunction(() => /660 DT net/.test(document.getElementById("pa-dlg-apercu").textContent.replace(/\s/g, " ")));
+    await page.click("#pa-dlg-ok");
+    await page.waitForSelector("#pa-depots .pa-alerte");
+    assert(/Échéance dans 12 jours/.test(await page.textContent("#pa-depots .pa-alerte")), "alerte d'échéance");
+    /* 5. Bien loué et or. */
+    await page.click("#pa-tab-immo");
+    await page.click('#pa-immo [data-ajouter="bien"]');
+    await page.waitForSelector("#dlg-placement[open]");
+    await page.fill("#pa-f-nom", "Appartement S+2");
+    await page.fill("#pa-f-valeur", "240 000");
+    await page.fill("#pa-f-loyer", "750");
+    await page.fill("#pa-f-charges", "1 380");
+    await page.click("#pa-dlg-ok");
+    await page.waitForSelector("#pa-immo .pa-bien");
+    assert(/Rendement net/.test(await page.textContent("#pa-immo")), "rendement du bien");
+    await page.click('#pa-immo [data-ajouter="or"]');
+    await page.waitForSelector("#dlg-placement[open]");
+    await page.fill("#pa-f-grammes", "86");
+    await page.click("#pa-dlg-ok");
+    await page.waitForSelector("#pa-immo .pa-or");
+    await page.click('#pa-immo [data-ajouter="coursOr"]');
+    await page.waitForSelector("#dlg-placement[open]");
+    await page.fill("#pa-f-g18", "200");
+    await page.click("#pa-dlg-ok");
+    await page.waitForFunction(() => /17 200/.test(document.querySelector("#pa-immo .pa-or").textContent.replace(/\s/g, " ")));
+    /* 6. Synthèse : donut, inflation, points. */
+    await page.click("#pa-tab-synthese");
+    await page.waitForSelector("#pa-synthese .pa-donut circle:nth-of-type(3)");
+    const synth = (await page.textContent("#pa-synthese")).replace(/\s/g, " ");
+    assert(/Après inflation/.test(synth) && /Immobilier/.test(synth), "synthèse : " + synth.slice(0, 200));
+    assert(await page.$$eval("#pa-synthese .cpt-point", (l) => l.length) >= 1, "points à surveiller");
+    assert(/Règles fiscales/.test(await page.textContent("#pa-source")), "sources fiscales");
+    await page.screenshot({ path: path.join(CAPTURES, "patrimoine.png"), fullPage: true });
+    /* 7. Patrimoine net de Mon orbite : les placements comptés. */
+    const net = await page.evaluate(() => window.DeciderCalcul.patrimoine(window.Orbite.synthese()).actifs.map((a) => a.cle));
+    assert(net.includes("immo-locatif") && net.includes("bourse") && net.includes("taux") && net.includes("or"), "patrimoine net : " + net);
+    /* 8. Supprimer le bien, puis annuler. */
+    await page.click("#pa-tab-immo");
+    await page.click('#pa-immo [data-bien="b1"]');
+    await page.waitForSelector("#dlg-placement[open]");
+    await page.click("#pa-dlg-supprimer");
+    await page.waitForSelector("#pa-dlg-confirmer:not([hidden])");
+    await page.click("#pa-dlg-supprimer-oui");
+    await page.waitForFunction(() => window.Orbite.profil().placements.biens.length === 0);
+    await page.click('.toast:has-text("Supprimé") button:has-text("Annuler")');
+    await page.waitForFunction(() => window.Orbite.profil().placements.biens.length === 1);
+    /* 9. Téléphone. */
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (const o of ["bourse", "depots", "immo", "synthese"]) {
+      await page.click("#pa-tab-" + o);
+      await page.waitForTimeout(150);
+      assert(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), "sans débordement sur téléphone : " + o);
+      await page.screenshot({ path: path.join(CAPTURES, "patrimoine-" + o + "-telephone.png"), fullPage: true });
+    }
+    await page.screenshot({ path: path.join(CAPTURES, "patrimoine-telephone.png"), fullPage: true });
+    await page.click('#pa-synthese [data-ajouter="inflation"]');
+    await page.waitForSelector("#dlg-placement[open]");
+    assert(!(await page.evaluate(() => { const d = document.getElementById("dlg-placement"); return d.scrollWidth > d.clientWidth + 1; })), "fenêtre sans débordement");
+    await page.click('#form-placement button[value="annuler"]');
+    await page.setViewportSize({ width: 1360, height: 900 });
+    await page.emulateMedia({ reducedMotion: null });
+    await page.evaluate((a) => window.Orbite.majProfil(JSON.parse(a), { immediat: true }), avant);
+  });
+
   await etape("bilan annuel en PDF : bouton dans Ma progression, aperçu avec les vrais chiffres, sections à cocher, coordonnées décochées, PDF valide, Ctrl K, téléphone", async () => {
     await page.setViewportSize({ width: 1360, height: 900 });
     await page.goto(base + "/espace/#progression");

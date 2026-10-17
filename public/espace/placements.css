@@ -1,0 +1,97 @@
+/* Orbite — Mon patrimoine (#placements ; lot A, maquette validée le 16 oct. 2026). Réutilise les lignes et points de comptes.css. */
+
+/* ---------- Couleurs des familles ---------- */
+:root {
+  --pa-immo: var(--credit); --pa-taux: var(--salaire); --pa-or: #C9A227; --pa-bourse: var(--epargne);
+  --pa-contrats: #0BA5EC; --pa-liquidites: var(--encre-3);
+  --pa-action: var(--epargne); --pa-sicav_oblig: var(--credit); --pa-sicav_mixte: #0BA5EC; --pa-fcp: var(--salaire); --pa-autre: var(--encre-3);
+}
+.pa-c-immo { --c: var(--pa-immo); } .pa-c-taux { --c: var(--pa-taux); } .pa-c-or { --c: var(--pa-or); }
+.pa-c-bourse { --c: var(--pa-bourse); } .pa-c-contrats { --c: var(--pa-contrats); } .pa-c-liquidites { --c: var(--pa-liquidites); }
+.pa-c-action { --c: var(--pa-action); } .pa-c-sicav_oblig { --c: var(--pa-sicav_oblig); } .pa-c-sicav_mixte { --c: var(--pa-sicav_mixte); }
+.pa-c-fcp { --c: var(--pa-fcp); } .pa-c-autre { --c: var(--pa-autre); }
+
+/* ---------- En-tête et onglets (4 colonnes, même geste que Mon mois) ---------- */
+.pa-tete { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.pa-onglets { position: relative; display: inline-grid; grid-template-columns: repeat(4, 1fr); padding: 4px; border-radius: 999px; background: var(--surface); box-shadow: var(--ombre-1); border: 1px solid var(--filet); }
+.pa-onglets button { position: relative; z-index: 1; font: inherit; font-size: 14px; font-weight: 650; border: 0; background: none; color: var(--encre-3); min-height: 38px; padding: 0 18px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: color 200ms ease; }
+.pa-onglets button[aria-selected="true"] { color: var(--inverse); }
+.pa-onglets button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.pa-onglets i { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 4); border-radius: 999px; background: var(--encre); transition: transform 360ms var(--sortie); }
+.pa-onglets[data-o="depots"] i { transform: translateX(100%); }
+.pa-onglets[data-o="immo"] i { transform: translateX(200%); }
+.pa-onglets[data-o="synthese"] i { transform: translateX(300%); }
+
+.pa-panneau { display: grid; gap: 18px; }
+.pa-panneau[hidden] { display: none; }
+.pa-carte { display: grid; gap: 10px; min-width: 0; }
+.pa-carte__titre { margin: 0; font-size: 18px; }
+.pa-source { margin: 4px 0 0; color: var(--encre-3); font-size: 12.5px; line-height: 1.5; }
+
+/* ---------- États vides ---------- */
+.pa-vide { justify-items: start; gap: 12px; }
+.pa-vide__ico { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; background: var(--epargne-doux); color: var(--epargne-t); }
+.pa-vide__ico svg { width: 24px; height: 24px; }
+.pa-vide h2 { margin: 0; font-size: 20px; }
+.pa-vide p { margin: 0; max-width: 62ch; color: var(--encre-2); font-size: 14.5px; line-height: 1.55; }
+
+.pa-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.pa-actions .bouton { flex: 0 1 auto; }
+
+/* ---------- Rangées libellé / montant ---------- */
+.pa-rang { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 8px 0; font-size: 14px; color: var(--encre-2); }
+.pa-rang + .pa-rang { border-top: 1px solid var(--filet); }
+.pa-rang b { color: var(--encre); font-weight: 750; text-align: right; white-space: nowrap; }
+.pa-rang b.cpt-plus { color: var(--salaire-t); } .pa-rang b.cpt-moins { color: var(--alerte); }
+.pa-rang .bouton { flex: none; margin-left: -6px; }
+.pa-gros { margin: 0; font-size: clamp(24px, 4vw, 32px); font-weight: 800; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.pa-deux { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pa-deux div { background: var(--fond); }
+
+/* ---------- Lignes (titres, dépôts) ---------- */
+.pa-ico { font-size: 11px; font-weight: 800; letter-spacing: 0; color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); }
+
+/* ---------- Barre de répartition et légende ---------- */
+.pa-barre { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--fond); margin-top: 6px; }
+.pa-barre i { display: block; height: 100%; background: var(--c); }
+.pa-barre i + i { border-left: 2px solid var(--surface); }
+.pa-leg { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--encre-2); }
+.pa-leg li { display: flex; align-items: center; gap: 6px; }
+.pa-leg li::before { content: ""; width: 10px; height: 10px; border-radius: 3px; background: var(--c); flex: none; }
+.pa-leg--col { display: grid; gap: 8px; }
+.pa-leg--col li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; }
+.pa-leg--col b { font-weight: 700; color: var(--encre); white-space: nowrap; }
+
+/* ---------- Échéance proche ---------- */
+.pa-alerte { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding: 14px 16px; border-radius: var(--r-int); background: var(--alerte-doux); border: 1px solid color-mix(in srgb, var(--alerte) 30%, transparent); color: var(--encre); }
+.pa-alerte > svg { width: 20px; height: 20px; color: var(--alerte); margin-top: 1px; }
+.pa-alerte div { display: grid; gap: 4px; font-size: 14px; line-height: 1.5; }
+.pa-alerte span { color: var(--encre-2); }
+
+/* ---------- Synthèse ---------- */
+.pa-synth { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 22px; align-items: center; margin-top: 8px; }
+.pa-donut { width: 160px; height: 160px; }
+.pa-donut circle { fill: none; stroke-width: 16; stroke: var(--c); }
+.pa-donut .pa-donut__fond { stroke: var(--fond); }
+.pa-neutre { padding: 0 2px; }
+
+/* ---------- Fenêtre ---------- */
+.pa-dlg .dialogue__corps { display: grid; gap: 12px; }
+.pa-dlg__aide { margin: 0; color: var(--encre-2); font-size: 13.5px; }
+.pa-dlg__apercu { margin: 0; padding: 11px 12px; border-radius: var(--r-int); background: var(--salaire-doux); border: 1px solid var(--filet); color: var(--encre-2); font-size: 13.5px; line-height: 1.5; }
+.pa-dlg__err { margin: 0; color: var(--erreur); font-size: 13.5px; font-weight: 650; }
+.pa-dlg__aide[hidden], .pa-dlg__apercu[hidden], .pa-dlg__err[hidden] { display: none; }
+
+/* ---------- Téléphone ---------- */
+@media (max-width: 720px) {
+  .pa-onglets { display: grid; width: 100%; }
+  .pa-onglets button { padding: 0 6px; font-size: 13px; }
+  .pa-synth { grid-template-columns: 1fr; justify-items: center; }
+  .pa-leg--col { width: 100%; }
+  .pa-actions .bouton { flex: 1 1 auto; justify-content: center; }
+  .pa-rang { flex-wrap: wrap; }
+  .pa-rang b { white-space: normal; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pa-onglets i { transition: none !important; }
+}

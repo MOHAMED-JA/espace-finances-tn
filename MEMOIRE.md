@@ -2147,3 +2147,23 @@ Demande : « application fonctionnelle et prête à déployer sur Play Store »,
 - Cause : la fonction serveur `rappels-email` (`gabarit.js`, liste `TYPES`) ne connaissait pas le type « versement » écrit par `rappels-calcul.js` : `nettoyerPlan` l'écartait sans bruit. Le rappel du jour de versement d'épargne n'a donc jamais été envoyé (l'e-mail attendu le 15 oct. n'était pas un problème d'heure).
 - Correction : `TYPES` contient « versement » (et « placement », pour les échéances du lot A) ; couleurs associées. Fonction **v5 déployée** et vérifiée (démarre, secrets présents).
 - Test de non-régression `types` (`tests/espace/rappels-email.test.js`) : lit tous les `type: "…"` de `rappels-calcul.js` et vérifie que le serveur les accepte ; un profil avec jour de versement produit un rappel gardé et envoyé. Vérifié : le test échoue sur l'ancien code. Le test existant utilise désormais `G.TYPES` au lieu d'une liste recopiée.
+
+## 3 centundecemquintricies. Lot A : Mon patrimoine (bourse, dépôts, immobilier et or, synthèse) (17 oct.)
+
+Maquettes 360° validées (A1–A4, ordre A → B → C). Nouvelle rubrique **« Mon patrimoine »** (`#placements`, après Mon mois dans la barre latérale, icône `portefeuille`).
+- **Moteur** `public/espace/js/placements-calcul.js` (`PlacementsCalcul`, pur, `tests/espace/placements.test.js`, profil fictif) :
+  - `profil.placements = { titres [{id, nom, type, quantite, investi (total), cours, coursDu}], revenus [{d, v, lib}], taux [{id, nom, type: dat|bta|btct|cse|autre, banque, montant, tauxBrut, debut, fin}], biens [{id, nom, valeur, loyer (mensuel), charges (annuelles), credit (libellé du crédit relié)}], or [{id, nom, grammes, carats 9|18|21|22|24, prixAchat}], coursOr {g18, du}, inflation (null = INS) }`. Plafonds : 30 titres, 120 revenus, 20 placements, 8 biens, 12 lignes d'or.
+  - Branché dans `OrbiteCalcul` (9ᵉ dépendance `PL`) et `DeciderCalcul` (3ᵉ `PL`) : `D.patrimoine` ajoute `immo-locatif`, `taux`, `bourse`, `or` (constants dans la projection) — **comptés une seule fois**.
+  - `analyser(p, ctx)` : bourse (valeur, plus-value latente, répartition, dividendes de l'année et 12 mois, cours de plus de 7 jours, impôt si vente des actions), taux connu (intérêts nets, échéances, échus non comptés), immobilier (impôt au taux marginal, rendement net, crédit relié, effort mensuel), or (prix du gramme selon les carats = 18 carats × k / 18, plus-value sur les achats connus), synthèse (répartition avec liquidités et contrats d'épargne, revenus nets ÷ total placé comparés à l'inflation, points à surveiller).
+  - `decisionEcheance` : à l'échéance, « renouveler » (intérêts nets) contre « rembourser le crédit le plus cher » (intérêts économisés la première année).
+- **Règles fiscales (sources, affichées sous la vue)** :
+  - Intérêts des dépôts et obligations : **retenue à la source de 20 %** (Code de l'IRPP).
+  - Comptes spéciaux d'épargne : intérêts **déductibles jusqu'à 6 000 DT par an** (art. 39-II du Code de l'IRPP, décret-loi n° 2021-21 / LF 2022 ; plafond global 10 000 DT) ; au-delà, la part en trop subit la retenue.
+  - Revenus fonciers : **déduction forfaitaire de 20 %** depuis la LF 2016 (note du ministère des Finances, OpenFisca Tunisie), puis barème de l'IRPP + CSS 0,5 %, calculés au **taux marginal** (`impotEnPlus` : impôt avec − impôt sans).
+  - Actions cotées : plus-value imposée à **10 % au-delà d'un abattement annuel de 10 000 DT**.
+  - Dividendes : retenue de 10 % non recalculée — l'utilisateur saisit le **net reçu**.
+  - Inflation : `Progression.inflation(année)` (table INS), modifiable.
+- **Interface** `vue-placements.js`, `placements.css` : 4 onglets (`.pa-onglets`, indicateur sur 4 colonnes, flèches du clavier, `#placements?onglet=`), états vides, une seule fenêtre `#dlg-placement` dont les champs dépendent de l'objet (titre, dividende, cours en lot, placement, bien avec liste des crédits, or, prix de l'or, inflation), aperçu en direct (intérêts nets, plus-value), alerte d'échéance à 30 jours avec la décision chiffrée, donut SVG (attributs de présentation, CSP respectée), tout annulable depuis le message. Sous-rubriques, palette Ctrl K « Mon patrimoine ».
+- Pas de conseil de produit ni de banque (phrase affichée).
+- e2e « Mon patrimoine : … ». SW `orbite-2026-10-17a`, nouveautés « 2026-10-17a ».
+- À faire plus tard (optionnel) : rappels d'échéance (type « placement », déjà accepté par le serveur, textes sans montant).

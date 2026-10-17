@@ -56,6 +56,7 @@
     vie: { onglets: ".vie-onglets" },
     progression: { onglets: ".pg-onglets" },
     mois: { onglets: ".mo-onglets" },
+    placements: { onglets: ".pa-onglets" },
     compte: { onglets: ".param-nav" }
   };
   var actives = {}, vueCourante = null, applique = false;
