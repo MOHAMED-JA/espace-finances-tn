@@ -11,11 +11,11 @@
  */
 (function (racine, fabrique) {
   if (typeof module === "object" && module.exports) {
-    module.exports = fabrique(require("./orbite-calcul.js"), require("./orbite-intelligence.js"));
+    module.exports = fabrique(require("./orbite-calcul.js"), require("./orbite-intelligence.js"), require("./placements-calcul.js"));
   } else {
-    racine.DeciderCalcul = fabrique(racine.OrbiteCalcul, racine.OrbiteIntelligence);
+    racine.DeciderCalcul = fabrique(racine.OrbiteCalcul, racine.OrbiteIntelligence, racine.PlacementsCalcul);
   }
-})(typeof self !== "undefined" ? self : this, function (OC, OI) {
+})(typeof self !== "undefined" ? self : this, function (OC, OI, PL) {
   "use strict";
 
   var MOIS = OC.MOIS;
@@ -163,6 +163,14 @@
     if (logement > 0) actifs.push({ cle: "logement", libelle: "Logement", montant: logement, estime: true });
     if (autres > 0) actifs.push({ cle: "autres", libelle: "Autres biens", montant: autres, estime: true });
     actifs.push({ cle: "epargne", libelle: "Épargne disponible", montant: p.epargneDisponible });
+    /* Mon patrimoine (lot A) : biens loués, placements à taux connu (en cours), bourse et or, à leur valeur saisie. */
+    var plac = PL && p.placements ? PL.analyser(p.placements, { aujourdhui: PL.iso(m) }) : null, valPlac = 0;
+    if (plac && !plac.vide) {
+      [["immo-locatif", "Immobilier locatif", plac.immobilier.total, true], ["taux", "Placements à taux connu", plac.taux.total, false],
+       ["bourse", "Bourse, SICAV et FCP", plac.bourse.valeur, true], ["or", "Or", plac.or.valeur, true]].forEach(function (x) {
+        if (x[2] > 0) { actifs.push({ cle: x[0], libelle: x[1], montant: x[2], estime: x[3] }); valPlac += x[2]; }
+      });
+    }
     if (capContrats > 0) actifs.push({ cle: "contrats", libelle: "Assurance vie et CEA", montant: capContrats, estime: contrats.some(function (c) { return c.estime; }) });
     var passifs = credits.map(function (x) { return { cle: "credit-" + x.i, libelle: x.c.libelle, montant: x.crd, estime: !(x.c.capitalRestant > 0) }; });
     var totA = actifs.reduce(function (t, a) { return t + a.montant; }, 0), totP = passifs.reduce(function (t, a) { return t + a.montant; }, 0);
@@ -183,7 +191,7 @@
         if (e.crd > 0.0005) { e.crd = e.t > 0 ? moisCredit(e.crd, e.M, e.t).crd : Math.max(0, e.crd - e.M); if (e.crd <= 0.0005 && e.fin === null) e.fin = k; }
         dettes += e.crd;
       });
-      var actifsK = lg + autres + p.epargneDisponible + ct, netK = actifsK - dettes;
+      var actifsK = lg + autres + p.epargneDisponible + ct + valPlac, netK = actifsK - dettes;
       if (k === 12) net12 = netK;
       if (k % 12 === 0) courbe.push({ x: an0 + k / 12, annee: m.getFullYear() + k / 12, net: netK, dettes: dettes, actifs: actifsK });
     }

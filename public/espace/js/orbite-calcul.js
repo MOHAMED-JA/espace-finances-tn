@@ -11,12 +11,13 @@
     module.exports = fabrique(
       require("../../moteurs/salaire/calcul.js"), require("../../moteurs/salaire/parametres.js"),
       require("../../moteurs/salaire/etat.js"), require("../../moteurs/vie/moteur-fiscal.js"),
-      require("../../moteurs/vie/scenario.js"), require("../../moteurs/salaire/pension.js"), require("./budget-calcul.js"), require("./comptes-calcul.js")
+      require("../../moteurs/vie/scenario.js"), require("../../moteurs/salaire/pension.js"), require("./budget-calcul.js"), require("./comptes-calcul.js"),
+      require("./placements-calcul.js")
     );
   } else {
-    racine.OrbiteCalcul = fabrique(racine.CalculSalaire, racine.PARAMETRES_PAIE, racine.EtatSimulation, racine.MoteurFiscal, racine.Scenario, racine.CalculPension, racine.BudgetCalcul, racine.ComptesCalcul);
+    racine.OrbiteCalcul = fabrique(racine.CalculSalaire, racine.PARAMETRES_PAIE, racine.EtatSimulation, racine.MoteurFiscal, racine.Scenario, racine.CalculPension, racine.BudgetCalcul, racine.ComptesCalcul, racine.PlacementsCalcul);
   }
-})(typeof self !== "undefined" ? self : this, function (C, P, E, MF, SC, CP, BC, CC) {
+})(typeof self !== "undefined" ? self : this, function (C, P, E, MF, SC, CP, BC, CC, PL) {
   "use strict";
 
   /* Hypothèses par défaut des crédits types (modifiables dans le module Crédit). */
@@ -363,6 +364,8 @@
       /* Mes comptes (16 oct. 2026) : comptes et soldes datés, dernière analyse refaite ; gardés sur l'espace seulement. */
       comptes: CC ? CC.normaliser(p.comptes) : undefined,
       comptesAnalyse: CC ? CC.normaliserAnalyse(p.comptesAnalyse) : undefined,
+      /* Mon patrimoine (lot A, 16 oct. 2026) : bourse, placements à taux connu, immobilier locatif, or ; espace seulement. */
+      placements: PL ? PL.normaliser(p.placements) : undefined,
       /* Autres lignes de la fiche de paie (13 oct. 2026), par mois : retenues sociales déductibles de l'impôt,
          versements non imposables, retenues sur le net ; impôt aligné sur la fiche (IRPP + CSS du mois et brut de la fiche). */
       lignesFiche: normaliserLignesFiche(p.lignesFiche),
