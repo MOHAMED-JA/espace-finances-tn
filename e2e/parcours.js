@@ -683,6 +683,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
 
   await etape("compte : nom affiché, thème, export JSON avec le profil", async () => {
     await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.reload(); /* état d'interface laissé par les étapes précédentes remis à zéro */
     await page.waitForSelector("#onglet-donnees:not([hidden])");
     assert(/^Acceptées le \d{1,2} \S+ \d{4} à \d{1,2} h \d\d \(version du 11 octobre 2026\)\.$/.test(await page.textContent("#accord-etat")), "trace de l'acceptation : " + await page.textContent("#accord-etat"));
     await page.goto(base + "/espace/#compte");
@@ -1048,6 +1049,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector("#admin-corps:not([hidden])");
     await page.waitForFunction(() => /Aucun compte n'a encore partagé/.test(document.getElementById("admin-fiches").textContent));
     await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.reload(); /* état d'interface laissé par les étapes précédentes remis à zéro */
     await page.waitForSelector("#onglet-donnees:not([hidden]) #partage-etat:not([hidden])");
     await page.waitForTimeout(300);
     assert(!(await page.isChecked("#partage-admin")), "partage désactivé par défaut");
@@ -1062,6 +1064,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(/Aziz Jaouadi/.test(fiche) && /Salaire brut/.test(fiche) && /14 mai 1990/.test(fiche) && /Voiture/.test(fiche), "fiche complète : " + fiche);
     await page.screenshot({ path: path.join(CAPTURES, "admin-fiche.png"), fullPage: true });
     await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.reload(); /* état d'interface laissé par les étapes précédentes remis à zéro */
     await page.waitForFunction(() => /Consultée 1 fois/.test(document.getElementById("partage-etat").textContent));
     await page.click('label:has(#partage-admin)');
     await page.waitForFunction(() => /non partagée/i.test(document.getElementById("partage-etat").textContent));
@@ -2861,6 +2864,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.screenshot({ path: path.join(CAPTURES, "credit-capacite.png") });
     /* Paramètres : carte de partage avec l'heure en français. */
     await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.reload(); /* état d'interface laissé par les étapes précédentes remis à zéro */
     await page.waitForSelector("#onglet-donnees:not([hidden]) #partage-etat:not([hidden])");
     await page.waitForTimeout(300);
     assert(!/\b(AM|PM)\b/.test(await page.textContent("#partage-etat")), "heure au format français");
@@ -3954,6 +3958,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(/^[A-HJ-NP-Z2-9]{10}$/.test(code), "code d'invitation : " + code);
     /* 3. Le client vérifie le code, voit qui l'invite, accepte. */
     await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.reload(); /* état d'interface laissé par les étapes précédentes remis à zéro */
     await page.waitForSelector("#pc-code", { state: "visible" });
     assert(/Aucun conseiller/.test(await page.textContent("#pc-liste")), "aucun conseiller au départ");
     await page.fill("#pc-code", "ABC");
@@ -3990,9 +3995,11 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.bringToFront();
     await page.goto(base + "/espace/#orbite");
     await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.reload(); /* état d'interface laissé par les étapes précédentes remis à zéro */
     await page.waitForSelector('#pc-liste .pc-conseiller:has-text("consulté")');
     assert(/consult.{1,2} \d+ fois/.test(await page.textContent("#pc-liste")), "consultations visibles : " + await page.textContent("#pc-liste"));
     await page.screenshot({ path: path.join(CAPTURES, "conseiller-partage-client.png"), fullPage: false });
+    if (process.env.DEBUG403) console.log("DIAG", await page.evaluate(() => { const l = []; for (let e = document.querySelector("[data-pc-retirer]"); e && e !== document.body; e = e.parentElement) { const c = getComputedStyle(e); l.push((e.id || e.className || e.tagName) + ":" + c.display + "/" + Math.round(e.getBoundingClientRect().width) + (e.hidden ? "/hidden" : "")); } return l.join(" < "); }));
     await page.waitForSelector("[data-pc-retirer]", { state: "visible", timeout: 60000 });
     const diag = await page.evaluate(() => { const b = document.querySelector("[data-pc-retirer]"), p = b.closest(".param-panneau"); return { onglet: p && p.getAttribute("data-onglet"), cache: p && p.hidden, hash: location.hash, w: b.getBoundingClientRect().width }; });
     await page.evaluate(() => document.querySelector("[data-pc-retirer]").click());
@@ -4284,11 +4291,13 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     const lien = await page.getAttribute('main a[href^="/connexion.html"]', "href");
     assert(decodeURIComponent(lien).endsWith("/espace/#compte?onglet=donnees"), "lien vers Paramètres › Vos données : " + lien);
     await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.reload(); /* état d'interface laissé par les étapes précédentes remis à zéro */
     await page.waitForSelector("#supprimer-compte", { state: "visible" });
   });
 
   await etape("déconnexion puis suppression définitive du compte", async () => {
     await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.reload(); /* état d'interface laissé par les étapes précédentes remis à zéro */
     await page.waitForSelector("#supprimer-compte");
     await page.click("#supprimer-compte");
     await page.waitForSelector("#dlg-supprimer-compte[open]");
