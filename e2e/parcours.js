@@ -3991,9 +3991,11 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector('#pc-liste .pc-conseiller:has-text("consulté")');
     assert(/consulté \d+ fois/.test(await page.textContent("#pc-liste")), "consultations visibles : " + await page.textContent("#pc-liste"));
     await page.screenshot({ path: path.join(CAPTURES, "conseiller-partage-client.png"), fullPage: false });
-    await page.click("[data-pc-retirer]", { force: true });
+    const diag = await page.evaluate(() => { const b = document.querySelector("[data-pc-retirer]"), p = b.closest(".param-panneau"); return { onglet: p && p.getAttribute("data-onglet"), cache: p && p.hidden, hash: location.hash, w: b.getBoundingClientRect().width }; });
+    console.log("DIAG", JSON.stringify(diag));
+    await page.evaluate(() => document.querySelector("[data-pc-retirer]").click());
     assert(/Confirmer/.test(await page.textContent("[data-pc-retirer]")), "confirmation avant le retrait");
-    await page.click("[data-pc-retirer]", { force: true });
+    await page.evaluate(() => document.querySelector("[data-pc-retirer]").click());
     await page.waitForSelector('#pc-liste:has-text("Aucun conseiller")');
     await pc.bringToFront();
     await pc.goto(base + "/espace/#orbite");
