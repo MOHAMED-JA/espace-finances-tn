@@ -115,3 +115,35 @@ test("versement mensuel : le jour choisi à 9 h, 5 jours ; le mois suivant une f
   assert.equal(O.normaliser({ jourVersement: 40 }).jourVersement, 28);
   assert.equal(R.rappels(O.synthese(O.normaliser(PROFIL), {}, M), null, null, M).filter((r) => r.type === 'versement').length, 0);
 });
+
+test('lots A et B : échéance d\'un placement (7 j avant), assurance (30 j avant), remboursement entre proches (le jour), emails sans montant ni prénom', () => {
+  const sy = O.synthese(Object.assign({}, PROFIL, {
+    placements: { taux: [{ id: 'p1', type: 'dat', montant: 10000, tauxBrut: 8, fin: '2026-10-28' }, { id: 'p2', type: 'dat', montant: 5000, tauxBrut: 8, fin: '2026-01-01' }] },
+    assurances: [{ id: 'a1', type: 'auto', prime: 640, echeance: '2025-11-05' }, { id: 'a2', type: 'sante', prime: 420, paie: true, echeance: '2025-11-05' }],
+    proches: [
+      { id: 'x1', sens: 'prete', nom: 'Karim', montant: 1200, mensualite: 200, debut: '2026-09-01', recus: [{ d: '2026-09-01', v: 200 }] },
+      { id: 'x2', sens: 'emprunte', nom: 'Papa', montant: 500 },
+      { id: 'x3', sens: 'prete', nom: 'S.', montant: 300, echeance: '2026-10-20', recus: [{ d: '2026-10-01', v: 300 }] }
+    ]
+  }), M);
+  const l = R.rappels(sy, null, null, M);
+  const p = l.find((r) => r.type === 'placement');
+  assert.equal(p.id, 'placement-p1-2026-10-28');
+  assert.equal(new Date(p.quand).getDate(), 21);
+  assert.ok(!l.some((r) => r.id.startsWith('placement-p2')), 'placement déjà échu depuis longtemps');
+  const a = l.filter((r) => r.type === 'assurance');
+  assert.equal(a.length, 1, 'pas de rappel pour une assurance retenue sur la paie');
+  assert.equal(a[0].id, 'assurance-a1-2026-11-05');
+  assert.equal(new Date(a[0].quand).getTime(), M.getTime(), 'déjà dans les 30 jours : affiché tout de suite');
+  const x = l.filter((r) => r.type === 'proche');
+  assert.equal(x.length, 0, 'échéance du 1er oct. passée depuis plus de 5 jours ; prêt à S. remboursé ; emprunt sans date');
+  const sy2 = O.synthese(Object.assign({}, PROFIL, { proches: [{ id: 'x1', sens: 'prete', nom: 'Karim', montant: 1200, mensualite: 200, debut: '2026-09-11', recus: [{ d: '2026-09-11', v: 200 }] }] }), M);
+  const x2 = R.rappels(sy2, null, null, M).filter((r) => r.type === 'proche');
+  assert.equal(x2.length, 1);
+  assert.equal(x2[0].id, 'proche-x1-2026-10-11');
+  assert.match(x2[0].titre, /Karim/);
+  R.planEmail(l.concat(x2)).forEach((e) => {
+    const t = [e.etiquette, e.titre, e.corps, e.conseil].join(' ');
+    assert.ok(!/\d+ ?DT|Karim|Papa/.test(t), 'email sans montant ni prénom : ' + t);
+  });
+});

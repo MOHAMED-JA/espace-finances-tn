@@ -1,5 +1,6 @@
 /*
- * Orbite — « Mon mois » (route #mois, onglet par #mois?onglet=budget|calendrier|comptes ; Comptes : vue-comptes.js). Point 5, choix validés le 12 oct. 2026.
+ * Orbite — « Mon mois » (route #mois, onglet par #mois?onglet=budget|calendrier|comptes|prevision|factures ; Comptes : vue-comptes.js ;
+ * Prévision et Factures : vue-pilotage.js). Point 5, choix validés le 12 oct. 2026.
  * Budget : enveloppes proposées depuis le profil (BudgetCalcul.proposition) tant que l'utilisateur ne les a pas modifiées,
  * dépense notée en une phrase (BudgetCalcul.phrase), reste à vivre et montant par jour jusqu'à la paie. Seuls les totaux par
  * enveloppe sont gardés, dans le profil (profil.budget) ; chaque changement s'annule depuis le message.
@@ -28,7 +29,7 @@
   function info(def) { return B.ENVELOPPES.filter(function (e) { return e.cle === def; })[0]; }
 
   /* ---------- Onglets ---------- */
-  var ONGLETS = ["budget", "calendrier", "comptes"], barre = doc.querySelector(".mo-onglets");
+  var ONGLETS = ["budget", "calendrier", "comptes", "prevision", "factures"], barre = doc.querySelector(".mo-onglets");
   function ouvrirOnglet(cle, focus) {
     if (ONGLETS.indexOf(cle) === -1) cle = "budget";
     barre.setAttribute("data-o", cle);
@@ -45,8 +46,8 @@
   barre.addEventListener("keydown", function (e) {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
     e.preventDefault();
-    var i = ONGLETS.indexOf(barre.getAttribute("data-o"));
-    choisir(ONGLETS[(Math.max(0, i) + 1) % ONGLETS.length], true);
+    var i = ONGLETS.indexOf(barre.getAttribute("data-o")), n = ONGLETS.length;
+    choisir(ONGLETS[(Math.max(0, i) + (e.key === "ArrowRight" ? 1 : n - 1)) % n], true);
   });
   function ongletActif() { return barre.getAttribute("data-o"); }
 
@@ -342,7 +343,8 @@
   function rendre() {
     if ($("vue-mois").hidden) return;
     var o = ongletActif();
-    if (o === "calendrier") rendreCalendrier(); else if (o === "comptes") { if (window.OrbiteComptes) window.OrbiteComptes.rendre(); } else rendreBudget();
+    if (o === "calendrier") rendreCalendrier(); else if (o === "comptes") { if (window.OrbiteComptes) window.OrbiteComptes.rendre(); }
+    else if (o === "prevision" || o === "factures") { if (window.OrbitePilotage) window.OrbitePilotage.rendre(o); } else rendreBudget();
   }
   /* Pour l'import du relevé (releve-import.js) : plan du mois et enregistrement avec « Annuler ». */
   window.OrbiteBudget = { plan: plan, enregistrer: enregistrer };

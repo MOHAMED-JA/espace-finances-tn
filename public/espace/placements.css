@@ -11,16 +11,18 @@
 .pa-c-action { --c: var(--pa-action); } .pa-c-sicav_oblig { --c: var(--pa-sicav_oblig); } .pa-c-sicav_mixte { --c: var(--pa-sicav_mixte); }
 .pa-c-fcp { --c: var(--pa-fcp); } .pa-c-autre { --c: var(--pa-autre); }
 
-/* ---------- En-tête et onglets (4 colonnes, même geste que Mon mois) ---------- */
+/* ---------- En-tête et onglets (6 colonnes, même geste que Mon mois) ---------- */
 .pa-tete { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
-.pa-onglets { position: relative; display: inline-grid; grid-template-columns: repeat(4, 1fr); padding: 4px; border-radius: 999px; background: var(--surface); box-shadow: var(--ombre-1); border: 1px solid var(--filet); }
+.pa-onglets { position: relative; display: inline-grid; grid-template-columns: repeat(6, 1fr); padding: 4px; border-radius: 999px; background: var(--surface); box-shadow: var(--ombre-1); border: 1px solid var(--filet); }
 .pa-onglets button { position: relative; z-index: 1; font: inherit; font-size: 14px; font-weight: 650; border: 0; background: none; color: var(--encre-3); min-height: 38px; padding: 0 18px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: color 200ms ease; }
 .pa-onglets button[aria-selected="true"] { color: var(--inverse); }
 .pa-onglets button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.pa-onglets i { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 4); border-radius: 999px; background: var(--encre); transition: transform 360ms var(--sortie); }
+.pa-onglets i { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 6); border-radius: 999px; background: var(--encre); transition: transform 360ms var(--sortie); }
 .pa-onglets[data-o="depots"] i { transform: translateX(100%); }
 .pa-onglets[data-o="immo"] i { transform: translateX(200%); }
-.pa-onglets[data-o="synthese"] i { transform: translateX(300%); }
+.pa-onglets[data-o="assurances"] i { transform: translateX(300%); }
+.pa-onglets[data-o="proches"] i { transform: translateX(400%); }
+.pa-onglets[data-o="synthese"] i { transform: translateX(500%); }
 
 .pa-panneau { display: grid; gap: 18px; }
 .pa-panneau[hidden] { display: none; }
@@ -47,6 +49,7 @@
 .pa-gros { margin: 0; font-size: clamp(24px, 4vw, 32px); font-weight: 800; letter-spacing: -.02em; overflow-wrap: anywhere; }
 .pa-deux { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .pa-deux div { background: var(--fond); }
+.cpt-delta.pa-deux div:last-child { grid-column: auto; }
 
 /* ---------- Lignes (titres, dépôts) ---------- */
 .pa-ico { font-size: 11px; font-weight: 800; letter-spacing: 0; color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); }
@@ -84,8 +87,13 @@
 
 /* ---------- Téléphone ---------- */
 @media (max-width: 720px) {
-  .pa-onglets { display: grid; width: 100%; }
+  /* Six onglets : deux rangées de trois, l'indicateur glisse aussi d'une rangée à l'autre. */
+  .pa-onglets { display: grid; width: 100%; grid-template-columns: repeat(3, 1fr); border-radius: 22px; }
   .pa-onglets button { padding: 0 6px; font-size: 13px; }
+  .pa-onglets i { width: calc((100% - 8px) / 3); height: calc((100% - 8px) / 2); bottom: auto; border-radius: 18px; }
+  .pa-onglets[data-o="assurances"] i { transform: translate(0, 100%); }
+  .pa-onglets[data-o="proches"] i { transform: translate(100%, 100%); }
+  .pa-onglets[data-o="synthese"] i { transform: translate(200%, 100%); }
   .pa-synth { grid-template-columns: 1fr; justify-items: center; }
   .pa-leg--col { width: 100%; }
   .pa-actions .bouton { flex: 1 1 auto; justify-content: center; }

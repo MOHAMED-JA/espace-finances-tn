@@ -63,7 +63,7 @@
   /* ===================================================================
      Onglets
      =================================================================== */
-  var ONGLETS = ["bourse", "depots", "immo", "synthese"], barre = doc.querySelector(".pa-onglets");
+  var ONGLETS = ["bourse", "depots", "immo", "assurances", "proches", "synthese"], barre = doc.querySelector(".pa-onglets");
   function ouvrirOnglet(cle, focus) {
     if (ONGLETS.indexOf(cle) === -1) cle = "bourse";
     barre.setAttribute("data-o", cle);
@@ -308,7 +308,10 @@
 
   function rendre() {
     if ($("vue-placements").hidden) return;
-    var ctx = contexte(), a = PL.analyser((O.profil() || {}).placements, ctx), o = actif();
+    var o = actif();
+    $("pa-source").hidden = o === "assurances" || o === "proches";
+    if (o === "assurances" || o === "proches") { if (window.OrbitePilotage) window.OrbitePilotage.rendre(o); return; }
+    var ctx = contexte(), a = PL.analyser((O.profil() || {}).placements, ctx);
     if (o === "bourse") rendreBourse(a);
     else if (o === "depots") rendreDepots(a, ctx);
     else if (o === "immo") rendreImmo(a);

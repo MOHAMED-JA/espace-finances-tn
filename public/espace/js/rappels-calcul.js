@@ -1,7 +1,8 @@
 /*
  * Orbite — rappels datés (pur, testé sous Node) : fin de l'essai, fin de l'abonnement,
  * dernière échéance d'un crédit, réduction de taux à demander (règle des 8 %), échéance fiscale de fin d'année,
- * rappels programmés par l'utilisateur (profil.rappelsPerso).
+ * rappels programmés par l'utilisateur (profil.rappelsPerso), échéances des placements, des assurances et des
+ * remboursements entre proches (lots A et B).
  * Chaque rappel : { id (unique, stable), titre, corps, url, quand (ISO : à partir de quand l'afficher), jusqua (ISO, facultatif) }.
  * Aucun montant précis du profil n'est mis dans les rappels transmis au service worker au-delà de ce que l'utilisateur voit déjà.
  * Chaque rappel porte aussi type et mail : { etiquette, titre, corps, conseil, bouton }, textes de l'email de rappel,
@@ -19,6 +20,17 @@
   function iso(d) { return new Date(d).toISOString(); }
   function mail(etiquette, titre, corps, conseil, bouton) { return { etiquette: etiquette, titre: titre, corps: corps, conseil: conseil || "", bouton: bouton }; }
   function minuscule(t) { return t.charAt(0).toLowerCase() + t.slice(1); }
+  /* Dates « AAAA-MM-JJ » (lots A et B) : à une heure donnée, n mois plus tard, prochain anniversaire, libellé. */
+  function jourA(s, h) { return new Date(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10), h || 0, 0, 0).getTime(); }
+  function isoJour(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function plusMoisJour(s, n) {
+    var a = +s.slice(0, 4), m = +s.slice(5, 7) - 1 + n, j = +s.slice(8, 10), dernier = new Date(a, m + 1, 0).getDate();
+    return isoJour(new Date(a, m, Math.min(j, dernier), 12));
+  }
+  function prochainAnniversaire(s, m) { var x = s, k = 0, auj = isoJour(m); while (x < auj && k < 100) { k++; x = plusMoisJour(s, 12 * k); } return x; }
+  function libJour(s) { var j = +s.slice(8, 10); return (j === 1 ? "1er" : j) + " " + MOIS[+s.slice(5, 7) - 1]; }
+  var NOMS_ASSURANCE = { auto: "auto", habitation: "habitation", sante: "santé", deces: "décès-invalidité", prevoyance: "prévoyance", autre: "" };
+  function nomAssurance(x) { return (x.nom || NOMS_ASSURANCE[x.type] || "").toLowerCase() || "en cours"; }
 
   /* sy : synthèse OrbiteCalcul ; acces : mon_acces() ; fiscal : optimiseurFiscal(sy) ; m : maintenant. */
   function rappels(sy, acces, fiscal, m) {
@@ -104,6 +116,48 @@
         if (fin < t) return;
         liste.push({ id: "perso-" + r.id, titre: r.titre, corps: r.corps, url: r.url, quand: iso(Math.max(d.getTime(), t)), jusqua: iso(fin), type: "perso",
           mail: mail("Votre rappel · " + MOIS[r.mois - 1] + " " + r.annee, r.titre, r.corps, "", "Ouvrir Orbite") });
+      });
+    }
+    /* Lots A et B (17 oct. 2026) : échéance d'un placement à taux connu (7 jours avant), d'une assurance (30 jours avant,
+       pour comparer), remboursement attendu ou dû entre proches (le jour même). Ni montant ni prénom dans l'email. */
+    if (sy && sy.profil) {
+      var pr = sy.profil;
+      ((pr.placements && pr.placements.taux) || []).forEach(function (x) {
+        if (!x.fin) return;
+        var df = jourA(x.fin, 9), dp = df - 7 * JOUR;
+        if (df + 3 * JOUR < t) return;
+        liste.push({ id: "placement-" + x.id + "-" + x.fin, titre: "Un placement arrive à échéance le " + libJour(x.fin),
+          corps: "Renouveler, placer ailleurs ou rembourser un crédit ? Orbite compare les choix avec vos chiffres.", url: "/espace/#placements?onglet=depots",
+          quand: iso(Math.max(dp, t)), jusqua: iso(df + 3 * JOUR), type: "placement",
+          mail: mail("Placement · " + libJour(x.fin), "Un placement arrive à échéance le " + libJour(x.fin),
+            "Un de vos placements à taux connu se termine bientôt. Orbite compare ce qu'il rapporterait renouvelé avec ce que vous économiseriez en remboursant un crédit.",
+            "Sans instruction de votre part, la banque le renouvelle souvent au taux du moment : décidez avant la date.", "Voir mes dépôts") });
+      });
+      (pr.assurances || []).forEach(function (x) {
+        if (!x.echeance || x.paie) return;
+        var d = prochainAnniversaire(x.echeance, maintenant), de = jourA(d, 9), dp = de - 30 * JOUR;
+        liste.push({ id: "assurance-" + x.id + "-" + d, titre: "Votre assurance " + nomAssurance(x) + " se renouvelle le " + libJour(d),
+          corps: "Le bon moment pour demander d'autres devis et comparer à garanties égales.", url: "/espace/#placements?onglet=assurances",
+          quand: iso(Math.max(dp, t)), jusqua: iso(de), type: "assurance",
+          mail: mail("Assurance · " + libJour(d), "Une assurance se renouvelle le " + libJour(d),
+            "Un de vos contrats arrive à échéance dans un mois. Le détail vous attend dans Orbite.",
+            "Demandez deux ou trois devis à garanties égales avant la date : un contrat non résilié se renouvelle pour un an.", "Voir mes assurances") });
+      });
+      (pr.proches || []).forEach(function (x) {
+        var recu = (x.recus || []).reduce(function (s, r) { return s + r.v; }, 0), reste = x.montant - recu, d = null;
+        if (!(reste > 0.0005)) return;
+        if (x.mensualite > 0 && x.debut) d = plusMoisJour(x.debut, Math.floor(recu / x.mensualite + 1e-9));
+        else if (x.echeance) d = x.echeance;
+        if (!d) return;
+        var dj = jourA(d, 9);
+        if (dj + 5 * JOUR < t) return;
+        var prete = x.sens !== "emprunte";
+        liste.push({ id: "proche-" + x.id + "-" + d, titre: prete ? "Remboursement attendu de " + x.nom : "Remboursement prévu à " + x.nom,
+          corps: prete ? "Prévu le " + libJour(d) + ". Notez-le dans Orbite quand vous l'avez reçu." : "Prévu le " + libJour(d) + ". Notez-le dans Orbite une fois rendu.",
+          url: "/espace/#placements?onglet=proches", quand: iso(Math.max(dj, t)), jusqua: iso(dj + 5 * JOUR), type: "proche",
+          mail: mail("Entre proches · " + libJour(d), prete ? "Un remboursement est attendu aujourd'hui" : "Un remboursement est prévu aujourd'hui",
+            "Vous avez noté dans Orbite un remboursement entre proches pour aujourd'hui. Le détail vous attend dans Orbite ; personne d'autre n'a reçu ce message.",
+            "", "Ouvrir Orbite") });
       });
     }
     if (fiscal && fiscal.statut === "a_optimiser" && fiscal.gainPossible > 20) {

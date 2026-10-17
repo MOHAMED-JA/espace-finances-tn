@@ -3,9 +3,12 @@
  * Changer « version » pour les montrer de nouveau ; 2 à 4 points courts, du point de vue de l'utilisateur.
  */
 window.ORBITE_NOUVEAUTES = {
-  version: "2026-10-17a",
+  version: "2026-10-17b",
   date: "17 octobre 2026",
   points: [
+    { titre: "Les 90 prochains jours de votre compte.", texte: "Mon mois › Prévision : à partir de votre dernier solde, Orbite trace votre compte courant jour par jour (salaire, crédits, budget, factures, assurances, remboursements des proches) et repère à l'avance un découvert, avec sa cause et la somme à virer pour l'éviter." },
+    { titre: "Factures et abonnements repérés.", texte: "Mon mois › Factures : lisez 2 ou 3 relevés, Orbite repère ce qui revient (forfait, internet, STEG, SONEDE, syndic…), signale les hausses de prix et dit ce que vous gagnez à arrêter un abonnement. Le relevé est lu sur votre appareil." },
+    { titre: "Vos assurances et l'argent entre proches.", texte: "Mon patrimoine › Assurances : primes, échéances et manques évidents (bien loué non assuré, crédit mal couvert). Mon patrimoine › Proches : ce que vous avez prêté ou emprunté, l'échéancier et un rappel le jour prévu, pour vous seul." },
     { titre: "Mon patrimoine : bourse, dépôts, immobilier et or.", texte: "Nouvelle rubrique « Mon patrimoine » : vos titres (plus-value, dividendes), vos dépôts à terme et bons du Trésor (intérêts nets d'impôt, échéances, « renouveler ou rembourser un crédit ? »), un appartement loué relié à son crédit (ce qu'il rapporte vraiment chaque mois) et votre or au prix du jour. La Synthèse montre la répartition et ce que vos placements rapportent une fois l'inflation retirée ; votre patrimoine net en tient compte." },
     { titre: "Votre abonnement, sur le site comme dans l'application.", texte: "Orbite se prépare pour Google Play. Dans l'application Android, les formules s'achètent par Google Play ; un abonnement pris sur le site ou dans l'application vaut partout, avec le même compte." },
     { titre: "Supprimer son compte, pas à pas.", texte: "Une page publique explique comment supprimer votre compte depuis n'importe quel appareil et ce qui est effacé : lien « Supprimer son compte » en bas de l'accueil, et Paramètres › Vos données." },
