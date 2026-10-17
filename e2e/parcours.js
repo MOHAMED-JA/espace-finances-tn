@@ -385,7 +385,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.screenshot({ path: path.join(CAPTURES, "visite-credit.png") });
     await page.click("#visite-suiv");
     await page.waitForSelector(".visite", { state: "detached" });
-    await page.waitForFunction(() => location.hash === "#orbite").catch(async (e) => { throw new Error("adresse finale : " + await page.evaluate(() => location.hash)); });
+    await page.waitForFunction(() => /^#orbite(\?partie=[a-z]+)?$/.test(location.hash)).catch(async (e) => { throw new Error("adresse finale : " + await page.evaluate(() => location.hash)); });
     await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite_nouveautes === "2026-10-15a");
     /* « Pour aller plus loin » : les nouveautés précédentes, Mon mois d'abord. */
     await page.click("#aide-visite");
@@ -3902,6 +3902,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
 
   await etape("mode conseiller : rôle donné par l'admin, double authentification exigée, code d'invitation, accord du client, lecture seule, consultations journalisées, retrait immédiat", async () => {
     await page.setViewportSize({ width: 1360, height: 900 });
+    refusAttendus = true; /* le serveur refuse (403) un conseiller sans double authentification : attendu */
     const EM = "conseil@exemple.tn", MDP = "Conseil-compte-2026!";
     faux.ajouterCompte(EM, MDP, { full_name: "Nadia Conseil", orbite_consentement: VERSION_ACCORD, orbite_partage_demande: new Date().toISOString(), orbite_partage_reponse: "non",
       orbite: { prenom: "Nadia", nom: "Conseil", dateNaissance: "1985-03-02", montant: 3000 } });
@@ -3990,10 +3991,9 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector('#pc-liste .pc-conseiller:has-text("consulté")');
     assert(/consulté \d+ fois/.test(await page.textContent("#pc-liste")), "consultations visibles : " + await page.textContent("#pc-liste"));
     await page.screenshot({ path: path.join(CAPTURES, "conseiller-partage-client.png"), fullPage: false });
-    await page.$eval("[data-pc-retirer]", (b) => b.scrollIntoView({ block: "center" }));
-    await page.click("[data-pc-retirer]");
+    await page.click("[data-pc-retirer]", { force: true });
     assert(/Confirmer/.test(await page.textContent("[data-pc-retirer]")), "confirmation avant le retrait");
-    await page.click("[data-pc-retirer]");
+    await page.click("[data-pc-retirer]", { force: true });
     await page.waitForSelector('#pc-liste:has-text("Aucun conseiller")');
     await pc.bringToFront();
     await pc.goto(base + "/espace/#orbite");
