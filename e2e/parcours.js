@@ -3681,6 +3681,118 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.evaluate((a) => window.Orbite.majProfil(JSON.parse(a), { immediat: true }), avant);
   });
 
+  await etape("pilotage (lot B) : prévision 90 jours (découvert, cause, solution), factures (relevé lu sur l'appareil, hausse, à revoir), assurances (manques), proches (remboursement), téléphone", async () => {
+    await page.setViewportSize({ width: 1360, height: 900 });
+    const avant = await page.evaluate(() => JSON.stringify(window.Orbite.profil()));
+    const iso = (decal) => { const d = new Date(); d.setDate(d.getDate() + decal); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+    const fr = (x) => x.slice(8) + "/" + x.slice(5, 7) + "/" + x.slice(0, 4);
+    await page.evaluate((auj) => window.Orbite.majProfil({ factures: [], assurances: [], proches: [], placements: null, jourPaie: 27, epargneDisponible: 20000, contrats: [], credits: [], loyer: 0, chargesFixes: 0, situation: "celibataire", enfants: 0,
+      comptes: [{ id: "c1", nom: "Compte courant", type: "courant", soldes: [{ d: auj, v: 900 }] }] }, { immediat: true }), iso(0));
+    await page.goto(base + "/espace/#mois?onglet=prevision");
+    await page.waitForSelector("#mo-prevision .pi-graphe svg");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.waitForTimeout(300);
+    assert(await page.getAttribute(".mo-onglets", "data-o") === "prevision", "onglet Prévision");
+    /* 1. Une assurance annuelle de 9 000 DT dans 20 jours : découvert repéré, cause et solution. */
+    await page.goto(base + "/espace/#placements?onglet=assurances");
+    await page.waitForSelector("#pa-assurances .pa-vide");
+    assert(await page.isHidden("#pa-source"), "pas de règles fiscales sous les assurances");
+    await page.click('#pa-assurances [data-pi-ajouter="assurance"]');
+    await page.waitForSelector("#dlg-pilotage[open]");
+    assert(await page.isHidden('[data-champ-de="credit"]') && await page.isHidden('[data-champ-de="bien"]'), "champs du crédit et du bien cachés pour une auto");
+    await page.fill("#pi-f-nom", "Tous risques");
+    await page.fill("#pi-f-prime", "9 000");
+    await page.fill("#pi-f-echeance", iso(20));
+    await page.click("#pi-dlg-ok");
+    await page.waitForFunction(() => window.Orbite.profil().assurances.length === 1);
+    await page.waitForSelector('.toast:has-text("Contrat ajouté")');
+    await page.waitForSelector("#pa-assurances .cpt-liste li");
+    assert(/9 000 DT \/ an/.test((await page.textContent("#pa-assurances")).replace(/\s/g, " ")), "total des primes");
+    assert(/Échéance le/.test(await page.textContent("#pa-assurances .cpt-points")), "échéance proche signalée");
+    await page.click('#pa-assurances [data-pi-ajouter="assurance"]');
+    await page.waitForSelector("#dlg-pilotage[open]");
+    await page.selectOption("#pi-f-type", "deces");
+    assert(await page.isVisible('[data-champ-de="credit"]') && await page.isVisible('[data-champ-de="couverture"]'), "champs du crédit montrés pour décès-invalidité");
+    await page.click('#form-pilotage button[value="annuler"]');
+    await page.goto(base + "/espace/#mois?onglet=prevision");
+    await page.waitForSelector("#mo-prevision .pa-alerte");
+    const alerte = (await page.textContent("#mo-prevision .pa-alerte")).replace(/\s/g, " ");
+    assert(/Découvert prévu/.test(alerte) && /Cause : assurance tous risques \(9 000 DT\)/.test(alerte) && !/\.\./.test(alerte), "découvert et cause : " + alerte);
+    assert(/Virer \d[\d ]* DT de l'épargne le/.test((await page.textContent("#mo-prevision .pi-etapes")).replace(/\s/g, " ")), "solution chiffrée");
+    assert(await page.isVisible("#mo-prevision .og-zone"), "zone sous zéro sur la courbe");
+    await page.screenshot({ path: path.join(CAPTURES, "prevision.png"), fullPage: true });
+    /* 2. Factures : relevé CSV de 3 mois (lu sur l'appareil), sélection, hausse, à revoir. */
+    await page.click("#mo-tab-factures");
+    await page.waitForSelector("#mo-factures .pa-vide");
+    const lignes = ["Date;Libellé;Débit;Crédit;Solde"];
+    [[-75, 40], [-45, 40], [-15, 45]].forEach(([j, v]) => lignes.push(fr(iso(j)) + ";PRLV OOREDOO 2161234;" + v + ",000;;"));
+    [[-80, 92], [-20, 104]].forEach(([j, v]) => lignes.push(fr(iso(j)) + ";STEG FACTURE;" + v + ",000;;"));
+    [[-70, 60], [-40, 60], [-10, 60]].forEach(([j, v]) => lignes.push(fr(iso(j)) + ";CB CALIFORNIA GYM;" + v + ",000;;"));
+    [[-60, 23], [-30, 81]].forEach(([j, v]) => lignes.push(fr(iso(j)) + ";CARREFOUR MARKET;" + v + ",000;;"));
+    await page.setInputFiles("#pi-fichier", { name: "releves.csv", mimeType: "text/csv", buffer: Buffer.from(lignes.join("\n") + "\n", "utf8") });
+    await page.waitForSelector("#pi-trouvees li:nth-child(3)");
+    assert(await page.$$eval("#pi-trouvees li", (l) => l.length) === 3, "3 factures repérées (pas les courses)");
+    await page.click('[data-pi="garder-trouvees"]');
+    await page.waitForFunction(() => window.Orbite.profil().factures.length === 3);
+    let p = await page.evaluate(() => window.Orbite.profil());
+    assert(!JSON.stringify(p).includes("CARREFOUR") && !JSON.stringify(p).includes("2161234"), "rien du relevé gardé en dehors des factures");
+    assert(p.factures.find((f) => f.cle === "STEG").periode === 2, "STEG tous les 2 mois");
+    await page.waitForSelector("#mo-factures .cpt-liste li");
+    assert(/Hausse/.test(await page.textContent("#mo-factures .cpt-liste")), "hausse du forfait signalée");
+    const gym = p.factures.find((f) => f.cle.includes("GYM"));
+    await page.click('#mo-factures [data-pi-facture="' + gym.id + '"]');
+    await page.waitForSelector("#dlg-pilotage[open]");
+    await page.fill("#pi-f-nom", "Salle de sport");
+    await page.selectOption("#pi-f-cat", "sport");
+    await page.check("#pi-f-aRevoir");
+    await page.click("#pi-dlg-ok");
+    await page.waitForSelector("#mo-factures .pi-astuce");
+    assert(/Si vous arrêtez « Salle de sport » : 720 DT de plus par an/.test((await page.textContent("#mo-factures .pi-astuce")).replace(/\s/g, " ")), "gain si arrêt");
+    await page.screenshot({ path: path.join(CAPTURES, "factures.png"), fullPage: true });
+    /* 3. Proches : prêt mensuel, remboursement noté, patrimoine net. */
+    await page.goto(base + "/espace/#placements?onglet=proches");
+    await page.waitForSelector("#pa-proches .pa-vide");
+    await page.click('#pa-proches [data-pi-ajouter="proche"]');
+    await page.waitForSelector("#dlg-pilotage[open]");
+    assert(await page.isHidden('[data-champ-de="debut"]'), "date du premier remboursement cachée sans mensualité");
+    await page.fill("#pi-f-nom", "K.");
+    await page.fill("#pi-f-montant", "1 200");
+    await page.fill("#pi-f-mensualite", "200");
+    await page.waitForSelector('[data-champ-de="debut"]:not([hidden])');
+    await page.fill("#pi-f-debut", iso(-35));
+    await page.waitForFunction(() => /6 remboursements/.test(document.getElementById("pi-dlg-apercu").textContent));
+    await page.click("#pi-dlg-ok");
+    await page.waitForSelector("#pa-proches .cpt-liste li");
+    assert(/en retard/.test(await page.textContent("#pa-proches .cpt-liste")), "échéance passée non reçue : en retard");
+    await page.click('#pa-proches [data-pi-ajouter="recu"]');
+    await page.waitForSelector("#dlg-pilotage[open]");
+    assert(await page.inputValue("#pi-f-v") === "200", "montant attendu proposé");
+    await page.click("#pi-dlg-ok");
+    await page.waitForFunction(() => window.Orbite.profil().proches[0].recus.length === 1);
+    assert(/1 000 DT/.test((await page.textContent("#pa-proches .pi-soldes")).replace(/\s/g, " ")), "on vous doit 1 000 DT");
+    const net = await page.evaluate(() => window.DeciderCalcul.patrimoine(window.Orbite.synthese()).actifs.find((a) => a.cle === "proches"));
+    assert(net && net.montant === 1000, "prêté aux proches dans le patrimoine net");
+    /* 4. Supprimer le prêt, puis annuler. */
+    await page.click('#pa-proches [data-pi-proche="x1"]');
+    await page.waitForSelector("#dlg-pilotage[open]");
+    await page.click("#pi-dlg-supprimer");
+    await page.click("#pi-dlg-supprimer-oui");
+    await page.waitForFunction(() => window.Orbite.profil().proches.length === 0);
+    await page.click('.toast:has-text("Supprimé") button:has-text("Annuler")');
+    await page.waitForFunction(() => window.Orbite.profil().proches.length === 1);
+    /* 5. Téléphone : 6 onglets sur deux rangées, 5 onglets de Mon mois, sans débordement. */
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (const [h, o] of [["#placements?onglet=proches", "proches"], ["#placements?onglet=assurances", "assurances"], ["#mois?onglet=prevision", "prevision"], ["#mois?onglet=factures", "factures"]]) {
+      await page.goto(base + "/espace/" + h);
+      await page.waitForTimeout(400);
+      assert(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), "sans débordement sur téléphone : " + o);
+      await page.screenshot({ path: path.join(CAPTURES, "pilotage-" + o + "-telephone.png"), fullPage: true });
+    }
+    await page.setViewportSize({ width: 1360, height: 900 });
+    await page.emulateMedia({ reducedMotion: null });
+    await page.evaluate((a) => window.Orbite.majProfil(JSON.parse(a), { immediat: true }), avant);
+  });
+
   await etape("bilan annuel en PDF : bouton dans Ma progression, aperçu avec les vrais chiffres, sections à cocher, coordonnées décochées, PDF valide, Ctrl K, téléphone", async () => {
     await page.setViewportSize({ width: 1360, height: 900 });
     await page.goto(base + "/espace/#progression");

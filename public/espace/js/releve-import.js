@@ -49,6 +49,8 @@
     }) };
     etat("");
     rendre();
+    /* Mon mois › Factures (vue-pilotage.js) : les mêmes opérations servent à repérer ce qui revient, en mémoire seulement. */
+    doc.dispatchEvent(new CustomEvent("orbite:releve-lu", { detail: { ops: ops } }));
     $("mo-rel-resultat").hidden = false;
     $("mo-rel-titre").focus();
   }

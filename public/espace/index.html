@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="/espace/mois.css">
   <link rel="stylesheet" href="/espace/comptes.css">
   <link rel="stylesheet" href="/espace/placements.css">
+  <link rel="stylesheet" href="/espace/pilotage.css">
   <link rel="stylesheet" href="/espace/annee.css">
   <link rel="stylesheet" href="/espace/fiche.css">
   <link rel="stylesheet" href="/espace/dossier.css">
@@ -1727,19 +1728,23 @@
           <header class="vue__tete pa-tete">
             <div>
               <h1 id="titre-placements">Mon patrimoine</h1>
-              <p class="vue__sous">Bourse, dépôts, immobilier et or : ce que vous avez placé, ce que cela rapporte vraiment, et ce qu'il faut surveiller.</p>
+              <p class="vue__sous">Bourse, dépôts, immobilier et or, vos assurances et l'argent entre proches : ce que vous avez, ce que cela rapporte vraiment, et ce qu'il faut surveiller.</p>
             </div>
             <div class="pa-onglets" role="tablist" aria-label="Mon patrimoine" data-o="bourse">
               <i aria-hidden="true"></i>
               <button type="button" role="tab" id="pa-tab-bourse" aria-controls="pa-bourse" aria-selected="true" data-onglet="bourse">Bourse</button>
               <button type="button" role="tab" id="pa-tab-depots" aria-controls="pa-depots" aria-selected="false" tabindex="-1" data-onglet="depots">Dépôts</button>
               <button type="button" role="tab" id="pa-tab-immo" aria-controls="pa-immo" aria-selected="false" tabindex="-1" data-onglet="immo">Immo &amp; or</button>
+              <button type="button" role="tab" id="pa-tab-assurances" aria-controls="pa-assurances" aria-selected="false" tabindex="-1" data-onglet="assurances">Assurances</button>
+              <button type="button" role="tab" id="pa-tab-proches" aria-controls="pa-proches" aria-selected="false" tabindex="-1" data-onglet="proches">Proches</button>
               <button type="button" role="tab" id="pa-tab-synthese" aria-controls="pa-synthese" aria-selected="false" tabindex="-1" data-onglet="synthese">Synthèse</button>
             </div>
           </header>
           <div class="pa-panneau" id="pa-bourse" role="tabpanel" aria-labelledby="pa-tab-bourse"></div>
           <div class="pa-panneau" id="pa-depots" role="tabpanel" aria-labelledby="pa-tab-depots" hidden></div>
           <div class="pa-panneau" id="pa-immo" role="tabpanel" aria-labelledby="pa-tab-immo" hidden></div>
+          <div class="pa-panneau pi-panneau" id="pa-assurances" role="tabpanel" aria-labelledby="pa-tab-assurances" hidden></div>
+          <div class="pa-panneau pi-panneau" id="pa-proches" role="tabpanel" aria-labelledby="pa-tab-proches" hidden></div>
           <div class="pa-panneau" id="pa-synthese" role="tabpanel" aria-labelledby="pa-tab-synthese" hidden></div>
           <p class="pa-source" id="pa-source"></p>
         </section>
@@ -1748,13 +1753,15 @@
           <header class="vue__tete mo-tete">
             <div>
               <h1 id="titre-mois">Mon mois</h1>
-              <p class="vue__sous">Votre budget par enveloppe, toutes les dates d'argent du mois et le solde de vos comptes.</p>
+              <p class="vue__sous">Votre budget par enveloppe, les dates d'argent du mois, le solde de vos comptes, les 90 prochains jours et ce qui revient chaque mois.</p>
             </div>
             <div class="mo-onglets" role="tablist" aria-label="Mon mois" data-o="budget">
               <i aria-hidden="true"></i>
               <button type="button" role="tab" id="mo-tab-budget" aria-controls="mo-budget" aria-selected="true" data-onglet="budget">Budget</button>
               <button type="button" role="tab" id="mo-tab-calendrier" aria-controls="mo-calendrier" aria-selected="false" tabindex="-1" data-onglet="calendrier">Calendrier</button>
               <button type="button" role="tab" id="mo-tab-comptes" aria-controls="mo-comptes" aria-selected="false" tabindex="-1" data-onglet="comptes">Comptes</button>
+              <button type="button" role="tab" id="mo-tab-prevision" aria-controls="mo-prevision" aria-selected="false" tabindex="-1" data-onglet="prevision">Prévision</button>
+              <button type="button" role="tab" id="mo-tab-factures" aria-controls="mo-factures" aria-selected="false" tabindex="-1" data-onglet="factures">Factures</button>
             </div>
           </header>
 
@@ -1881,6 +1888,10 @@
             </section>
             <p class="ce-note"><svg aria-hidden="true"><use href="/orbite/icones.svg#cadenas"/></svg><span>Vos soldes sont gardés dans votre profil, protégés comme lui (et par la double authentification si vous l'avez activée). Un relevé est lu sur votre appareil : seuls les soldes datés que vous cochez sont gardés, jamais les opérations.</span></p>
           </div>
+
+          <!-- ============ Prévision et factures (lot B, maquettes B1 et B2 validées le 16 oct. 2026 ; pilotage-calcul.js, vue-pilotage.js) ============ -->
+          <div class="mo-panneau pi-panneau" id="mo-prevision" role="tabpanel" aria-labelledby="mo-tab-prevision" hidden></div>
+          <div class="mo-panneau pi-panneau" id="mo-factures" role="tabpanel" aria-labelledby="mo-tab-factures" hidden></div>
         </section>
       </main>
     </div>
@@ -2506,6 +2517,28 @@
     </form>
   </dialog>
 
+  <!-- Lot B (factures, assurances, proches) : une seule fenêtre, dont les champs dépendent de ce que l'on ajoute ou modifie (vue-pilotage.js) -->
+  <dialog class="dialogue pa-dlg" id="dlg-pilotage" aria-labelledby="pi-dlg-titre">
+    <form method="dialog" id="form-pilotage">
+      <div class="dialogue__tete"><h2 id="pi-dlg-titre">Ajouter</h2></div>
+      <div class="dialogue__corps">
+        <p class="pa-dlg__aide" id="pi-dlg-aide" hidden></p>
+        <div class="grille-champs" id="pi-dlg-champs"></div>
+        <p class="pa-dlg__apercu" id="pi-dlg-apercu" aria-live="polite" hidden></p>
+        <p class="pa-dlg__err" id="pi-dlg-err" role="alert" hidden></p>
+        <div class="cpt-suppr" id="pi-dlg-confirmer" hidden>
+          <p id="pi-dlg-confirmer-txt"></p>
+          <button type="button" class="bouton bouton--danger-plein" id="pi-dlg-supprimer-oui">Oui, supprimer</button>
+        </div>
+      </div>
+      <div class="dialogue__pied">
+        <button type="button" class="bouton bouton--fantome pg-supprimer" id="pi-dlg-supprimer" hidden><svg aria-hidden="true"><use href="/orbite/icones.svg#poubelle"/></svg>Supprimer</button>
+        <button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Annuler</button>
+        <button type="submit" class="bouton bouton--plein" value="ok" id="pi-dlg-ok">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- Mon patrimoine : une seule fenêtre, dont les champs dépendent de ce que l'on ajoute ou modifie (vue-placements.js) -->
   <dialog class="dialogue pa-dlg" id="dlg-placement" aria-labelledby="pa-dlg-titre">
     <form method="dialog" id="form-placement" novalidate>
@@ -2790,6 +2823,7 @@
   <script src="/espace/js/releve-calcul.js"></script>
   <script src="/espace/js/comptes-calcul.js"></script>
   <script src="/espace/js/placements-calcul.js"></script>
+  <script src="/espace/js/pilotage-calcul.js"></script>
   <script src="/espace/js/orbite-calcul.js"></script>
   <script src="/espace/js/orbite-intelligence.js"></script>
   <script src="/espace/js/assistant-local.js"></script>
@@ -2859,6 +2893,7 @@
   <script src="/espace/js/releve-import.js"></script>
   <script src="/espace/js/vue-comptes.js"></script>
   <script src="/espace/js/vue-placements.js"></script>
+  <script src="/espace/js/vue-pilotage.js"></script>
   <script src="/espace/js/fiche-calcul.js"></script>
   <script src="/espace/js/dossier-calcul.js"></script>
   <script src="/espace/js/negociateur-calcul.js"></script>

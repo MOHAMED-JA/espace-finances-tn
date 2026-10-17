@@ -12,12 +12,12 @@
       require("../../moteurs/salaire/calcul.js"), require("../../moteurs/salaire/parametres.js"),
       require("../../moteurs/salaire/etat.js"), require("../../moteurs/vie/moteur-fiscal.js"),
       require("../../moteurs/vie/scenario.js"), require("../../moteurs/salaire/pension.js"), require("./budget-calcul.js"), require("./comptes-calcul.js"),
-      require("./placements-calcul.js")
+      require("./placements-calcul.js"), require("./pilotage-calcul.js")
     );
   } else {
-    racine.OrbiteCalcul = fabrique(racine.CalculSalaire, racine.PARAMETRES_PAIE, racine.EtatSimulation, racine.MoteurFiscal, racine.Scenario, racine.CalculPension, racine.BudgetCalcul, racine.ComptesCalcul, racine.PlacementsCalcul);
+    racine.OrbiteCalcul = fabrique(racine.CalculSalaire, racine.PARAMETRES_PAIE, racine.EtatSimulation, racine.MoteurFiscal, racine.Scenario, racine.CalculPension, racine.BudgetCalcul, racine.ComptesCalcul, racine.PlacementsCalcul, racine.PilotageCalcul);
   }
-})(typeof self !== "undefined" ? self : this, function (C, P, E, MF, SC, CP, BC, CC, PL) {
+})(typeof self !== "undefined" ? self : this, function (C, P, E, MF, SC, CP, BC, CC, PL, PI) {
   "use strict";
 
   /* Hypothèses par défaut des crédits types (modifiables dans le module Crédit). */
@@ -366,6 +366,10 @@
       comptesAnalyse: CC ? CC.normaliserAnalyse(p.comptesAnalyse) : undefined,
       /* Mon patrimoine (lot A, 16 oct. 2026) : bourse, placements à taux connu, immobilier locatif, or ; espace seulement. */
       placements: PL ? PL.normaliser(p.placements) : undefined,
+      /* Lot B (17 oct. 2026) : factures et abonnements qui reviennent, assurances, argent entre proches ; espace seulement. */
+      factures: PI ? PI.normaliser({ factures: p.factures }).factures : undefined,
+      assurances: PI ? PI.normaliser({ assurances: p.assurances }).assurances : undefined,
+      proches: PI ? PI.normaliser({ proches: p.proches }).proches : undefined,
       /* Autres lignes de la fiche de paie (13 oct. 2026), par mois : retenues sociales déductibles de l'impôt,
          versements non imposables, retenues sur le net ; impôt aligné sur la fiche (IRPP + CSS du mois et brut de la fiche). */
       lignesFiche: normaliserLignesFiche(p.lignesFiche),

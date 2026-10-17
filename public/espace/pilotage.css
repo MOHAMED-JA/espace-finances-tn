@@ -1,0 +1,69 @@
+/* Orbite — pilotage (lot B : Prévision, Factures, Assurances, Proches). Réutilise comptes.css et placements.css. */
+
+.pi-panneau { display: grid; gap: 18px; }
+.pi-panneau[hidden] { display: none; }
+
+/* ---------- Couleurs des pastilles ---------- */
+.pi-c-mobile, .pi-c-internet, .pi-c-video { --c: var(--epargne); }
+.pi-c-electricite, .pi-c-gaz { --c: #C9A227; }
+.pi-c-eau { --c: #0BA5EC; }
+.pi-c-sport, .pi-c-ecole { --c: var(--salaire); }
+.pi-c-syndic, .pi-c-assurance, .pi-c-autre { --c: var(--credit); }
+.pi-c-a-auto, .pi-c-a-habitation { --c: var(--credit); }
+.pi-c-a-sante, .pi-c-a-autre { --c: var(--salaire); }
+.pi-c-a-deces, .pi-c-a-prevoyance { --c: var(--encre-2); }
+.pi-c-a-vie { --c: var(--epargne); }
+.pi-c-prete { --c: var(--salaire); }
+.pi-c-emprunte { --c: var(--alerte); }
+.pa-ico svg { width: 18px; height: 18px; }
+
+/* ---------- Pastilles « À revoir », « Hausse » ---------- */
+.pi-badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-style: normal; font-size: 11.5px; font-weight: 750; vertical-align: 1px; }
+.pi-badge--revoir { background: var(--alerte-doux); color: var(--alerte); }
+.pi-badge--hausse { background: var(--fond); color: var(--encre-2); }
+
+/* ---------- Alertes ---------- */
+.pi-alerte--danger { background: color-mix(in srgb, var(--erreur) 10%, var(--surface)); border-color: color-mix(in srgb, var(--erreur) 35%, transparent); }
+.pi-alerte--danger > svg { color: var(--erreur); }
+.pi-alerte--ok { background: var(--salaire-doux); border-color: color-mix(in srgb, var(--salaire) 35%, transparent); }
+.pi-alerte--ok > svg { color: var(--salaire-t); }
+
+/* ---------- Prévision ---------- */
+.pi-graphe { min-height: 230px; }
+.pi-ancien { color: var(--alerte); }
+.pi-evts { list-style: none; margin: 0; padding: 0; display: grid; }
+.pi-evt { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 0; }
+.pi-evt + .pi-evt { border-top: 1px solid var(--filet); }
+.pi-evt__ico { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; background: var(--fond); color: var(--encre-2); }
+.pi-evt__ico svg { width: 17px; height: 17px; }
+.pi-evt--assurance .pi-evt__ico, .pi-evt--facture .pi-evt__ico { background: var(--alerte-doux); color: var(--alerte); }
+.pi-evt--proche .pi-evt__ico { background: var(--salaire-doux); color: var(--salaire-t); }
+.pi-evt--credit .pi-evt__ico { background: var(--credit-doux); color: var(--credit-t); }
+.pi-evt__txt { display: grid; gap: 2px; min-width: 0; }
+.pi-evt__txt b { font-size: 14.5px; overflow-wrap: anywhere; }
+.pi-evt__txt small { color: var(--encre-3); font-size: 12.5px; }
+.pi-evt > b { font-size: 15px; white-space: nowrap; }
+.pi-etapes { margin: 0; padding: 0; list-style: none; counter-reset: etape; display: grid; gap: 10px; }
+.pi-etapes li { counter-increment: etape; display: grid; grid-template-columns: 28px minmax(0, 1fr); column-gap: 12px; row-gap: 2px; font-size: 14.5px; }
+.pi-etapes li::before { content: counter(etape); grid-row: span 2; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--encre); color: var(--inverse); font-weight: 800; font-size: 13px; }
+.pi-etapes span { color: var(--encre-2); font-size: 13.5px; }
+.pi-hyp { padding: 0 2px; }
+
+/* ---------- Factures ---------- */
+.pi-astuce { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; margin: 0; padding: 12px 14px; border-radius: var(--r-int); background: var(--epargne-doux); color: var(--encre); font-size: 14px; line-height: 1.5; }
+.pi-astuce svg { width: 18px; height: 18px; color: var(--epargne-t); margin-top: 2px; }
+.pi-trouvees .cpt-trouve span:last-child { font-weight: 750; }
+
+/* ---------- Proches ---------- */
+.pi-soldes { margin: 0; }
+.pi-gros { font-size: clamp(20px, 3.4vw, 26px); font-weight: 800; letter-spacing: -.01em; }
+.pi-soldes dd.cpt-plus { color: var(--salaire-t); }
+.pi-soldes dd.cpt-moins { color: var(--alerte); }
+
+/* ---------- Fenêtre ---------- */
+#dlg-pilotage .champ[hidden] { display: none; }
+#dlg-pilotage .interrupteur { min-height: 44px; font-size: 14.5px; }
+
+@media (max-width: 720px) {
+  .pi-evt > b { font-size: 14px; }
+}
