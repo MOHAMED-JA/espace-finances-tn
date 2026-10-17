@@ -3,9 +3,10 @@
  * Changer « version » pour les montrer de nouveau ; 2 à 4 points courts, du point de vue de l'utilisateur.
  */
 window.ORBITE_NOUVEAUTES = {
-  version: "2026-10-17c",
+  version: "2026-10-17d",
   date: "17 octobre 2026",
   points: [
+    { titre: "Partager avec votre conseiller, en lecture seule.", texte: "Paramètres › Vos données › Partager avec un conseiller : avec le code que vous donne votre banquier, assureur ou expert-comptable, il voit votre Orbite sans rien pouvoir modifier. Chaque consultation est enregistrée et vous retirez l'accord quand vous voulez." },
     { titre: "Votre patrimoine à 360°.", texte: "Mon orbite › Patrimoine : tout ce que vous possédez moins tout ce que vous devez, chaque ligne s'ouvre sur son module. Orbite garde un relevé par mois : vous voyez ce qui a bougé depuis le mois dernier et votre vraie courbe, qui se remplit à partir d'aujourd'hui." },
     { titre: "Liberté financière.", texte: "Ma progression › Liberté : combien il vous faut pour vivre de votre patrimoine (25 ans de dépenses), où vous en êtes, l'année où vous y arriveriez à ce rythme, et les trois leviers qui vous font gagner le plus d'années." },
     { titre: "Mon coffre, sur votre appareil.", texte: "Mon espace › Mon coffre : fiches de paie, contrats, attestations rangés par thème et chiffrés sur votre téléphone, ouverts par votre empreinte. Rien n'est envoyé sur internet ; une sauvegarde chiffrée par votre mot de passe vous protège si vous changez de téléphone." },
