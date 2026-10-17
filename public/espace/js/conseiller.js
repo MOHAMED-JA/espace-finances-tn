@@ -233,7 +233,8 @@
       ul.appendChild(li);
     });
   }
-  function chargerAdmin() { if (E.admin && E.admin.conseillers) E.admin.conseillers().then(rendreAdmin).catch(function () {}); }
+  /* Seulement pour l'administrateur : un compte ordinaire qui ouvre #admin ne doit pas déclencher de refus du serveur. */
+  function chargerAdmin() { if (E.admin && E.admin.conseillers && E.admin.est) E.admin.est().then(function (oui) { return oui ? E.admin.conseillers().then(rendreAdmin) : null; }).catch(function () {}); }
   $("form-conseiller").addEventListener("submit", function (e) {
     e.preventDefault();
     var em = $("acn-email").value.trim(), nom = $("acn-nom").value.trim(), err = $("acn-erreur");

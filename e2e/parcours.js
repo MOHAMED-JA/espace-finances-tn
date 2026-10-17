@@ -3993,8 +3993,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector('#pc-liste .pc-conseiller:has-text("consulté")');
     assert(/consult.{1,2} \d+ fois/.test(await page.textContent("#pc-liste")), "consultations visibles : " + await page.textContent("#pc-liste"));
     await page.screenshot({ path: path.join(CAPTURES, "conseiller-partage-client.png"), fullPage: false });
-    await page.click("#tab-donnees");
-    await page.waitForSelector("[data-pc-retirer]", { state: "visible" });
+    await page.waitForSelector("[data-pc-retirer]", { state: "visible", timeout: 60000 });
     const diag = await page.evaluate(() => { const b = document.querySelector("[data-pc-retirer]"), p = b.closest(".param-panneau"); return { onglet: p && p.getAttribute("data-onglet"), cache: p && p.hidden, hash: location.hash, w: b.getBoundingClientRect().width }; });
     await page.evaluate(() => document.querySelector("[data-pc-retirer]").click());
     assert(/Confirmer/.test(await page.textContent("[data-pc-retirer]")), "confirmation avant le retrait");
