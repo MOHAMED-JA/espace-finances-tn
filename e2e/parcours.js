@@ -385,7 +385,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.screenshot({ path: path.join(CAPTURES, "visite-credit.png") });
     await page.click("#visite-suiv");
     await page.waitForSelector(".visite", { state: "detached" });
-    await page.waitForFunction(() => location.hash === "#orbite").catch(async (e) => { throw new Error("adresse finale : " + await page.evaluate(() => location.hash)); });
+    await page.waitForFunction(() => /^#orbite(\?partie=[a-z]+)?$/.test(location.hash)).catch(async (e) => { throw new Error("adresse finale : " + await page.evaluate(() => location.hash)); });
     await page.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_visite_nouveautes === "2026-10-15a");
     /* « Pour aller plus loin » : les nouveautés précédentes, Mon mois d'abord. */
     await page.click("#aide-visite");
@@ -682,6 +682,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
 
   await etape("compte : nom affiché, thème, export JSON avec le profil", async () => {
     await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.reload(); /* état d'interface laissé par les étapes précédentes remis à zéro */
     await page.waitForSelector("#onglet-donnees:not([hidden])");
     assert(/^Acceptées le \d{1,2} \S+ \d{4} à \d{1,2} h \d\d \(version du 11 octobre 2026\)\.$/.test(await page.textContent("#accord-etat")), "trace de l'acceptation : " + await page.textContent("#accord-etat"));
     await page.goto(base + "/espace/#compte");
@@ -1047,6 +1048,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector("#admin-corps:not([hidden])");
     await page.waitForFunction(() => /Aucun compte n'a encore partagé/.test(document.getElementById("admin-fiches").textContent));
     await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.reload(); /* état d'interface laissé par les étapes précédentes remis à zéro */
     await page.waitForSelector("#onglet-donnees:not([hidden]) #partage-etat:not([hidden])");
     await page.waitForTimeout(300);
     assert(!(await page.isChecked("#partage-admin")), "partage désactivé par défaut");
@@ -1061,6 +1063,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(/Aziz Jaouadi/.test(fiche) && /Salaire brut/.test(fiche) && /14 mai 1990/.test(fiche) && /Voiture/.test(fiche), "fiche complète : " + fiche);
     await page.screenshot({ path: path.join(CAPTURES, "admin-fiche.png"), fullPage: true });
     await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.reload(); /* état d'interface laissé par les étapes précédentes remis à zéro */
     await page.waitForFunction(() => /Consultée 1 fois/.test(document.getElementById("partage-etat").textContent));
     await page.click('label:has(#partage-admin)');
     await page.waitForFunction(() => /non partagée/i.test(document.getElementById("partage-etat").textContent));
@@ -2860,6 +2863,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.screenshot({ path: path.join(CAPTURES, "credit-capacite.png") });
     /* Paramètres : carte de partage avec l'heure en français. */
     await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.reload(); /* état d'interface laissé par les étapes précédentes remis à zéro */
     await page.waitForSelector("#onglet-donnees:not([hidden]) #partage-etat:not([hidden])");
     await page.waitForTimeout(300);
     assert(!/\b(AM|PM)\b/.test(await page.textContent("#partage-etat")), "heure au format français");
@@ -3900,6 +3904,127 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.evaluate((a) => window.Orbite.majProfil(JSON.parse(a), { immediat: true }), avant);
   });
 
+  await etape("mode conseiller : rôle donné par l'admin, double authentification exigée, code d'invitation, accord du client, lecture seule, consultations journalisées, retrait immédiat", async () => {
+    await page.setViewportSize({ width: 1360, height: 900 });
+    refusAttendus = true; /* le serveur refuse (403) un conseiller sans double authentification : attendu */
+    const EM = "conseil@exemple.tn", MDP = "Conseil-compte-2026!";
+    faux.ajouterCompte(EM, MDP, { full_name: "Nadia Conseil", orbite_consentement: VERSION_ACCORD, orbite_partage_demande: new Date().toISOString(), orbite_partage_reponse: "non",
+      orbite: { prenom: "Nadia", nom: "Conseil", dateNaissance: "1985-03-02", montant: 3000 } });
+    faux.marquerAdmin("aziz@exemple.tn");
+    const avantNom = await page.evaluate(() => { const p = window.Orbite.profil(); return { prenom: p.prenom, nom: p.nom }; });
+    await page.evaluate(() => window.Orbite.majProfil({ prenom: "Aziz", nom: "Test" }, { immediat: true }));
+    for (let i = 0; i < 100 && (((faux.comptes.get("aziz@exemple.tn").user.user_metadata || {}).orbite || {}).nom !== "Test"); i++) await page.waitForTimeout(100);
+    /* 1. L'administrateur donne le rôle. */
+    await page.goto(base + "/espace/#admin");
+    await page.reload();
+    await page.waitForSelector("#form-conseiller", { state: "visible" });
+    await page.fill("#acn-email", EM);
+    await page.fill("#acn-nom", "Nadia C., Banque A");
+    await page.click('#form-conseiller button[type="submit"]');
+    await page.waitForSelector('#admin-conseillers li:has-text("Nadia C., Banque A")');
+    /* 2. Le conseiller sans double authentification : rien. Puis avec : invitation. */
+    const cc = await navigateur.newContext({ viewport: { width: 1280, height: 900 }, locale: "fr-FR", reducedMotion: "reduce" });
+    await cc.route(SUPABASE + "/**", (r) => faux.gerer(r));
+    await cc.route("https://api.pwnedpasswords.com/**", fuites);
+    await cc.addInitScript(() => { try { localStorage.setItem("orbite-nouveautes", "vu"); } catch (e) {} });
+    const pc = await cc.newPage();
+    suivre(pc);
+    const fermerNotes = async () => {
+      await pc.waitForTimeout(1200);
+      if (await pc.isVisible("#dlg-nouveautes")) await pc.click('#dlg-nouveautes button[value="ok"]');
+      for (let i = 0; i < 4 && await pc.$(".visite"); i++) { await pc.keyboard.press("Escape"); await pc.waitForTimeout(250); }
+    };
+    await pc.goto(base + "/connexion.html");
+    await pc.fill("#email", EM); await pc.fill("#mdp", MDP); await pc.click("#envoyer");
+    await pc.waitForURL(/\/espace\//);
+    await fermerNotes();
+    await pc.goto(base + "/espace/#clients");
+    await pc.waitForSelector("#rail-clients:not([hidden])", { state: "attached" });
+    await pc.waitForSelector('#cl-zone h2:has-text("Double authentification requise")');
+    const secret = faux.ajouterFacteur(EM);
+    await pc.click("#deconnexion");
+    await pc.waitForURL(/connexion\.html/);
+    await pc.fill("#email", EM); await pc.fill("#mdp", MDP); await pc.click("#envoyer");
+    await pc.waitForSelector("#etape-code:not([hidden])");
+    await pc.fill("#code-2fa", Faux.totp(secret));
+    await pc.waitForURL(/\/espace\//);
+    await fermerNotes();
+    await pc.goto(base + "/espace/#clients");
+    await pc.waitForSelector('#cl-zone h2:has-text("Aucun client")');
+    await pc.click('[data-cl="inviter"]');
+    await pc.waitForSelector("#cl-zone .cl-code");
+    const code = (await pc.textContent("#cl-zone .cl-code")).replace(/\s/g, "");
+    assert(/^[A-HJ-NP-Z2-9]{10}$/.test(code), "code d'invitation : " + code);
+    /* 3. Le client vérifie le code, voit qui l'invite, accepte. */
+    await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.reload(); /* état d'interface laissé par les étapes précédentes remis à zéro */
+    await page.waitForSelector("#pc-code", { state: "visible" });
+    assert(/Aucun conseiller/.test(await page.textContent("#pc-liste")), "aucun conseiller au départ");
+    await page.fill("#pc-code", "ABC");
+    await page.click("#pc-voir");
+    assert(/10 caractères/.test(await page.textContent("#pc-etat")), "code mal formé refusé");
+    await page.fill("#pc-code", "AAAAA AAAAA");
+    await page.click("#pc-voir");
+    await page.waitForFunction(() => /inconnu|expiré/.test(document.getElementById("pc-etat").textContent));
+    await page.fill("#pc-code", code.slice(0, 5) + " " + code.slice(5).toLowerCase());
+    await page.click("#pc-voir");
+    await page.waitForSelector("#pc-confirmer:not([hidden])");
+    assert(/Nadia C., Banque A vous invite/.test(await page.textContent("#pc-confirmer-txt")), "nom du conseiller montré avant d'accepter");
+    await page.click("#pc-accepter");
+    await page.waitForSelector('#pc-liste .pc-conseiller:has-text("pas encore consulté")');
+    /* Le code ne sert qu'une fois. */
+    await page.fill("#pc-code", code);
+    await page.click("#pc-voir");
+    await page.waitForFunction(() => /déjà utilisé|inconnu/.test(document.getElementById("pc-etat").textContent));
+    /* 4. Le conseiller voit le client en lecture seule, ouvre, télécharge le bilan. */
+    await pc.bringToFront();
+    await pc.goto(base + "/espace/#orbite");
+    await pc.goto(base + "/espace/#clients");
+    await pc.waitForSelector("#cl-zone .cl-client");
+    const carte = (await pc.textContent("#cl-zone .cl-client")).replace(/\s+/g, " ");
+    assert(/Aziz T\./.test(carte) && /Patrimoine net/.test(carte) && /Score de santé\s*\d+ \/ 100/.test(carte), "carte du client : " + carte.slice(0, 200));
+    assert(!/aziz@exemple\.tn/.test(await pc.textContent("#cl-zone")), "jamais l'e-mail du client");
+    await pc.click("[data-cl-ouvrir]");
+    await pc.waitForSelector("#cl-zone .cl-details");
+    const [pdf] = await Promise.all([pc.waitForEvent("download", { timeout: 60000 }), pc.click("[data-cl-bilan]")]);
+    assert(/^bilan-aziz-t-\d{4}\.pdf$/.test(pdf.suggestedFilename()) && fs.readFileSync(await pdf.path()).slice(0, 5).toString() === "%PDF-", "bilan PDF du client : " + pdf.suggestedFilename());
+    await pc.screenshot({ path: path.join(CAPTURES, "conseiller-clients.png"), fullPage: true });
+    assert(faux.consultationsConseiller.length >= 1, "consultation journalisée");
+    /* 5. Le client voit la consultation et retire l'accord (deux gestes). */
+    await page.bringToFront();
+    await page.goto(base + "/espace/#orbite");
+    await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.reload(); /* état d'interface laissé par les étapes précédentes remis à zéro */
+    await page.waitForSelector('#pc-liste .pc-conseiller:has-text("consulté")');
+    assert(/consult.{1,2} \d+ fois/.test(await page.textContent("#pc-liste")), "consultations visibles : " + await page.textContent("#pc-liste"));
+    await page.screenshot({ path: path.join(CAPTURES, "conseiller-partage-client.png"), fullPage: false });
+    await page.waitForSelector("[data-pc-retirer]", { state: "visible", timeout: 60000 });
+    const diag = await page.evaluate(() => { const b = document.querySelector("[data-pc-retirer]"), p = b.closest(".param-panneau"); return { onglet: p && p.getAttribute("data-onglet"), cache: p && p.hidden, hash: location.hash, w: b.getBoundingClientRect().width }; });
+    await page.evaluate(() => document.querySelector("[data-pc-retirer]").click());
+    assert(/Confirmer/.test(await page.textContent("[data-pc-retirer]")), "confirmation avant le retrait");
+    await page.evaluate(() => document.querySelector("[data-pc-retirer]").click());
+    await page.waitForSelector('#pc-liste:has-text("Aucun conseiller")');
+    await pc.bringToFront();
+    await pc.goto(base + "/espace/#orbite");
+    await pc.goto(base + "/espace/#clients");
+    await pc.waitForSelector('#cl-zone h2:has-text("Aucun client")');
+    /* 6. Téléphone (conseiller), puis rôle retiré par l'admin : le menu disparaît. */
+    await pc.setViewportSize({ width: 390, height: 844 });
+    await pc.waitForTimeout(300);
+    assert(!(await pc.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), "Mes clients sans débordement sur téléphone");
+    await page.bringToFront();
+    await page.goto(base + "/espace/#orbite");
+    await page.goto(base + "/espace/#admin");
+    await page.waitForSelector('#admin-conseillers [data-ac-retirer]');
+    await page.click('#admin-conseillers [data-ac-retirer]');
+    await page.waitForSelector('#admin-conseillers li:has-text("Aucun conseiller")');
+    await pc.reload();
+    await pc.waitForTimeout(1500);
+    assert(await pc.$eval("#rail-clients", (e) => e.hidden), "menu « Mes clients » retiré");
+    await cc.close();
+    await page.evaluate((n) => window.Orbite.majProfil(n, { immediat: true }), avantNom);
+  });
+
   await etape("bilan annuel en PDF : bouton dans Ma progression, aperçu avec les vrais chiffres, sections à cocher, coordonnées décochées, PDF valide, Ctrl K, téléphone", async () => {
     await page.setViewportSize({ width: 1360, height: 900 });
     await page.goto(base + "/espace/#progression");
@@ -4164,11 +4289,13 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     const lien = await page.getAttribute('main a[href^="/connexion.html"]', "href");
     assert(decodeURIComponent(lien).endsWith("/espace/#compte?onglet=donnees"), "lien vers Paramètres › Vos données : " + lien);
     await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.reload(); /* état d'interface laissé par les étapes précédentes remis à zéro */
     await page.waitForSelector("#supprimer-compte", { state: "visible" });
   });
 
   await etape("déconnexion puis suppression définitive du compte", async () => {
     await page.goto(base + "/espace/#compte?onglet=donnees");
+    await page.reload(); /* état d'interface laissé par les étapes précédentes remis à zéro */
     await page.waitForSelector("#supprimer-compte");
     await page.click("#supprimer-compte");
     await page.waitForSelector("#dlg-supprimer-compte[open]");

@@ -329,7 +329,24 @@
     offrirNouveaux: function (oui) { return client.rpc("admin_offrir_nouveaux", { p_actif: !!oui }).then(verifier); },
     /* TMM du mois (point 5) : saisi par l'administrateur, appliqué à tout Orbite. mois : « AAAA-MM-01 ». */
     tmmSaisir: function (mois, taux) { return client.rpc("admin_tmm_saisir", { p_mois: mois, p_taux: taux }).then(verifier); },
-    tmmSupprimer: function (mois) { return client.rpc("admin_tmm_supprimer", { p_mois: mois }).then(verifier); }
+    tmmSupprimer: function (mois) { return client.rpc("admin_tmm_supprimer", { p_mois: mois }).then(verifier); },
+    /* Mode conseiller (migration 0018) : le rôle n'est donné que par l'administrateur. */
+    conseillers: function () { return client.rpc("admin_conseillers").then(verifier); },
+    conseillerDefinir: function (email, nom, actif) { return client.rpc("admin_conseiller_definir", { p_email: email, p_nom: nom, p_actif: !!actif }).then(verifier); }
+  };
+  /* Mode conseiller (lot C, migration 0018) : lecture seule, double authentification exigée côté serveur. */
+  var conseiller = {
+    moi: function () { return client.rpc("conseiller_moi").then(verifier); },
+    inviter: function () { return client.rpc("conseiller_inviter").then(verifier); },
+    invitations: function () { return client.rpc("conseiller_invitations_en_cours").then(verifier); },
+    clients: function () { return client.rpc("conseiller_clients").then(verifier); }
+  };
+  /* Côté client : accepter un conseiller avec son code, voir les consultations, retirer l'accord. */
+  var partageConseiller = {
+    etat: function () { return client.rpc("partage_conseiller_etat").then(verifier); },
+    voir: function (code) { return client.rpc("partage_conseiller_voir", { p_code: code }).then(verifier); },
+    accepter: function (code) { return client.rpc("partage_conseiller_accepter", { p_code: code }).then(verifier); },
+    retirer: function (id) { return client.rpc("partage_conseiller_retirer", { p_conseiller: id }).then(verifier); }
   };
   /* Historique du TMM (lecture pour tout compte connecté), du plus récent au plus ancien. */
   var tmm = {
@@ -467,7 +484,7 @@
     simulations: simulations,
     abonnement: abonnement,
     avatar: avatar,
-    admin: admin, partage: partage, tmm: tmm,
+    admin: admin, partage: partage, tmm: tmm, conseiller: conseiller, partageConseiller: partageConseiller,
     parrainage: parrainage,
     assistant: assistant,
     rappelsEmail: rappelsEmail,

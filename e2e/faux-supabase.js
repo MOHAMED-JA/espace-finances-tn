@@ -43,6 +43,8 @@ function creer() {
   const photos = new Map();  // chemin -> Buffer (stockage privé « avatars »)
   /* Administration (migration 0006) : admins, alertes d'inscription, compteurs anonymes. */
   const admins = new Set();
+  /* Mode conseiller (migration 0018). */
+  const conseillers = new Map(), invitationsC = new Map(), partagesC = new Map(), consultationsC = [];
   /* Accords de partage avec l'admin (migration 0009) et journal des consultations. */
   const partages = new Map(), consultations = [];
   const etatPartage = (id) => { const c = consultations.filter((x) => x.user_id === id); return { accorde: partages.has(id), accorde_le: partages.get(id) || null, derniere_consultation: c.length ? c[c.length - 1].consulte_le : null, consultations: c.length }; };
@@ -488,7 +490,49 @@ function creer() {
     if (url.pathname === "/rest/v1/rpc/partage_admin_etat") return repondre(route, 200, etatPartage(u.id));
     if (url.pathname === "/rest/v1/rpc/partage_admin_definir") { if (corps.p_accord) { if (!partages.has(u.id)) partages.set(u.id, new Date().toISOString()); } else partages.delete(u.id); return repondre(route, 200, etatPartage(u.id)); }
     if (url.pathname === "/rest/v1/rpc/compter_usage") { const k = corps.p_type + ":" + corps.p_cle; usage.set(k, (usage.get(k) || 0) + 1); return repondre(route, 204); }
+    /* ---------- Mode conseiller (comme la migration 0018) ---------- */
+    const tC = (req.headers()["authorization"] || "").replace(/^Bearer\s+/i, "");
+    const nomClient = (id) => { const o = ((compteParId(id) || {}).user || {}).user_metadata || {}; const p = o.orbite || {}; return ((p.prenom || "") + " " + (p.nom ? p.nom.charAt(0) + "." : "")).trim() || "Client"; };
+    const etatPartageC = (id) => [...partagesC.entries()].filter(([k]) => k.split("|")[0] === id).map(([k, le]) => { const c = k.split("|")[1], l = consultationsC.filter((x) => x.client === id && x.conseiller === c).map((x) => x.le).reverse();
+      return { conseiller: c, nom: conseillers.get(c).nom, accorde_le: le, consultations: l.length, dernieres: l.slice(0, 20) }; });
+    const refusC = () => { if (!conseillers.has(u.id)) return repondre(route, 403, { code: "42501", message: "Réservé aux conseillers" }); if (aalJeton.get(tC) !== "aal2") return repondre(route, 403, { code: "42501", message: "Double authentification requise" }); return null; };
+    if (url.pathname === "/rest/v1/rpc/conseiller_moi") return repondre(route, 200, { conseiller: conseillers.has(u.id), nom: conseillers.has(u.id) ? conseillers.get(u.id).nom : null, aal2: aalJeton.get(tC) === "aal2" });
+    if (url.pathname === "/rest/v1/rpc/partage_conseiller_etat") return repondre(route, 200, etatPartageC(u.id));
+    if (url.pathname === "/rest/v1/rpc/partage_conseiller_voir" || url.pathname === "/rest/v1/rpc/partage_conseiller_accepter") {
+      const code = String(corps.p_code || "").trim().toUpperCase(), inv = invitationsC.get(code);
+      if (!inv || inv.utilisee_par || Date.parse(inv.expire_le) < Date.now() || inv.conseiller === u.id) return repondre(route, 404, { code: "P0002", message: "Code inconnu, déjà utilisé ou expiré" });
+      if (url.pathname.endsWith("_voir")) return repondre(route, 200, { nom: conseillers.get(inv.conseiller).nom, expire_le: inv.expire_le });
+      inv.utilisee_par = u.id;
+      const k = u.id + "|" + inv.conseiller; if (!partagesC.has(k)) partagesC.set(k, new Date().toISOString());
+      return repondre(route, 200, etatPartageC(u.id));
+    }
+    if (url.pathname === "/rest/v1/rpc/partage_conseiller_retirer") { partagesC.delete(u.id + "|" + corps.p_conseiller); return repondre(route, 200, etatPartageC(u.id)); }
+    if (url.pathname === "/rest/v1/rpc/conseiller_inviter") {
+      const r = refusC(); if (r) return r;
+      const alpha = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", code = [...crypto.randomBytes(10)].map((b) => alpha[b % 32]).join("");
+      const exp = new Date(Date.now() + 7 * 86400000).toISOString();
+      invitationsC.set(code, { conseiller: u.id, cree_le: new Date().toISOString(), expire_le: exp, utilisee_par: null });
+      return repondre(route, 200, { code, expire_le: exp });
+    }
+    if (url.pathname === "/rest/v1/rpc/conseiller_invitations_en_cours") {
+      const r = refusC(); if (r) return r;
+      return repondre(route, 200, [...invitationsC.entries()].filter(([, i]) => i.conseiller === u.id && !i.utilisee_par).map(([code, i]) => ({ code, expire_le: i.expire_le })));
+    }
+    if (url.pathname === "/rest/v1/rpc/conseiller_clients") {
+      const r = refusC(); if (r) return r;
+      const l = [...partagesC.entries()].filter(([k]) => k.split("|")[1] === u.id).map(([k, le]) => { const id = k.split("|")[0];
+        consultationsC.push({ client: id, conseiller: u.id, le: new Date().toISOString() });
+        return { id, nom: nomClient(id), accorde_le: le, profil: (compteParId(id).user.user_metadata || {}).orbite || {} }; });
+      return repondre(route, 200, l);
+    }
     if (url.pathname.indexOf("/rest/v1/rpc/admin_") === 0 && !admins.has(u.id)) return repondre(route, 403, { code: "42501", message: "Réservé à l'administrateur" });
+    if (url.pathname === "/rest/v1/rpc/admin_conseillers") return repondre(route, 200, [...conseillers.entries()].map(([id, c]) => ({ id, nom: c.nom, email: compteParId(id).user.email, ajoute_le: c.ajoute_le, clients: [...partagesC.keys()].filter((k) => k.split("|")[1] === id).length })));
+    if (url.pathname === "/rest/v1/rpc/admin_conseiller_definir") {
+      const c = comptes.get(String(corps.p_email || "").trim().toLowerCase());
+      if (!c) return repondre(route, 404, { code: "P0002", message: "Aucun compte avec cette adresse" });
+      if (corps.p_actif) conseillers.set(c.user.id, { nom: String(corps.p_nom || "").trim(), ajoute_le: new Date().toISOString() }); else conseillers.delete(c.user.id);
+      return repondre(route, 200, [...conseillers.entries()].map(([id, x]) => ({ id, nom: x.nom, email: compteParId(id).user.email, ajoute_le: x.ajoute_le, clients: 0 })));
+    }
     if (url.pathname === "/rest/v1/rpc/admin_tableau") {
       const liste = [...comptes.values()].map(({ user }) => ({ id: user.id, offert_par: abonnementDe(user.id).offert_par || null, nom: (user.user_metadata || {}).nom || "", email: user.email, methode: "email", inscrit_le: user.created_at, derniere_connexion: user.last_sign_in_at || user.created_at, etat: acces(user.id).etat, formule: abonnementDe(user.id).formule, testeur: !!abonnementDe(user.id).testeur }));
       const n = liste.length;
@@ -587,6 +631,14 @@ function creer() {
     abonnementDe(email) { return abonnementDe(comptes.get(email).user.id); },
     partageDe(email) { return etatPartage(comptes.get(email).user.id); },
     marquerAdmin(email) { admins.add(comptes.get(email).user.id); },
+    /* Appareil de double authentification déjà vérifié (mode conseiller) : renvoie la clé pour calculer les codes. */
+    ajouterFacteur(email) {
+      const u = comptes.get(email).user, id = crypto.randomUUID(), secret = base32(crypto.randomBytes(20));
+      u.factors = (u.factors || []).concat([{ id, friendly_name: "Téléphone", factor_type: "totp", status: "verified", created_at: new Date().toISOString(), updated_at: new Date().toISOString() }]);
+      secrets.set(id, secret);
+      return secret;
+    },
+    consultationsConseiller: consultationsC,
     tmm() { return new Map(tmm); },
     dernierAssistant() { return dernierAssistant; },
     dernierAuth() { return dernierAuth; },
