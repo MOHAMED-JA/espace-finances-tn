@@ -1,0 +1,96 @@
+/* Orbite — modèle D (choisi le 22 oct. 2026), téléphone seulement (moins de 768 px) :
+   1. barre du bas flottante, sombre (claire en thème sombre), pilule qui glisse sous la rubrique active ;
+   2. « Le fil de votre mois » en tête de l'accueil : anneau du budget, reste à vivre, prochaines dates (fil-mois.js).
+   L'ordinateur et la tablette gardent la barre latérale. */
+
+@media (max-width: 767.98px) {
+  .onglets-bas {
+    left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom));
+    height: 64px; box-sizing: border-box; padding: 6px;
+    border: 0; border-radius: 22px;
+    background: color-mix(in srgb, var(--encre) 93%, transparent);
+    box-shadow: 0 18px 40px -14px rgba(10, 13, 20, .55), 0 2px 8px rgba(10, 13, 20, .18);
+    isolation: isolate;
+  }
+  .onglets-bas a, .onglets-bas__menu {
+    position: relative; z-index: 1; align-content: center; padding: 0; border-radius: 16px;
+    color: color-mix(in srgb, var(--fond) 72%, transparent); font-size: 11px;
+    transition: color 220ms ease;
+  }
+  .onglets-bas a svg, .onglets-bas__menu svg { width: 22px; height: 22px; }
+  /* Sans :has (anciens navigateurs), pas de pilule : l'entrée active reste lisible, en clair sur la barre. */
+  .onglets-bas a[aria-current="page"], .onglets-bas__menu[data-actif], .onglets-bas__menu[aria-expanded="true"] { color: var(--fond); }
+  @supports selector(:has(a)) {
+    .onglets-bas a[aria-current="page"], .onglets-bas__menu[data-actif], .onglets-bas__menu[aria-expanded="true"] { color: var(--encre); }
+  }
+  .onglets-bas a[aria-current="page"] svg, .onglets-bas__menu[data-actif] svg { transform: translateY(-1px) scale(1.08); }
+  .onglets-bas a:focus-visible, .onglets-bas__menu:focus-visible { outline: 2px solid var(--fond); outline-offset: -3px; }
+
+  /* Pilule : posée sous l'entrée active (5 colonnes égales), glisse d'une rubrique à l'autre. */
+  .onglets-bas__pilule {
+    position: absolute; z-index: 0; top: 6px; bottom: 6px; left: 6px; width: calc((100% - 12px) / 5);
+    border-radius: 16px; background: var(--surface);
+    box-shadow: 0 2px 8px -2px rgba(10, 13, 20, .3);
+    opacity: 0; transform: translateX(0) scale(.9);
+    transition: transform 380ms cubic-bezier(.32, .72, 0, 1), opacity 200ms ease;
+  }
+  .onglets-bas:has(a[data-vue="orbite"][aria-current="page"]) .onglets-bas__pilule { opacity: 1; transform: translateX(0); }
+  .onglets-bas:has(a[data-vue="salaire"][aria-current="page"]) .onglets-bas__pilule { opacity: 1; transform: translateX(100%); }
+  .onglets-bas:has(a[data-vue="epargne"][aria-current="page"]) .onglets-bas__pilule { opacity: 1; transform: translateX(200%); }
+  .onglets-bas:has(a[data-vue="credit"][aria-current="page"]) .onglets-bas__pilule { opacity: 1; transform: translateX(300%); }
+  .onglets-bas:has(.onglets-bas__menu[data-actif]) .onglets-bas__pilule,
+  .onglets-bas:has(.onglets-bas__menu[aria-expanded="true"]) .onglets-bas__pilule { opacity: 1; transform: translateX(400%); }
+
+  /* Ce qui flotte au-dessus de la barre remonte d'autant. */
+  .bulle-assistant { bottom: calc(88px + env(safe-area-inset-bottom)); }
+  .comparer-barre { bottom: calc(88px + env(safe-area-inset-bottom)); }
+  /* Les messages passent au-dessus de la barre et de la bulle de l'Assistant, jamais devant (elles restent utilisables). */
+  .toasts { bottom: calc(146px + env(safe-area-inset-bottom)); }
+}
+/* Thème sombre : la barre devient claire, la pilule sombre (mêmes jetons inversés). */
+:root[data-theme="dark"] .onglets-bas__pilule { box-shadow: 0 2px 8px -2px rgba(0, 0, 0, .5); }
+
+/* ---------- Le fil de votre mois (accueil, téléphone) ---------- */
+.fil-mois { margin: 0 0 18px; padding: 18px; border-radius: 22px; background: var(--surface); box-shadow: var(--ombre-1, 0 1px 2px rgba(12, 16, 20, .06)); }
+.fil-mois[hidden] { display: none; }
+@media (min-width: 768px) { .fil-mois { display: none !important; } }
+.fil-mois__titre { margin: 0 0 14px; font-size: 17px; font-weight: 700; letter-spacing: -.2px; }
+.fil-mois__budget { display: flex; align-items: center; gap: 18px; color: inherit; text-decoration: none; border-radius: 16px; -webkit-tap-highlight-color: transparent; transition: transform 160ms var(--sortie); }
+.fil-mois__budget:active { transform: scale(.98); }
+.fil-mois__budget:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; }
+.fil-mois__anneau { position: relative; flex: none; width: 104px; height: 104px; }
+.fil-mois__anneau svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.fil-mois__piste, .fil-mois__arc { fill: none; stroke-width: 10; }
+.fil-mois__piste { stroke: var(--surface-3, #E7EAF0); }
+.fil-mois__arc { stroke: var(--salaire, #067647); stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 100; transition: stroke-dashoffset 1100ms cubic-bezier(.23, 1, .32, 1); }
+.fil-mois--depasse .fil-mois__arc { stroke: var(--erreur); }
+.fil-mois__pct { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: 2px; }
+.fil-mois__pct strong { font: 600 19px/1 var(--mono, "JetBrains Mono", monospace); }
+.fil-mois__pct span { font-size: 11px; color: var(--encre-3); }
+.fil-mois__texte { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.fil-mois__lib { font-size: 13px; color: var(--encre-3); }
+.fil-mois__reste { font: 600 26px/1.05 var(--mono, "JetBrains Mono", monospace); letter-spacing: -.5px; }
+.fil-mois--depasse .fil-mois__reste { color: var(--erreur); }
+.fil-mois__etat { font-size: 13px; color: var(--encre-2); }
+.fil-mois__sous { margin: 20px 0 10px; font-size: 12px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--encre-3); }
+.fil-mois__liste { position: relative; list-style: none; margin: 0; padding: 0 0 0 22px; display: grid; gap: 10px; }
+.fil-mois__liste::before { content: ""; position: absolute; left: 6px; top: 10px; bottom: 10px; width: 2px; border-radius: 2px; background: var(--filet); }
+.fil-mois__date { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: var(--surface-2); animation: fil-entree 460ms var(--sortie) both; animation-delay: calc(var(--i, 0) * 70ms + 120ms); }
+.fil-mois__date::before { content: ""; position: absolute; left: -21px; top: 50%; width: 12px; height: 12px; margin-top: -6px; border-radius: 50%; background: var(--encre); border: 2px solid var(--surface); box-sizing: border-box; }
+.fil-mois__date--entree::before { background: var(--salaire, #067647); }
+.fil-mois__date--jour::before { background: var(--credit, #1F45C7); animation: fil-pouls 1.8s ease-out infinite; }
+.fil-mois__quand { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.fil-mois__jour { font-size: 12px; color: var(--encre-3); }
+.fil-mois__libelle { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.fil-mois__montant { flex: none; font: 600 15px/1 var(--mono, "JetBrains Mono", monospace); }
+.fil-mois__date--entree .fil-mois__montant { color: var(--salaire-t, #067647); }
+.fil-mois__vide { padding: 12px 14px; border-radius: 14px; background: var(--surface-2); font-size: 14px; color: var(--encre-2); }
+.fil-mois__vide::before { display: none; }
+.fil-mois__lien { display: inline-flex; align-items: center; min-height: 44px; margin-top: 6px; font-size: 14px; font-weight: 650; color: var(--credit-t, #1F45C7); }
+@keyframes fil-entree { from { opacity: 0; transform: translateY(10px); } }
+@keyframes fil-pouls { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--credit, #1F45C7) 45%, transparent); } 100% { box-shadow: 0 0 0 9px transparent; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .onglets-bas__pilule, .fil-mois__arc { transition: none; }
+  .fil-mois__date, .fil-mois__date--jour::before { animation: none; }
+}

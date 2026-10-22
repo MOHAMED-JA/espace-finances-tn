@@ -36,6 +36,7 @@
   <link rel="stylesheet" href="/espace/apparence.css">
   <link rel="stylesheet" href="/espace/sous-rubriques.css">
   <link rel="stylesheet" href="/espace/menu.css">
+  <link rel="stylesheet" href="/espace/barre-flottante.css">
   <link rel="stylesheet" href="/espace/installer.css">
   <link rel="stylesheet" href="/espace/securite.css">
   <link rel="stylesheet" href="/espace/decider.css">
@@ -155,6 +156,25 @@
               <button type="button" class="bouton bouton--petit" data-installer="plus-tard">Plus tard</button>
               <button type="button" class="bouton bouton--petit bouton--plein" data-installer="oui">Installer</button>
             </div>
+          </section>
+
+          <!-- Fil du mois (téléphone, modèle D choisi le 22 oct. 2026) : reste à vivre et prochaines dates, fil-mois.js -->
+          <section class="fil-mois" id="fil-mois" aria-labelledby="fil-titre" hidden>
+            <h2 class="fil-mois__titre" id="fil-titre">Le fil de votre mois</h2>
+            <a class="fil-mois__budget" id="fil-budget" href="#mois?onglet=budget">
+              <span class="fil-mois__anneau" aria-hidden="true">
+                <svg viewBox="0 0 112 112"><circle class="fil-mois__piste" cx="56" cy="56" r="48" pathLength="100"></circle><circle class="fil-mois__arc" id="fil-arc" cx="56" cy="56" r="48" pathLength="100"></circle></svg>
+                <span class="fil-mois__pct"><strong id="fil-pct">0 %</strong><span>dépensé</span></span>
+              </span>
+              <span class="fil-mois__texte">
+                <span class="fil-mois__lib">Reste à vivre</span>
+                <strong class="fil-mois__reste" id="fil-reste">0 DT</strong>
+                <span class="fil-mois__etat" id="fil-etat"></span>
+              </span>
+            </a>
+            <h3 class="fil-mois__sous" id="fil-sous">À venir</h3>
+            <ol class="fil-mois__liste" id="fil-liste" aria-labelledby="fil-sous"></ol>
+            <a class="fil-mois__lien" href="#mois?onglet=calendrier">Tout le calendrier</a>
           </section>
 
           <!-- Premier pas : profil minimal -->
@@ -1962,6 +1982,7 @@
     <!-- Téléphone : l'Assistant reste à portée de pouce, sur toutes les pages -->
     <a class="bulle-assistant" id="bulle-assistant" href="#assistant" aria-label="Ouvrir l'Assistant"><svg aria-hidden="true"><use href="/orbite/icones.svg#etoile"/></svg><span>Assistant</span></a>
     <nav class="onglets-bas" aria-label="Navigation">
+      <span class="onglets-bas__pilule" aria-hidden="true"></span>
       <a href="#orbite" data-vue="orbite"><svg aria-hidden="true"><use href="/orbite/icones.svg#orbite"/></svg><span translate="no">Orbite</span></a>
       <a href="#salaire" data-vue="salaire"><svg aria-hidden="true"><use href="/orbite/icones.svg#salaire"/></svg><span data-lib-salaire>Salaire</span></a>
       <a href="#epargne" data-vue="epargne"><svg aria-hidden="true"><use href="/orbite/icones.svg#epargne"/></svg><span>Épargne</span></a>
@@ -3004,6 +3025,7 @@
   <script src="/espace/js/vue-reserve.js"></script>
   <script src="/espace/js/calendrier-calcul.js"></script>
   <script src="/espace/js/vue-mois.js"></script>
+  <script src="/espace/js/fil-mois.js"></script>
   <script src="/espace/js/annee-calcul.js"></script>
   <script src="/espace/js/vue-annee.js"></script>
   <script src="/espace/js/bilan-calcul.js"></script>

@@ -72,6 +72,25 @@
     return { prelevements: Math.round(prelev * 1000) / 1000, entrees: Math.round(entree * 1000) / 1000 };
   }
 
+  /**
+   * Prochaines dates (fil du mois de l'accueil) : listes d'événements de plusieurs mois réunies, à partir d'aujourd'hui,
+   * dans l'ordre, n au plus. Sens du montant : « entree » pour la paie et les versements en plus, « sortie » sinon,
+   * null sans montant (rappel, date fiscale).
+   */
+  function prochains(listes, maintenant, n) {
+    var mt = maintenant || new Date(), auj = iso(mt.getFullYear(), mt.getMonth(), mt.getDate()), max = n == null ? 3 : n, vus = {};
+    return [].concat.apply([], listes || []).filter(function (e) {
+      if (!e || !e.date || e.date < auj) return false;
+      var cle = e.date + "|" + e.type + "|" + e.libelle;
+      if (vus[cle]) return false;
+      vus[cle] = true;
+      return true;
+    }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; }).slice(0, Math.max(0, max)).map(function (e) {
+      var sens = e.montant == null ? null : (e.type === "paie" || e.type === "prime" ? "entree" : "sortie");
+      return { date: e.date, type: e.type, libelle: e.libelle, montant: e.montant, sens: sens, aujourdhui: e.date === auj };
+    });
+  }
+
   /** Fichier .ics (agenda) : un événement d'une journée par date. */
   function ics(evts, maintenant) {
     var m = maintenant || new Date(), stamp = m.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
@@ -88,5 +107,5 @@
     return lignes.filter(Boolean).join("\r\n") + "\r\n";
   }
 
-  return { evenements: evenements, grille: grille, resume: resume, ics: ics, dernierJour: dernierJour };
+  return { evenements: evenements, grille: grille, resume: resume, prochains: prochains, ics: ics, dernierJour: dernierJour };
 });
