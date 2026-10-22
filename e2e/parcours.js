@@ -1099,7 +1099,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await p4.waitForFunction(() => /fiche est partagée/.test([...document.querySelectorAll(".toast")].map((t) => t.textContent).join(" ")));
     assert(faux.partageDe("partage@exemple.tn").accorde, "accord enregistré sur le serveur");
     /* Profil déjà repris par la migration : lu dans la table, copie des métadonnées effacée sans rien perdre. */
-    assert(faux.comptes.get("partage@exemple.tn").user.user_metadata.orbite == null && faux.profilEnTable("partage@exemple.tn").salaireBrut === 2400, "métadonnées vidées, profil intact dans la table");
+    assert(faux.comptes.get("partage@exemple.tn").user.user_metadata.orbite == null && faux.profilEnTable("partage@exemple.tn").dateNaissance === "1992-03-08", "métadonnées vidées, profil intact dans la table");
     await p4.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_partage_reponse === "oui");
     await p4.goto(base + "/espace/#compte?onglet=donnees");
     await p4.waitForFunction(() => document.getElementById("partage-admin").checked && /Partage activé/.test(document.getElementById("partage-etat").textContent));
@@ -4185,7 +4185,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await fermerNotes();
     /* Ancien compte (profil dans les métadonnées) : repris dans la table protégée à l'ouverture, métadonnées vidées. */
     for (let i = 0; i < 40 && !faux.profilEnTable(EM); i++) await ps.waitForTimeout(100);
-    assert(faux.profilEnTable(EM) && faux.profilEnTable(EM).prenom === "Sam" && faux.profilEnTable(EM).salaireBrut === 2600, "profil repris dans la table");
+    assert(faux.profilEnTable(EM) && faux.profilEnTable(EM).prenom === "Sam" && faux.profilEnTable(EM).dateNaissance === "1990-05-02", "profil repris dans la table");
     for (let i = 0; i < 40 && faux.comptes.get(EM).user.user_metadata.orbite != null; i++) await ps.waitForTimeout(100);
     assert(faux.comptes.get(EM).user.user_metadata.orbite == null, "métadonnées du compte vidées après la reprise");
     /* Activer : code QR, clé, premier code tapé (lu ici avec la même clé, comme l'application d'authentification). */
