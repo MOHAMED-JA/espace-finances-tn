@@ -314,7 +314,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForFunction(() => ["ok", "ancien"].includes(document.getElementById("etat-enregistrement").getAttribute("data-etat")));
     assert(/Enregistré/.test(await page.textContent("#etat-enregistrement")), "témoin « Enregistré »");
     assert(/Enregistré/.test(await page.textContent("#etat-enregistrement-annonce")), "annonce pour lecteur d'écran");
-    const meta = faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite;
+    const meta = faux.profil("aziz@exemple.tn");
     assert(meta && meta.montant === 2500 && meta.chefDeFamille === true, "profil enregistré dans le compte : " + JSON.stringify(meta));
     /* Sous-rubriques : la page s'ouvre sur la vue d'ensemble, la capacité est une partie à part. */
     assert(await page.isVisible("#orbite-contenu") && !(await page.isVisible("#vue-orbite .requiert-naissance")), "Mon orbite s'ouvre sur la vue d'ensemble");
@@ -467,7 +467,9 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.click('[data-ajouter="projets"]');
     await page.fill('#liste-projets li:first-child [data-c="montant"]', "180000");
     await page.waitForTimeout(1600);
-    const meta = faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite;
+    const meta = faux.profil("aziz@exemple.tn");
+    assert(faux.profilEnTable("aziz@exemple.tn") && faux.profilEnTable("aziz@exemple.tn").credits.length === 1, "profil enregistré dans la table protégée");
+    assert(faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite == null, "plus aucun profil financier dans les métadonnées du compte");
     assert(meta.credits.length === 1 && meta.credits[0].mensualite === 300, "crédit enregistré");
     assert(meta.contrats.length === 1 && meta.contrats[0].versementMensuel === 150, "contrat enregistré");
     assert(meta.nom === "Jaouadi" && meta.dateNaissance === "1990-05-14" && meta.dateEmbauche === "2018-09-01", "nom et dates enregistrés");
@@ -1075,6 +1077,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   await etape("partage accepté depuis la demande : accord enregistré, fiche visible par l'admin, Paramètres à jour", async () => {
     faux.ajouterCompte("partage@exemple.tn", "Partage-compte-2026!", { full_name: "Aziz Démo", orbite_consentement: VERSION_ACCORD,
       orbite: { prenom: "Aziz", nom: "Démo", dateNaissance: "1992-03-08", salaireBrut: 2400 } });
+    faux.reprise0019("partage@exemple.tn");
     const ctx4 = await navigateur.newContext({ viewport: { width: 1280, height: 900 } });
     await ctx4.route(SUPABASE + "/**", (r) => faux.gerer(r));
     await ctx4.route("https://api.pwnedpasswords.com/**", fuites);
@@ -1095,6 +1098,8 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await p4.waitForSelector("#dlg-partage", { state: "hidden" });
     await p4.waitForFunction(() => /fiche est partagée/.test([...document.querySelectorAll(".toast")].map((t) => t.textContent).join(" ")));
     assert(faux.partageDe("partage@exemple.tn").accorde, "accord enregistré sur le serveur");
+    /* Profil déjà repris par la migration : lu dans la table, copie des métadonnées effacée sans rien perdre. */
+    assert(faux.comptes.get("partage@exemple.tn").user.user_metadata.orbite == null && faux.profilEnTable("partage@exemple.tn").dateNaissance === "1992-03-08", "métadonnées vidées, profil intact dans la table");
     await p4.waitForFunction(() => window.Orbite.utilisateur().user_metadata.orbite_partage_reponse === "oui");
     await p4.goto(base + "/espace/#compte?onglet=donnees");
     await p4.waitForFunction(() => document.getElementById("partage-admin").checked && /Partage activé/.test(document.getElementById("partage-etat").textContent));
@@ -1962,7 +1967,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector("#ajouter-profil", { state: "visible" });
     /* On retire le remboursement anticipé de l'étape précédente. */
     while (await page.$("[data-ra-retirer]")) { await page.evaluate(() => document.querySelector("[data-ra-retirer]").click()); await page.waitForTimeout(50); }
-    const avant = faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite.credits.length;
+    const avant = faux.profil("aziz@exemple.tn").credits.length;
     await page.click("#ajouter-profil");
     await page.waitForSelector("#dlg-profil[open]");
     /* Première échéance à venir : « En projet » proposé ; on choisit « Déjà signé ». */
@@ -2150,7 +2155,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.locator("#p-montant").blur();
     await page.waitForFunction((v) => window.Orbite.profil().historiqueSalaire.some((h) => h.montant === v), nouveau + 1);
     await page.waitForTimeout(1600);
-    const meta = faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite;
+    const meta = faux.profil("aziz@exemple.tn");
     assert(meta.historiqueSalaire.length === 3 && meta.montant === nouveau + 1, "historique enregistré : " + JSON.stringify(meta.historiqueSalaire));
     /* Module Salaire : un autre salaire demande sa date d'effet. */
     await page.goto(base + "/espace/#salaire");
@@ -2196,7 +2201,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.locator("#etsi-nom-B").press("Tab");
     await page.waitForFunction(() => window.Orbite.profil().scenarios[1].nom === "Bébé");
     await page.waitForTimeout(1600);
-    assert(faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite.scenarios.length === 2, "scénarios enregistrés dans le compte");
+    assert(faux.profil("aziz@exemple.tn").scenarios.length === 2, "scénarios enregistrés dans le compte");
     const avant = await page.evaluate(() => { const p = window.Orbite.profil(); return { projets: p.projets.length, contrats: p.contrats.length, rappels: p.rappelsPerso.length, enfants: p.enfants }; });
     await page.selectOption("#etsi-appliquer-choix", "0");
     await page.click("#etsi-appliquer");
@@ -2268,7 +2273,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.click("#contact-profil label:has(#p-contact-ok)");
     await page.waitForFunction(() => window.Orbite.profil().contactOk === true && !!window.Orbite.profil().contactOkLe);
     await page.waitForTimeout(1600);
-    const meta = faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite;
+    const meta = faux.profil("aziz@exemple.tn");
     assert(meta.telephone === "+21622123456" && meta.contactOk === true, "coordonnées enregistrées");
     await page.goto(base + "/espace/#admin");
     await page.waitForSelector("#admin-corps:not([hidden])");
@@ -2306,7 +2311,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     const jeton = faux.rappelsEmailDe("aziz@exemple.tn").jeton;
     await page.goto(base + "/rappels.html#d=" + jeton);
     await page.waitForFunction(() => /C'est noté/.test(document.getElementById("rp-titre").textContent));
-    const meta = () => faux.comptes.get("aziz@exemple.tn").user.user_metadata.orbite.rappelsEmail;
+    const meta = () => faux.profil("aziz@exemple.tn").rappelsEmail;
     assert(meta() === false && faux.rappelsEmailDe("aziz@exemple.tn").desinscrit_le, "désinscrit, case du profil décochée");
     await page.click("#rp-action");
     await page.waitForFunction(() => /Emails réactivés/.test(document.getElementById("rp-titre").textContent));
@@ -3913,7 +3918,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     faux.marquerAdmin("aziz@exemple.tn");
     const avantNom = await page.evaluate(() => { const p = window.Orbite.profil(); return { prenom: p.prenom, nom: p.nom }; });
     await page.evaluate(() => window.Orbite.majProfil({ prenom: "Aziz", nom: "Test" }, { immediat: true }));
-    for (let i = 0; i < 100 && (((faux.comptes.get("aziz@exemple.tn").user.user_metadata || {}).orbite || {}).nom !== "Test"); i++) await page.waitForTimeout(100);
+    for (let i = 0; i < 100 && (faux.profil("aziz@exemple.tn").nom !== "Test"); i++) await page.waitForTimeout(100);
     /* 1. L'administrateur donne le rôle. */
     await page.goto(base + "/espace/#admin");
     await page.reload();
@@ -4178,6 +4183,11 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await connecter();
     await ps.waitForURL(/\/espace\//);
     await fermerNotes();
+    /* Ancien compte (profil dans les métadonnées) : repris dans la table protégée à l'ouverture, métadonnées vidées. */
+    for (let i = 0; i < 40 && !faux.profilEnTable(EM); i++) await ps.waitForTimeout(100);
+    assert(faux.profilEnTable(EM) && faux.profilEnTable(EM).prenom === "Sam" && faux.profilEnTable(EM).dateNaissance === "1990-05-02", "profil repris dans la table");
+    for (let i = 0; i < 40 && faux.comptes.get(EM).user.user_metadata.orbite != null; i++) await ps.waitForTimeout(100);
+    assert(faux.comptes.get(EM).user.user_metadata.orbite == null, "métadonnées du compte vidées après la reprise");
     /* Activer : code QR, clé, premier code tapé (lu ici avec la même clé, comme l'application d'authentification). */
     await ps.goto(bl + "/espace/#compte?onglet=securite");
     await ps.waitForSelector("#activer-2fa", { state: "visible" });
@@ -4202,6 +4212,9 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     const aal1 = faux.jetonPour(EM).access_token;
     const statut = await ps.evaluate(async (a) => (await fetch(a.url + "/rest/v1/simulations?select=id", { headers: { apikey: "x", Authorization: "Bearer " + a.t } })).status, { url: SUPABASE, t: aal1 });
     assert(statut === 403, "données refusées sans le code : " + statut);
+    const lirePF = (t) => ps.evaluate(async (a) => (await fetch(a.url + "/rest/v1/profils_financiers?select=donnees", { headers: { apikey: "x", Authorization: "Bearer " + a.t } })).status, { url: SUPABASE, t });
+    assert(await lirePF(aal1) === 403, "profil financier refusé sans le code");
+    assert(await lirePF(faux.jetonPour(EM, "aal2").access_token) === 200, "profil financier lisible avec le code");
     /* Connexion : le code après le mot de passe ; un mauvais code refusé ; l'espace renvoie à l'étape du code. */
     await ps.click("#deconnexion");
     await ps.waitForURL(/connexion\.html/);

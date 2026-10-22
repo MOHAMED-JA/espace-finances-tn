@@ -75,6 +75,7 @@
     sortieVolontaire();
     return client.auth.signOut().catch(function () {}).then(function () {
       try { localStorage.removeItem(C.cleSession); } catch (e) {}
+      oublierProfils();
       location.replace("/connexion.html?au-revoir=1");
     });
   }
@@ -151,6 +152,7 @@
       sortieVolontaire();
       /* La photo de profil (espace privé) est effacée d'abord, puis le compte et toutes ses données. */
       return avatar.supprimer().catch(function () {}).then(function () { return client.rpc("supprimer_mon_compte"); }).then(verifier).then(function () {
+        oublierProfils();
         return client.auth.signOut({ scope: "local" }).catch(function () {});
       }, function (err) {
         document.documentElement.setAttribute("data-protege", "");
@@ -161,6 +163,60 @@
     preferences: function (donnees) { return client.auth.updateUser({ data: donnees }).then(verifier); },
     changerMotDePasse: function (mdp) {
       return client.auth.updateUser({ password: mdp }).then(verifier);
+    }
+  };
+
+  /* ---------- Profil financier (migration 0019) ----------
+   * Salaire, crédits, épargne… vivent dans la table profils_financiers : règles d'accès par compte et
+   * double authentification exigée côté serveur. Avant, ils étaient dans les métadonnées du compte
+   * (user_metadata.orbite), que le jeton de session transporte et qu'une session sans code pouvait lire.
+   * Ancien compte : le profil des métadonnées est repris, enregistré dans la table, puis effacé des métadonnées.
+   * Copie locale (cet appareil, ce compte) pour ouvrir Orbite hors connexion ; effacée à la déconnexion. */
+  var CLE_PROFIL = "ef-profil-";
+  function metaOrbite(u) { var m = (u && u.user_metadata) || {}; return m.orbite && typeof m.orbite === "object" ? m.orbite : null; }
+  function cacheProfil(u, donnees) {
+    try {
+      if (donnees) localStorage.setItem(CLE_PROFIL + u.id, JSON.stringify(donnees));
+      else localStorage.removeItem(CLE_PROFIL + u.id);
+    } catch (e) {}
+  }
+  function profilEnCache(u) { try { return JSON.parse(localStorage.getItem(CLE_PROFIL + u.id) || "null"); } catch (e) { return null; } }
+  function oublierProfils() {
+    try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf(CLE_PROFIL) === 0) localStorage.removeItem(k); }); } catch (e) {}
+  }
+  /* Table absente (base pas encore migrée) : on reste sur les métadonnées, sans rien casser. */
+  function tableAbsente(e) { return !!e && (e.code === "PGRST205" || e.code === "42P01" || /profils_financiers/.test(e.message || "") && /schema cache|does not exist/.test(e.message || "")); }
+  var profilFinancier = {
+    /* → { donnees, source } ; source : "table", "metadonnees" (à reprendre), "cache" (hors connexion), "ancien" (base pas encore migrée) ou "vide". */
+    lire: function (u) {
+      var ancien = metaOrbite(u);
+      if (horsLigne) return Promise.resolve({ donnees: profilEnCache(u) || ancien, source: "cache" });
+      return client.from("profils_financiers").select("donnees").maybeSingle().then(function (r) {
+        if (r.error) throw r.error;
+        if (r.data && r.data.donnees && typeof r.data.donnees === "object") {
+          cacheProfil(u, r.data.donnees);
+          /* Déjà repris (migration 0019 ou autre appareil) : la copie des métadonnées n'a plus lieu d'être. */
+          if (ancien) client.auth.updateUser({ data: { orbite: null } }).catch(function () {});
+          return { donnees: r.data.donnees, source: "table" };
+        }
+        return ancien ? { donnees: ancien, source: "metadonnees" } : { donnees: null, source: "vide" };
+      }).catch(function (err) {
+        if (estErreurReseau(err)) { horsLigne = true; return { donnees: profilEnCache(u) || ancien, source: "cache" }; }
+        if (tableAbsente(err)) return { donnees: ancien, source: "ancien" };
+        throw err;
+      });
+    },
+    enregistrer: function (u, donnees) {
+      cacheProfil(u, donnees);
+      return client.from("profils_financiers").upsert({ user_id: u.id, donnees: donnees }, { onConflict: "user_id" }).then(function (r) {
+        if (r.error && tableAbsente(r.error)) return client.auth.updateUser({ data: { orbite: donnees } }).then(verifier).then(function () { return "ancien"; });
+        return verifier(r);
+      }).then(function (etape) {
+        if (etape === "ancien") return null;
+        /* Reprise terminée : le profil quitte les métadonnées (et donc le jeton de session). */
+        if (!metaOrbite(u)) return null;
+        return client.auth.updateUser({ data: { orbite: null } }).then(function (r) { return r.data && r.data.user || null; }).catch(function () { return null; });
+      });
     }
   };
 
@@ -491,6 +547,7 @@
     objectifs: objectifs,
     consentements: consentements,
     estErreurReseau: estErreurReseau,
+    profilFinancier: profilFinancier,
     horsLigne: function () { return horsLigne || (typeof navigator !== "undefined" && navigator.onLine === false); },
     compterUsage: compterUsage,
     compte: compte,

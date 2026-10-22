@@ -43,6 +43,8 @@
   /* Connexion réussie : courte transition (planète, éclat, « Bienvenue Prénom »), puis l'espace s'ouvre. */
   function prenomDe(u) {
     var m = (u && u.user_metadata) || {}, o = m.orbite || {};
+    /* Le profil a quitté les métadonnées (migration 0019) : prénom repris de la copie locale de cet appareil. */
+    if (!o.prenom && u && u.id) { try { o = JSON.parse(localStorage.getItem("ef-profil-" + u.id) || "null") || {}; } catch (e) { o = {}; } }
     return String(o.prenom || (m.full_name || m.name || "").split(" ")[0] || "").slice(0, 40);
   }
   function entrer(u) {

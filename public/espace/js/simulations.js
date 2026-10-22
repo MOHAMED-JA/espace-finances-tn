@@ -375,8 +375,7 @@
     var b = this;
     b.setAttribute("aria-busy", "true"); b.disabled = true;
     E.compte.exporter().then(function (donnees) {
-      var u = window.Orbite.utilisateur();
-      donnees = Object.assign({}, donnees, { profil_orbite: (u && u.user_metadata && u.user_metadata.orbite) || (window.Orbite.profil() || null) });
+      donnees = Object.assign({}, donnees, { profil_orbite: window.Orbite.profil() || null });
       var blob = new Blob([JSON.stringify(donnees, null, 2)], { type: "application/json" });
       var a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
