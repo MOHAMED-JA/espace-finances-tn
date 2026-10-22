@@ -346,8 +346,18 @@
     if (o === "calendrier") rendreCalendrier(); else if (o === "comptes") { if (window.OrbiteComptes) window.OrbiteComptes.rendre(); }
     else if (o === "prevision" || o === "factures") { if (window.OrbitePilotage) window.OrbitePilotage.rendre(o); } else rendreBudget();
   }
+  /* Pour le fil du mois de l'accueil (fil-mois.js) : état du mois en cours et prochaines dates, mêmes calculs que cette page. */
+  function etatDuMois() {
+    var p = O.profil(); if (!p) return null;
+    var mt = new Date(), b = budgetProfil();
+    return B.etat({ net: revenu(), enveloppes: plan().enveloppes, depenses: b.mois[B.cleMois(mt)] || {}, maintenant: mt, jourPaie: p.jourPaie });
+  }
+  function prochains(n) {
+    var mt = new Date(), rs = rappels();
+    return K.prochains([evenementsDe(mt, rs), evenementsDe(new Date(mt.getFullYear(), mt.getMonth() + 1, 1), rs)], mt, n);
+  }
   /* Pour l'import du relevé (releve-import.js) : plan du mois et enregistrement avec « Annuler ». */
-  window.OrbiteBudget = { plan: plan, enregistrer: enregistrer };
+  window.OrbiteBudget = { plan: plan, enregistrer: enregistrer, etatDuMois: etatDuMois, prochains: prochains };
   doc.addEventListener("orbite:vue", function (e) {
     if (e.detail.vue !== "mois") return;
     ouvrirOnglet(e.detail.params.get("onglet") || ongletActif());

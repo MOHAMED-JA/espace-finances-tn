@@ -81,3 +81,21 @@ test("calendrier : grille du lundi au dimanche, fichier .ics valide", () => {
   assert.match(ics, /SUMMARY:Auto\\, prêt\\; test · 320\\,000 DT/);
   assert.match(ics, /END:VCALENDAR\r\n$/);
 });
+
+test("calendrier : prochaines dates du fil du mois (à partir d'aujourd'hui, triées, sans doublon, sens du montant)", () => {
+  const oct = K.evenements(PROFIL, 2026, 9, { maintenant: M, net: 2000 });
+  const nov = K.evenements(PROFIL, 2026, 10, { maintenant: M, net: 2000 });
+  const p = K.prochains([oct, nov, oct], M, 4);
+  assert.equal(p.length, 4);
+  assert.ok(p.every((e) => e.date >= "2026-10-12"), "rien avant aujourd'hui");
+  assert.deepEqual(p.map((e) => e.date), p.map((e) => e.date).slice().sort(), "dans l'ordre");
+  assert.equal(new Set(p.map((e) => e.date + e.type + e.libelle)).size, 4, "sans doublon");
+  assert.equal(p[0].date, "2026-10-15");
+  const paie = p.find((e) => e.type === "paie");
+  assert.ok(paie && paie.sens === "entree" && paie.date === "2026-10-25");
+  assert.ok(p.filter((e) => e.type === "credit").every((e) => e.sens === "sortie"));
+  assert.ok(K.prochains([oct], new Date("2026-10-25T08:00:00"), 3)[0].aujourdhui, "la date du jour est marquée");
+  assert.deepEqual(K.prochains([], M, 3), []);
+  assert.deepEqual(K.prochains([oct], M, 0), []);
+  assert.equal(K.prochains([[{ date: "2026-12-31", type: "fiscal", libelle: "Date limite", montant: null }]], M, 3)[0].sens, null);
+});

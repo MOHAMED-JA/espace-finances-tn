@@ -487,6 +487,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
   await etape("Mon orbite : satellites, fiche et voyage dans le temps", async () => {
     await page.goto(base + "/espace/#orbite");
     await page.waitForFunction(() => document.querySelectorAll("#ciel-satellites .satellite").length === 3);
+    assert(await page.isHidden("#fil-mois"), "fil du mois réservé au téléphone");
     assert(await page.$eval("#noyau-val", (e) => !!e.querySelector(".roule") && /DT$/.test(e.textContent.trim())), "net en chiffres qui roulent, texte exact");
     assert((await page.$$("#fiche-orbite [data-choisir]")).length === 3, "fiche : crédit, contrat et projet listés");
     assert(/Tranche d'impôt/.test(await page.textContent("#fiche-orbite .orbite-reperes")), "les trois repères dans la vue d'ensemble");
@@ -865,6 +866,36 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await pm.screenshot({ path: path.join(CAPTURES, "visite-mobile.png") });
     await pm.keyboard.press("Escape");
     await pm.waitForSelector(".visite", { state: "detached" });
+    /* Modèle D (22 oct. 2026) : barre flottante, pilule sous la rubrique active, fil du mois en tête de l'accueil. */
+    await pm.click('.onglets-bas a[data-vue="orbite"]');
+    await pm.waitForSelector("#vue-orbite:not([hidden])");
+    const barre = await pm.evaluate(() => { const r = document.querySelector(".onglets-bas").getBoundingClientRect(); return [r.left, r.right, r.bottom, r.height]; });
+    assert(barre[0] >= 10 && barre[1] <= 380 && barre[2] <= 834 && barre[3] === 64, "barre flottante détachée des bords : " + barre);
+    const sousPilule = async (vue) => pm.evaluate((v) => {
+      const p = document.querySelector(".onglets-bas__pilule").getBoundingClientRect(), a = document.querySelector('.onglets-bas a[data-vue="' + v + '"]').getBoundingClientRect();
+      return Math.abs((p.left + p.width / 2) - (a.left + a.width / 2)) < 3 && getComputedStyle(document.querySelector(".onglets-bas__pilule")).opacity === "1";
+    }, vue);
+    await pm.waitForTimeout(500);
+    assert(await sousPilule("orbite"), "pilule sous Orbite");
+    await pm.waitForSelector("#fil-mois:not([hidden])");
+    assert(/\d %$/.test(await pm.textContent("#fil-pct")), "part du budget dépensée");
+    assert(/DT$/.test(await pm.textContent("#fil-reste")) && (await pm.textContent("#fil-etat")).length > 5, "reste à vivre et état du mois");
+    assert((await pm.$$("#fil-liste li")).length >= 1, "prochaines dates ou message");
+    const resteAccueil = await pm.textContent("#fil-reste");
+    await pm.screenshot({ path: path.join(CAPTURES, "modele-d-accueil.png") });
+    await pm.click('.onglets-bas a[data-vue="salaire"]');
+    await pm.waitForSelector("#vue-salaire:not([hidden])");
+    await pm.waitForTimeout(500);
+    assert(await sousPilule("salaire"), "la pilule a glissé sous Salaire");
+    await pm.evaluate(() => { location.hash = "#mois?onglet=budget"; });
+    await pm.waitForSelector("#vue-mois:not([hidden])");
+    assert((await pm.textContent("#mo-reste")) === resteAccueil, "même reste à vivre que Mon mois");
+    await pm.waitForTimeout(700);
+    assert(await pm.evaluate(() => {
+      const p = document.querySelector(".onglets-bas__pilule").getBoundingClientRect(), m = document.getElementById("onglet-menu").getBoundingClientRect();
+      return Math.abs((p.left + p.width / 2) - (m.left + m.width / 2)) < 3 && getComputedStyle(document.querySelector(".onglets-bas__pilule")).opacity === "1";
+    }), "pilule sous Menu pour Mon mois");
+    await pm.screenshot({ path: path.join(CAPTURES, "modele-d-mois.png") });
     /* Le pointeur resté sur un message le met en pause : on l'écarte et on attend que les messages se ferment. */
     await pm.mouse.move(5, 5);
     await pm.waitForFunction(() => !document.querySelector(".toasts .toast"), null, { timeout: 10000 });
