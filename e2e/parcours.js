@@ -917,6 +917,18 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     const menu = await pm.evaluate(() => Object.fromEntries([...document.querySelectorAll(".menu-complet__ru")].map((r) => [r.querySelector(".menu-complet__nom").textContent, r.querySelectorAll(".menu-complet__puce").length])));
     assert(Object.keys(menu).length >= 12 && menu["Mon profil"] === 5 && menu["Crédit"] === 8 && menu["Vie & impôts"] === 4 && menu["Paramètres"] === 6 && menu["Mon orbite"] >= 4, "rubriques et sous-rubriques du menu : " + JSON.stringify(menu));
     assert(await pm.getAttribute("#onglet-menu", "aria-expanded") === "true", "onglet « Menu » ouvert");
+    /* Liste dépliante : rubriques repliées (sauf celle où l'on est), une seule ouverte à la fois, sous-rubriques en colonne. */
+    assert(await pm.evaluate(() => document.querySelectorAll(".menu-complet__ru--ouverte").length) <= 1, "au plus une rubrique dépliée à l'ouverture");
+    assert(await pm.$eval('.menu-complet__lien[data-ru="vie"]', (b) => b.getAttribute("aria-expanded") === "false"), "Vie & impôts repliée");
+    await pm.tap('.menu-complet__lien[data-ru="credit"]');
+    await pm.waitForTimeout(450);
+    await pm.tap('.menu-complet__lien[data-ru="vie"]');
+    await pm.waitForTimeout(450);
+    assert(await pm.evaluate(() => [...document.querySelectorAll(".menu-complet__ru--ouverte")].map((r) => r.getAttribute("data-ru")).join() === "vie"), "seule Vie & impôts est dépliée");
+    assert(await pm.$eval('.menu-complet__lien[data-ru="vie"]', (b) => b.getAttribute("aria-expanded") === "true"), "état déplié annoncé");
+    const colonne = await pm.$$eval('.menu-complet__ru[data-ru="vie"] .menu-complet__puce', (as) => as.map((a) => Math.round(a.getBoundingClientRect().left)));
+    assert(colonne.length === 4 && new Set(colonne).size === 1, "sous-rubriques alignées en colonne : " + colonne);
+    assert(await pm.$eval('.menu-complet__ru[data-ru="credit"] .menu-complet__tiroir', (t) => t.hasAttribute("inert")), "rubrique repliée inaccessible au clavier");
     await pm.screenshot({ path: path.join(CAPTURES, "menu-complet-telephone.png") });
     await pm.tap('.menu-complet__puce[href="#vie?onglet=decider"]');
     await pm.waitForSelector("#vue-vie:not([hidden])");
@@ -926,6 +938,10 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await pm.tap("#menu-ouvrir");
     await pm.waitForSelector("#dlg-menu[open]");
     assert(await pm.$eval('.menu-complet__ru--ici .menu-complet__nom', (n) => n.textContent === "Vie & impôts") && await pm.$eval('.menu-complet__ru--ici .menu-complet__puce[aria-current="true"]', (a) => a.textContent === "Décider"), "rubrique et sous-rubrique en cours marquées");
+    assert(await pm.$eval(".menu-complet__ru--ici", (r) => r.classList.contains("menu-complet__ru--ouverte")), "la rubrique en cours est dépliée d'office");
+    assert(await pm.evaluate(() => { const t = document.querySelector(".menu-complet__ru--ici > .menu-complet__lien").getBoundingClientRect(), l = document.getElementById("menu-liste").getBoundingClientRect(); return t.top >= l.top - 1 && t.bottom <= l.bottom; }), "titre de la rubrique en cours visible à l'ouverture");
+    await pm.waitForTimeout(400);
+    await pm.screenshot({ path: path.join(CAPTURES, "menu-complet-ici.png") });
     await pm.keyboard.press("Escape");
     await pm.waitForSelector("#dlg-menu:not([open])", { state: "attached" });
     /* Installer Orbite (gratuit, sans boutique) : carte dans Mon orbite et en haut du Menu, guide en 3 gestes, invitation du navigateur. */
@@ -952,7 +968,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await pm.waitForSelector("#installer-orbite[hidden]", { state: "attached" });
     assert(await pm.evaluate(() => Number(localStorage.getItem("ef-installer-plus-tard")) > 0), "« Plus tard » retenu sur l'appareil");
     for (const vue of ["orbite", "salaire", "epargne", "credit", "profil"]) {
-      if (vue === "profil") { await pm.tap("#onglet-menu"); await pm.waitForSelector("#dlg-menu[open]"); await pm.tap('.menu-complet__lien[href="#profil"]'); }
+      if (vue === "profil") { await pm.tap("#onglet-menu"); await pm.waitForSelector("#dlg-menu[open]"); await pm.tap('.menu-complet__lien[data-ru="profil"]'); await pm.waitForTimeout(450); await pm.tap('.menu-complet__ru[data-ru="profil"] li:first-child .menu-complet__puce'); }
       else await pm.tap('.onglets-bas a[data-vue="' + vue + '"]');
       await pm.waitForSelector("#vue-" + vue + ":not([hidden])");
       await pm.waitForTimeout(300);

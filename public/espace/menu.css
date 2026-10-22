@@ -39,22 +39,46 @@ dialog.menu-complet[open] { display: flex; flex-direction: column; animation: me
 .menu-complet__recherche kbd { font: 600 11.5px var(--mono, ui-monospace, monospace); padding: 2px 7px; border-radius: 6px; background: var(--surface); border: 1px solid var(--filet); color: var(--encre-3); }
 
 .menu-complet__liste { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 0 16px 24px; }
-.menu-complet__groupe { margin: 16px 4px 6px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--encre-3); }
-.menu-complet__ru { margin-bottom: 8px; border: 1px solid var(--filet); border-radius: 16px; background: var(--surface); }
-.menu-complet__ru--ici { border-color: var(--salaire); background: linear-gradient(180deg, color-mix(in srgb, var(--salaire) 10%, var(--surface)), var(--surface) 70%); }
-.menu-complet__lien { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 12px; border-radius: 15px; color: var(--encre); text-decoration: none; font-weight: 650; font-size: 16px; }
-.menu-complet__lien:focus-visible, .menu-complet__puce:focus-visible { outline: 2px solid var(--encre); outline-offset: 2px; }
+/* Liste dépliante (22 oct. 2026) : blocs groupés, une ligne courte par rubrique, une seule rubrique dépliée. */
+.menu-complet__groupe { margin: 18px 6px 8px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--encre-3); }
+.menu-complet__bloc { margin-top: 10px; border: 1px solid var(--filet); border-radius: 18px; background: var(--surface); overflow: hidden; }
+.menu-complet__groupe + .menu-complet__bloc { margin-top: 0; }
+.menu-complet__ru + .menu-complet__ru { border-top: 1px solid var(--filet); }
+.menu-complet__lien { width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 14px; border: 0; background: none; color: var(--encre); text-decoration: none; text-align: left; font: inherit; font-weight: 650; font-size: 16px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background-color 160ms ease; }
+.menu-complet__lien:active { background: var(--surface-2); }
+.menu-complet__lien:focus-visible, .menu-complet__puce:focus-visible { outline: 2px solid var(--encre); outline-offset: -2px; }
 .menu-complet__ico { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 10px; background: var(--surface-2); color: var(--encre-2); }
 .menu-complet__ico svg { width: 19px; height: 19px; }
 .menu-complet__ru[data-module="salaire"] .menu-complet__ico { color: var(--salaire-t); }
 .menu-complet__ru[data-module="epargne"] .menu-complet__ico { color: var(--epargne-t); }
 .menu-complet__ru[data-module="credit"] .menu-complet__ico { color: var(--credit-t); }
-.menu-complet__ru--ici .menu-complet__ico { background: var(--salaire); color: #04140C; }
+.menu-complet__ru--ici .menu-complet__ico { background: var(--encre); color: var(--surface); }
 .menu-complet__nom { flex: 1; min-width: 0; }
 .menu-complet__ici { font-size: 12px; font-weight: 700; color: var(--salaire-t); white-space: nowrap; }
 .menu-complet__badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--alerte-doux); color: var(--alerte); white-space: nowrap; }
-.menu-complet__sous { list-style: none; margin: 0; padding: 0 12px 12px 58px; display: flex; flex-wrap: wrap; gap: 6px; }
-.menu-complet__puce { display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px; border-radius: 999px; background: var(--surface-2); color: var(--encre-2); text-decoration: none; font-size: 14px; font-weight: 600; transition: background-color 160ms ease, color 160ms ease; }
-.menu-complet__puce:hover { color: var(--encre); }
-.menu-complet__puce[aria-current="true"] { background: var(--encre); color: var(--surface); }
-@media (max-width: 360px) { .menu-complet__sous { padding-left: 12px; } }
+.menu-complet__compte { min-width: 24px; height: 24px; padding: 0 7px; box-sizing: border-box; display: grid; place-items: center; border-radius: 999px; background: var(--surface-2); color: var(--encre-3); font: 650 12px/1 var(--mono, ui-monospace, monospace); }
+.menu-complet__ru--ici .menu-complet__compte { display: none; }
+.menu-complet__chevron { width: 18px; height: 18px; flex: none; color: var(--encre-3); transition: transform 300ms var(--sortie); }
+a.menu-complet__lien .menu-complet__chevron { display: none; }
+.menu-complet__ru--ouverte .menu-complet__chevron { transform: rotate(180deg); color: var(--encre); }
+.menu-complet__ru--ouverte > .menu-complet__lien { background: color-mix(in srgb, var(--surface-2) 60%, var(--surface)); }
+
+/* Tiroir : hauteur animée (grille 0fr → 1fr), sous-rubriques en liste verticale sur un fil, partie en cours repérée. */
+.menu-complet__tiroir { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 340ms var(--sortie); }
+.menu-complet__ru--ouverte > .menu-complet__tiroir { grid-template-rows: 1fr; }
+.menu-complet__sous { position: relative; min-height: 0; overflow: hidden; list-style: none; margin: 0; padding: 0 14px 0 60px; display: grid; }
+.menu-complet__ru--ouverte .menu-complet__sous { padding-top: 2px; padding-bottom: 10px; }
+.menu-complet__sous::before { content: ""; position: absolute; left: 30px; top: 6px; bottom: 14px; width: 2px; border-radius: 2px; background: var(--filet); }
+.menu-complet__puce { position: relative; display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 12px; color: var(--encre-2); text-decoration: none; font-size: 15px; font-weight: 600; opacity: 0; transform: translateY(-4px); transition: background-color 160ms ease, color 160ms ease, opacity 220ms ease, transform 300ms var(--sortie); }
+.menu-complet__ru--ouverte .menu-complet__puce { opacity: 1; transform: none; }
+.menu-complet__ru--ouverte li:nth-child(2) .menu-complet__puce { transition-delay: 30ms; }
+.menu-complet__ru--ouverte li:nth-child(3) .menu-complet__puce { transition-delay: 60ms; }
+.menu-complet__ru--ouverte li:nth-child(4) .menu-complet__puce { transition-delay: 90ms; }
+.menu-complet__ru--ouverte li:nth-child(n+5) .menu-complet__puce { transition-delay: 120ms; }
+.menu-complet__puce:active { background: var(--surface-2); }
+.menu-complet__puce[aria-current="true"] { color: var(--encre); font-weight: 700; background: var(--surface-2); }
+.menu-complet__puce[aria-current="true"]::before { content: ""; position: absolute; left: -32px; top: 50%; width: 6px; height: 22px; margin-top: -11px; border-radius: 3px; background: var(--encre); }
+.menu-complet__ru[data-module="salaire"] .menu-complet__puce[aria-current="true"]::before { background: var(--salaire); }
+.menu-complet__ru[data-module="epargne"] .menu-complet__puce[aria-current="true"]::before { background: var(--epargne); }
+.menu-complet__ru[data-module="credit"] .menu-complet__puce[aria-current="true"]::before { background: var(--credit); }
+@media (prefers-reduced-motion: reduce) { .menu-complet__tiroir, .menu-complet__puce, .menu-complet__chevron { transition: none; } }
