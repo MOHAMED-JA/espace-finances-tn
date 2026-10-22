@@ -2225,3 +2225,11 @@ Quatre modèles de navigation animée montrés sur une page de maquettes interac
 - Sous-rubriques : inchangées, leurs pastilles avaient déjà la pastille qui glisse du modèle.
 - e2e « mobile » : barre détachée des bords, pilule centrée sous Orbite, Salaire puis Menu, fil du mois rempli et **même reste à vivre que Mon mois** ; « Mon orbite » (ordinateur) : fil du mois caché. Captures `modele-d-accueil.png`, `modele-d-mois.png`.
 - SW `orbite-2026-10-22b`, nouveautés « 2026-10-22b » (barre, fil du mois, protection du profil).
+
+## 3 centseptdecemquintricies. Menu du téléphone en liste dépliante (22 oct.)
+
+Retour d'un utilisateur (captures sur téléphone, thème sombre) : sous-rubriques difficiles à trouver, affichage jugé laid. Le menu montrait ~15 grandes cartes avec toutes les pastilles de sous-rubriques ouvertes, sur 4 à 5 écrans, en lignes de longueurs inégales. Trois propositions ; choix : **liste dépliante**.
+- `menu-complet.js` : rubriques en **blocs groupés** (un bloc par liste de la barre latérale, titres de groupe conservés), **une ligne de 56 px** par rubrique (icône, nom, badge, « Vous êtes ici », nombre de sous-rubriques, chevron). Une rubrique à sous-rubriques est un `<button aria-expanded aria-controls>` qui **déplie son tiroir** ; **une seule ouverte à la fois** ; la rubrique en cours est dépliée d'office et son titre amené en haut de la liste (positions mesurées par `getBoundingClientRect`, pas `offsetTop` faussé par les blocs). Rubrique sans sous-rubriques : lien direct. Tiroir replié en `inert` (rien d'atteignable au clavier). Ouvrir une rubrique en bas de l'écran la fait remonter.
+- `menu.css` : tiroir animé (grille 0fr → 1fr), sous-rubriques **en colonne** sur un fil vertical (44 px de haut), partie en cours en gras avec un trait de la couleur du module, entrée échelonnée, chevron qui pivote ; tout coupé avec « réduire les animations ».
+- e2e « mobile » : au plus une rubrique dépliée, Crédit puis Vie & impôts (Crédit se replie), sous-rubriques alignées, tiroir replié `inert`, rubrique en cours dépliée et titre visible ; Mon profil ouvert par sa rubrique puis « Vous ». Captures `menu-complet-telephone.png`, `menu-complet-ici.png`.
+- SW `orbite-2026-10-22c`, nouveautés « 2026-10-22c » (point « Un menu plus clair sur téléphone » ajouté).
