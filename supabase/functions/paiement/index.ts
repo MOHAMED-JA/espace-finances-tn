@@ -24,6 +24,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { passerelle, nouvelleReference, REFERENCE_VALIDE } from "./passerelles.js";
 import { formuleDe, JETON_VALIDE, lireCompte, jetonAcces, lireAchat, etatAchat, consommer, empreinte } from "./play.js";
+import { mfaManquante, MESSAGE_MFA } from "./mfa.js";
 
 const env = Deno.env.toObject();
 env.URL_APPLICATION = (env.URL_APPLICATION || "https://espace-finances-tn.jaouadimohamedaziz.workers.dev").replace(/\/+$/, "");
@@ -51,8 +52,11 @@ function repondre(req: Request, corps: unknown, statut = 200) {
   return new Response(JSON.stringify(corps), { status: statut, headers: entetes(req) });
 }
 
+function jetonDe(req: Request) {
+  return (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+}
 async function utilisateur(req: Request) {
-  const jeton = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+  const jeton = jetonDe(req);
   if (!jeton) return null;
   const { data, error } = await admin.auth.getUser(jeton);
   return error || !data.user ? null : data.user;
@@ -177,6 +181,8 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return repondre(req, { erreur: "Méthode non autorisée" }, 405);
   const u = await utilisateur(req);
   if (!u) return repondre(req, { erreur: "Connexion requise" }, 401);
+  /* Double authentification : une session sans le code n'accède ni aux commandes ni aux achats. */
+  if (mfaManquante(jetonDe(req), u)) return repondre(req, { erreur: MESSAGE_MFA, code: "mfa" }, 403);
   let corps: Record<string, any>;
   try { corps = await req.json(); } catch { return repondre(req, { erreur: "Requête invalide" }, 400); }
 

@@ -19,6 +19,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import Anthropic from "npm:@anthropic-ai/sdk";
 import { SYSTEME, nettoyer, messages, reponseTexte, messagesChat, choisirModeleCF, texteCloudflare, MODELES_CF_SECOURS } from "./regles.js";
+import { mfaManquante, MESSAGE_MFA } from "./mfa.js";
 
 const env = Deno.env.toObject();
 const URL_APPLICATION = (env.URL_APPLICATION || "https://espace-finances-tn.jaouadimohamedaziz.workers.dev").replace(/\/+$/, "");
@@ -97,6 +98,7 @@ Deno.serve(async (req) => {
   const { data: u } = jeton ? await admin.auth.getUser(jeton) : { data: null };
   const user = u && u.user;
   if (!user) return repondre(req, { erreur: "Connexion requise" }, 401);
+  if (mfaManquante(jeton, user)) return repondre(req, { erreur: MESSAGE_MFA, code: "mfa" }, 403);
   /* Réponse 200 : état normal tant que la clé n'est pas configurée. */
   if (!claude && !CF) return repondre(req, { erreur: "L'Assistant Orbite arrive très bientôt.", code: "bientot" });
   if (!(await accesActif(user.id))) return repondre(req, { erreur: "L'Assistant est inclus dans l'abonnement : choisissez une formule pour l'utiliser.", code: "abonnement" });

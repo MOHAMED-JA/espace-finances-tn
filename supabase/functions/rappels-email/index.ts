@@ -17,6 +17,7 @@
  */
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { aEnvoyer, email, confirmation, adresses } from "./gabarit.js";
+import { mfaManquante, MESSAGE_MFA } from "./mfa.js";
 
 const env = Deno.env.toObject();
 const APP = (env.URL_APPLICATION || "https://espace-finances-tn.jaouadimohamedaziz.workers.dev").replace(/\/+$/, "");
@@ -119,6 +120,7 @@ Deno.serve(async (req) => {
       const jeton = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
       const { data: u, error } = jeton ? await admin.auth.getUser(jeton) : { data: { user: null }, error: true };
       if (error || !u.user) return repondre(req, { erreur: "Connexion requise" }, 401);
+      if (mfaManquante(jeton, u.user)) return repondre(req, { erreur: MESSAGE_MFA, code: "mfa" }, 403);
       const { data } = await admin.rpc("rappels_destinataires", { p_user: u.user.id });
       const d = ((data || []) as Record<string, any>[])[0];
       if (!d) return repondre(req, { envoye: false, raison: "inactif" });

@@ -22,6 +22,7 @@ function totp(secret, decalage) {
 
 function creer() {
   const comptes = new Map();   // email -> { user, mdp }
+  const profilsF = new Map();  // user id -> { donnees, maj_le } (table profils_financiers, migration 0019)
   const jetons = new Map();    // access_token -> user id
   const rafraich = new Map();  // refresh_token -> user id
   let simulations = [];
@@ -63,7 +64,16 @@ function creer() {
     return rappelsEmail.get(id);
   }
   const etatRappels = (r) => ({ desinscrit_le: r.desinscrit_le, adresse_confirmee: r.adresse_confirmee, confirmation_adresse: r.confirmation_adresse, confirmation_envoyee_le: r.confirmation_envoyee_le });
-  function metaRappels(id, v) { const c = compteParId(id); if (c && c.user.user_metadata && c.user.user_metadata.orbite) c.user.user_metadata.orbite.rappelsEmail = v; }
+  /* Profil financier : la table profils_financiers d'abord, les métadonnées du compte (anciens comptes) à défaut. */
+  function profilDe(id) {
+    if (profilsF.has(id)) return profilsF.get(id).donnees;
+    const c = compteParId(id), o = c && (c.user.user_metadata || {}).orbite;
+    return o && typeof o === "object" ? o : {};
+  }
+  function metaRappels(id, v) {
+    if (profilsF.has(id)) profilsF.get(id).donnees.rappelsEmail = v;
+    const c = compteParId(id); if (c && c.user.user_metadata && c.user.user_metadata.orbite) c.user.user_metadata.orbite.rappelsEmail = v;
+  }
   /* Codes promo et parrainage (migration 0007) : même règles que prix_formule / activer_paiement. */
   const codes = new Map();       // code -> { code, libelle, remise_pct, formules, fin, max_utilisations, utilisations, automatique, actif }
   const parrains = new Map();    // user id -> code
@@ -300,7 +310,7 @@ function creer() {
       const ent = [...rappelsEmail.entries()].find(([, r]) => (nom === "rappels_confirmer_adresse" ? r.confirmation_jeton : r.jeton) === corps.p_jeton);
       if (!ent) return repondre(route, 200, { ok: false });
       const [id, r] = ent;
-      if (nom === "rappels_desinscrire") { r.desinscrit_le = r.desinscrit_le || new Date().toISOString(); metaRappels(id, false); const o = (compteParId(id).user.user_metadata || {}).orbite || {}; return repondre(route, 200, { ok: true, prenom: o.prenom || "" }); }
+      if (nom === "rappels_desinscrire") { r.desinscrit_le = r.desinscrit_le || new Date().toISOString(); metaRappels(id, false); const o = profilDe(id); return repondre(route, 200, { ok: true, prenom: o.prenom || "" }); }
       if (nom === "rappels_reabonner") { r.desinscrit_le = null; metaRappels(id, true); return repondre(route, 200, { ok: true }); }
       r.adresse_confirmee = r.confirmation_adresse; r.confirmation_adresse = null; r.confirmation_jeton = null;
       return repondre(route, 200, { ok: true, adresse: r.adresse_confirmee });
@@ -324,7 +334,7 @@ function creer() {
     if (url.pathname === "/functions/v1/rappels-email") {
       if (!u) return repondre(route, 401, { erreur: "Connexion requise" });
       if (corps.action !== "confirmation") return repondre(route, 400, { erreur: "Action inconnue" });
-      const o = ((compteParId(u.id).user.user_metadata || {}).orbite) || {}, r = ligneRappels(u.id), c = String(o.emailContact || "").toLowerCase();
+      const o = profilDe(u.id), r = ligneRappels(u.id), c = String(o.emailContact || "").toLowerCase();
       if (!o.rappelsEmail || r.desinscrit_le) return repondre(route, 200, { envoye: false, raison: "inactif" });
       if (!c || c === u.email.toLowerCase() || c === r.adresse_confirmee) return repondre(route, 200, { envoye: false, raison: "deja" });
       if (r.confirmation_envoyee_le && Date.now() - Date.parse(r.confirmation_envoyee_le) < 3600000) return repondre(route, 200, { envoye: false, raison: "limite", adresse: c });
@@ -450,6 +460,22 @@ function creer() {
       }
       return repondre(route, 403, { code: "42501", message: "permission denied for table consentements" });
     }
+    if (url.pathname === "/rest/v1/profils_financiers") {
+      const l = profilsF.get(u.id);
+      if (methode === "GET") {
+        const vue = l ? { donnees: l.donnees, maj_le: l.maj_le } : null;
+        if (unique(req)) return vue ? repondre(route, 200, vue) : repondre(route, 406, { code: "PGRST116", message: "JSON object requested, multiple (or no) rows returned" });
+        return repondre(route, 200, vue ? [vue] : []);
+      }
+      if (methode === "POST") {
+        const ligne = Array.isArray(corps) ? corps[0] : corps;
+        if (!ligne || ligne.user_id !== u.id) return repondre(route, 403, { code: "42501", message: "new row violates row-level security policy for table \"profils_financiers\"" });
+        if (!ligne.donnees || typeof ligne.donnees !== "object" || Array.isArray(ligne.donnees)) return repondre(route, 400, { code: "23514", message: "check constraint" });
+        profilsF.set(u.id, { donnees: JSON.parse(JSON.stringify(ligne.donnees)), maj_le: new Date().toISOString() });
+        return repondre(route, 201);
+      }
+      return repondre(route, 403, { code: "42501", message: "permission denied for table profils_financiers" });
+    }
     if (url.pathname === "/rest/v1/profils") {
       const p = profils.get(u.id);
       if (methode === "GET") return unique(req) ? repondre(route, 200, p) : repondre(route, 200, [p]);
@@ -492,7 +518,7 @@ function creer() {
     if (url.pathname === "/rest/v1/rpc/compter_usage") { const k = corps.p_type + ":" + corps.p_cle; usage.set(k, (usage.get(k) || 0) + 1); return repondre(route, 204); }
     /* ---------- Mode conseiller (comme la migration 0018) ---------- */
     const tC = (req.headers()["authorization"] || "").replace(/^Bearer\s+/i, "");
-    const nomClient = (id) => { const o = ((compteParId(id) || {}).user || {}).user_metadata || {}; const p = o.orbite || {}; return ((p.prenom || "") + " " + (p.nom ? p.nom.charAt(0) + "." : "")).trim() || "Client"; };
+    const nomClient = (id) => { const p = profilDe(id); return ((p.prenom || "") + " " + (p.nom ? p.nom.charAt(0) + "." : "")).trim() || "Client"; };
     const etatPartageC = (id) => [...partagesC.entries()].filter(([k]) => k.split("|")[0] === id).map(([k, le]) => { const c = k.split("|")[1], l = consultationsC.filter((x) => x.client === id && x.conseiller === c).map((x) => x.le).reverse();
       return { conseiller: c, nom: conseillers.get(c).nom, accorde_le: le, consultations: l.length, dernieres: l.slice(0, 20) }; });
     const refusC = () => { if (!conseillers.has(u.id)) return repondre(route, 403, { code: "42501", message: "Réservé aux conseillers" }); if (aalJeton.get(tC) !== "aal2") return repondre(route, 403, { code: "42501", message: "Double authentification requise" }); return null; };
@@ -522,7 +548,7 @@ function creer() {
       const r = refusC(); if (r) return r;
       const l = [...partagesC.entries()].filter(([k]) => k.split("|")[1] === u.id).map(([k, le]) => { const id = k.split("|")[0];
         consultationsC.push({ client: id, conseiller: u.id, le: new Date().toISOString() });
-        return { id, nom: nomClient(id), accorde_le: le, profil: (compteParId(id).user.user_metadata || {}).orbite || {} }; });
+        return { id, nom: nomClient(id), accorde_le: le, profil: profilDe(id) }; });
       return repondre(route, 200, l);
     }
     if (url.pathname.indexOf("/rest/v1/rpc/admin_") === 0 && !admins.has(u.id)) return repondre(route, 403, { code: "42501", message: "Réservé à l'administrateur" });
@@ -543,20 +569,20 @@ function creer() {
         essais_termines: 0, convertis: 0, desabonnes: 0, inscriptions_30j: [{ jour: new Date().toISOString().slice(0, 10), n }], utilisateurs: liste, alertes_non_lues: alertes.filter((a) => !a.lue).length });
     }
     if (url.pathname === "/rest/v1/rpc/admin_contacts") {
-      return repondre(route, 200, [...comptes.values()].map((x) => x.user).filter((c) => ((c.user_metadata || {}).orbite || {}).contactOk === true).map((c) => {
-        const o = c.user_metadata.orbite;
+      return repondre(route, 200, [...comptes.values()].map((x) => x.user).filter((c) => profilDe(c.id).contactOk === true).map((c) => {
+        const o = profilDe(c.id);
         return { id: c.id, nom: ((o.prenom || "") + " " + (o.nom || "")).trim(), nom_compte: c.user_metadata.nom || "", email: o.emailContact || c.email, telephone: o.telephone || null, accorde_le: o.contactOkLe || null, rappels_email: o.rappelsEmail === true };
       }));
     }
     if (url.pathname === "/rest/v1/rpc/admin_fiches") {
-      return repondre(route, 200, [...partages.keys()].map((id) => { const c = compteParId(id).user, o = (c.user_metadata || {}).orbite || {};
+      return repondre(route, 200, [...partages.keys()].map((id) => { const c = compteParId(id).user, o = profilDe(id);
         return { id, email: c.email, accorde_le: partages.get(id), nom: ((o.prenom || "") + " " + (o.nom || "")).trim(), nom_compte: (c.user_metadata || {}).nom || "" }; }));
     }
     if (url.pathname === "/rest/v1/rpc/admin_fiche") {
       if (!partages.has(corps.p_user)) return repondre(route, 403, { code: "42501", message: "Ce compte n'a pas donné son accord" });
       const c = compteParId(corps.p_user).user;
       consultations.push({ user_id: corps.p_user, consulte_le: new Date().toISOString() });
-      return repondre(route, 200, { id: c.id, email: c.email, inscrit_le: c.created_at, derniere_connexion: c.last_sign_in_at || c.created_at, accorde_le: partages.get(c.id), profil: (c.user_metadata || {}).orbite || {} });
+      return repondre(route, 200, { id: c.id, email: c.email, inscrit_le: c.created_at, derniere_connexion: c.last_sign_in_at || c.created_at, accorde_le: partages.get(c.id), profil: profilDe(c.id) });
     }
     if (url.pathname === "/rest/v1/rpc/admin_alertes_liste") return repondre(route, 200, alertes);
     /* Accès offert à vie (migration 0014) : retirer remet l'essai ou l'abonnement payé tel quel. */
@@ -620,6 +646,11 @@ function creer() {
   return {
     gerer,
     ajouterCompte,
+    /* Profil financier tel que le serveur le voit (table, sinon métadonnées d'un ancien compte). */
+    profil(email) { return profilDe(comptes.get(email).user.id); },
+    /* Comme la reprise de la migration 0019 : copie du profil des métadonnées dans la table (métadonnées gardées). */
+    reprise0019(email) { const u = comptes.get(email).user; if (u.user_metadata.orbite && !profilsF.has(u.id)) profilsF.set(u.id, { user_id: u.id, donnees: JSON.parse(JSON.stringify(u.user_metadata.orbite)), maj_le: new Date().toISOString() }); },
+    profilEnTable(email) { const l = profilsF.get(comptes.get(email).user.id); return l ? l.donnees : null; },
     simulations: () => simulations,
     objectifs: () => objectifs,
     versementsObjectifs: () => versementsObj,
@@ -652,7 +683,7 @@ function creer() {
     confirmationsEnvoyees: () => confirmationsEnvoyees,
     comptes,
     journal,
-    jetonPour(email) { return jeton(comptes.get(email).user); },
+    jetonPour(email, aal) { return jeton(comptes.get(email).user, aal); },
     /* Code à 6 chiffres actuel pour une clé (la personne qui lit son application d'authentification). */
     totp
   };

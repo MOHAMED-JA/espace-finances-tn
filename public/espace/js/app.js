@@ -141,7 +141,6 @@
   var utilisateur = null, profil = null, choix = { epargne: "equilibree" }, synthese = null, abonnes = [];
   var etatEnr = $("etat-enregistrement"), minuterieProfil = null, profilVierge = true;
 
-  function metaProfil(u) { var m = (u && u.user_metadata) || {}; return m.orbite && typeof m.orbite === "object" ? m.orbite : null; }
   function recalculer() {
     /* Date de naissance obligatoire : sans elle, la capacité d'emprunt (qui dépend de l'âge) reste masquée. */
     doc.body.classList.toggle("sans-naissance", !!profil && !profil.dateNaissance);
@@ -222,10 +221,13 @@
     if (e === "ok") minuterieTemoin = setTimeout(function () { temoin("ancien"); }, 3000);
     else if (e === "ancien") minuterieTemoin = setTimeout(function () { temoin("ancien"); }, 30000);
   }
+  var profilLectureEchouee = false;
   function sauverProfil() {
+    /* Profil non relu au démarrage : rien n'est envoyé, pour ne jamais écraser celui du serveur. */
+    if (profilLectureEchouee) { temoin("erreur"); return; }
     temoin("envoi");
-    E.client.auth.updateUser({ data: { orbite: Object.assign({ v: 1 }, profil) } }).then(function (r) {
-      if (r.error) throw r.error;
+    E.profilFinancier.enregistrer(utilisateur, Object.assign({ v: 1 }, profil)).then(function (u) {
+      if (u) utilisateur = u;
       temoin("ok");
     }).catch(function (err) {
       /* Hors connexion : le profil reste sur l'appareil et part dès le retour du réseau. */
@@ -796,8 +798,17 @@
   /* ---------- Démarrage ---------- */
   majTheme();
   E.exigerConnexion().then(function (u) {
+    if (!u) return { u: u, r: { donnees: null, source: "vide" } };
+    return E.profilFinancier.lire(u).then(function (r) { return { u: u, r: r }; }, function (err) {
+      /* Lecture refusée (réseau capricieux, droits) : Orbite s'ouvre quand même, sans écraser le profil enregistré. */
+      if (window.console) console.error(err);
+      E.toast("Profil momentanément illisible", { erreur: true, detail: M.messageErreur(err), action: { libelle: "Recharger", fn: function () { location.reload(); } } });
+      return { u: u, r: { donnees: null, source: "erreur" } };
+    });
+  }).then(function (o) {
+    var u = o.u, p = o.r.donnees && typeof o.r.donnees === "object" ? o.r.donnees : null;
     utilisateur = u;
-    var p = metaProfil(u);
+    profilLectureEchouee = o.r.source === "erreur";
     profilVierge = !p;
     profil = OC.normaliser(p || {});
     /* Hausse de salaire datée arrivée à son mois : le profil passe au nouveau salaire. */
@@ -806,6 +817,8 @@
       profil = OC.normaliser(hs.profil);
       setTimeout(function () { sauverProfil(); E.toast("Votre salaire de " + F.saisie(hs.entree.montant) + " DT " + hs.entree.sens + " s'applique depuis " + MOIS_NOMS[hs.entree.mois - 1] + " " + hs.entree.annee + " : Orbite est à jour."); }, 800);
     }
+    /* Ancien compte : le profil passe des métadonnées du compte à la table protégée. */
+    if (p && o.r.source === "metadonnees") setTimeout(sauverProfil, 0);
     recalculer();
     remplirUtilisateur();
     rafraichirAvatar();
