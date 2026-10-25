@@ -179,7 +179,7 @@
     if (phrase && q.trim().length <= 200) {
       var question = q.trim();
       trouves.push({ id: "q", groupe: "Assistant", titre: "Demander à l'Assistant : « " + question + " »", sous: "Réponse calculée sur vos chiffres", teinte: "orbite", fin: "Entrée", brut: true,
-        faire: function () { location.hash = "#assistant?q=" + encodeURIComponent(question); } });
+        faire: function () { try { sessionStorage.setItem("ef-assistant-envoyer", question); } catch (e) {} location.hash = "#assistant?q=" + encodeURIComponent(question); } });
     }
     return trouves;
   }

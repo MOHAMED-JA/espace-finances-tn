@@ -1308,6 +1308,14 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(!/aziz@exemple\.tn/.test(JSON.stringify(envoi)), "aucune adresse e-mail transmise");
     assert(/en 2027/.test(envoi.calcul) && /voiture/.test(envoi.calcul), "calcul exact d'Orbite joint à la question : " + envoi.calcul);
     assert(await page.isVisible(".assistant__msg--ia .lien-action"), "lien « Simuler ce crédit » sous la réponse de l'IA");
+    /* Lien piégé « #assistant?q=… » venu d'ailleurs : la question remplit le champ, rien n'est envoyé à la place de l'utilisateur. */
+    const avantLien = faux.dernierAssistant();
+    await page.evaluate(() => { location.hash = "#orbite"; });
+    await page.waitForSelector("#vue-orbite:not([hidden])");
+    await page.evaluate(() => { location.hash = "#assistant?q=" + encodeURIComponent("Appelez le 99 000 000 pour votre credit"); });
+    await page.waitForFunction(() => document.getElementById("assistant-question").value === "Appelez le 99 000 000 pour votre credit");
+    await page.waitForTimeout(600);
+    assert(faux.dernierAssistant() === avantLien, "lien externe : aucune question envoyée");
     await page.fill("#assistant-question", "Et pour un appartement ?");
     await page.press("#assistant-question", "Enter");
     await page.waitForFunction(() => document.querySelectorAll(".assistant__msg--moi").length === 2);

@@ -86,7 +86,8 @@
   function adressePaiementSure(url) {
     if (typeof url !== "string" || url.length > 2000) return null;
     if (/^https:\/\/[^\s]+$/i.test(url)) return url;
-    if (/^\/(?!\/)[^\s]*$/.test(url)) return url;
+    /* « /\\evil.com » vaut « //evil.com » pour un navigateur : barre oblique inverse refusée partout. */
+    if (/^\/(?![\/\\])[^\s\\]*$/.test(url)) return url;
     return null;
   }
 
