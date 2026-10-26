@@ -52,7 +52,7 @@
       activite: "salarie", caissePension: "cnss", pensionEtrangere: false,
       primesImposables: 0, primesNonCotisables: 0, avantagesNature: 0, indemnitesNonImposables: 0,
       chefDeFamille: false, enfants: 0, etudiants: 0, handicapes: 0, parents: 0,
-      credits: [], contrats: [], projets: [], historiqueSalaire: [], scenarios: [], rappelsPerso: [], jourVersement: 0, jourPaie: 0,
+      credits: [], contrats: [], projets: [], historiqueSalaire: [], historiqueFamille: [], scenarios: [], rappelsPerso: [], jourVersement: 0, jourPaie: 0,
       loyer: 0, chargesFixes: 0, epargneDisponible: 0, autresRevenus: 0,
       quotiteNet: QUOTITE, quotiteBrut: QUOTITE
     };
@@ -130,7 +130,7 @@
   }
   function sommeFiche(p, g) { return lignesAuMois(p)[g].reduce(function (t, l) { return t + (l.montant || 0); }, 0); }
   /* Profil vu un mois donné : ses lignes de fiche sont celles de ce mois (paie mois par mois, Mon année, hausses futures). */
-  function profilAuMois(p, annee, mois0) { return Object.assign({}, p, { _moisFiche: cleMois(annee, mois0) }); }
+  function profilAuMois(p, annee, mois0) { return Object.assign({}, p, familleAuMois(p, annee, mois0), { _moisFiche: cleMois(annee, mois0) }); }
   function signatureFiche(p) { var l = lignesAuMois(p); return GROUPES_FICHE.map(function (g) { return l[g].reduce(function (t, x) { return t + x.montant; }, 0).toFixed(3); }).join("/"); }
   /* Impôt aligné : IRPP et CSS retenus sur la fiche, pour le brut mensuel de cette fiche (au-delà, le calcul d'Orbite reprend). */
   function normaliserImpotFiche(v) {
@@ -382,6 +382,8 @@
       lignesFiche: normaliserLignesFiche(p.lignesFiche),
       impotFiche: normaliserImpotFiche(p.impotFiche),
       historiqueSalaire: liste(p.historiqueSalaire, normaliserHausse, 40).filter(function (h) { return h.montant > 0; }).sort(function (a, b) { return cleHausse(a) - cleHausse(b); }),
+      /* Chronologie de la famille : situation et charges de famille à partir d'un mois (même principe que le salaire). */
+      historiqueFamille: liste(p.historiqueFamille, normaliserFamille, 40).sort(function (a, b) { return cleHausse(a) - cleHausse(b); }),
       loyer: nombre(p.loyer, 0, 0, 1e6),
       chargesFixes: nombre(p.chargesFixes, 0, 0, 1e6),
       epargneDisponible: nombre(p.epargneDisponible, 0, 0, 1e9),
@@ -606,25 +608,82 @@
     });
   }
 
+  /* ---------- Chronologie de la famille ----------
+     Chaque entrée : la situation et les charges de famille à partir d'un mois (mois = 0 et annee = 0 : avant la première date).
+     Règle fiscale tunisienne (Code de l'IRPP, art. 40) : l'impôt de l'année retient la situation et les charges de famille
+     au 1er janvier ; la retenue à la source de chaque mois suit la situation connue de l'employeur ce mois-là.
+     L'écart entre les deux se règle dans la déclaration annuelle. */
+  var CHAMPS_FAMILLE = ["situation", "chefDeFamille", "enfants", "etudiants", "handicapes", "parents"];
+  function normaliserFamille(f) {
+    f = f || {};
+    return { situation: choix(f.situation, ["celibataire", "marie", "divorce", "veuf"], "celibataire"), chefDeFamille: !!f.chefDeFamille,
+      enfants: entier(f.enfants, 0, 0, 15), etudiants: entier(f.etudiants, 0, 0, 15), handicapes: entier(f.handicapes, 0, 0, 15), parents: entier(f.parents, 0, 0, 2),
+      mois: entier(f.mois, 0, 0, 12), annee: entier(f.annee, 0, 0, 2100) };
+  }
+  function familleDe(x) { var o = {}; CHAMPS_FAMILLE.forEach(function (k) { o[k] = x[k]; }); return o; }
+  function memeFamille(a, b) { return !!a && !!b && CHAMPS_FAMILLE.every(function (k) { return a[k] === b[k]; }); }
+  function signatureFamille(x) { return CHAMPS_FAMILLE.map(function (k) { return String(x[k]); }).join(","); }
+  /* Situation de famille en vigueur un mois donné (mois0 : 0 à 11) : la dernière entrée dont la date est passée, sinon null. */
+  function familleEnVigueur(p, annee, mois0) {
+    var cible = annee * 12 + mois0, r = null;
+    (p.historiqueFamille || []).forEach(function (f) { if (cleHausse(f) <= cible) r = f; });
+    return r;
+  }
+  /* Champs de famille d'un mois (vide sans chronologie : le profil garde les siens). */
+  function familleAuMois(p, annee, mois0) { var f = familleEnVigueur(p, annee, mois0); return f ? familleDe(f) : {}; }
+  /* Profil aligné sur la situation de famille d'aujourd'hui (un changement daté arrive à son mois). */
+  function appliquerFamille(p0, maintenant) {
+    var m = maintenant || new Date(), f = familleEnVigueur(p0, m.getFullYear(), m.getMonth());
+    if (!f || memeFamille(f, p0)) return { profil: p0, change: false, entree: f };
+    return { profil: Object.assign({}, p0, familleDe(f)), change: true, entree: f };
+  }
+  /* La situation de famille change-t-elle au cours de l'année ? */
+  function familleVarie(p, annee) {
+    if (!(p.historiqueFamille || []).length) return false;
+    var s0 = signatureFamille(Object.assign({}, p, familleAuMois(p, annee, 0)));
+    for (var k = 1; k < 12; k++) if (signatureFamille(Object.assign({}, p, familleAuMois(p, annee, k))) !== s0) return true;
+    return false;
+  }
+  /* Où en est la chronologie : entrée en vigueur, changements à venir. */
+  function infoFamille(p, maintenant) {
+    var liste = p.historiqueFamille || [];
+    if (!liste.length) return null;
+    var m = maintenant || new Date(), cle = m.getFullYear() * 12 + m.getMonth();
+    return { liste: liste, enVigueur: familleEnVigueur(p, m.getFullYear(), m.getMonth()),
+      futurs: liste.filter(function (f) { return cleHausse(f) > cle; }) };
+  }
+
   /* Salaire de l'année civile calculé mois par mois : chaque mois (et chaque prime) au salaire alors en vigueur.
      L'impôt annuel porte sur le total de l'année. Renvoie null si le salaire ne change pas dans l'année. */
   function salaireAnnee(p, maintenant) {
-    if (!(p.historiqueSalaire || []).length && !lignesDatees(p)) return null;
-    var Y = (maintenant || new Date()).getFullYear(), cal = calendrierPrimes(p), cache = {}, parMois = [], brutAn = 0, ids = {}, moy = { sociales: 0, gains: 0, nettes: 0 };
+    var Y = (maintenant || new Date()).getFullYear(), varieF = familleVarie(p, Y);
+    if (!(p.historiqueSalaire || []).length && !lignesDatees(p) && !varieF) return null;
+    /* Situation de famille au 1er janvier : celle de l'impôt de l'année. */
+    var fJan = familleDe(Object.assign({}, p, familleAuMois(p, Y, 0))), pJan = Object.assign({}, p, fJan);
+    var cal = calendrierPrimes(p), cache = {}, parMois = [], brutAn = 0, ids = {}, moy = { sociales: 0, gains: 0, nettes: 0 }, retenues = 0, retenuesJan = 0;
+    function calculMois(pm, h, compter) { var id = h.montant + "|" + h.sens + "|" + h.periode + "|" + signatureFiche(pm) + "|" + signatureFamille(pm); if (compter) ids[id] = true; return cache[id] || (cache[id] = salaireDe(pm, h)); }
     for (var k = 0; k < 12; k++) {
       var h = salaireEnVigueur(p, Y, k) || { montant: p.montant, sens: p.sens, periode: p.periode }, pm = profilAuMois(p, Y, k);
-      var id = h.montant + "|" + h.sens + "|" + h.periode + "|" + signatureFiche(pm), S = cache[id] || (cache[id] = salaireDe(pm, h));
-      ids[id] = true;
+      var S = calculMois(pm, h, true), r = S.impotMois + cal[k] * S.impotParVersement;
       GROUPES_FICHE.forEach(function (g) { moy[g] += sommeFiche(pm, g) / 12; });
-      parMois.push({ mois: k, brutMensuel: S.brutMensuel, primes: cal[k], retenue: S.impotMois + cal[k] * S.impotParVersement, salaire: h, netMensuel: S.netMensuel });
+      var ligne = { mois: k, brutMensuel: S.brutMensuel, primes: cal[k], retenue: r, salaire: h, netMensuel: S.netMensuel, famille: familleDe(pm) };
+      /* Même mois avec la situation du 1er janvier : ce que l'impôt de l'année retient vraiment. */
+      var SJ = varieF ? calculMois(Object.assign({}, pm, fJan), h, false) : S;
+      ligne.retenueJanvier = SJ.impotMois + cal[k] * SJ.impotParVersement;
+      retenues += r; retenuesJan += ligne.retenueJanvier;
+      parMois.push(ligne);
       brutAn += S.brutMensuel * (1 + cal[k]);
     }
     if (Object.keys(ids).length < 2) return null;
     var n = 12 + cal.reduce(function (a, b) { return a + b; }, 0);
     /* Impôt de l'année : brut moyen et lignes de fiche moyennes de l'année (une ligne par groupe, sans date). */
     var lm = {}; GROUPES_FICHE.forEach(function (g) { lm[g] = moy[g] > 0 ? [{ libelle: "Moyenne de l'année", montant: moy[g], debut: "", fin: "" }] : []; });
-    var sA = salaire(Object.assign({}, p, { sens: "brut", periode: "mensuel", montant: brutAn / n, nombreSalaires: n, lignesFiche: lm, impotFiche: {} }));
+    var sA = salaire(Object.assign({}, pJan, { sens: "brut", periode: "mensuel", montant: brutAn / n, nombreSalaires: n, lignesFiche: lm, impotFiche: {} }));
     sA.parMois = parMois; sA.annee = Y; sA.varie = true;
+    /* Changement de situation de famille dans l'année : retenues des paies (situation de chaque mois) face à l'impôt
+       (situation du 1er janvier). ecart > 0 : trop retenu, à récupérer ; ecart < 0 : complément à payer. */
+    sA.famille = varieF ? { janvier: fJan, retenues: retenues, retenuesJanvier: retenuesJan, ecart: retenues - retenuesJan,
+      changements: (p.historiqueFamille || []).filter(function (f) { return f.annee === Y && f.mois > 1; }) } : null;
     return sA;
   }
 
@@ -1217,7 +1276,7 @@
   /* Synthèse complète du profil, recalculée à chaque modification. */
   function synthese(p0, choix0, maintenant) {
     /* Le salaire en vigueur aujourd'hui (historique) sert à tous les calculs. */
-    var p = appliquerEcheanciers(appliquerHistorique(normaliser(p0), maintenant).profil, maintenant);
+    var p = appliquerEcheanciers(appliquerHistorique(appliquerFamille(normaliser(p0), maintenant).profil, maintenant).profil, maintenant);
     var ch = choix0 || {};
     var ageActuel = age(p, maintenant);
     var s = salaire(p);
@@ -1246,6 +1305,7 @@
     sy.historique = infoHistorique(p, s, sy.maintenant);
     sy.futursRevenu = futursRevenu(p, sy.maintenant);
     sy.salaireAnnee = salaireAnnee(p, sy.maintenant);
+    sy.famille = infoFamille(p, sy.maintenant);
     sy.tauxImmo = tauxImmo(p);
     sy.contrats = p.contrats.map(function (c) { return estimationContrat(c, sy.maintenant); });
     sy.credits = p.credits.map(function (c) {
@@ -1279,7 +1339,7 @@
   }
 
   var API = {
-    TMM: TMM, definirTMM: definirTMM, CREDITS_TYPES: CREDITS_TYPES, calculAligne: calculAligne, sommeFiche: sommeFiche, GROUPES_FICHE: GROUPES_FICHE, MAX_LIGNES_FICHE: MAX_LIGNES_FICHE, lignesAuMois: lignesAuMois, profilAuMois: profilAuMois, ligneActive: ligneActive, cleMois: cleMois, signatureFiche: signatureFiche, lignesDatees: lignesDatees, ficheChanger: ficheChanger, ficheRetirer: ficheRetirer, ficheAnnulerFutur: ficheAnnulerFutur, ficheVue: ficheVue, moisPrecedent: moisPrecedent, moisSuivant: moisSuivant, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, pension: pension, futursRevenu: futursRevenu, lireEmail: lireEmail, lireTelephone: lireTelephone, formatTelephone: formatTelephone, contratCommence: contratCommence, depensesMois: depensesMois, cibleReserve: cibleReserve, normaliserChangement: normaliserChangement, normaliserScenario: normaliserScenario, MAX_SCENARIOS: MAX_SCENARIOS, MAX_CHANGEMENTS: MAX_CHANGEMENTS, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
+    TMM: TMM, definirTMM: definirTMM, CREDITS_TYPES: CREDITS_TYPES, calculAligne: calculAligne, sommeFiche: sommeFiche, GROUPES_FICHE: GROUPES_FICHE, MAX_LIGNES_FICHE: MAX_LIGNES_FICHE, lignesAuMois: lignesAuMois, profilAuMois: profilAuMois, ligneActive: ligneActive, cleMois: cleMois, signatureFiche: signatureFiche, lignesDatees: lignesDatees, ficheChanger: ficheChanger, ficheRetirer: ficheRetirer, ficheAnnulerFutur: ficheAnnulerFutur, ficheVue: ficheVue, moisPrecedent: moisPrecedent, moisSuivant: moisSuivant, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, familleEnVigueur: familleEnVigueur, familleAuMois: familleAuMois, appliquerFamille: appliquerFamille, familleVarie: familleVarie, infoFamille: infoFamille, normaliserFamille: normaliserFamille, memeFamille: memeFamille, familleDe: familleDe, CHAMPS_FAMILLE: CHAMPS_FAMILLE, pension: pension, futursRevenu: futursRevenu, lireEmail: lireEmail, lireTelephone: lireTelephone, formatTelephone: formatTelephone, contratCommence: contratCommence, depensesMois: depensesMois, cibleReserve: cibleReserve, normaliserChangement: normaliserChangement, normaliserScenario: normaliserScenario, MAX_SCENARIOS: MAX_SCENARIOS, MAX_CHANGEMENTS: MAX_CHANGEMENTS, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
     profilParDefaut: profilParDefaut, normaliser: normaliser, creditTermine: creditTermine, age: age, etatSalaire: etatSalaire, entreeBrut: entreeBrut,
     tranche: tranche, salaire: salaire, augmentation: augmentation, calendrierPrimes: calendrierPrimes, impotRestantAnnee: impotRestantAnnee,
     capitalPourMensualite: capitalPourMensualite, mensualitePourCapital: mensualitePourCapital, capacite: capacite,

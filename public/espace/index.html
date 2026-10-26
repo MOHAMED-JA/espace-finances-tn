@@ -474,6 +474,12 @@
                   <p class="champ__aide compteurs__aide" id="p-enfants-aide" hidden>Les enfants à charge se déclarent avec « Chef de famille » : la déduction lui est réservée.</p>
                   <div class="compteur-ligne"><span id="lp-parents">Parents à charge</span><span class="compteur" role="group" aria-labelledby="lp-parents"><button type="button" data-pp="parents" data-pas="-1" aria-label="Un parent de moins"><svg aria-hidden="true"><use href="/orbite/icones.svg#moins"/></svg></button><output data-po="parents">0</output><button type="button" data-pp="parents" data-pas="1" aria-label="Un parent de plus"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg></button></span></div>
                 </div>
+                <div class="champ champ--large historique-salaire" id="hf-bloc">
+                  <div class="historique-salaire__tete"><span class="champ__lib">Historique de votre situation de famille</span><button type="button" class="bouton bouton--petit" id="hf-maj"><svg aria-hidden="true"><use href="/orbite/icones.svg#plus"/></svg>Changer ma situation de famille</button></div>
+                  <ol class="historique-salaire__liste" id="hf-liste" hidden></ol>
+                  <p class="champ__aide" id="hf-aide">Mariage, divorce, naissance ? Indiquez la nouvelle situation et le mois où elle s'applique : la retenue de chaque mois suit votre situation, l'impôt de l'année retient celle du 1er janvier.</p>
+                  <p class="note" id="hf-ecart" hidden></p>
+                </div>
                 <div class="contact-profil champ--large" id="contact-profil">
                   <p class="contact-profil__titre">Vous joindre <span class="champ__facultatif">facultatif</span></p>
                   <div class="grille-champs">
@@ -2241,6 +2247,32 @@
       <div class="dialogue__pied">
         <button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Annuler</button>
         <button type="submit" class="bouton bouton--plein" value="ok" id="sal-valider">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialogue" id="dlg-famille" aria-labelledby="dlg-famille-titre">
+    <form method="dialog" id="form-famille" novalidate>
+      <div class="dialogue__tete"><h2 id="dlg-famille-titre">Changer ma situation de famille</h2></div>
+      <div class="dialogue__corps ajout-profil">
+        <p class="ajout-profil__resume" id="fam-actuel"></p>
+        <div class="grille-champs">
+          <div class="champ champ--large"><label for="fam-situation">Nouvelle situation</label><div class="saisie"><select id="fam-situation"><option value="celibataire">Célibataire</option><option value="marie">Marié·e</option><option value="divorce">Divorcé·e</option><option value="veuf">Veuf·ve</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
+          <div class="champ"><label for="fam-mois">À partir du mois de</label><div class="saisie"><select id="fam-mois"><option value="1">Janvier</option><option value="2">Février</option><option value="3">Mars</option><option value="4">Avril</option><option value="5">Mai</option><option value="6">Juin</option><option value="7">Juillet</option><option value="8">Août</option><option value="9">Septembre</option><option value="10">Octobre</option><option value="11">Novembre</option><option value="12">Décembre</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
+          <div class="champ"><label for="fam-annee">Année</label><div class="saisie"><input id="fam-annee" type="text" inputmode="numeric" maxlength="4" autocomplete="off"></div><span class="erreur-champ" id="fam-annee-err" hidden></span></div>
+        </div>
+        <label class="interrupteur"><span><strong>Chef de famille</strong><small id="fam-chef-aide"></small></span><input type="checkbox" id="fam-chef" role="switch"><span class="interrupteur__piste" aria-hidden="true"></span></label>
+        <div class="grille-champs">
+          <div class="champ"><label for="fam-enfants">Enfants à charge</label><div class="saisie"><input id="fam-enfants" type="text" inputmode="numeric" maxlength="2" autocomplete="off" data-max="15"></div></div>
+          <div class="champ"><label for="fam-etudiants">Dont étudiants (sans bourse)</label><div class="saisie"><input id="fam-etudiants" type="text" inputmode="numeric" maxlength="2" autocomplete="off" data-max="15"></div></div>
+          <div class="champ"><label for="fam-handicapes">Enfants handicapés</label><div class="saisie"><input id="fam-handicapes" type="text" inputmode="numeric" maxlength="2" autocomplete="off" data-max="15"></div></div>
+          <div class="champ"><label for="fam-parents">Parents à charge</label><div class="saisie"><input id="fam-parents" type="text" inputmode="numeric" maxlength="2" autocomplete="off" data-max="2"></div></div>
+        </div>
+        <p class="note" id="fam-effet" aria-live="polite"></p>
+      </div>
+      <div class="dialogue__pied">
+        <button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Annuler</button>
+        <button type="submit" class="bouton bouton--plein" value="ok" id="fam-valider">Enregistrer</button>
       </div>
     </form>
   </dialog>
