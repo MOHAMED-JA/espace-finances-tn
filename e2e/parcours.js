@@ -2216,6 +2216,91 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert((await page.evaluate(() => window.Orbite.profil().historiqueSalaire.length)) === 3, "annulé : historique inchangé");
   });
 
+  await etape("chronologie de la famille : divorce daté (retenue du mois, impôt au 1er janvier, écart), remariage prévu, retrait annulé, correction directe", async () => {
+    await page.goto(base + "/espace/#profil?section=identite");
+    await page.waitForSelector("#hf-maj", { state: "visible" });
+    const f0 = await page.evaluate(() => { const p = window.Orbite.profil(); return { situation: p.situation, chefDeFamille: p.chefDeFamille, enfants: p.enfants, etudiants: p.etudiants, handicapes: p.handicapes, parents: p.parents }; });
+    await page.evaluate(() => window.Orbite.majProfil({ situation: "marie", chefDeFamille: true, enfants: 2, etudiants: 0, handicapes: 0, parents: 0, historiqueFamille: [] }, { immediat: true }));
+    await page.waitForFunction(() => document.getElementById("hf-liste").hidden && !document.getElementById("hf-aide").hidden);
+    const auj = new Date(), Y = auj.getFullYear(), M = auj.getMonth() + 1;
+    await page.click("#hf-maj");
+    await page.waitForSelector("#dlg-famille[open]");
+    assert((await page.inputValue("#fam-situation")) === "marie" && (await page.isChecked("#fam-chef")) && (await page.inputValue("#fam-enfants")) === "2", "situation du jour préremplie");
+    assert((await page.inputValue("#fam-mois")) === String(M) && (await page.inputValue("#fam-annee")) === String(Y), "mois et année du jour par défaut");
+    await page.selectOption("#fam-situation", "divorce");
+    assert(!(await page.isChecked("#fam-chef")), "divorcé·e : chef de famille décoché par défaut");
+    assert((await page.textContent("#fam-chef-aide")).includes("garde des enfants"), "rappel : la garde des enfants");
+    await page.fill("#fam-enfants", "0");
+    await page.waitForFunction(() => /Impôt retenu chaque mois : \+/.test(document.getElementById("fam-effet").textContent));
+    if (M > 1) assert(/1er janvier.*à récupérer/.test(await page.textContent("#fam-effet")), "écart annoncé : " + (await page.textContent("#fam-effet")));
+    await page.screenshot({ path: path.join(CAPTURES, "chronologie-famille-fenetre.png") });
+    await page.click("#fam-valider");
+    await page.waitForFunction(() => { const p = window.Orbite.profil(); return p.historiqueFamille.length === 2 && p.situation === "divorce" && !p.chefDeFamille && p.enfants === 0; });
+    await page.waitForFunction(() => document.querySelectorAll("#hf-liste li").length === 2);
+    assert((await page.textContent("#hf-liste li:first-child")).includes("en vigueur"), "nouvelle situation en vigueur");
+    assert((await page.textContent("#hf-liste li:last-child")).startsWith("Avant "), "situation d'avant conservée");
+    assert((await page.inputValue("#p-situation")) === "divorce", "champ du profil à jour");
+    const an = await page.evaluate(() => { const sa = window.Orbite.synthese().salaireAnnee; return sa && sa.famille ? { janvier: sa.famille.janvier.situation, ecart: sa.famille.ecart } : null; });
+    if (M > 1) {
+      assert(an && an.janvier === "marie" && an.ecart > 0, "impôt de l'année au 1er janvier, écart à récupérer : " + JSON.stringify(an));
+      assert(await page.isVisible("#hf-ecart") && /1er janvier.*à récupérer/.test(await page.textContent("#hf-ecart")), "écart affiché dans le profil");
+    }
+    /* Remariage annoncé pour mars prochain : prévu, la situation du jour ne change pas. */
+    await page.click("#hf-maj");
+    await page.waitForSelector("#dlg-famille[open]");
+    await page.selectOption("#fam-situation", "marie");
+    await page.check("#fam-chef");
+    await page.fill("#fam-enfants", "2");
+    await page.selectOption("#fam-mois", "3");
+    await page.fill("#fam-annee", String(Y + 1));
+    await page.waitForFunction(() => /−/.test(document.getElementById("fam-effet").textContent));
+    await page.click("#fam-valider");
+    await page.waitForFunction(() => window.Orbite.profil().historiqueFamille.length === 3);
+    assert((await page.evaluate(() => window.Orbite.profil().situation)) === "divorce", "situation du jour inchangée");
+    await page.waitForFunction(() => document.querySelectorAll("#hf-liste li").length === 3);
+    assert((await page.textContent("#hf-liste li:first-child")).includes("prévue"), "remariage marqué « prévue »");
+    await page.locator("#hf-bloc").scrollIntoViewIfNeeded();
+    await page.screenshot({ path: path.join(CAPTURES, "chronologie-famille.png") });
+    /* Retrait puis annulation. */
+    await page.click("#hf-liste li:first-child [data-hf-retirer]");
+    await page.waitForFunction(() => window.Orbite.profil().historiqueFamille.length === 2);
+    await page.click('.toast:has-text("retirée de l") button:has-text("Annuler")');
+    await page.waitForFunction(() => window.Orbite.profil().historiqueFamille.length === 3);
+    /* Correction directe de la situation : l'entrée en vigueur suit. */
+    await page.selectOption("#p-situation", "veuf");
+    await page.waitForFunction((y) => window.Orbite.profil().historiqueFamille.some((f) => f.situation === "veuf" && f.annee === y), Y);
+    await page.waitForTimeout(1600);
+    const meta = faux.profil("aziz@exemple.tn");
+    assert(meta.historiqueFamille.length === 3 && meta.situation === "veuf", "chronologie enregistrée : " + JSON.stringify(meta.historiqueFamille));
+    /* Palette : l'action ouvre la fenêtre. */
+    await page.keyboard.press("Control+k");
+    await page.waitForSelector("#dlg-palette[open]");
+    await page.keyboard.type("divorce");
+    await page.waitForSelector('#dlg-palette [data-id="a-famille"], #dlg-palette :text("Changer ma situation de famille")');
+    await page.keyboard.press("Enter");
+    await page.waitForSelector("#dlg-famille[open]");
+    await page.click('#dlg-famille button[value="annuler"]');
+    await page.waitForSelector("#dlg-famille:not([open])", { state: "attached" });
+    assert((await page.evaluate(() => window.Orbite.profil().historiqueFamille.length)) === 3, "annulé : chronologie inchangée");
+    /* Téléphone : liste et fenêtre sans défilement horizontal. */
+    await page.setViewportSize({ width: 375, height: 780 });
+    await page.locator("#hf-bloc").scrollIntoViewIfNeeded();
+    await page.waitForTimeout(400);
+    const deb = await page.evaluate(() => { const w = window.innerWidth; return { sw: document.documentElement.scrollWidth, w, larges: [...document.querySelectorAll("body *")].filter((e) => { const r = e.getBoundingClientRect(); return r.width && r.right > w + 1; }).slice(0, 6).map((e) => e.tagName + "#" + e.id + "." + String(e.className).slice(0, 50) + " " + Math.round(e.getBoundingClientRect().right)) }; });
+    assert(deb.sw <= deb.w, "téléphone : pas de défilement horizontal " + JSON.stringify(deb));
+    await page.screenshot({ path: path.join(CAPTURES, "chronologie-famille-telephone.png") });
+    await page.click("#hf-maj");
+    await page.waitForSelector("#dlg-famille[open]");
+    assert(await page.evaluate(() => { const d = document.getElementById("dlg-famille"); return d.scrollWidth <= d.clientWidth + 1; }), "téléphone : fenêtre sans débordement");
+    await page.screenshot({ path: path.join(CAPTURES, "chronologie-famille-fenetre-telephone.png") });
+    await page.click('#dlg-famille button[value="annuler"]');
+    await page.waitForSelector("#dlg-famille:not([open])", { state: "attached" });
+    await page.setViewportSize({ width: 1360, height: 900 });
+    /* Retour à la situation de départ pour la suite du parcours. */
+    await page.evaluate((f) => window.Orbite.majProfil(Object.assign({ historiqueFamille: [] }, f), { immediat: true }), f0);
+    await page.waitForFunction(() => window.Orbite.profil().historiqueFamille.length === 0);
+  });
+
   await etape("Et si… : modèles, refus de la banque, enregistrement, application annulable, rappel programmé", async () => {
     await page.goto(base + "/espace/#vie?onglet=scenarios");
     await page.waitForSelector("#vie-panneau-scenarios:not([hidden])");

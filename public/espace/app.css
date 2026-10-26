@@ -844,6 +844,9 @@ body.attente .onglets-bas a, body.attente .rail__liens a { pointer-events: none;
 .barre__aide:hover { color: var(--encre); }
 .barre__aide:hover svg, .barre__aide:focus-visible svg { transform: rotate(-35deg); }
 @media (max-width: 640px) { .barre__aide { width: 36px; padding: 0; } .barre__aide-lib { display: none; } }
+/* Téléphones étroits (moins de 390 px : 375, 360, 320) : la barre tient sur la largeur, pastille d'accès comprise.
+   Le guide reste dans la recherche (Ctrl K, loupe) : « Revoir la visite guidée ». */
+@media (max-width: 389.98px) { .barre { gap: 6px; padding-left: 12px; padding-right: 12px; } #aide-visite { display: none; } }
 @media (prefers-reduced-motion: reduce) { .barre__aide svg { transition: none; } }
 .visite { position: fixed; inset: 0; z-index: 200; }
 .visite__halo { position: fixed; left: 0; top: 0; border-radius: 14px; box-shadow: 0 0 0 9999px rgba(7, 9, 15, .62), 0 0 0 2px var(--credit-lum); pointer-events: none;

@@ -161,6 +161,14 @@
         partiel = Object.assign({}, partiel, { historiqueSalaire: hist });
       }
     }
+    /* Même principe pour la famille : une correction à la main modifie la situation en vigueur aujourd'hui. */
+    if (!partiel.historiqueFamille && profil && profil.historiqueFamille && profil.historiqueFamille.length && OC.CHAMPS_FAMILLE.some(function (k) { return k in partiel; })) {
+      var mf = new Date(), fIci = OC.familleEnVigueur(profil, mf.getFullYear(), mf.getMonth());
+      if (fIci) {
+        var corr = {}; OC.CHAMPS_FAMILLE.forEach(function (k) { if (k in partiel) corr[k] = partiel[k]; });
+        partiel = Object.assign({}, partiel, { historiqueFamille: profil.historiqueFamille.map(function (f) { return f === fIci ? Object.assign({}, f, corr) : f; }) });
+      }
+    }
     profil = OC.normaliser(Object.assign({}, profil, partiel));
     profilVierge = false;
     recalculer();
@@ -558,6 +566,114 @@
     E.toast("Salaire de " + (retiree.annee ? MOIS_NOMS[retiree.mois - 1] + " " + retiree.annee : "départ") + " retiré de l'historique.", { action: annulationSalaire(avant) });
   }
 
+  /* ---------- Chronologie de la famille : nouvelle situation et mois d'effet ---------- */
+  var SITUATIONS_LIB = { celibataire: "célibataire", marie: "marié·e", divorce: "divorcé·e", veuf: "veuf·ve" };
+  function libFamille(f) {
+    var t = SITUATIONS_LIB[f.situation] || f.situation;
+    if (f.chefDeFamille) t += ", chef de famille";
+    if (f.enfants) t += ", " + f.enfants + (f.enfants > 1 ? " enfants" : " enfant") + " à charge";
+    if (f.parents) t += ", " + f.parents + (f.parents > 1 ? " parents" : " parent") + " à charge";
+    return t;
+  }
+  /* Qui est chef de famille (Code de l'IRPP) : rappel selon la situation choisie. */
+  var AIDE_CHEF = {
+    marie: "En principe l'époux. 300 DT de déduction par an, plus les enfants à charge.",
+    divorce: "Seulement si vous avez la garde des enfants.",
+    veuf: "Le veuf ou la veuve est chef de famille.",
+    celibataire: "Seulement si vous avez adopté un enfant."
+  };
+  function annulationFamille(avant, message) {
+    var apres = JSON.stringify(profil.historiqueFamille);
+    return { libelle: "Annuler", fn: function () {
+      if (JSON.stringify(profil.historiqueFamille) !== apres) { E.toast("Annulation impossible : l'historique de la famille a changé depuis."); return; }
+      majProfil(avant, { immediat: true }); if (message) E.toast(message);
+    } };
+  }
+  function changerFamille() {
+    if (!profil) return;
+    var maint = new Date(), hist = profil.historiqueFamille || [], ici = OC.familleEnVigueur(profil, maint.getFullYear(), maint.getMonth());
+    $("fam-actuel").textContent = "Aujourd'hui : " + libFamille(profil) + (ici && ici.annee ? ", depuis " + MOIS_NOMS[ici.mois - 1] + " " + ici.annee : "") + ".";
+    $("fam-situation").value = profil.situation;
+    $("fam-chef").checked = profil.chefDeFamille;
+    [["fam-enfants", "enfants"], ["fam-etudiants", "etudiants"], ["fam-handicapes", "handicapes"], ["fam-parents", "parents"]].forEach(function (x) { $(x[0]).value = String(profil[x[1]]); });
+    $("fam-mois").value = String(maint.getMonth() + 1);
+    $("fam-annee").value = String(maint.getFullYear());
+    $("fam-annee-err").hidden = true;
+    var dlg = $("dlg-famille");
+    function n(id) { var v = parseInt($(id).value, 10), mx = +$(id).getAttribute("data-max"); return isFinite(v) ? Math.max(0, Math.min(mx, v)) : 0; }
+    function lire() {
+      return { situation: $("fam-situation").value, chefDeFamille: $("fam-chef").checked, enfants: n("fam-enfants"), etudiants: n("fam-etudiants"),
+        handicapes: n("fam-handicapes"), parents: n("fam-parents"), mois: +$("fam-mois").value, annee: parseInt($("fam-annee").value, 10) };
+    }
+    /* Nouvelle chronologie : la situation d'aujourd'hui devient « au départ » au premier changement. */
+    function chronologie(v) {
+      var h2 = hist.slice();
+      if (!h2.length) h2.push(Object.assign(OC.familleDe(profil), { mois: 0, annee: 0 }));
+      h2 = h2.filter(function (f) { return !(f.mois === v.mois && f.annee === v.annee); });
+      h2.push(v);
+      return h2;
+    }
+    function effet() {
+      var v = lire(), out = $("fam-effet");
+      $("fam-chef-aide").textContent = AIDE_CHEF[v.situation] || "";
+      if (!(v.annee >= 1990 && v.annee <= 2100)) { out.textContent = ""; return; }
+      try {
+        var p2 = OC.normaliser(Object.assign({}, profil, { historiqueFamille: chronologie(v) }));
+        /* Même mois, même salaire : seule la situation de famille change (celle du mois d'avant, puis la nouvelle). */
+        var d0 = new Date(v.annee, v.mois - 2, 1), pm = OC.profilAuMois(p2, v.annee, v.mois - 1), h = OC.salaireEnVigueur(p2, v.annee, v.mois - 1) || p2;
+        var avant = OC.salaireDe(Object.assign({}, pm, OC.familleDe(OC.profilAuMois(p2, d0.getFullYear(), d0.getMonth()))), h), apres = OC.salaireDe(pm, h);
+        var d = apres.impotMois - avant.impotMois, t;
+        if (Math.abs(d) < 0.0005) t = "Pas d'effet sur l'impôt retenu chaque mois.";
+        else t = "Impôt retenu chaque mois : " + (d > 0 ? "+" : "−") + F.dt3(Math.abs(d)) + " DT à partir de " + MOIS_NOMS[v.mois - 1] + " " + v.annee + " (net " + F.dt3(apres.netMensuel) + " DT).";
+        if (v.mois > 1) {
+          var sa = OC.synthese(p2, {}, new Date(v.annee, 11, 15)).salaireAnnee, e = sa && sa.famille ? sa.famille.ecart : 0;
+          t += " L'impôt de " + v.annee + " garde votre situation au 1er janvier" +
+            (Math.abs(e) >= 0.5 ? " : environ " + F.dt0(Math.abs(e)) + " DT " + (e > 0 ? "à récupérer" : "à payer en plus") + " lors de la déclaration annuelle." : ".");
+        } else t += " En janvier, l'impôt de toute l'année suit la nouvelle situation.";
+        out.textContent = t;
+      } catch (err) { out.textContent = ""; }
+    }
+    $("fam-situation").onchange = function () {
+      /* Valeur proposée selon la situation ; vous gardez la main. */
+      var s = $("fam-situation").value;
+      if (s === "divorce" || s === "celibataire") $("fam-chef").checked = false;
+      if (s === "veuf") $("fam-chef").checked = true;
+      effet();
+    };
+    dlg.oninput = effet; dlg.onchange = function (ev) { if (ev.target !== $("fam-situation")) effet(); }; effet();
+    dlg.returnValue = "";
+    dlg.showModal();
+    $("fam-situation").focus();
+    $("form-famille").onsubmit = function (ev) {
+      if (ev.submitter && ev.submitter.value !== "ok") return;
+      var v = lire(), anOk = v.annee >= 1990 && v.annee <= 2100;
+      $("fam-annee-err").hidden = anOk; if (!anOk) { $("fam-annee-err").textContent = "Année entre 1990 et 2100."; ev.preventDefault(); }
+    };
+    dlg.onclose = function () {
+      dlg.onclose = null;
+      if (dlg.returnValue !== "ok") return;
+      var v = lire(); if (!(v.annee >= 1990 && v.annee <= 2100)) return;
+      var avant = Object.assign({ historiqueFamille: hist.slice() }, OC.familleDe(profil));
+      var h2 = chronologie(v), ap = OC.appliquerFamille(OC.normaliser(Object.assign({}, profil, { historiqueFamille: h2 })), maint).profil;
+      majProfil(Object.assign({ historiqueFamille: h2 }, OC.familleDe(ap)), { immediat: true });
+      var futur = v.annee * 12 + v.mois - 1 > maint.getFullYear() * 12 + maint.getMonth();
+      E.toast((futur ? "Changement prévu en " : "Nouvelle situation enregistrée depuis ") + MOIS_NOMS[v.mois - 1] + " " + v.annee + " : " + libFamille(v) + ".",
+        { action: annulationFamille(avant, "Historique de la famille revenu comme avant.") });
+      vibrer(10);
+    };
+  }
+  /* Retire une entrée de la chronologie ; la situation en vigueur est recalculée. */
+  function retirerFamille(i) {
+    var hist = (profil.historiqueFamille || []).slice(), retiree = hist[i]; if (!retiree) return;
+    var avant = Object.assign({ historiqueFamille: profil.historiqueFamille.slice() }, OC.familleDe(profil));
+    hist.splice(i, 1);
+    var partiel;
+    if (hist.length === 1 && OC.cleHausse(hist[0]) < 0) partiel = Object.assign({ historiqueFamille: [] }, OC.familleDe(hist[0]));
+    else partiel = Object.assign({ historiqueFamille: hist }, OC.familleDe(OC.appliquerFamille(OC.normaliser(Object.assign({}, profil, { historiqueFamille: hist })), new Date()).profil));
+    majProfil(partiel, { immediat: true });
+    E.toast("Situation " + (retiree.annee ? "de " + MOIS_NOMS[retiree.mois - 1] + " " + retiree.annee : "de départ") + " retirée de l'historique.", { action: annulationFamille(avant) });
+  }
+
   /* Ouvre une simulation enregistrée dans son module. */
   function ouvrirSimulation(s) {
     var vue = OUTIL_VERS_VUE[s.outil]; if (!vue) return;
@@ -767,6 +883,8 @@
     definirExpert: definirExpert,
     telecharger: telecharger,
     retirerSalaire: retirerSalaire,
+    changerFamille: changerFamille,
+    retirerFamille: retirerFamille,
     rouler: rouler,
     vibrer: vibrer,
     puceVolante: puceVolante,

@@ -292,6 +292,55 @@
     if (b) O.retirerSalaire(Number(b.getAttribute("data-hs-retirer")));
   });
 
+  /* ---------- Chronologie de la famille : du plus récent au plus ancien, et écart de l'année ---------- */
+  var SITUATIONS = { celibataire: "Célibataire", marie: "Marié·e", divorce: "Divorcé·e", veuf: "Veuf·ve" };
+  function libFamille(f) {
+    var t = SITUATIONS[f.situation] || f.situation;
+    if (f.chefDeFamille) t += ", chef de famille";
+    if (f.enfants) t += ", " + f.enfants + (f.enfants > 1 ? " enfants" : " enfant");
+    if (f.parents) t += ", " + f.parents + (f.parents > 1 ? " parents" : " parent") + " à charge";
+    return t;
+  }
+  function rendreFamille(sy) {
+    var ol = $("hf-liste"), info = sy.famille, liste = (info && info.liste) || [];
+    ol.textContent = "";
+    ol.hidden = !liste.length;
+    $("hf-aide").hidden = !!liste.length;
+    var maint = sy.maintenant || new Date(), cle = maint.getFullYear() * 12 + maint.getMonth();
+    for (var i = liste.length - 1; i >= 0; i--) {
+      var x = liste[i], futur = OC.cleHausse(x) > cle, ici = x === info.enVigueur, suiv = liste[i + 1];
+      var li = doc.createElement("li");
+      li.className = "historique-salaire__item" + (ici ? " historique-salaire__item--actuel" : "") + (futur ? " historique-salaire__item--prevue" : "");
+      var quand = doc.createElement("span"); quand.className = "historique-salaire__date";
+      quand.textContent = !x.annee ? (suiv && suiv.annee ? "Avant " + OC.MOIS[suiv.mois - 1] + " " + suiv.annee : "Au départ")
+        : (futur ? "À partir de " : "Depuis ") + OC.MOIS[x.mois - 1] + " " + x.annee;
+      var lib = doc.createElement("strong"); lib.className = "historique-salaire__montant"; lib.textContent = libFamille(x);
+      li.appendChild(quand); li.appendChild(lib);
+      if (ici || futur) {
+        var badge = doc.createElement("span"); badge.className = "puce " + (futur ? "puce--salaire" : "puce--succes");
+        badge.textContent = futur ? "prévue" : "en vigueur"; li.appendChild(badge);
+      }
+      var bt = doc.createElement("button"); bt.type = "button"; bt.className = "bouton bouton--fantome bouton--icone bouton--petit historique-salaire__retirer";
+      bt.setAttribute("data-hf-retirer", String(i));
+      bt.setAttribute("aria-label", "Retirer la situation " + quand.textContent.charAt(0).toLowerCase() + quand.textContent.slice(1));
+      bt.innerHTML = '<svg aria-hidden="true"><use href="/orbite/icones.svg#poubelle"/></svg>';
+      li.appendChild(bt);
+      ol.appendChild(li);
+    }
+    /* Changement en cours d'année : retenues des paies (situation de chaque mois) et impôt (situation du 1er janvier). */
+    var sa = sy.salaireAnnee, fa = sa && sa.famille, ec = $("hf-ecart");
+    ec.hidden = !fa;
+    if (!fa) return;
+    var e = fa.ecart, fin = Math.abs(e) < 0.5 ? "pas d'écart notable à régulariser."
+      : "environ " + F.dt0(Math.abs(e)) + " DT " + (e > 0 ? "retenus en trop, à récupérer" : "retenus en moins, à payer") + " lors de votre déclaration annuelle.";
+    ec.textContent = "Impôt " + sa.annee + " : votre situation au 1er janvier (" + libFamille(fa.janvier).toLowerCase() + ") est retenue pour toute l'année. Vos paies suivent la situation de chaque mois : " + fin;
+  }
+  $("hf-maj").addEventListener("click", function () { O.changerFamille(); });
+  $("hf-liste").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-hf-retirer]");
+    if (b) O.retirerFamille(Number(b.getAttribute("data-hf-retirer")));
+  });
+
   /* ---------- Résumés et progression ---------- */
   function progression(p) {
     var points = 0, total = 8;
@@ -349,6 +398,7 @@
         " · tranche d'impôt à " + F.pct(s.tranche.taux, 0) + "."));
     } else r.appendChild(doc.createTextNode(" · brut " + F.dt0(s.brutMensuel) + " DT · tranche d'impôt à " + F.pct(s.tranche.taux, 0) + "."));
     rendreHistorique(sy, p);
+    rendreFamille(sy);
     var nc = p.credits.length, nk = p.contrats.length, np = p.projets.length;
     $("sec-credits-sous").textContent = nc ? nc + " crédit" + (nc > 1 ? "s" : "") + " · " + F.dt0(sy.chargesCredits) + " DT par mois" : "Aucun crédit déclaré";
     $("sec-contrats-sous").textContent = nk ? nk + " contrat" + (nk > 1 ? "s" : "") + " · " + F.dt0(sy.epargne.economieContrats) + " DT d'impôt économisé par an" : "Aucun contrat déclaré";
