@@ -633,14 +633,28 @@
         out.textContent = t;
       } catch (err) { out.textContent = ""; }
     }
+    /* Sans « chef de famille », les enfants ne se saisissent pas : la déduction lui est réservée (valeurs gardées). */
+    var CHAMPS_ENFANTS = ["fam-enfants", "fam-etudiants", "fam-handicapes"];
+    function majChef() {
+      var chef = $("fam-chef").checked;
+      CHAMPS_ENFANTS.forEach(function (id) { $(id).disabled = !chef; $(id).closest(".champ").classList.toggle("champ--bloque", !chef); });
+      $("fam-enfants-aide").textContent = chef ? "Comptez chaque enfant une seule fois : un étudiant ou un enfant handicapé n'entre pas dans « Enfants à charge »."
+        : "Les enfants à charge se déclarent avec « Chef de famille » : cochez-le pour les saisir.";
+    }
+    /* Chiffres seulement, bornés au maximum du champ. */
+    ["fam-enfants", "fam-etudiants", "fam-handicapes", "fam-parents"].forEach(function (id) {
+      $(id).oninput = function () { var el = $(id), v = el.value.replace(/\D/g, ""); if (v !== "" && +v > +el.getAttribute("data-max")) v = el.getAttribute("data-max"); if (v !== el.value) el.value = v; };
+    });
+    $("fam-chef").onchange = function () { majChef(); effet(); };
+    majChef();
     $("fam-situation").onchange = function () {
       /* Valeur proposée selon la situation ; vous gardez la main. */
       var s = $("fam-situation").value;
       if (s === "divorce" || s === "celibataire") $("fam-chef").checked = false;
       if (s === "veuf") $("fam-chef").checked = true;
-      effet();
+      majChef(); effet();
     };
-    dlg.oninput = effet; dlg.onchange = function (ev) { if (ev.target !== $("fam-situation")) effet(); }; effet();
+    dlg.oninput = effet; dlg.onchange = function (ev) { if (ev.target !== $("fam-situation") && ev.target !== $("fam-chef")) effet(); }; effet();
     dlg.returnValue = "";
     dlg.showModal();
     $("fam-situation").focus();

@@ -17,15 +17,21 @@
   function largeur(tranche) { return tranche.max === Infinity ? Infinity : tranche.max - tranche.min; }
 
   /* abattementTaux (retraités) : abattement forfaitaire sur la pension, sans plafond, à la place des frais professionnels. */
+  /* Mêmes règles que le moteur du salaire (Code de l'IRPP, art. 40) : enfants, étudiants et enfants handicapés réservés
+     au chef de famille ; étudiants puis enfants sur les 4 premiers rangs (la déduction la plus forte d'abord) ; enfants
+     handicapés sans condition de rang ; par parent à charge, 5 % du revenu net (après frais professionnels) plafonnés. */
   function detailDeductions(revenu, chefDeFamille, enfants, enfantsInfirmes, etudiants, parents, r, abattementTaux) {
     var d = (r || regles()).deductions;
+    var frais = abattementTaux > 0 ? abattementTaux * revenu : Math.min(d.fraisProfessionnelsTaux * revenu, d.fraisProfessionnelsMax);
+    var rangs = d.rangsEnfantsMax, etu = chefDeFamille ? Math.min(etudiants, rangs) : 0, enf = chefDeFamille ? Math.min(enfants, rangs - etu) : 0;
+    var nbParents = Math.min(parents, d.parentsMax);
     return {
-      fraisProfessionnels: abattementTaux > 0 ? abattementTaux * revenu : Math.min(d.fraisProfessionnelsTaux * revenu, d.fraisProfessionnelsMax),
+      fraisProfessionnels: frais,
       chefDeFamille: chefDeFamille ? d.chefDeFamille : 0,
-      enfants: Math.min(enfants * d.enfant, d.enfantsMax),
-      enfantsInfirmes: enfantsInfirmes * d.enfantInfirme,
-      etudiants: Math.min(etudiants * d.etudiant, d.etudiantsMax),
-      parents: parents * d.parent
+      enfants: enf * d.enfant,
+      enfantsInfirmes: chefDeFamille ? enfantsInfirmes * d.enfantInfirme : 0,
+      etudiants: etu * d.etudiant,
+      parents: nbParents * Math.min(d.parentTaux * Math.max(0, revenu - frais), d.parent)
     };
   }
 

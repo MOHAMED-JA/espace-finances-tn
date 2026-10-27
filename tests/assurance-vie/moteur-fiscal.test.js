@@ -58,8 +58,17 @@ test('déductions : plafonds appliqués', () => {
   assert.equal(d.etudiants, 1000);
   assert.equal(d.parents, 450);
   assert.equal(M.totalDeductions(d), 3950);
-  assert.equal(M.detailDeductions(0, false, 9, 0, 9, 0).enfants, 400);
-  assert.equal(M.detailDeductions(0, false, 9, 0, 9, 0).etudiants, 4000);
+  /* Sans chef de famille : ni enfants, ni étudiants, ni enfants handicapés. */
+  const sansChef = M.detailDeductions(30000, false, 3, 1, 2, 0);
+  assert.equal(sansChef.enfants + sansChef.etudiants + sansChef.enfantsInfirmes, 0);
+  /* 4 rangs au total, étudiants d'abord ; enfants handicapés hors rang. */
+  const rangs = M.detailDeductions(30000, true, 9, 1, 3, 0);
+  assert.equal(rangs.etudiants, 3000);
+  assert.equal(rangs.enfants, 100);
+  assert.equal(rangs.enfantsInfirmes, 2000);
+  /* Parent à charge : 5 % du revenu net, 450 DT au plus ; 2 parents au plus. */
+  proche(M.detailDeductions(5000, false, 0, 0, 0, 1).parents, 0.05 * 4500);
+  assert.equal(M.detailDeductions(45000, false, 0, 0, 0, 5).parents, 900);
   proche(M.detailDeductions(8000, false, 0, 0, 0, 0).fraisProfessionnels, 800);
 });
 

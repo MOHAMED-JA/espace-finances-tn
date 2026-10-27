@@ -301,8 +301,22 @@
   }
 
   /* Profil nettoyé : tout champ inconnu ou hors bornes reprend sa valeur par défaut. */
+  /* Dates de carrière cohérentes : embauche et début de carrière à partir de 16 ans, début de carrière au plus tard
+     à l'embauche. Renvoie, par champ, le message d'erreur à montrer (null si la date est acceptable ou vide). */
+  function seize(naissance) { return naissance ? String(+naissance.slice(0, 4) + 16) + naissance.slice(4) : "1960-01-01"; }
+  function erreursDates(p) {
+    var n = dateIso(p.dateNaissance, "1930-01-01", isoDecale(16)), min = n && seize(n) > "1960-01-01" ? seize(n) : "1960-01-01";
+    var e = typeof p.dateEmbauche === "string" && p.dateEmbauche ? p.dateEmbauche : "", c = typeof p.debutCarriere === "string" && p.debutCarriere ? p.debutCarriere : "";
+    return {
+      dateEmbauche: e && n && e < min ? "Date d'embauche avant vos 16 ans : vérifiez l'année." : e && e > isoDecale(0) ? "Date d'embauche dans le futur." : null,
+      debutCarriere: c && n && c < min ? "Début de carrière avant vos 16 ans : vérifiez l'année." : c && e && c > e ? "Le début de carrière ne peut pas suivre votre embauche actuelle." : c && c > isoDecale(0) ? "Début de carrière dans le futur." : null
+    };
+  }
   function normaliser(p0) {
     var d = profilParDefaut(), p = p0 || {};
+    /* Dates incohérentes (avant 16 ans, carrière commencée après l'embauche) : ignorées par le calcul. */
+    var errD = erreursDates(p);
+    if (errD.dateEmbauche || errD.debutCarriere) p = Object.assign({}, p, errD.dateEmbauche ? { dateEmbauche: "" } : {}, errD.debutCarriere ? { debutCarriere: "" } : {});
     function liste(v, fn, max) { return Array.isArray(v) ? v.slice(0, max).map(fn) : []; }
     return {
       prenom: texte(p.prenom, 40),
@@ -1311,8 +1325,10 @@
     sy.credits = p.credits.map(function (c) {
       var e = echeancier(c, sy.maintenant), mois = e ? e.restantes : c.moisRestants;
       var d = mois > 0 ? new Date(sy.maintenant.getFullYear(), sy.maintenant.getMonth() + mois, 1) : null;
+      /* Cohérence : les échéances restantes doivent au moins rembourser le capital restant dû (taux positif ou nul). */
+      var verse = c.mensualite * mois, incoherent = c.capitalRestant > 0 && c.mensualite > 0 && mois > 0 && verse < c.capitalRestant * 0.99;
       return { calcule: !!e, payees: e ? e.payees : null, restantes: mois, duree: c.dureeMois || null, fin: e ? e.fin : d ? MOIS[d.getMonth()] + " " + d.getFullYear() : null,
-        reduction: c.reductionTaux || null };
+        reduction: c.reductionTaux || null, incoherent: incoherent ? { verse: verse, capital: c.capitalRestant } : null };
     });
     /* L'alerte d'endettement du budget suit la règle de la banque (12 salaires, net ou brut). */
     var capBanque = sy.capacite[p.baseBanque], qBanque = p.baseBanque === "brut" ? p.quotiteBrut : p.quotiteNet;
@@ -1339,7 +1355,7 @@
   }
 
   var API = {
-    TMM: TMM, definirTMM: definirTMM, CREDITS_TYPES: CREDITS_TYPES, calculAligne: calculAligne, sommeFiche: sommeFiche, GROUPES_FICHE: GROUPES_FICHE, MAX_LIGNES_FICHE: MAX_LIGNES_FICHE, lignesAuMois: lignesAuMois, profilAuMois: profilAuMois, ligneActive: ligneActive, cleMois: cleMois, signatureFiche: signatureFiche, lignesDatees: lignesDatees, ficheChanger: ficheChanger, ficheRetirer: ficheRetirer, ficheAnnulerFutur: ficheAnnulerFutur, ficheVue: ficheVue, moisPrecedent: moisPrecedent, moisSuivant: moisSuivant, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, familleEnVigueur: familleEnVigueur, familleAuMois: familleAuMois, appliquerFamille: appliquerFamille, familleVarie: familleVarie, infoFamille: infoFamille, normaliserFamille: normaliserFamille, memeFamille: memeFamille, familleDe: familleDe, CHAMPS_FAMILLE: CHAMPS_FAMILLE, pension: pension, futursRevenu: futursRevenu, lireEmail: lireEmail, lireTelephone: lireTelephone, formatTelephone: formatTelephone, contratCommence: contratCommence, depensesMois: depensesMois, cibleReserve: cibleReserve, normaliserChangement: normaliserChangement, normaliserScenario: normaliserScenario, MAX_SCENARIOS: MAX_SCENARIOS, MAX_CHANGEMENTS: MAX_CHANGEMENTS, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
+    TMM: TMM, definirTMM: definirTMM, CREDITS_TYPES: CREDITS_TYPES, calculAligne: calculAligne, sommeFiche: sommeFiche, GROUPES_FICHE: GROUPES_FICHE, MAX_LIGNES_FICHE: MAX_LIGNES_FICHE, lignesAuMois: lignesAuMois, profilAuMois: profilAuMois, ligneActive: ligneActive, cleMois: cleMois, signatureFiche: signatureFiche, lignesDatees: lignesDatees, ficheChanger: ficheChanger, ficheRetirer: ficheRetirer, ficheAnnulerFutur: ficheAnnulerFutur, ficheVue: ficheVue, moisPrecedent: moisPrecedent, moisSuivant: moisSuivant, salaireEnVigueur: salaireEnVigueur, salaireDe: salaireDe, familleEnVigueur: familleEnVigueur, familleAuMois: familleAuMois, appliquerFamille: appliquerFamille, familleVarie: familleVarie, infoFamille: infoFamille, normaliserFamille: normaliserFamille, memeFamille: memeFamille, familleDe: familleDe, CHAMPS_FAMILLE: CHAMPS_FAMILLE, pension: pension, futursRevenu: futursRevenu, lireEmail: lireEmail, erreursDates: erreursDates, lireTelephone: lireTelephone, formatTelephone: formatTelephone, contratCommence: contratCommence, depensesMois: depensesMois, cibleReserve: cibleReserve, normaliserChangement: normaliserChangement, normaliserScenario: normaliserScenario, MAX_SCENARIOS: MAX_SCENARIOS, MAX_CHANGEMENTS: MAX_CHANGEMENTS, appliquerHistorique: appliquerHistorique, salaireAnnee: salaireAnnee, infoHistorique: infoHistorique, memeSalaire: memeSalaire, cleHausse: cleHausse, REGLE_8: REGLE_8, reductionsTaux: reductionsTaux, evenementEtape: evenementEtape, tauxOrigine: tauxOrigine, QUOTITE: QUOTITE, AGE_MAX: AGE_MAX, PROJETS: PROJETS, MOIS: MOIS, RENDEMENT_ESTIME: RENDEMENT_ESTIME,
     profilParDefaut: profilParDefaut, normaliser: normaliser, creditTermine: creditTermine, age: age, etatSalaire: etatSalaire, entreeBrut: entreeBrut,
     tranche: tranche, salaire: salaire, augmentation: augmentation, calendrierPrimes: calendrierPrimes, impotRestantAnnee: impotRestantAnnee,
     capitalPourMensualite: capitalPourMensualite, mensualitePourCapital: mensualitePourCapital, capacite: capacite,

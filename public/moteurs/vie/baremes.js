@@ -27,10 +27,11 @@
         deductions: {
           fraisProfessionnelsTaux: 0.10, fraisProfessionnelsMax: 2000,
           chefDeFamille: 300,
-          enfant: 100, enfantsMax: 400,
-          enfantInfirme: 2000,
-          etudiant: 1000, etudiantsMax: 4000,
-          parent: 450, parentsMax: 2
+          enfant: 100, enfantInfirme: 2000, etudiant: 1000,
+          /* Étudiants et enfants : 4 premiers rangs au total ; enfants handicapés hors rang. */
+          rangsEnfantsMax: 4,
+          /* Par parent : 5 % du revenu net, 450 DT au plus (art. 40-IV ; LF 2020, art. 41). */
+          parentTaux: 0.05, parent: 450, parentsMax: 2
         },
         /* Impôt après investissement jamais inférieur à 45 % de l'impôt initial (réduction de 55 % au plus) */
         impotMinimumTaux: 0.45,
