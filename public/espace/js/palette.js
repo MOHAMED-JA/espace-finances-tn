@@ -93,6 +93,7 @@
       section("s-preferences", "#compte?onglet=preferences", "Préférences", "Paramètres › Préférences", "preferences theme page ouverture expert", "orbite"),
       section("s-donnees", "#compte?onglet=donnees", "Mes données", "Paramètres › Données", "donnees export suppression", "orbite"),
       action("a-salaire", retraite ? "Mettre à jour ma pension" : "Mettre à jour mon salaire", "Nouveau montant et mois d'effet", "mettre a jour salaire augmentation hausse nouveau pension", function () { O.mettreAJourSalaire(); }),
+      action("a-famille", "Changer ma situation de famille", "Mariage, divorce, naissance : à partir d'un mois", "situation famille mariage divorce remarie naissance enfant veuf chef de famille", function () { O.changerFamille(); }),
       action("a-nego", "Préparer ma négociation", "Brut à demander, paliers, arguments", "negociation negocier augmentation hausse demander offre emploi zyeda", function () { surVue("salaire", function () { O.ouvrirNegociation(); }); }),
       action("a-dossier", "Préparer mon dossier banque", "PDF à remettre au conseiller", "dossier banque pdf pret credit kridi", function () { surVue("credit", function () { O.ouvrirDossier(); }); }),
       action("a-fiche", "Contrôler ma fiche de paie", "Lecture sur l'appareil, sans envoi", "fiche de paie controler verifier bulletin", function () { surVue("salaire", function () { cliquer("fiche-controle"); }); }),
