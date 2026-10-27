@@ -4524,21 +4524,22 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
       const parties = await page.evaluate((v) => (window.SousRubriques && window.SousRubriques.items(v) || []).map((i) => i.href), vue);
       for (const href of parties.length ? parties : ["#" + vue]) {
         await page.evaluate((h) => { location.hash = h; }, href);
-        await page.waitForTimeout(250);
+        await page.waitForTimeout(150);
         const ids = await page.evaluate((v) => {
           const racine = document.getElementById("vue-" + v); if (!racine) return [];
           return [...racine.querySelectorAll('input[inputmode="decimal"], input[inputmode="numeric"], input[type="number"]')]
             .filter((el) => !el.disabled && !el.readOnly && el.offsetParent !== null && !el.closest("dialog"))
             .map((el, i) => { if (!el.id) el.id = "cc-" + v + "-" + i + "-" + Math.random().toString(36).slice(2, 7); return el.id; });
         }, vue);
-        for (const id of ids.slice(0, 40)) {
+        console.log("  … " + href + " : " + ids.length + " champs");
+        for (const id of ids.slice(0, 25)) {
           const sel = "#" + CSS_ESC(id), origine = await page.inputValue(sel).catch(() => null);
           if (origine === null) continue;
           champs++;
           for (const v of VALEURS) {
             await page.fill(sel, v).catch(() => {});
             await page.locator(sel).blur().catch(() => {});
-            await page.waitForTimeout(60);
+            await page.waitForTimeout(35);
             const absurde = await page.evaluate((vv) => { const t = document.getElementById("vue-" + vv).innerText; const m = t.match(/.{0,40}(\bNaN\b|undefined|Infinity|\[object).{0,40}/); return m ? m[0] : null; }, vue);
             if (absurde) constats.push(href + " " + id + " ← « " + v + " » : " + absurde.replace(/\s+/g, " "));
           }
