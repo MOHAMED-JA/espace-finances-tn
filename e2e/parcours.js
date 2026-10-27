@@ -37,6 +37,7 @@ async function partie(p, vue, cle) {
   await p.waitForFunction(([v, c]) => window.SousRubriques && window.SousRubriques.active(v) === c, [vue, cle]);
   await p.waitForTimeout(120);
 }
+const CSS_ESC = (s) => String(s).replace(/([^\w-])/g, "\\$1");
 const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, "").replace(",", "."));
 
 (async () => {
@@ -2238,12 +2239,23 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.selectOption("#fam-situation", "divorce");
     assert(!(await page.isChecked("#fam-chef")), "divorcé·e : chef de famille décoché par défaut");
     assert((await page.textContent("#fam-chef-aide")).includes("garde des enfants"), "rappel : la garde des enfants");
-    await page.fill("#fam-enfants", "0");
+    /* Table de décision : sans « chef de famille », les enfants ne se saisissent pas (valeurs gardées, sans effet). */
+    for (const id of ["#fam-enfants", "#fam-etudiants", "#fam-handicapes"]) assert(await page.isDisabled(id), id + " bloqué sans chef de famille");
+    assert(!(await page.isDisabled("#fam-parents")), "parents à charge toujours modifiables");
+    assert(/cochez-le/.test(await page.textContent("#fam-enfants-aide")), "aide : cocher « Chef de famille »");
+    await page.check("#fam-chef");
+    assert(!(await page.isDisabled("#fam-enfants")) && /une seule fois/.test(await page.textContent("#fam-enfants-aide")), "chef coché : enfants modifiables");
+    await page.fill("#fam-enfants", "a-1x2");
+    assert((await page.inputValue("#fam-enfants")) === "12", "chiffres seulement : " + (await page.inputValue("#fam-enfants")));
+    await page.fill("#fam-enfants", "99");
+    assert((await page.inputValue("#fam-enfants")) === "15", "borné à 15");
+    await page.fill("#fam-enfants", "2");
+    await page.uncheck("#fam-chef");
     await page.waitForFunction(() => /Impôt retenu chaque mois : \+/.test(document.getElementById("fam-effet").textContent));
     if (M > 1) assert(/1er janvier.*à récupérer/.test(await page.textContent("#fam-effet")), "écart annoncé : " + (await page.textContent("#fam-effet")));
     await page.screenshot({ path: path.join(CAPTURES, "chronologie-famille-fenetre.png") });
     await page.click("#fam-valider");
-    await page.waitForFunction(() => { const p = window.Orbite.profil(); return p.historiqueFamille.length === 2 && p.situation === "divorce" && !p.chefDeFamille && p.enfants === 0; });
+    await page.waitForFunction(() => { const p = window.Orbite.profil(); return p.historiqueFamille.length === 2 && p.situation === "divorce" && !p.chefDeFamille && p.enfants === 2; });
     await page.waitForFunction(() => document.querySelectorAll("#hf-liste li").length === 2);
     assert((await page.textContent("#hf-liste li:first-child")).includes("en vigueur"), "nouvelle situation en vigueur");
     assert((await page.textContent("#hf-liste li:last-child")).startsWith("Avant "), "situation d'avant conservée");
@@ -2307,6 +2319,57 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     /* Retour à la situation de départ pour la suite du parcours. */
     await page.evaluate((f) => window.Orbite.majProfil(Object.assign({ historiqueFamille: [] }, f), { immediat: true }), f0);
     await page.waitForFunction(() => window.Orbite.profil().historiqueFamille.length === 0);
+  });
+
+  /* Cohérence (ISTQB, tables de décision et valeurs limites) : dépendances entre champs, sans enregistrer d'incohérence. */
+  await etape("cohérence : dates de carrière, crédit impossible signalé, enfants de l'épargne réservés au chef de famille", async () => {
+    await page.goto(base + "/espace/#profil?section=salaire");
+    await page.waitForSelector("#p-embauche", { state: "visible" });
+    const avant = await page.evaluate(() => { const p = window.Orbite.profil(); return { naissance: p.dateNaissance, embauche: p.dateEmbauche, debut: p.debutCarriere, chef: p.chefDeFamille, credits: p.credits.length }; });
+    const an = +avant.naissance.slice(0, 4);
+    /* Embauche avant 16 ans : refusée, message, rien d'enregistré. */
+    await page.fill("#p-embauche", (an + 10) + "-06-01");
+    await page.locator("#p-embauche").blur();
+    await page.waitForSelector("#p-embauche-err:not([hidden])");
+    assert(/16 ans/.test(await page.textContent("#p-embauche-err")) && (await page.getAttribute("#p-embauche", "aria-invalid")) === "true", "embauche avant 16 ans signalée");
+    await page.waitForTimeout(400);
+    assert((await page.evaluate(() => window.Orbite.profil().dateEmbauche)) === avant.embauche, "embauche incohérente non enregistrée");
+    /* Embauche valide, puis début de carrière après l'embauche : refusé. */
+    await page.fill("#p-embauche", (an + 25) + "-03-01");
+    await page.locator("#p-embauche").blur();
+    await page.waitForFunction((v) => window.Orbite.profil().dateEmbauche === v, (an + 25) + "-03-01");
+    assert(await page.isHidden("#p-embauche-err"), "message effacé");
+    await page.fill("#p-debut", (an + 27) + "-01-01");
+    await page.locator("#p-debut").blur();
+    await page.waitForSelector("#p-debut-err:not([hidden])");
+    assert(/suivre votre embauche/.test(await page.textContent("#p-debut-err")), "début de carrière après l'embauche signalé");
+    await page.fill("#p-debut", (an + 22) + "-09-01");
+    await page.locator("#p-debut").blur();
+    await page.waitForFunction((v) => window.Orbite.profil().debutCarriere === v, (an + 22) + "-09-01");
+    /* Crédit impossible : 12 échéances de 100 DT pour 50 000 DT restant dus. */
+    await page.goto(base + "/espace/#profil?section=credits");
+    await page.click('[data-ajouter="credits"]');
+    const li = page.locator("#liste-credits > li").last();
+    await li.locator('[data-c="mensualite"]').fill("100");
+    await li.locator('[data-c="capitalRestant"]').fill("50000");
+    await li.locator('[data-c="moisRestants"]').fill("12");
+    await li.locator('[data-c="moisRestants"]').blur();
+    await page.waitForFunction(() => { const l = [...document.querySelectorAll("#liste-credits > li")].pop(); const i = l && l.querySelector("[data-echeancier]"); return i && /À vérifier/.test(i.textContent); });
+    assert(await li.locator("[data-echeancier]").evaluate((e) => e.classList.contains("ligne-liste__info--alerte")), "crédit impossible mis en avant");
+    await li.locator('[data-c="moisRestants"]').fill("60");
+    await li.locator('[data-c="mensualite"]').fill("1000");
+    await li.locator('[data-c="mensualite"]').blur();
+    await page.waitForFunction(() => { const l = [...document.querySelectorAll("#liste-credits > li")].pop(); return !/À vérifier/.test(l.querySelector("[data-echeancier]").textContent); });
+    await page.evaluate((n) => window.Orbite.majProfil({ credits: window.Orbite.profil().credits.slice(0, n) }, { immediat: true }), avant.credits);
+    /* Épargne : enfants, étudiants et enfants handicapés bloqués sans « chef de famille », parents toujours possibles. */
+    await page.goto(base + "/espace/#epargne");
+    await page.waitForSelector("#ep-chef", { state: "attached" });
+    await page.evaluate(() => { const c = document.getElementById("ep-chef"); if (c.checked) c.click(); });
+    for (const k of ["enfants", "etudiants", "infirmes"]) assert(await page.evaluate((kk) => [...document.querySelectorAll('[data-cpt="' + kk + '"]')].every((b) => b.disabled), k), k + " bloqué sans chef de famille");
+    assert(await page.evaluate(() => !document.querySelector('[data-cpt="parents"][data-pas="1"]').disabled), "parents toujours modifiables");
+    await page.evaluate(() => document.getElementById("ep-chef").click());
+    assert(await page.evaluate(() => !document.querySelector('[data-cpt="enfants"][data-pas="1"]').disabled), "chef coché : enfants modifiables");
+    await page.evaluate((c) => { const el = document.getElementById("ep-chef"); if (el.checked !== c) el.click(); }, avant.chef);
   });
 
   await etape("Et si… : modèles, refus de la banque, enregistrement, application annulable, rappel programmé", async () => {
@@ -4444,6 +4507,50 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.goto(base + "/espace/#compte?onglet=donnees");
     await page.reload(); /* état d'interface laissé par les étapes précédentes remis à zéro */
     await page.waitForSelector("#supprimer-compte", { state: "visible" });
+  });
+
+  /* Campagne de cohérence (robustesse, ISTQB) : chaque champ chiffré de chaque partie de chaque rubrique reçoit des
+     saisies invalides (négatif, lettres, nombre énorme, vide) ; ni erreur JavaScript, ni « NaN », « undefined »,
+     « Infinity » ou « [object » affichés. Les valeurs d'origine sont remises après chaque champ. */
+  await etape("campagne de cohérence : saisies invalides dans tous les champs chiffrés, sans erreur ni valeur absurde affichée", async () => {
+    await page.setViewportSize({ width: 1360, height: 900 });
+    const VUES = ["orbite", "profil", "salaire", "epargne", "credit", "vie", "progression", "mois", "placements"];
+    const VALEURS = ["-5", "abc", "99999999999999", ""];
+    const constats = [], avantErreurs = problemes.length;
+    let champs = 0;
+    for (const vue of VUES) {
+      await page.goto(base + "/espace/#" + vue);
+      await page.waitForSelector("#vue-" + vue + ":not([hidden])", { timeout: 8000 }).catch(() => {});
+      const parties = await page.evaluate((v) => (window.SousRubriques && window.SousRubriques.items(v) || []).map((i) => i.href), vue);
+      for (const href of parties.length ? parties : ["#" + vue]) {
+        await page.evaluate((h) => { location.hash = h; }, href);
+        await page.waitForTimeout(250);
+        const ids = await page.evaluate((v) => {
+          const racine = document.getElementById("vue-" + v); if (!racine) return [];
+          return [...racine.querySelectorAll('input[inputmode="decimal"], input[inputmode="numeric"], input[type="number"]')]
+            .filter((el) => !el.disabled && !el.readOnly && el.offsetParent !== null && !el.closest("dialog"))
+            .map((el, i) => { if (!el.id) el.id = "cc-" + v + "-" + i + "-" + Math.random().toString(36).slice(2, 7); return el.id; });
+        }, vue);
+        for (const id of ids.slice(0, 40)) {
+          const sel = "#" + CSS_ESC(id), origine = await page.inputValue(sel).catch(() => null);
+          if (origine === null) continue;
+          champs++;
+          for (const v of VALEURS) {
+            await page.fill(sel, v).catch(() => {});
+            await page.locator(sel).blur().catch(() => {});
+            await page.waitForTimeout(60);
+            const absurde = await page.evaluate((vv) => { const t = document.getElementById("vue-" + vv).innerText; const m = t.match(/.{0,40}(\bNaN\b|undefined|Infinity|\[object).{0,40}/); return m ? m[0] : null; }, vue);
+            if (absurde) constats.push(href + " " + id + " ← « " + v + " » : " + absurde.replace(/\s+/g, " "));
+          }
+          await page.fill(sel, origine).catch(() => {});
+          await page.locator(sel).blur().catch(() => {});
+        }
+      }
+    }
+    const erreurs = problemes.slice(avantErreurs);
+    fs.writeFileSync(path.join(CAPTURES, "campagne-coherence.json"), JSON.stringify({ champs, constats, erreurs }, null, 2));
+    assert(champs > 30, "trop peu de champs essayés : " + champs);
+    assert(!constats.length && !erreurs.length, champs + " champs ; " + constats.length + " valeurs absurdes, " + erreurs.length + " erreurs :\n    " + constats.concat(erreurs).slice(0, 25).join("\n    "));
   });
 
   await etape("déconnexion puis suppression définitive du compte", async () => {

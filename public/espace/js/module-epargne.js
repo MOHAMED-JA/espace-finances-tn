@@ -164,6 +164,7 @@
       return '<label><input type="radio" name="' + nom + '" value="' + o[0] + '"><span>' + o[1] + "</span></label>";
     }).join("") + '<i class="bascule__pastille" aria-hidden="true"></i></div>';
   }
+  var ENFANTS_CHEF = ["enfants", "etudiants", "infirmes"];
   function compteur(cle, titre, aide, max) {
     return '<div class="ep-ligne"><span class="ep-ligne__txt" id="ep-lib-' + cle + '"><strong>' + titre + "</strong><small>" + aide + '</small></span><span class="compteur" role="group" aria-labelledby="ep-lib-' + cle + '">' +
       '<button type="button" data-cpt="' + cle + '" data-pas="-1" aria-label="' + titre + ' : un de moins">' + ico("moins") + "</button>" +
@@ -234,10 +235,10 @@
         champ("ep-revenu", "Revenu annuel imposable", "revenu", "m", "DT / an", "Brut annuel moins cotisations sociales, avant frais professionnels. Repris de votre profil.") +
         '<div class="ep-lignes-saisie">' +
           interrupteur("ep-chef", "Chef de famille", "300 DT de déduction par an") +
-          compteur("enfants", "Enfants à charge", "100 DT chacun, 4 au plus", 15) +
-          compteur("etudiants", "Enfants étudiants", "1 000 DT chacun, sans bourse", 15) +
-          compteur("infirmes", "Enfants handicapés", "2 000 DT chacun", 15) +
-          compteur("parents", "Parents à charge", "450 DT chacun, 2 au plus", 2) +
+          compteur("enfants", "Enfants à charge", "100 DT chacun ; 4 rangs avec les étudiants ; avec « Chef de famille »", 15) +
+          compteur("etudiants", "Enfants étudiants", "1 000 DT chacun, sans bourse ; comptés à part des enfants", 15) +
+          compteur("infirmes", "Enfants handicapés", "2 000 DT chacun, hors rang ; comptés à part", 15) +
+          compteur("parents", "Parents à charge", "5 % du revenu net, 450 DT au plus chacun ; 2 au plus", 2) +
         "</div>" +
         '<div class="champ"><label for="ep-annee">Barème appliqué</label><div class="saisie"><select id="ep-annee">' + annees.map(function (a) { return '<option value="' + a + '">' + esc(BA.annees[a].libelle) + "</option>"; }).join("") + '</select>' + ico("chevron", "ep-select-ico") + "</div></div>" +
         '<div class="ep-contrats" id="ep-contrats"></div>' +
@@ -365,9 +366,12 @@
     var o = $("ep-cpt-" + k);
     o.textContent = String(etat[k] || 0);
     if (saute && !reduit.matches) { o.classList.remove("saute"); void o.offsetWidth; o.classList.add("saute"); }
+    /* Enfants, étudiants et enfants handicapés : réservés au chef de famille (le calcul les ignore sans lui). */
+    var bloque = ENFANTS_CHEF.indexOf(k) >= 0 && !etat.chef;
     R.querySelectorAll('[data-cpt="' + k + '"]').forEach(function (b) {
-      b.disabled = Number(b.getAttribute("data-pas")) < 0 ? !(etat[k] > 0) : etat[k] >= Number(b.getAttribute("data-max"));
+      b.disabled = bloque || (Number(b.getAttribute("data-pas")) < 0 ? !(etat[k] > 0) : etat[k] >= Number(b.getAttribute("data-max")));
     });
+    var ligne = o.closest(".ep-ligne"); if (ligne) ligne.classList.toggle("ep-ligne--bloque", bloque);
   }
   function majCurseur(el) {
     var min = Number(el.min), max = Number(el.max), v = Number(el.value);
@@ -1363,7 +1367,7 @@
       etat.frequence = t.value;
       remplirChamps(); planifier(true); signaler(); return;
     }
-    if (t.id === "ep-chef") { etat.chef = t.checked; planifier(true); signaler(); return; }
+    if (t.id === "ep-chef") { etat.chef = t.checked; ENFANTS_CHEF.forEach(function (k) { majCompteur(k); }); planifier(true); signaler(); return; }
     if (t.id === "ep-annee") { etat.annee = t.value; planifier(true); signaler(); return; }
     if (t.id === "ep-inclure") { ui.inclure = t.checked; planifier(true); signaler(); return; }
     if (t.id === "ep-reinvestir") { etat.reinvestir = t.checked; planifier(true); signaler(); return; }

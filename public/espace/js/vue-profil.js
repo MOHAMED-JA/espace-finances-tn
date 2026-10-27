@@ -153,6 +153,11 @@
       el.setAttribute("aria-invalid", ok && !(el.required && !el.value) ? "false" : "true");
       if (!ok) return;
       partiel[cle] = el.value;
+      /* Cohérence des dates (16 ans, début de carrière au plus tard à l'embauche) : rien n'est enregistré tant qu'elle manque. */
+      var errs = OC.erreursDates(Object.assign({}, O.profil(), partiel)), errEl = $(el.id + "-err");
+      var msg = errs[cle] || (cle === "dateNaissance" && (errs.dateEmbauche || errs.debutCarriere) ? "Avec cette date de naissance, votre embauche ou votre début de carrière tomberait avant vos 16 ans : vérifiez les deux dates." : null);
+      if (errEl) { errEl.textContent = msg || ""; errEl.hidden = !msg; }
+      if (msg) { el.setAttribute("aria-invalid", "true"); return; }
     }
     else if (cle === "anneeNaissance") { var a = parseInt(el.value, 10); if (!(a > 1900)) return; partiel[cle] = a; }
     else {
@@ -356,6 +361,8 @@
   /* Enfants, étudiants, handicapés : la déduction est réservée au chef de famille, les compteurs aussi
      (à chaque rendu, même pendant une saisie : la case se coche sans quitter le champ). */
   var ENFANTS = ["enfants", "etudiants", "handicapes"];
+  /* Le calcul compte trois catégories distinctes (Code de l'IRPP, art. 40) : un enfant n'entre que dans une seule. */
+  var AIDE_ENFANTS = "Comptez chaque enfant une seule fois : un étudiant ou un enfant handicapé n'entre pas dans « Enfants à charge ».";
   function majEnfants(p) {
     ENFANTS.forEach(function (cle) {
       form.querySelectorAll('[data-pp="' + cle + '"]').forEach(function (b) {
@@ -364,7 +371,7 @@
       });
     });
     form.querySelectorAll("[data-seul-chef]").forEach(function (l) { l.classList.toggle("compteur-ligne--bloque", !p.chefDeFamille); });
-    $("p-enfants-aide").hidden = !!p.chefDeFamille;
+    $("p-enfants-aide").textContent = p.chefDeFamille ? AIDE_ENFANTS : "Les enfants à charge se déclarent avec « Chef de famille » : la déduction lui est réservée.";
   }
   function rendre(sy, p) {
     if (!sy) return;
@@ -414,6 +421,8 @@
       info.textContent = e.calcule
         ? e.payees + " échéances payées sur " + e.duree + " · " + e.restantes + " restantes · dernière échéance en " + e.fin
         : e.restantes > 0 ? e.restantes + " échéances restantes · fin prévue en " + e.fin + ". Indiquez la date de début et la durée pour un calcul exact." : "Indiquez la date de début et la durée : Orbite calcule les échéances restantes et la date de fin.";
+      if (e.incoherent) info.textContent = "À vérifier : " + e.restantes + " échéances de cette mensualité font " + F.dt0(e.incoherent.verse) + " DT, moins que les " + F.dt0(e.incoherent.capital) + " DT restant dus. Corrigez la mensualité, le capital ou la durée.";
+      info.classList.toggle("ligne-liste__info--alerte", !!e.incoherent);
       /* Règle des 8 % : où en est ce crédit ? */
       var r8 = li.querySelector("[data-reduction]"), rt = e.reduction;
       if (r8) {
