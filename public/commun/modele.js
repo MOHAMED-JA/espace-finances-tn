@@ -136,6 +136,7 @@
     [/code inconnu|déjà utilisé ou expiré/i, "Code inconnu, déjà utilisé ou expiré : demandez-en un nouveau à votre conseiller."],
     [/réservé aux conseillers/i, "Cet espace est réservé aux conseillers désignés par l'administrateur."],
     [/aucun compte avec cette adresse/i, "Aucun compte Orbite avec cette adresse : la personne doit d'abord créer son compte."],
+    [/trop d'essais/i, "Trop d'essais de code : réessayez dans une heure."],
     [/trop d'invitations/i, "Trop d'invitations en attente (20 au plus) : attendez qu'elles soient utilisées ou expirent."],
     [/double authentification requise/i, "Double authentification requise : activez-la dans Paramètres › Sécurité, puis reconnectez-vous."],
     [/unable to validate email|invalid email|email address .* invalid/i, "Adresse e-mail invalide."],

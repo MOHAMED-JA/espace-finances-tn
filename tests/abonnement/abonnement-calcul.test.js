@@ -63,6 +63,8 @@ test('adresse de paiement : https ou chemin du site, rien d\'autre', () => {
   assert.equal(A.adressePaiementSure('/espace/paiement-test.html?ref=X'), '/espace/paiement-test.html?ref=X');
   assert.equal(A.adressePaiementSure('javascript:alert(1)'), null);
   assert.equal(A.adressePaiementSure('//evil.example'), null);
+  assert.equal(A.adressePaiementSure('/\\evil.example'), null, 'barre oblique inverse = //evil.example pour le navigateur');
+  assert.equal(A.adressePaiementSure('/espace/\\x'), null);
   assert.equal(A.adressePaiementSure('http://insecure.example'), null);
   assert.ok(A.REFERENCE.test('ORB-20261008-AB12CD34'));
 });

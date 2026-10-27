@@ -110,7 +110,15 @@
   doc.addEventListener("orbite:vue", function (e) {
     if (e.detail.vue !== "assistant") return;
     var q = e.detail.params.get("q");
-    if (q) { history.replaceState(null, "", "#assistant"); envoyer(q.slice(0, 1500)); }
+    /* Un lien « #assistant?q=… » venu d'ailleurs remplit seulement le champ (il ne doit ni envoyer à votre place ni
+       user votre quota). Seule la palette Ctrl K de cet onglet envoie directement (marque en sessionStorage). */
+    if (q) {
+      history.replaceState(null, "", "#assistant");
+      var marque = null;
+      try { marque = sessionStorage.getItem("ef-assistant-envoyer"); sessionStorage.removeItem("ef-assistant-envoyer"); } catch (er) {}
+      if (marque === q) envoyer(q.slice(0, 1500));
+      else { champ.value = q.slice(0, 1500); setTimeout(function () { champ.focus({ preventScroll: true }); }, 50); }
+    }
     else setTimeout(function () { champ.focus({ preventScroll: true }); }, 50);
   });
 })();
