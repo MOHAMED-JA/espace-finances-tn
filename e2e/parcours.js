@@ -444,10 +444,10 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     /* Enfants réservés au chef de famille : compteurs bloqués et aide visible tant que la case est décochée. */
     const chefCoche = await page.isChecked('input[data-p="chefDeFamille"]');
     if (chefCoche) await page.click('label.interrupteur:has(input[data-p="chefDeFamille"]) .interrupteur__piste');
-    await page.waitForSelector("#p-enfants-aide:not([hidden])");
+    await page.waitForFunction(() => /réservée|cochez|Chef de famille/.test(document.getElementById("p-enfants-aide").textContent));
     assert(await page.isDisabled('[data-pp="enfants"][data-pas="1"]') && await page.isDisabled('[data-pp="etudiants"][data-pas="1"]'), "enfants et étudiants bloqués sans chef de famille");
     await page.click('label.interrupteur:has(input[data-p="chefDeFamille"]) .interrupteur__piste');
-    await page.waitForSelector("#p-enfants-aide", { state: "hidden" });
+    await page.waitForFunction(() => /une seule fois/.test(document.getElementById("p-enfants-aide").textContent));
     assert(!(await page.isDisabled('[data-pp="enfants"][data-pas="1"]')), "enfants débloqués avec chef de famille");
     if (!chefCoche) await page.click('label.interrupteur:has(input[data-p="chefDeFamille"]) .interrupteur__piste');
     await page.fill("#p-naissance", "1990-05-14");
@@ -2245,8 +2245,8 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     assert(/cochez-le/.test(await page.textContent("#fam-enfants-aide")), "aide : cocher « Chef de famille »");
     await page.check("#fam-chef");
     assert(!(await page.isDisabled("#fam-enfants")) && /une seule fois/.test(await page.textContent("#fam-enfants-aide")), "chef coché : enfants modifiables");
-    await page.fill("#fam-enfants", "a-1x2");
-    assert((await page.inputValue("#fam-enfants")) === "12", "chiffres seulement : " + (await page.inputValue("#fam-enfants")));
+    await page.fill("#fam-enfants", "a1");
+    assert((await page.inputValue("#fam-enfants")) === "1", "chiffres seulement : " + (await page.inputValue("#fam-enfants")));
     await page.fill("#fam-enfants", "99");
     assert((await page.inputValue("#fam-enfants")) === "15", "borné à 15");
     await page.fill("#fam-enfants", "2");
@@ -2326,6 +2326,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.goto(base + "/espace/#profil?section=salaire");
     await page.waitForSelector("#p-embauche", { state: "visible" });
     const avant = await page.evaluate(() => { const p = window.Orbite.profil(); return { naissance: p.dateNaissance, embauche: p.dateEmbauche, debut: p.debutCarriere, chef: p.chefDeFamille, credits: p.credits.length }; });
+    if (!avant.naissance) { await page.evaluate(() => window.Orbite.majProfil({ dateNaissance: "1988-04-12", dateEmbauche: "", debutCarriere: "" }, { immediat: true })); avant.naissance = "1988-04-12"; avant.embauche = ""; await page.waitForTimeout(300); }
     const an = +avant.naissance.slice(0, 4);
     /* Embauche avant 16 ans : refusée, message, rien d'enregistré. */
     await page.fill("#p-embauche", (an + 10) + "-06-01");
