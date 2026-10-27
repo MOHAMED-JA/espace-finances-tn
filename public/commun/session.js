@@ -397,11 +397,16 @@
     invitations: function () { return client.rpc("conseiller_invitations_en_cours").then(verifier); },
     clients: function () { return client.rpc("conseiller_clients").then(verifier); }
   };
+  function erreurConseiller(d) {
+    if (d && !Array.isArray(d) && d.erreur) { var e = new Error(d.message || "Code refusé"); e.code = d.erreur; throw e; }
+    return d;
+  }
   /* Côté client : accepter un conseiller avec son code, voir les consultations, retirer l'accord. */
   var partageConseiller = {
     etat: function () { return client.rpc("partage_conseiller_etat").then(verifier); },
-    voir: function (code) { return client.rpc("partage_conseiller_voir", { p_code: code }).then(verifier); },
-    accepter: function (code) { return client.rpc("partage_conseiller_accepter", { p_code: code }).then(verifier); },
+    /* Un code faux ou trop d'essais reviennent en { erreur, message } (l'essai reste compté côté serveur) : même erreur qu'avant. */
+    voir: function (code) { return client.rpc("partage_conseiller_voir", { p_code: code }).then(verifier).then(erreurConseiller); },
+    accepter: function (code) { return client.rpc("partage_conseiller_accepter", { p_code: code }).then(verifier).then(erreurConseiller); },
     retirer: function (id) { return client.rpc("partage_conseiller_retirer", { p_conseiller: id }).then(verifier); }
   };
   /* Historique du TMM (lecture pour tout compte connecté), du plus récent au plus ancien. */

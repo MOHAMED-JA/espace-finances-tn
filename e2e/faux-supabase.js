@@ -526,7 +526,7 @@ function creer() {
     if (url.pathname === "/rest/v1/rpc/partage_conseiller_etat") return repondre(route, 200, etatPartageC(u.id));
     if (url.pathname === "/rest/v1/rpc/partage_conseiller_voir" || url.pathname === "/rest/v1/rpc/partage_conseiller_accepter") {
       const code = String(corps.p_code || "").trim().toUpperCase(), inv = invitationsC.get(code);
-      if (!inv || inv.utilisee_par || Date.parse(inv.expire_le) < Date.now() || inv.conseiller === u.id) return repondre(route, 404, { code: "P0002", message: "Code inconnu, déjà utilisé ou expiré" });
+      if (!inv || inv.utilisee_par || Date.parse(inv.expire_le) < Date.now() || inv.conseiller === u.id) return repondre(route, 200, { erreur: "P0002", message: "Code inconnu, déjà utilisé ou expiré" });
       if (url.pathname.endsWith("_voir")) return repondre(route, 200, { nom: conseillers.get(inv.conseiller).nom, expire_le: inv.expire_le });
       inv.utilisee_par = u.id;
       const k = u.id + "|" + inv.conseiller; if (!partagesC.has(k)) partagesC.set(k, new Date().toISOString());
