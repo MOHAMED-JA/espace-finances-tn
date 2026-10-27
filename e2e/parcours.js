@@ -4515,7 +4515,7 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
      « Infinity » ou « [object » affichés. Les valeurs d'origine sont remises après chaque champ. */
   await etape("campagne de cohérence : saisies invalides dans tous les champs chiffrés, sans erreur ni valeur absurde affichée", async () => {
     await page.setViewportSize({ width: 1360, height: 900 });
-    const VUES = ["orbite", "profil", "salaire", "epargne", "credit", "vie", "progression", "mois", "placements"];
+    const VUES = (process.env.CAMPAGNE_VUES || "orbite,profil,salaire,epargne,credit,vie,progression,mois,placements").split(",");
     const VALEURS = ["-5", "abc", "99999999999999", ""];
     const constats = [], avantErreurs = problemes.length;
     let champs = 0;

@@ -803,7 +803,9 @@
     rendreComparaison();
     OUTILS.forEach(function (o) {
       var d = $("cr-outil-" + o.cle);
-      if (d && d.open && OUTIL_FN[o.cle] && OUTIL_FN[o.cle].suit) { try { OUTIL_FN[o.cle].calc($("cr-o-" + o.cle)); } catch (err) { if (window.console) console.error(err); } }
+      /* Outil ouvert mais pas encore construit (pas de zone de résultat) : rien à actualiser. */
+      var corps = $("cr-o-" + o.cle);
+      if (d && d.open && corps && sortie(corps) && OUTIL_FN[o.cle] && OUTIL_FN[o.cle].suit) { try { OUTIL_FN[o.cle].calc(corps); } catch (err) { if (window.console) console.error(err); } }
     });
   }
   var annoncer = anti(function () {
