@@ -2271,5 +2271,7 @@ Techniques : partitions d'équivalence, valeurs limites, tables de décision, te
 - **Dates** (`OC.erreursDates`) : embauche ou début de carrière avant 16 ans, début de carrière après l'embauche, dates futures : message sous le champ, rien d'enregistré ; `normaliser` ignore ces dates.
 - **Crédit impossible** : mensualité × échéances restantes inférieure au capital restant dû → « À vérifier » dans la liste des crédits (`sy.credits[].incoherent`).
 - Tests : `tests/espace/coherence.test.js` (7 : différentiel, invariants net ≤ brut et aucun NaN, monotonie, table de décision chef de famille, valeurs limites, aller-retour net → brut → net, saisies invalides) ; tests du moteur de l'épargne mis à jour. e2e : étape « campagne de cohérence » (4 saisies invalides — négatif, lettres, nombre énorme, vide — dans chaque champ chiffré de 9 rubriques : aucune erreur JavaScript ni « NaN / undefined / Infinity / [object » affiché ; rapport `test-results/campagne-coherence.json`) et étape « cohérence » (dates, crédit impossible, enfants de l'Épargne).
-- **Piège de test** : `page.fill` respecte `maxlength` (« a-1x2 » devient « a- »).
+- **Crédit › Outils** : le balayage a aussi trouvé une erreur JavaScript (`calc` d'un outil ouvert mais pas encore construit : pas de zone `.cr-outil__sortie`) ; `rendreLourd` ne rafraîchit plus un outil sans zone de résultat.
+- Résultat final : parcours complet 90 réussis, 0 échec ; balayage : 94 champs, 0 valeur absurde, 0 erreur. `CAMPAGNE_VUES=credit,…` limite le balayage à certaines rubriques.
+- **Pièges de test** : `page.fill` respecte `maxlength` (« a-1x2 » devient « a- ») ; le balayage complet dure environ une heure.
 - SW `orbite-2026-10-27b`.
