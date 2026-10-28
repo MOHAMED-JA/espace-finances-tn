@@ -435,7 +435,7 @@
       proches: liste(x.proches, normaliserProche, MAX.proches) };
   }
 
-  return {
+  return { prochaineDate: prochaineDate,
     MAX: MAX, CATS: CATS, NOMS_CAT: NOMS_CAT, PERIODES: PERIODES, NOMS_PERIODE: NOMS_PERIODE, TYPES_A: TYPES_A, NOMS_A: NOMS_A, CATS_LOGEMENT: CATS_LOGEMENT,
     iso: iso, isoValide: isoValide, libDate: libDate, decaler: decaler, plusMois: plusMois, ecart: ecart, nouvelId: nouvelId,
     normaliser: normaliser, normaliserFacture: normaliserFacture, normaliserAssurance: normaliserAssurance, normaliserProche: normaliserProche,

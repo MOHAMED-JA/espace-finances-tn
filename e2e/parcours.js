@@ -4510,6 +4510,66 @@ const chiffre = (t) => Number(String(t).replace(/[^\d,.-]/g, "").replace(/\./g, 
     await page.waitForSelector("#supprimer-compte", { state: "visible" });
   });
 
+  await etape("obligations (Mon mois) : vignette calculée et datée, payée, assurance auto et factures reprises sans double saisie, fêtes, calendrier, téléphone", async () => {
+    await page.setViewportSize({ width: 1360, height: 900 });
+    const avant = await page.evaluate(() => { const p = window.Orbite.profil(); return JSON.parse(JSON.stringify({ obligations: p.obligations, factures: p.factures, assurances: p.assurances })); });
+    await page.evaluate(() => window.Orbite.majProfil({ obligations: { vehicules: [], evenements: [] } }, { immediat: true }));
+    await page.goto(base + "/espace/#mois?onglet=obligations");
+    await page.waitForSelector("#mo-obligations:not([hidden])");
+    await page.waitForFunction(() => /À mettre de côté/.test(document.getElementById("mo-obligations").textContent));
+    /* Voiture : 5 CV diesel, immatriculation impaire → 280 DT, avant le 5 avril. */
+    await page.click('[data-ob-ajouter="vehicule"]');
+    await page.waitForSelector("#dlg-vehicule[open]");
+    await page.click("#ob-v-valider");
+    assert(await page.isVisible("#ob-v-cv-err"), "puissance fiscale obligatoire");
+    await page.fill("#ob-v-nom", "Clio");
+    await page.fill("#ob-v-cv", "5x");
+    assert((await page.inputValue("#ob-v-cv")) === "5", "chiffres seulement");
+    await page.selectOption("#ob-v-carburant", "diesel");
+    await page.check('input[name="ob-v-parite"][value="impair"]', { force: true });
+    assert(/280 DT/.test(await page.textContent("#ob-v-calcul")), "barème affiché : " + (await page.textContent("#ob-v-calcul")));
+    await page.click("#ob-v-valider");
+    await page.waitForFunction(() => (window.Orbite.profil().obligations.vehicules || []).length === 1);
+    const v = await page.evaluate(() => window.Orbite.profil().obligations.vehicules[0]);
+    assert(v.nom === "Clio" && v.cv === 5 && v.carburant === "diesel" && v.parite === "impair", JSON.stringify(v));
+    await page.waitForFunction(() => /Vignette : Clio/.test(document.getElementById("ob-liste").textContent));
+    assert(/5 avril/.test(await page.textContent("#ob-liste")) && /280 DT/.test(await page.textContent("#ob-liste")), "vignette datée et chiffrée");
+    /* Payée cette année : la date passe à l'année suivante. */
+    await page.click('#ob-liste [data-ob-vehicule]');
+    await page.waitForSelector("#dlg-vehicule[open]");
+    await page.click("#dlg-vehicule label.interrupteur .interrupteur__piste");
+    await page.click("#ob-v-valider");
+    const an = new Date().getFullYear();
+    await page.waitForFunction((a) => window.Orbite.profil().obligations.vehicules[0].payeAnnee === a, an);
+    await page.waitForFunction((a) => new RegExp("5 avril " + (a + 1)).test(document.getElementById("ob-liste").textContent), an);
+    /* Assurance auto et facture STEG notées ailleurs : reprises ici, sans copie. */
+    await page.evaluate(() => window.Orbite.majProfil({ assurances: [{ id: "a1", type: "auto", nom: "Clio", prime: 540, echeance: "2025-12-15" }],
+      factures: [{ id: "f1", nom: "STEG", cat: "electricite", montant: 95, periode: 2, prochaine: "2026-12-12" }] }, { immediat: true }));
+    await page.waitForFunction(() => /Assurance auto : Clio/.test(document.getElementById("ob-liste").textContent) && /STEG/.test(document.getElementById("mo-obligations").textContent));
+    const copie = await page.evaluate(() => JSON.stringify(window.Orbite.profil().obligations));
+    assert(!/STEG|540/.test(copie), "rien de recopié dans les obligations : " + copie);
+    /* Fête suivie : Aïd el-Adha, 1 200 DT. */
+    await page.click('.ob-fete[data-ob-type="aid-adha"] .interrupteur__piste');
+    await page.waitForFunction(() => window.Orbite.profil().obligations.evenements.some((e) => e.type === "aid-adha" && e.actif));
+    await page.fill('[data-ob-budget="aid-adha"]', "1200");
+    await page.locator('[data-ob-budget="aid-adha"]').blur();
+    await page.waitForFunction(() => window.Orbite.profil().obligations.evenements.some((e) => e.type === "aid-adha" && e.budget === 1200));
+    await page.waitForFunction(() => /Aïd el-Adha/.test(document.getElementById("ob-liste").textContent));
+    const mois = await page.evaluate(() => window.Orbite.synthese().obligations.parMois);
+    assert(mois > 0, "somme à mettre de côté calculée : " + mois);
+    await page.screenshot({ path: path.join(CAPTURES, "obligations.png"), fullPage: true });
+    /* Calendrier : l'assurance de décembre y figure, en orange « Obligation ». */
+    const dec = await page.evaluate(() => { const OB = window.ObligationsCalcul, sy = window.Orbite.synthese(); return OB.evenementsMois(sy.obligations, 2026, 11).length; });
+    assert(dec >= 1, "obligation de décembre dans le calendrier");
+    /* Téléphone : onglets sur 2 rangées, pas de défilement horizontal. */
+    await page.setViewportSize({ width: 375, height: 780 });
+    await page.waitForTimeout(300);
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), "téléphone sans défilement horizontal");
+    await page.screenshot({ path: path.join(CAPTURES, "obligations-telephone.png") });
+    await page.setViewportSize({ width: 1360, height: 900 });
+    await page.evaluate((x) => window.Orbite.majProfil(x, { immediat: true }), avant);
+  });
+
   /* Campagne de cohérence (robustesse, ISTQB) : chaque champ chiffré de chaque partie de chaque rubrique reçoit des
      saisies invalides (négatif, lettres, nombre énorme, vide) ; ni erreur JavaScript, ni « NaN », « undefined »,
      « Infinity » ou « [object » affichés. Les valeurs d'origine sont remises après chaque champ. */
