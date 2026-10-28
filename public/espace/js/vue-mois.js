@@ -15,7 +15,7 @@
   var MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
   var JOURS = ["lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."];
   var FIXES = { credits: "Prélevé chaque mois", logement: "Loyer et charges du profil", epargne: "Versements de vos contrats" };
-  var LIB_TYPE = { paie: "Paie", prime: "Versement en plus", credit: "Crédit", fin: "Fin de crédit", epargne: "Épargne", fiscal: "Impôt", rappel: "Rappel" };
+  var LIB_TYPE = { paie: "Paie", prime: "Versement en plus", credit: "Crédit", fin: "Fin de crédit", epargne: "Épargne", fiscal: "Impôt", obligation: "Obligation", rappel: "Rappel" };
   var decalB = 0, decalC = 0, ouvert = null, jourVu = 0;
 
   function cree(tag, cls, txt) { var e = doc.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
@@ -29,7 +29,7 @@
   function info(def) { return B.ENVELOPPES.filter(function (e) { return e.cle === def; })[0]; }
 
   /* ---------- Onglets ---------- */
-  var ONGLETS = ["budget", "calendrier", "comptes", "prevision", "factures"], barre = doc.querySelector(".mo-onglets");
+  var ONGLETS = ["budget", "calendrier", "comptes", "prevision", "factures", "obligations"], barre = doc.querySelector(".mo-onglets");
   function ouvrirOnglet(cle, focus) {
     if (ONGLETS.indexOf(cle) === -1) cle = "budget";
     barre.setAttribute("data-o", cle);
@@ -225,7 +225,8 @@
   function rappels() { try { return window.OrbiteRappels ? window.OrbiteRappels.liste() : []; } catch (e) { return []; } }
   function evenementsDe(d, rs) {
     var sy = O.synthese(); if (!sy) return [];
-    return K.evenements(sy.profil, d.getFullYear(), d.getMonth(), { maintenant: new Date(), net: sy.salaire ? sy.salaire.netMensuel : 0, rappels: rs });
+    var OB = window.ObligationsCalcul, ob = OB && sy.obligations ? OB.evenementsMois(sy.obligations, d.getFullYear(), d.getMonth()) : [];
+    return K.evenements(sy.profil, d.getFullYear(), d.getMonth(), { maintenant: new Date(), net: sy.salaire ? sy.salaire.netMensuel : 0, rappels: rs, obligations: ob });
   }
   function rendreCalendrier() {
     var sy = O.synthese(); if (!sy) return;
@@ -344,7 +345,8 @@
     if ($("vue-mois").hidden) return;
     var o = ongletActif();
     if (o === "calendrier") rendreCalendrier(); else if (o === "comptes") { if (window.OrbiteComptes) window.OrbiteComptes.rendre(); }
-    else if (o === "prevision" || o === "factures") { if (window.OrbitePilotage) window.OrbitePilotage.rendre(o); } else rendreBudget();
+    else if (o === "prevision" || o === "factures") { if (window.OrbitePilotage) window.OrbitePilotage.rendre(o); }
+    else if (o === "obligations") { if (window.OrbiteObligations) window.OrbiteObligations.rendre(); } else rendreBudget();
   }
   /* Pour le fil du mois de l'accueil (fil-mois.js) : état du mois en cours et prochaines dates, mêmes calculs que cette page. */
   function etatDuMois() {

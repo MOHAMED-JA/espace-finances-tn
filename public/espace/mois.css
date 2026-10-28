@@ -1,14 +1,15 @@
 /* Orbite — « Mon mois » : budget par enveloppe et calendrier de l'argent (point 5). */
 .mo-tete { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
-.mo-onglets { position: relative; display: inline-grid; grid-template-columns: repeat(5, 1fr); padding: 4px; border-radius: 999px; background: var(--surface); box-shadow: var(--ombre-1); border: 1px solid var(--filet); }
+.mo-onglets { position: relative; display: inline-grid; grid-template-columns: repeat(6, 1fr); padding: 4px; border-radius: 999px; background: var(--surface); box-shadow: var(--ombre-1); border: 1px solid var(--filet); }
 .mo-onglets button { position: relative; z-index: 1; font: inherit; font-size: 14px; font-weight: 650; border: 0; background: none; color: var(--encre-3); min-height: 38px; padding: 0 22px; border-radius: 999px; cursor: pointer; transition: color 200ms ease; }
 .mo-onglets button[aria-selected="true"] { color: var(--inverse); }
 .mo-onglets button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.mo-onglets i { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 5); border-radius: 999px; background: var(--encre); transition: transform 360ms var(--sortie); }
+.mo-onglets i { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 6); border-radius: 999px; background: var(--encre); transition: transform 360ms var(--sortie); }
 .mo-onglets[data-o="calendrier"] i { transform: translateX(100%); }
 .mo-onglets[data-o="comptes"] i { transform: translateX(200%); }
 .mo-onglets[data-o="prevision"] i { transform: translateX(300%); }
 .mo-onglets[data-o="factures"] i { transform: translateX(400%); }
+.mo-onglets[data-o="obligations"] i { transform: translateX(500%); }
 
 .mo-panneau { display: grid; gap: 18px; }
 .mo-mois-nav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -85,6 +86,7 @@
 [data-t="credit"], [data-t="fin"] { --t: var(--credit); }
 [data-t="epargne"] { --t: var(--epargne); }
 [data-t="fiscal"] { --t: var(--ambre); }
+[data-t="obligation"] { --t: var(--alerte); }
 [data-t="rappel"] { --t: var(--encre-2); }
 .mo-cal__points i[data-t], .mo-legende li[data-t]::before, .mo-evt[data-t] .mo-evt__type::before { background: var(--t); }
 .mo-legende { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--encre-3); }
@@ -172,8 +174,11 @@
 @media (max-width: 640px) {
   .mo-tete { align-items: stretch; }
   .mo-onglets { display: grid; width: 100%; }
-  .mo-onglets { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-  .mo-onglets button { padding: 0; font-size: 12px; letter-spacing: -.01em; }
+  /* 6 onglets : 2 rangées de 3 sur téléphone, onglet actif surligné (la pastille glissante est réservée à une seule rangée). */
+  .mo-onglets { grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: 18px; row-gap: 2px; }
+  .mo-onglets i { display: none; }
+  .mo-onglets button { padding: 0; font-size: 13px; letter-spacing: -.01em; border-radius: 14px; }
+  .mo-onglets button[aria-selected="true"] { background: var(--encre); }
   .mo-ajout__form { grid-template-columns: minmax(0, 1fr); }
   .mo-ajout__form .bouton { margin-top: 0; justify-self: stretch; }
   .mo-totaux { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
@@ -203,3 +208,17 @@
 @media (prefers-reduced-motion: reduce) {
   .mo-onglets i, .mo-jauge i, .mo-ligne__barre i, .mo-evt { transition: none !important; }
 }
+
+/* ---------- Obligations (vue-obligations.js) ---------- */
+.ob-ico { color: var(--alerte); background: var(--alerte-doux); }
+.ob-ico--assurance { color: var(--credit-t, var(--credit)); background: var(--credit-doux); }
+.ob-ico--facture { color: var(--encre-2); background: var(--fond); }
+.ob-ico svg { width: 17px; height: 17px; }
+.ob-fetes { display: grid; gap: 4px; }
+.ob-fete { display: grid; gap: 8px; padding: 12px 0; border-top: 1px solid var(--filet); }
+.ob-fete:first-of-type { border-top: 0; }
+.ob-fete__champs { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 14px; }
+.ob-fete:has(input[data-ob-actif]:not(:checked)) .ob-fete__champs { display: none; }
+/* Lignes qui mènent ailleurs (assurance auto, factures) : même aspect que les lignes modifiables. */
+#mo-obligations a.cpt-ligne, #mo-obligations a.cpt-ligne * { text-decoration: none; color: inherit; }
+#mo-obligations a.cpt-ligne small { color: var(--encre-3); }

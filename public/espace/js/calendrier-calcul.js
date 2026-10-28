@@ -18,7 +18,8 @@
 
   /**
    * Événements du mois (a, m0 : année et mois 0-11). p : profil normalisé (crédits avec moisRestants), o :
-   * { maintenant, net (paie du mois), rappels: [{ quand, titre, type, url }] }.
+   * { maintenant, net (paie du mois), rappels: [{ quand, titre, type, url }], obligations: [{ date, jour, type: "obligation", libelle, montant, detail }] }
+   * (obligations du mois : ObligationsCalcul.evenementsMois).
    * Seuls les mois à venir (ou le mois en cours) portent les échéances : le passé ne se reconstitue pas.
    */
   function evenements(p, a, m0, o) {
@@ -43,6 +44,8 @@
       else if (m0 === 11 && num(x.nombreSalaires, 12) > 12) plus = num(x.nombreSalaires, 12) - 12;
       if (plus > 0) ajouter(jp, "prime", "Versement en plus : " + String(plus).replace(".", ",") + " salaire" + (plus > 1 ? "s" : ""), null);
     }
+    /* Obligations de l'année (vignette, assurance auto, fêtes) : à leur date, même dans le mois en cours. */
+    (opt.obligations || []).forEach(function (e) { if (e && e.date && +e.date.slice(0, 4) === a && +e.date.slice(5, 7) - 1 === m0) ajouter(e.jour, "obligation", e.libelle, e.montant, e.detail); });
     if (m0 === 11) ajouter(31, "fiscal", "Dernier jour pour réduire l'impôt " + a, null, "Versements en assurance vie et CEA pris en compte pour l'année.");
     /* Rappels déjà en place (sauf ceux que le calendrier montre déjà). */
     (opt.rappels || []).forEach(function (r) {
@@ -50,7 +53,7 @@
       var d = new Date(r.quand);
       if (d.getFullYear() === a && d.getMonth() === m0) ajouter(d.getDate(), "rappel", r.titre, null, r.corps ? String(r.corps).slice(0, 140) : "");
     });
-    var ordre = { paie: 0, prime: 1, credit: 2, fin: 3, epargne: 4, fiscal: 5, rappel: 6 };
+    var ordre = { paie: 0, prime: 1, credit: 2, fin: 3, epargne: 4, obligation: 5, fiscal: 6, rappel: 7 };
     res.sort(function (u, v) { return u.jour - v.jour || ordre[u.type] - ordre[v.type]; });
     return res;
   }

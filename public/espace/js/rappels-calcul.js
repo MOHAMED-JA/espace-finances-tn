@@ -143,6 +143,26 @@
             "Un de vos contrats arrive à échéance dans un mois. Le détail vous attend dans Orbite.",
             "Demandez deux ou trois devis à garanties égales avant la date : un contrat non résilié se renouvelle pour un an.", "Voir mes assurances") });
       });
+      /* Obligations de l'année (28 oct. 2026) : vignette 15 jours avant la date limite (et en retard), fêtes suivies 7 jours
+         avant. L'assurance auto a déjà son rappel ci-dessus. Aucun montant dans l'email. */
+      ((sy.obligations && sy.obligations.lignes) || []).forEach(function (x) {
+        if (x.type === "assurance" || x.etat === "paye") return;
+        var de = jourA(x.date, 9), avance = x.type === "vignette" ? 15 : 7, dp = de - avance * JOUR;
+        if (x.type === "vignette") {
+          var retard = x.etat === "retard";
+          liste.push({ id: "vignette-" + x.id + "-" + x.date, titre: retard ? "Vignette en retard : " + x.libelle.replace(/^Vignette : /, "") : "Vignette à payer avant le " + libJour(x.date),
+            corps: "En ligne sur taxe-circulation.finances.gov.tn, puis cochez « payée » dans Orbite.", url: "/espace/#mois?onglet=obligations",
+            quand: iso(retard ? t : Math.max(dp, t)), jusqua: iso(retard ? t + 30 * JOUR : de), type: "obligation",
+            mail: mail("Vignette · " + libJour(x.date), retard ? "La date limite de la vignette est passée" : "La vignette est à payer avant le " + libJour(x.date),
+              "La taxe de circulation de votre voiture se paie en ligne, sans autocollant depuis 2026. Le montant vous attend dans Orbite.",
+              "Gardez le reçu avec son code QR : il sert de preuve en cas de contrôle.", "Voir mes obligations") });
+          return;
+        }
+        liste.push({ id: "fete-" + (x.sousType || x.cle) + "-" + x.date, titre: x.libelle + " le " + libJour(x.date) + (x.sousType === "rentree" ? "" : " (à un jour près)"),
+          corps: "Vérifiez que le budget prévu est bien de côté.", url: "/espace/#mois?onglet=obligations",
+          quand: iso(Math.max(dp, t)), jusqua: iso(de), type: "obligation",
+          mail: mail(x.libelle + " · " + libJour(x.date), x.libelle + " approche", "Vous suivez cette date dans Orbite : le budget que vous avez prévu vous y attend.", "", "Voir mes obligations") });
+      });
       (pr.proches || []).forEach(function (x) {
         var recu = (x.recus || []).reduce(function (s, r) { return s + r.v; }, 0), reste = x.montant - recu, d = null;
         if (!(reste > 0.0005)) return;

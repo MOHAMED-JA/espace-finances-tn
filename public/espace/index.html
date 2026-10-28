@@ -1850,6 +1850,7 @@
               <button type="button" role="tab" id="mo-tab-comptes" aria-controls="mo-comptes" aria-selected="false" tabindex="-1" data-onglet="comptes">Comptes</button>
               <button type="button" role="tab" id="mo-tab-prevision" aria-controls="mo-prevision" aria-selected="false" tabindex="-1" data-onglet="prevision">Prévision</button>
               <button type="button" role="tab" id="mo-tab-factures" aria-controls="mo-factures" aria-selected="false" tabindex="-1" data-onglet="factures">Factures</button>
+              <button type="button" role="tab" id="mo-tab-obligations" aria-controls="mo-obligations" aria-selected="false" tabindex="-1" data-onglet="obligations">Obligations</button>
             </div>
           </header>
 
@@ -1930,7 +1931,7 @@
                 <p class="mo-cal__resume" id="mo-cal-resume"></p>
                 <div class="mo-cal__grille" id="mo-cal-grille" aria-hidden="true"></div>
                 <ul class="mo-legende" role="list">
-                  <li data-t="paie">Paie</li><li data-t="credit">Crédit</li><li data-t="epargne">Épargne</li><li data-t="fiscal">Impôt</li><li data-t="rappel">Rappel</li>
+                  <li data-t="paie">Paie</li><li data-t="credit">Crédit</li><li data-t="epargne">Épargne</li><li data-t="fiscal">Impôt</li><li data-t="obligation">Obligation</li><li data-t="rappel">Rappel</li>
                 </ul>
               </section>
               <section class="panneau mo-agenda" aria-labelledby="mo-t-agenda">
@@ -1980,6 +1981,8 @@
           <!-- ============ Prévision et factures (lot B, maquettes B1 et B2 validées le 16 oct. 2026 ; pilotage-calcul.js, vue-pilotage.js) ============ -->
           <div class="mo-panneau pi-panneau" id="mo-prevision" role="tabpanel" aria-labelledby="mo-tab-prevision" hidden></div>
           <div class="mo-panneau pi-panneau" id="mo-factures" role="tabpanel" aria-labelledby="mo-tab-factures" hidden></div>
+          <!-- Obligations de l'année (choisi le 28 oct. 2026 ; obligations-calcul.js, vue-obligations.js) -->
+          <div class="mo-panneau pi-panneau" id="mo-obligations" role="tabpanel" aria-labelledby="mo-tab-obligations" hidden></div>
         </section>
       </main>
     </div>
@@ -2274,6 +2277,27 @@
       <div class="dialogue__pied">
         <button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Annuler</button>
         <button type="submit" class="bouton bouton--plein" value="ok" id="fam-valider">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialogue" id="dlg-vehicule" aria-labelledby="ob-v-titre">
+    <form method="dialog" id="form-vehicule" novalidate>
+      <div class="dialogue__tete"><h2 id="ob-v-titre">Ajouter une voiture</h2></div>
+      <div class="dialogue__corps ajout-profil">
+        <div class="grille-champs">
+          <div class="champ champ--large"><label for="ob-v-nom">Nom</label><div class="saisie"><input id="ob-v-nom" type="text" maxlength="40" autocomplete="off" placeholder="Ma voiture"></div></div>
+          <div class="champ"><label for="ob-v-cv">Puissance fiscale</label><div class="saisie"><input id="ob-v-cv" type="text" inputmode="numeric" maxlength="2" autocomplete="off" aria-describedby="ob-v-cv-aide ob-v-cv-err"><span class="saisie__unite">CV</span></div><span class="champ__aide" id="ob-v-cv-aide">Sur la carte grise</span><span class="erreur-champ" id="ob-v-cv-err" role="alert" hidden></span></div>
+          <div class="champ"><label for="ob-v-carburant">Carburant</label><div class="saisie"><select id="ob-v-carburant"><option value="essence">Essence (ou hybride essence)</option><option value="diesel">Diesel (ou hybride diesel)</option><option value="gpl">GPL</option><option value="electrique">100 % électrique</option></select><svg class="saisie__chevron" aria-hidden="true"><use href="/orbite/icones.svg#chevron"/></svg></div></div>
+        </div>
+        <div class="bascule" role="radiogroup" aria-label="Dernier chiffre de l'immatriculation"><label><input type="radio" name="ob-v-parite" value="pair"><span>Immatriculation paire · 5 mars</span></label><label><input type="radio" name="ob-v-parite" value="impair"><span>Impaire · 5 avril</span></label><i class="bascule__pastille" aria-hidden="true"></i></div>
+        <div class="champ"><label for="ob-v-montant">Montant de la vignette <span class="champ__facultatif">facultatif</span></label><div class="saisie"><input id="ob-v-montant" type="text" inputmode="decimal" autocomplete="off" aria-describedby="ob-v-calcul"><span class="saisie__unite">DT</span></div><span class="champ__aide" id="ob-v-calcul"></span></div>
+        <label class="interrupteur"><span><strong id="ob-v-paye-lib">Vignette déjà payée</strong><small>La prochaine date passe alors à l'année suivante.</small></span><input type="checkbox" id="ob-v-paye" role="switch"><span class="interrupteur__piste" aria-hidden="true"></span></label>
+      </div>
+      <div class="dialogue__pied">
+        <button type="submit" class="bouton bouton--fantome bouton--danger" value="supprimer" id="ob-v-supprimer" formnovalidate hidden>Retirer</button>
+        <button type="submit" class="bouton bouton--fantome" value="annuler" formnovalidate>Annuler</button>
+        <button type="submit" class="bouton bouton--plein" value="ok" id="ob-v-valider">Enregistrer</button>
       </div>
     </form>
   </dialog>
@@ -2995,6 +3019,7 @@
   <script src="/espace/js/comptes-calcul.js"></script>
   <script src="/espace/js/placements-calcul.js"></script>
   <script src="/espace/js/pilotage-calcul.js"></script>
+  <script src="/espace/js/obligations-calcul.js"></script>
   <script src="/espace/js/ensemble-calcul.js"></script>
   <script src="/espace/js/coffre-calcul.js"></script>
   <script src="/espace/js/orbite-calcul.js"></script>
@@ -3068,6 +3093,7 @@
   <script src="/espace/js/vue-comptes.js"></script>
   <script src="/espace/js/vue-placements.js"></script>
   <script src="/espace/js/vue-pilotage.js"></script>
+  <script src="/espace/js/vue-obligations.js"></script>
   <script src="/espace/js/vue-liberte.js"></script>
   <script src="/espace/js/vue-coffre.js"></script>
   <script src="/espace/js/conseiller.js"></script>

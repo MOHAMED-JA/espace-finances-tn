@@ -2275,3 +2275,17 @@ Techniques : partitions d'équivalence, valeurs limites, tables de décision, te
 - Résultat final : parcours complet 90 réussis, 0 échec ; balayage : 94 champs, 0 valeur absurde, 0 erreur. `CAMPAGNE_VUES=credit,…` limite le balayage à certaines rubriques.
 - **Pièges de test** : `page.fill` respecte `maxlength` (« a-1x2 » devient « a- ») ; le balayage complet dure environ une heure.
 - SW `orbite-2026-10-27b`.
+
+## 3 centunvicies. Mon mois › Obligations : vignette, assurance auto et factures reprises, rentrée, Ramadan, Aïd (28 oct.)
+
+Choisi parmi 10 idées (calendrier des obligations), placé dans Mon mois. L'utilisateur a demandé d'inclure STEG, SONEDE, internet et syndic **sans les saisir deux fois** : ils existaient déjà (Mon mois › Factures, catégories electricite, eau, internet, syndic) ; l'assurance auto aussi (Patrimoine › Assurances, type auto, avec rappel). Ils sont **repris en lecture**, avec un lien vers leur onglet.
+Règles vérifiées (sources) :
+- **Vignette** (taxe de circulation), personnes physiques : avant le 5 mars (immatriculation paire), avant le 5 avril (impaire) ; paiement en ligne sur taxe-circulation.finances.gov.tn, sans autocollant depuis 2026 (La Presse, Managers, Tuniscope, Idaraty). Barème des voitures particulières (DT, essence / diesel / GPL) : 4 CV 65/215/390 ; 5-7 CV 130/280/455 ; 8 CV 180/330/505 ; 9 CV 180/405/580 ; 10-11 CV 230/455/630 ; 12-13 CV 1 050/1 275/1 450 ; 14-15 CV 1 400/1 625/1 800 ; 16 CV et plus 2 100/2 325/2 500 (automobile.tn, Tunisia Times, Réalités ; texte officiel non lu : montant modifiable). 100 % électrique : moitié du tarif essence ; hybride : carburant du moteur thermique.
+- **Ramadan, Aïd el-Fitr, Aïd el-Adha** : `Intl` calendrier `islamic-umalqura` du navigateur (1er ramadan, 1er chawwal, 10 dhou al-hijja), « à un jour près ». Rentrée : date choisie (15 septembre par défaut).
+- Écartés faute de source sûre : taxe municipale (aucune date unique), déclaration annuelle (non choisie).
+Construction :
+- `obligations-calcul.js` (pur) : `montantVignette`, `dateVignette`, `fetesHegiriennes`, `prochaineFete`, `normaliser` (profil.obligations : 5 voitures au plus, 4 fêtes), `analyser` → lignes datées (vignette : à venir / payée / en retard ; assurance auto reprise ; fêtes suivies), **somme à mettre de côté par mois** (montant ÷ mois restants, mois de l'échéance compris ; rien si en retard ou prime prélevée avec le salaire), factures du logement reprises (`PI.prochaineDate` exporté) ; `evenementsMois` pour le calendrier. `sy.obligations` calculé dans `synthese`.
+- `vue-obligations.js` + onglet **Obligations** (6ᵉ onglet de Mon mois ; sur téléphone, onglets en 2 rangées de 3) ; fenêtre `dlg-vehicule` (nom, CV, carburant, pair/impair, montant facultatif, « payée ») ; fêtes : interrupteur, budget, date de rentrée ; chaque changement annulable.
+- **Calendrier de l'argent** et **fil du mois** : type `obligation` (orange, légende « Obligation »).
+- **Rappels** : vignette 15 jours avant (puis « en retard »), fête suivie 7 jours avant ; type `obligation` ajouté à `TYPES` de la fonction `rappels-email` (**à redéployer** pour les emails ; les notifications de l'appli marchent sans) ; aucun montant dans l'email.
+- Palette : « Mes obligations de l'année ». Tests : `tests/espace/obligations.test.js` (8). e2e « obligations ». SW `orbite-2026-10-28a`, nouveautés « 2026-10-28a ».

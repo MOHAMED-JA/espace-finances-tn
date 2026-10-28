@@ -12,12 +12,12 @@
       require("../../moteurs/salaire/calcul.js"), require("../../moteurs/salaire/parametres.js"),
       require("../../moteurs/salaire/etat.js"), require("../../moteurs/vie/moteur-fiscal.js"),
       require("../../moteurs/vie/scenario.js"), require("../../moteurs/salaire/pension.js"), require("./budget-calcul.js"), require("./comptes-calcul.js"),
-      require("./placements-calcul.js"), require("./pilotage-calcul.js"), require("./ensemble-calcul.js")
+      require("./placements-calcul.js"), require("./pilotage-calcul.js"), require("./ensemble-calcul.js"), require("./obligations-calcul.js")
     );
   } else {
-    racine.OrbiteCalcul = fabrique(racine.CalculSalaire, racine.PARAMETRES_PAIE, racine.EtatSimulation, racine.MoteurFiscal, racine.Scenario, racine.CalculPension, racine.BudgetCalcul, racine.ComptesCalcul, racine.PlacementsCalcul, racine.PilotageCalcul, racine.EnsembleCalcul);
+    racine.OrbiteCalcul = fabrique(racine.CalculSalaire, racine.PARAMETRES_PAIE, racine.EtatSimulation, racine.MoteurFiscal, racine.Scenario, racine.CalculPension, racine.BudgetCalcul, racine.ComptesCalcul, racine.PlacementsCalcul, racine.PilotageCalcul, racine.EnsembleCalcul, racine.ObligationsCalcul);
   }
-})(typeof self !== "undefined" ? self : this, function (C, P, E, MF, SC, CP, BC, CC, PL, PI, EC) {
+})(typeof self !== "undefined" ? self : this, function (C, P, E, MF, SC, CP, BC, CC, PL, PI, EC, OB) {
   "use strict";
 
   /* Hypothèses par défaut des crédits types (modifiables dans le module Crédit). */
@@ -384,6 +384,8 @@
       factures: PI ? PI.normaliser({ factures: p.factures }).factures : undefined,
       assurances: PI ? PI.normaliser({ assurances: p.assurances }).assurances : undefined,
       proches: PI ? PI.normaliser({ proches: p.proches }).proches : undefined,
+      /* Obligations de l'année (Mon mois › Obligations) : voitures (vignette) et fêtes suivies. */
+      obligations: OB ? OB.normaliser(p.obligations) : undefined,
       /* Lot C (17 oct. 2026) : relevé mensuel du patrimoine net (historique réel, 36 mois) ; hypothèses de la liberté financière. */
       patrimoineHisto: EC ? EC.normaliserHistorique(p.patrimoineHisto) : undefined,
       liberte: (function (x) {
@@ -1320,6 +1322,10 @@
     sy.futursRevenu = futursRevenu(p, sy.maintenant);
     sy.salaireAnnee = salaireAnnee(p, sy.maintenant);
     sy.famille = infoFamille(p, sy.maintenant);
+    /* Obligations de l'année (vignette, assurance auto, fêtes) et factures du logement reprises de Mon mois › Factures. */
+    var mo = sy.maintenant;
+    sy.obligations = OB ? OB.analyser({ aujourdhui: mo.getFullYear() + "-" + String(mo.getMonth() + 1).padStart(2, "0") + "-" + String(mo.getDate()).padStart(2, "0"),
+      obligations: p.obligations, assurances: p.assurances, factures: p.factures, prochaineFacture: PI && PI.prochaineDate }) : null;
     sy.tauxImmo = tauxImmo(p);
     sy.contrats = p.contrats.map(function (c) { return estimationContrat(c, sy.maintenant); });
     sy.credits = p.credits.map(function (c) {
